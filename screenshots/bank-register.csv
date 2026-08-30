@@ -1,0 +1,109 @@
+﻿Date,Type,Number,Payee,Memo,Bank,Payment,Deposit,Balance,Status
+Opening,Opening,,Opening balance,,,0,4266250,4266250,
+"Jan 1, 2026",Check,#4401,Ayala Land — Warehouse rent,January warehouse,Operating,85000,0,4181250,Cleared
+"Jan 8, 2026",Transfer,,Transfer Operating → Payroll,,Operating,255000,0,3926250,Posted
+"Jan 8, 2026",Transfer,,Transfer Operating → Payroll,,Payroll,0,255000,4181250,Posted
+"Jan 13, 2026",Check,#1101,Staff payroll — 1st half January,Semi-monthly payroll,Payroll,126400,0,4054850,Cleared
+"Jan 16, 2026",Cash Sale,RCPT-2026-018,Walk-in — Harbor stall,Same-day cash.,Operating,0,9800,4064650,Posted
+"Jan 22, 2026",Check,#4402,Meralco,January warehouse power,Operating,17820,0,4046830,Cleared
+"Jan 27, 2026",Check,#1102,Staff payroll — 2nd half January,Semi-monthly payroll,Payroll,126400,0,3920430,Cleared
+"Jan 30, 2026",Receipt,RCPT-2026-001,Laguna Foods Inc.,Payment INV-2026-001,Operating,0,172800,4093230,Posted
+"Feb 1, 2026",Check,#4403,Ayala Land — Warehouse rent,February warehouse,Operating,85000,0,4008230,Cleared
+"Feb 5, 2026",Receipt,Chk 3301,Metro Clinic Group,Payment INV-2026-018,Operating,0,96000,4104230,Posted
+"Feb 8, 2026",Transfer,,Transfer Operating → Payroll,,Operating,255000,0,3849230,Posted
+"Feb 8, 2026",Transfer,,Transfer Operating → Payroll,,Payroll,0,255000,4104230,Posted
+"Feb 13, 2026",Check,#1103,Staff payroll — 1st half February,Semi-monthly payroll,Payroll,126400,0,3977830,Cleared
+"Feb 21, 2026",Cash Sale,RCPT-2026-019,Walk-in — Harbor stall,Same-day cash.,Operating,0,11200,3989030,Posted
+"Feb 22, 2026",Check,#4404,Meralco,February warehouse power,Operating,16440,0,3972590,Cleared
+"Feb 27, 2026",Check,#1104,Staff payroll — 2nd half February,Semi-monthly payroll,Payroll,126400,0,3846190,Cleared
+"Feb 28, 2026",Receipt,Chk 2188,Cebu Marine Supply,Payment INV-2026-013,Operating,0,78600,3924790,Posted
+"Mar 1, 2026",Check,#4405,Ayala Land — Warehouse rent,March warehouse,Operating,85000,0,3839790,Cleared
+"Mar 2, 2026",Receipt,Chk 1042,Laguna Foods Inc.,Payment INV-2026-002,Reserve,0,168400,4008190,Posted
+"Mar 3, 2026",Vendor Pay,BILL-2026-001,Harbor Packaging Co.,Cartons and tape — February,Operating,14200,0,3993990,Paid
+"Mar 8, 2026",Transfer,,Transfer Operating → Payroll,,Operating,255000,0,3738990,Posted
+"Mar 8, 2026",Transfer,,Transfer Operating → Payroll,,Payroll,0,255000,3993990,Posted
+"Mar 13, 2026",Check,#1105,Staff payroll — 1st half March,Semi-monthly payroll,Payroll,126400,0,3867590,Cleared
+"Mar 20, 2026",Receipt,RCPT-2026-014,Davao Harvest Co.,Payment INV-2026-022,Reserve,0,62250,3929840,Posted
+"Mar 22, 2026",Check,#4406,Meralco,March warehouse power,Operating,19100,0,3910740,Cleared
+"Mar 27, 2026",Check,#1106,Staff payroll — 2nd half March,Semi-monthly payroll,Payroll,126400,0,3784340,Cleared
+"Mar 30, 2026",Receipt,RCPT-2026-003,Laguna Foods Inc.,Payment INV-2026-003,Operating,0,191200,3975540,Posted
+"Apr 1, 2026",Check,#4407,Ayala Land — Warehouse rent,April warehouse,Operating,85000,0,3890540,Cleared
+"Apr 8, 2026",Vendor Pay,BILL-2026-010,Delta Freight Lines,Southbound hauling — Davao March,Reserve,18400,0,3872140,Paid
+"Apr 8, 2026",Transfer,,Transfer Operating → Payroll,,Operating,255000,0,3617140,Posted
+"Apr 8, 2026",Transfer,,Transfer Operating → Payroll,,Payroll,0,255000,3872140,Posted
+"Apr 10, 2026",Receipt,Chk 5510,Davao Harvest Co.,Payment INV-2026-022,Reserve,0,62250,3934390,Posted
+"Apr 12, 2026",Vendor Pay,BILL-2026-006,Santos & Co. CPAs,Q1 bookkeeping retainer,Operating,22000,0,3912390,Paid
+"Apr 13, 2026",Check,#1107,Staff payroll — 1st half April,Semi-monthly payroll,Payroll,126400,0,3785990,Cleared
+"Apr 18, 2026",Cash Sale,RCPT-2026-020,Walk-in — Harbor stall,Held in safekeeping.,Safekeeping,0,8450,3794440,Posted
+"Apr 22, 2026",Check,#4408,Meralco,April warehouse power,Operating,18640,0,3775800,Cleared
+"Apr 27, 2026",Check,#1108,Staff payroll — 2nd half April,Semi-monthly payroll,Payroll,126400,0,3649400,Cleared
+"Apr 30, 2026",Receipt,Chk 1044,Laguna Foods Inc.,Payment INV-2026-004,Operating,0,175000,3824400,Posted
+"May 1, 2026",Check,#4409,Ayala Land — Warehouse rent,May warehouse,Operating,85000,0,3739400,Cleared
+"May 6, 2026",Receipt,Chk 4412,Cebu Marine Supply,Payment INV-2026-014,Operating,0,102400,3841800,Posted
+"May 8, 2026",Transfer,,Transfer Operating → Payroll,,Operating,255000,0,3586800,Posted
+"May 8, 2026",Transfer,,Transfer Operating → Payroll,,Payroll,0,255000,3841800,Posted
+"May 8, 2026",Receipt,Chk 3308,Metro Clinic Group,Payment INV-2026-019,Operating,0,96000,3937800,Posted
+"May 13, 2026",Check,#1109,Staff payroll — 1st half May,Semi-monthly payroll,Payroll,126400,0,3811400,Cleared
+"May 22, 2026",Check,#4410,Meralco,May warehouse power,Operating,21300,0,3790100,Cleared
+"May 27, 2026",Check,#1110,Staff payroll — 2nd half May,Semi-monthly payroll,Payroll,126400,0,3663700,Cleared
+"May 27, 2026",Cash Sale,RCPT-2026-021,Walk-in — Harbor stall,Same-day cash.,Operating,0,13100,3676800,Posted
+"May 30, 2026",Receipt,RCPT-2026-005,Laguna Foods Inc.,Payment INV-2026-005,Reserve,0,188600,3865400,Posted
+"Jun 1, 2026",Check,#4411,Ayala Land — Warehouse rent,June warehouse,Operating,85000,0,3780400,Cleared
+"Jun 5, 2026",Vendor Pay,BILL-2026-002,Harbor Packaging Co.,Cartons and tape — May,Operating,16800,0,3763600,Paid
+"Jun 8, 2026",Transfer,,Transfer Operating → Payroll,,Operating,255000,0,3508600,Posted
+"Jun 8, 2026",Transfer,,Transfer Operating → Payroll,,Payroll,0,255000,3763600,Posted
+"Jun 13, 2026",Check,#1111,Staff payroll — 1st half June,Semi-monthly payroll,Payroll,126400,0,3637200,Cleared
+"Jun 22, 2026",Check,#4412,Meralco,June warehouse power,Operating,19880,0,3617320,Cleared
+"Jun 27, 2026",Check,#1112,Staff payroll — 2nd half June,Semi-monthly payroll,Payroll,126400,0,3490920,Cleared
+"Jun 30, 2026",Receipt,Chk 1046,Laguna Foods Inc.,Payment INV-2026-006,Operating,0,179200,3670120,Posted
+"Jul 1, 2026",Check,#4413,Ayala Land — Warehouse rent,July warehouse,Operating,85000,0,3585120,Cleared
+"Jul 8, 2026",Transfer,,Transfer Operating → Payroll,,Operating,255000,0,3330120,Posted
+"Jul 8, 2026",Transfer,,Transfer Operating → Payroll,,Payroll,0,255000,3585120,Posted
+"Jul 8, 2026",Receipt,Chk 5522,Davao Harvest Co.,Payment INV-2026-023,Reserve,0,156000,3741120,Posted
+"Jul 9, 2026",Vendor Pay,BILL-2026-011,Delta Freight Lines,Southbound hauling — Davao June,Reserve,24800,0,3716320,Paid
+"Jul 9, 2026",Receipt,Chk 2204,Cebu Marine Supply,Payment INV-2026-015,Reserve,0,91800,3808120,Posted
+"Jul 11, 2026",Vendor Pay,BILL-2026-007,Santos & Co. CPAs,Q2 bookkeeping retainer,Operating,22000,0,3786120,Paid
+"Jul 13, 2026",Check,#1113,Staff payroll — 1st half July,Semi-monthly payroll,Payroll,126400,0,3659720,Cleared
+"Jul 22, 2026",Check,#4414,Meralco,July warehouse power,Operating,20050,0,3639670,Cleared
+"Jul 23, 2026",Cash Sale,RCPT-2026-022,Walk-in — Harbor stall,Same-day cash.,Operating,0,10600,3650270,Posted
+"Jul 27, 2026",Check,#1114,Staff payroll — 2nd half July,Semi-monthly payroll,Payroll,126400,0,3523870,Cleared
+"Jul 30, 2026",Receipt,RCPT-2026-007,Laguna Foods Inc.,Payment INV-2026-007,Operating,0,194000,3717870,Posted
+"Aug 1, 2026",Check,#4415,Ayala Land — Warehouse rent,August warehouse,Operating,85000,0,3632870,Cleared
+"Aug 8, 2026",Transfer,,Transfer Operating → Payroll,,Operating,255000,0,3377870,Posted
+"Aug 8, 2026",Transfer,,Transfer Operating → Payroll,,Payroll,0,255000,3632870,Posted
+"Aug 12, 2026",Receipt,Chk 3312,Metro Clinic Group,Payment INV-2026-020,Operating,0,96000,3728870,Posted
+"Aug 13, 2026",Check,#1115,Staff payroll — 1st half August,Semi-monthly payroll,Payroll,126400,0,3602470,Cleared
+"Aug 14, 2026",Vendor Pay,BILL-2026-003,Harbor Packaging Co.,Cartons and tape — July,Operating,15400,0,3587070,Paid
+"Aug 18, 2026",Receipt,RCPT-2026-017,Davao Harvest Co.,Payment INV-2026-024,Reserve,0,49650,3636720,Posted
+"Aug 21, 2026",Cash Sale,RCPT-2026-023,Walk-in — Harbor stall,Same-day cash.,Operating,0,12400,3649120,Posted
+"Aug 22, 2026",Check,#4416,Meralco,August warehouse power,Operating,18640,0,3630480,Cleared
+"Aug 27, 2026",Check,#1116,Staff payroll — 2nd half August,Semi-monthly payroll,Payroll,126400,0,3504080,Cleared
+"Aug 27, 2026",Cash Sale,Chk 2208,Cebu Marine Supply,Paid at the counter.,Safekeeping,0,8750,3512830,Posted
+"Sep 1, 2026",Check,#4417,Ayala Land — Warehouse rent,September warehouse,Operating,85000,0,3427830,Pending
+"Sep 8, 2026",Transfer,,Transfer Operating → Payroll,,Operating,255000,0,3172830,Posted
+"Sep 8, 2026",Transfer,,Transfer Operating → Payroll,,Payroll,0,255000,3427830,Posted
+"Sep 13, 2026",Check,#1117,Staff payroll — 1st half September,Semi-monthly payroll,Payroll,126400,0,3301430,Pending
+"Sep 22, 2026",Check,#4418,Meralco,September warehouse power,Operating,19220,0,3282210,Pending
+"Sep 27, 2026",Check,#1118,Staff payroll — 2nd half September,Semi-monthly payroll,Payroll,126400,0,3155810,Pending
+"Oct 1, 2026",Check,#4419,Ayala Land — Warehouse rent,October warehouse,Operating,85000,0,3070810,Pending
+"Oct 8, 2026",Transfer,,Transfer Operating → Payroll,,Operating,255000,0,2815810,Posted
+"Oct 8, 2026",Transfer,,Transfer Operating → Payroll,,Payroll,0,255000,3070810,Posted
+"Oct 13, 2026",Check,#1119,Staff payroll — 1st half October,Semi-monthly payroll,Payroll,126400,0,2944410,Pending
+"Oct 22, 2026",Check,#4420,Meralco,October warehouse power,Operating,18400,0,2926010,Pending
+"Oct 27, 2026",Check,#1120,Staff payroll — 2nd half October,Semi-monthly payroll,Payroll,126400,0,2799610,Pending
+"Nov 1, 2026",Check,#4421,Ayala Land — Warehouse rent,November warehouse,Operating,85000,0,2714610,Pending
+"Nov 8, 2026",Transfer,,Transfer Operating → Payroll,,Operating,280000,0,2434610,Posted
+"Nov 8, 2026",Transfer,,Transfer Operating → Payroll,,Payroll,0,280000,2714610,Posted
+"Nov 13, 2026",Check,#1121,Staff payroll — 1st half November,Semi-monthly payroll,Payroll,126400,0,2588210,Pending
+"Nov 22, 2026",Check,#4422,Meralco,November warehouse power,Operating,17650,0,2570560,Pending
+"Nov 27, 2026",Check,#1122,Staff payroll — 2nd half November,Semi-monthly payroll,Payroll,126400,0,2444160,Pending
+"Dec 1, 2026",Check,#4423,Ayala Land — Warehouse rent,December warehouse,Operating,85000,0,2359160,Pending
+"Dec 5, 2026",Transfer,,Transfer Operating → Payroll (13th month),,Operating,260000,0,2099160,Posted
+"Dec 5, 2026",Transfer,,Transfer Operating → Payroll (13th month),,Payroll,0,260000,2359160,Posted
+"Dec 8, 2026",Transfer,,Transfer Operating → Payroll,,Operating,280000,0,2079160,Posted
+"Dec 8, 2026",Transfer,,Transfer Operating → Payroll,,Payroll,0,280000,2359160,Posted
+"Dec 12, 2026",Check,#1125,Staff payroll — 13th month,13th month pay (PD 851),Payroll,252800,0,2106360,Pending
+"Dec 13, 2026",Check,#1123,Staff payroll — 1st half December,Semi-monthly payroll,Payroll,126400,0,1979960,Pending
+"Dec 19, 2026",Cash Sale,RCPT-2026-025,Walk-in — Christmas bazaar,Harbor Point Christmas market.,Operating,0,24800,2004760,Posted
+"Dec 22, 2026",Check,#4424,Meralco,December warehouse power,Operating,22100,0,1982660,Pending
+"Dec 27, 2026",Check,#1124,Staff payroll — 2nd half December,Semi-monthly payroll,Payroll,126400,0,1856260,Pending

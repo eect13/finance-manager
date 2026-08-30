@@ -1,0 +1,1196 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces", "Iowan Old Style", Georgia, serif;
+
+  --color-background: #f3f0e8;
+  --color-foreground: #1a1916;
+  --color-card: #fbfaf6;
+  --color-card-foreground: #1a1916;
+  --color-popover: #fbfaf6;
+  --color-popover-foreground: #1a1916;
+  --color-primary: #243542;
+  --color-primary-foreground: #f6f3ec;
+  --color-secondary: #e7e2d6;
+  --color-secondary-foreground: #243542;
+  --color-muted: #ebe6da;
+  --color-muted-foreground: #6a665c;
+  --color-accent: #e4dfd2;
+  --color-accent-foreground: #1a1916;
+  --color-destructive: #9b3a2f;
+  --color-destructive-foreground: #fbfaf6;
+  --color-border: #d9d3c5;
+  --color-input: #d4cec0;
+  --color-ring: #243542;
+  --color-sidebar: #ebe6db;
+  --color-sidebar-foreground: #1a1916;
+  --color-credit: #2c5a45;
+  --color-debit: #9b3a2f;
+  --color-warning: #8a5a24;
+
+  --radius-xs: 0.125rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
+  --radius-3xl: 1.5rem;
+
+  --shadow-elevation:
+    0px 0px 0px 1px rgb(26 25 22 / 0.06),
+    0px 1px 2px -1px rgb(26 25 22 / 0.06),
+    0px 2px 4px 0px rgb(26 25 22 / 0.04);
+}
+
+:root {
+  color-scheme: light;
+}
+
+.dark {
+  color-scheme: dark;
+  --color-background: #141311;
+  --color-foreground: #ece8df;
+  --color-card: #1c1b18;
+  --color-card-foreground: #ece8df;
+  --color-popover: #1c1b18;
+  --color-popover-foreground: #ece8df;
+  --color-primary: #d6cfc0;
+  --color-primary-foreground: #1a1916;
+  --color-secondary: #2a2824;
+  --color-secondary-foreground: #ece8df;
+  --color-muted: #24221e;
+  --color-muted-foreground: #a39e92;
+  --color-accent: #2e2c27;
+  --color-accent-foreground: #ece8df;
+  --color-destructive: #c56b60;
+  --color-destructive-foreground: #1a1916;
+  --color-border: #3a372f;
+  --color-input: #3a372f;
+  --color-ring: #d6cfc0;
+  --color-sidebar: #191816;
+  --color-sidebar-foreground: #ece8df;
+  --color-credit: #7dba98;
+  --color-debit: #e08a7e;
+  --color-warning: #d4a05a;
+  --shadow-elevation:
+    0px 0px 0px 1px rgb(236 232 223 / 0.08),
+    0px 1px 2px -1px rgb(0 0 0 / 0.45),
+    0px 2px 4px 0px rgb(0 0 0 / 0.28);
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+    max-width: 100%;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    line-height: 1.5;
+    overflow-x: hidden;
+    max-width: 100%;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  * {
+    border-color: var(--color-border);
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+  }
+
+  .app-workspace {
+    container-type: inline-size;
+    container-name: workspace;
+    --app-header-h: 4.35rem;
+  }
+
+  .desk-stats {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: 1fr;
+  }
+
+  .desk-split {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: 1fr;
+  }
+
+  .desk-trio {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: 1fr;
+  }
+
+  .elevation {
+    box-shadow: var(--shadow-elevation);
+  }
+
+  .eyebrow {
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-muted-foreground);
+  }
+
+  tr[data-selected="true"] td {
+    background-color: var(--color-accent);
+  }
+
+  [data-selected="true"] {
+    background-color: var(--color-accent);
+  }
+
+  [data-drop="true"] {
+    background-color: var(--color-accent);
+    box-shadow: 0 0 0 2px var(--color-ring);
+  }
+
+  [data-dragging="true"] {
+    opacity: 0.55;
+  }
+
+  [data-open="true"] {
+    cursor: pointer;
+  }
+
+  [data-open="true"]:hover {
+    background-color: color-mix(in oklab, var(--color-muted) 72%, transparent);
+  }
+
+  [data-open="true"]:focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: -2px;
+  }
+
+  .register-matrix {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    font-size: var(--register-font, 13px);
+    line-height: 1.35;
+  }
+
+  .register-matrix table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .register-matrix th,
+  .register-matrix td {
+    padding: 0.55rem 0.75rem;
+    vertical-align: middle;
+  }
+
+  .register-matrix thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--color-muted);
+    font-weight: 500;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .register-matrix tbody td {
+    border-bottom: 1px solid color-mix(in oklab, var(--color-border) 65%, transparent);
+  }
+
+  .register-matrix tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  .register-matrix tbody tr:hover:not([aria-hidden]) td {
+    background: color-mix(in oklab, var(--color-foreground) 6%, var(--color-card));
+  }
+
+  .register-matrix tbody tr[data-open="true"]:hover td {
+    background: color-mix(in oklab, var(--color-foreground) 6%, var(--color-card));
+  }
+
+  .register-matrix tr[data-selected="true"] td {
+    background: color-mix(in oklab, var(--color-primary) 8%, var(--color-card));
+  }
+
+  .register-matrix tr[data-selected="true"]:hover td {
+    background: color-mix(in oklab, var(--color-primary) 12%, var(--color-card));
+  }
+
+  .register-matrix tr[data-drop="true"] td {
+    background: color-mix(in oklab, var(--color-ring) 14%, var(--color-card));
+  }
+
+  .register-matrix .col-check {
+    width: 2.5rem;
+    text-align: center;
+  }
+
+  .register-matrix .col-date {
+    width: 8em;
+  }
+
+  .register-matrix .col-type {
+    width: 7em;
+    white-space: nowrap;
+  }
+
+  .register-matrix .col-num {
+    width: 6.5em;
+  }
+
+  .register-matrix .col-payee {
+    min-width: 10em;
+  }
+
+  .register-matrix .col-memo {
+    min-width: 8em;
+    color: var(--color-muted-foreground);
+  }
+
+  .register-matrix .col-bank {
+    width: 9em;
+  }
+
+  .register-matrix th {
+    white-space: nowrap;
+  }
+
+  .register-matrix .col-money {
+    width: 8.5em;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .register-matrix .col-balance {
+    font-weight: 600;
+    color: var(--color-foreground);
+  }
+
+  .register-matrix th.col-money button {
+    width: 100%;
+  }
+
+  .register-matrix .col-status {
+    width: 8em;
+  }
+
+  .register-matrix .register-bank-select {
+    height: 1.85em;
+    min-height: 1.85em;
+    font-size: 1em;
+    line-height: 1.2;
+  }
+
+  .register-matrix .register-bank-select svg {
+    width: 1em;
+    height: 1em;
+  }
+
+  .register-matrix .col-status span {
+    font-size: 0.85em;
+    padding: 0.12em 0.65em;
+    line-height: 1.25;
+  }
+
+  .register-matrix tfoot td {
+    font-weight: 600;
+    background: var(--color-muted);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .party-txn-table table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .party-txn-table th,
+  .party-txn-table td {
+    padding: 0.7rem 0.75rem;
+    vertical-align: middle;
+    text-align: left;
+    border-bottom: 1px solid color-mix(in oklab, var(--color-border) 65%, transparent);
+  }
+
+  .party-txn-table th {
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-muted-foreground);
+    white-space: nowrap;
+  }
+
+  .party-txn-table td.num,
+  .party-txn-table th.num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .party-txn-table tbody tr {
+    min-height: 2.75rem;
+  }
+
+  .party-txn-table tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  .party-txn-table tbody tr[data-open="true"]:hover td {
+    background: color-mix(in oklab, var(--color-muted) 70%, var(--color-card));
+  }
+
+  .party-center {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .register-select-bar {
+    position: sticky;
+    bottom: 0.75rem;
+    z-index: 20;
+  }
+
+  .register-summary {
+    position: sticky;
+    top: var(--app-header-h, 4.35rem);
+    z-index: 16;
+  }
+
+  .register-view {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    border-radius: var(--radius-2xl);
+    background: var(--color-card);
+    box-shadow: var(--shadow-elevation);
+  }
+
+  .register-toolbar {
+    display: grid;
+    gap: 0.5rem;
+    grid-template-columns: 1fr;
+  }
+
+  .register-toolbar-search {
+    grid-column: 1 / -1;
+  }
+
+  @media (max-width: 767px) {
+    .app-workspace {
+      --app-header-h: 7.25rem;
+    }
+  }
+
+  .register-post-well {
+    padding: 0.5rem 0.75rem 0.75rem;
+    border-radius: var(--radius-2xl);
+    background: color-mix(in oklab, var(--color-foreground) 9%, var(--color-muted));
+    color: var(--color-foreground);
+  }
+
+  .register-post-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.75rem;
+    align-items: stretch;
+  }
+
+  .register-post-context,
+  .register-post-vars {
+    display: grid;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .register-post-context {
+    flex: 1 1 16rem;
+    grid-template-columns: minmax(9.5rem, 11rem) minmax(7rem, 1fr);
+    padding: 0.25rem;
+    border-radius: var(--radius-lg);
+    background: color-mix(in oklab, var(--color-card) 58%, transparent);
+  }
+
+  .register-post-vars {
+    flex: 2 1 20rem;
+    grid-template-columns: minmax(8rem, 1fr) 7.25rem 7.25rem;
+  }
+
+  .register-post-submit {
+    flex: 1 1 100%;
+  }
+
+  .register-post-amount {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .register-view-grid {
+    display: grid;
+    gap: 0.5rem;
+    grid-template-columns: 1fr;
+  }
+
+  @container workspace (min-width: 20rem) {
+    .desk-stats {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .register-view-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .register-toolbar {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  @container workspace (min-width: 36rem) {
+    .register-post-submit {
+      flex: 0 0 5.75rem;
+      align-self: center;
+    }
+  }
+
+  @container workspace (min-width: 40rem) {
+    .desk-trio {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  @container workspace (min-width: 48rem) {
+    .desk-split {
+      grid-template-columns: 3fr 2fr;
+    }
+  }
+
+  @container workspace (min-width: 56rem) {
+    .party-center {
+      grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
+    }
+
+    .register-view-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .register-toolbar {
+      grid-template-columns: minmax(12rem, 1fr) auto auto;
+    }
+
+    .register-toolbar-search {
+      grid-column: auto;
+    }
+  }
+
+  @container workspace (min-width: 64rem) {
+    .desk-stats {
+      grid-template-columns: repeat(4, 1fr);
+    }
+
+    .desk-trio {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .register-matrix.hide-date .col-date,
+  .register-matrix.hide-type .col-type,
+  .register-matrix.hide-number .col-num,
+  .register-matrix.hide-payee .col-payee,
+  .register-matrix.hide-memo .col-memo,
+  .register-matrix.hide-bank .col-bank,
+  .register-matrix.hide-payment .col-payment,
+  .register-matrix.hide-deposit .col-deposit,
+  .register-matrix.hide-balance .col-balance,
+  .register-matrix.hide-status .col-status,
+  .register-matrix[data-hide-date] .col-date,
+  .register-matrix[data-hide-type] .col-type,
+  .register-matrix[data-hide-number] .col-num,
+  .register-matrix[data-hide-payee] .col-payee,
+  .register-matrix[data-hide-memo] .col-memo,
+  .register-matrix[data-hide-bank] .col-bank,
+  .register-matrix[data-hide-payment] .col-payment,
+  .register-matrix[data-hide-deposit] .col-deposit,
+  .register-matrix[data-hide-balance] .col-balance,
+  .register-matrix[data-hide-status] .col-status {
+    display: none !important;
+  }
+
+  .register-bank-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 0.25rem;
+    border-radius: var(--radius-xl);
+    background: var(--color-muted);
+  }
+
+  .register-bank-tabs button {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    min-height: 2.25rem;
+    height: 2.25rem;
+    padding: 0 0.75rem;
+    border-radius: var(--radius-lg);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-muted-foreground);
+    white-space: nowrap;
+  }
+
+  .register-bank-tabs button.is-on,
+  .register-bank-tabs button[aria-selected="true"] {
+    background: var(--color-card);
+    color: var(--color-card-foreground);
+    box-shadow: var(--shadow-elevation);
+  }
+
+  .register-calendar button[data-today="true"] {
+    box-shadow: inset 0 0 0 1px var(--color-ring);
+  }
+
+  .register-calendar button[data-active="true"] {
+    background: color-mix(in oklab, var(--color-primary) 10%, var(--color-card));
+  }
+
+  .notion-cal {
+    overflow: hidden;
+    border-radius: 1rem;
+    background: var(--color-card);
+    box-shadow: var(--shadow-elevation);
+  }
+
+  .notion-cal-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    background: var(--color-muted);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .notion-cal-weekdays span {
+    padding: 0.5rem 0.25rem;
+    overflow: hidden;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    text-align: center;
+    text-transform: uppercase;
+    color: var(--color-muted-foreground);
+  }
+
+  .notion-cal-days {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+
+  .notion-cal-day {
+    display: flex;
+    min-width: 0;
+    min-height: 5.5rem;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0.35rem;
+    text-align: left;
+    cursor: pointer;
+    border-right: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-card);
+    color: var(--color-card-foreground);
+  }
+
+  .notion-cal-day:nth-child(7n) {
+    border-right: 0;
+  }
+
+  .notion-cal-day:hover {
+    background: color-mix(in oklab, var(--color-muted) 55%, var(--color-card));
+  }
+
+  .notion-cal-day[data-outside="true"] {
+    color: var(--color-muted-foreground);
+    background: color-mix(in oklab, var(--color-muted) 40%, var(--color-card));
+  }
+
+  .notion-cal-day[data-active="true"] {
+    background: color-mix(in oklab, var(--color-primary) 8%, var(--color-card));
+  }
+
+  .notion-cal-day[data-drop="true"] {
+    background: color-mix(in oklab, var(--color-ring) 12%, var(--color-card));
+  }
+
+  .notion-cal-num {
+    display: inline-flex;
+    min-width: 1.5rem;
+    height: 1.5rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+
+  .notion-cal-day[data-today="true"] .notion-cal-num {
+    background: var(--color-primary);
+    color: var(--color-primary-foreground);
+  }
+
+  .notion-cal-count {
+    font-size: 0.7rem;
+    color: var(--color-muted-foreground);
+  }
+
+  .notion-cal-pill {
+    display: flex;
+    min-width: 0;
+    min-height: 1.35rem;
+    cursor: grab;
+    align-items: center;
+    gap: 0.25rem;
+    overflow: hidden;
+    border-radius: 0.25rem;
+    padding: 0 0.35rem;
+    font-size: 0.7rem;
+    line-height: 1.2;
+  }
+
+  .notion-cal-pill[data-dir="in"] {
+    background: color-mix(in oklab, var(--color-credit) 16%, var(--color-card));
+    color: var(--color-credit);
+  }
+
+  .notion-cal-pill[data-dir="out"] {
+    background: color-mix(in oklab, var(--color-debit) 14%, var(--color-card));
+    color: var(--color-debit);
+  }
+
+  .notion-cal-pill[data-dragging="true"] {
+    opacity: 0.4;
+  }
+
+  @media (min-width: 768px) {
+    .notion-cal-day {
+      min-height: 7.5rem;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .notion-cal-day {
+      min-height: 8.5rem;
+    }
+  }
+
+  .register-print-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: var(--register-font, 12px);
+  }
+
+  .register-print-table th,
+  .register-print-table td {
+    border-bottom: 1px solid color-mix(in oklab, var(--color-border) 65%, transparent);
+    padding: 0.45rem 0.55rem;
+    text-align: left;
+    vertical-align: middle;
+  }
+
+  .register-print-table th {
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-muted-foreground);
+    white-space: nowrap;
+    background: var(--color-muted);
+  }
+
+  .register-print-table tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  .register-print-table tfoot td {
+    font-weight: 600;
+    background: var(--color-muted);
+    border-bottom: 0;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .print-only {
+    display: none;
+  }
+
+  .print-root {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .print-preview-dialog {
+    max-height: min(92dvh, 56rem);
+  }
+
+  .print-pdf-stage {
+    flex: 1 1 auto;
+    min-height: 12rem;
+    max-height: none;
+    overflow: auto;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    border-radius: var(--radius-2xl);
+    background: var(--color-muted);
+    padding: 0.75rem 0.75rem 1rem;
+  }
+
+  .print-preview-figure {
+    margin: 0;
+    width: min(100%, 40rem);
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .print-preview-figure:has(.print-sheet[data-orient="landscape"]) {
+    width: min(100%, 58rem);
+  }
+
+  .print-preview-figure:last-child {
+    margin-bottom: 0;
+  }
+
+  .print-preview-figure[data-current="true"] .print-sheet {
+    box-shadow:
+      0 0 0 1px rgb(26 25 22 / 0.08),
+      0 12px 28px rgb(26 25 22 / 0.14);
+  }
+
+  .print-preview-caption {
+    margin-top: 0.5rem;
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--color-muted-foreground);
+  }
+
+  .print-sheet {
+    --color-card: #fbfaf6;
+    --color-card-foreground: #1a1916;
+    --color-muted: #ebe6da;
+    --color-muted-foreground: #6a665c;
+    --color-border: #d9d3c5;
+    --color-credit: #2c5a45;
+    --color-debit: #9b3a2f;
+    background: var(--color-card);
+    color: var(--color-card-foreground);
+    width: 100%;
+    max-width: 100%;
+    margin-inline: auto;
+    padding: 1.25rem 1.35rem 1rem;
+    overflow: visible;
+    border-radius: 2px;
+    box-shadow:
+      0 0 0 1px rgb(26 25 22 / 0.06),
+      0 8px 20px rgb(26 25 22 / 0.1);
+  }
+
+  .print-pdf-stage .print-sheet[data-orient="portrait"] {
+    width: 100%;
+    aspect-ratio: 8.5 / 11;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .print-pdf-stage .print-sheet[data-orient="landscape"] {
+    width: 100%;
+    aspect-ratio: 11 / 8.5;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .print-pdf-stage .print-sheet .register-print-table th,
+  .print-pdf-stage .print-sheet .register-print-table td {
+    padding: 0.28rem 0.45rem;
+  }
+
+  .print-sheet .register-print-head {
+    text-align: center;
+    margin-bottom: 0.85rem;
+  }
+
+  .print-sheet .register-print-head h1 {
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+    font-weight: 500;
+    margin: 0.1rem 0;
+    color: var(--color-card-foreground);
+    white-space: nowrap;
+  }
+
+  .print-sheet .register-print-head p {
+    margin: 0;
+    font-size: 0.75rem;
+    color: var(--color-muted-foreground);
+  }
+
+  .print-sheet .register-print-head p.print-company {
+    font-weight: 600;
+    color: var(--color-card-foreground);
+  }
+
+  .print-sheet .register-print-table {
+    width: 100%;
+    table-layout: auto;
+    font-size: var(--register-font, 12px);
+    line-height: 1.35;
+  }
+
+  .print-sheet .register-print-table th,
+  .print-sheet .register-print-table td {
+    border: none;
+    border-bottom: 1px solid color-mix(in oklab, var(--color-border) 65%, transparent);
+    padding: 0.5rem 0.6rem;
+    vertical-align: middle;
+    color: var(--color-card-foreground);
+  }
+
+  .print-sheet .register-print-table th {
+    background: var(--color-muted);
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-muted-foreground);
+  }
+
+  .print-sheet .register-print-table .col-date,
+  .print-sheet .register-print-table .col-type,
+  .print-sheet .register-print-table .col-num,
+  .print-sheet .register-print-table .col-bank,
+  .print-sheet .register-print-table .col-status {
+    white-space: nowrap;
+  }
+
+  .print-sheet .register-print-table td.num,
+  .print-sheet .register-print-table th.num,
+  .print-sheet .register-print-table .col-money {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .print-sheet .register-print-table tfoot td {
+    background: var(--color-muted);
+    font-weight: 600;
+    border-bottom: 0;
+  }
+
+  .print-sheet .register-print-table tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  .print-sheet-memo {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: var(--color-muted-foreground);
+  }
+
+  .print-sheet-empty {
+    padding: 2rem 0;
+    text-align: center;
+    font-size: 0.875rem;
+    color: var(--color-muted-foreground);
+  }
+
+  @media (min-width: 640px) {
+    .print-pdf-stage {
+      padding: 1rem 1.25rem 1.25rem;
+    }
+  }
+}
+
+@media print {
+  html,
+  body {
+    overflow: visible !important;
+    max-width: none !important;
+    background: white;
+    color: black;
+  }
+
+  [data-sonner-toaster] {
+    display: none !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  main {
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .elevation {
+    box-shadow: none !important;
+  }
+
+  .register-matrix {
+    overflow: visible;
+    font-size: var(--register-font, 11px);
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .register-matrix table {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .register-matrix th,
+  .register-matrix td {
+    border-color: #222;
+    padding: 0.28rem 0.4rem;
+  }
+
+  .register-matrix thead {
+    display: table-header-group;
+  }
+
+  .register-matrix thead th {
+    background: #eee;
+    position: static;
+    border-bottom: 1px solid #222;
+  }
+
+  .register-matrix tbody td {
+    border-bottom: 1px solid #ccc;
+  }
+
+  .register-matrix tbody tr {
+    break-inside: avoid;
+  }
+
+  .register-matrix tbody tr:nth-child(even) td {
+    background: #f7f7f7;
+  }
+
+  .register-matrix tfoot {
+    display: table-footer-group;
+  }
+
+  .register-print-head {
+    text-align: center;
+    margin-bottom: 0.45rem;
+  }
+
+  .register-print-head h1 {
+    font-size: 14pt;
+    margin: 0.1rem 0;
+  }
+
+  .register-print-head p {
+    margin: 0;
+    font-size: 9pt;
+  }
+
+  @page {
+    size: portrait;
+    margin: 0.4in;
+  }
+
+  body.printing-preview > :not(.print-root),
+  body:has(.print-root) > :not(.print-root) {
+    display: none !important;
+  }
+
+  body.printing-preview .print-root,
+  body:has(.print-root) .print-root {
+    display: block !important;
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    visibility: visible;
+    pointer-events: auto;
+    background: white;
+    color: black;
+  }
+
+  body.printing-preview .print-sheet {
+    display: block;
+    width: 100%;
+    max-width: none;
+    min-height: auto;
+    aspect-ratio: auto;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    background: white;
+    color: black;
+    box-shadow: none;
+    border-radius: 0;
+    break-after: page;
+    page-break-after: always;
+    break-inside: avoid;
+  }
+
+  body.printing-preview .print-sheet:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  body.printing-preview .print-sheet .register-print-head h1 {
+    color: black;
+    font-size: 16pt;
+  }
+
+  body.printing-preview .print-sheet .register-print-head p,
+  body.printing-preview .print-sheet-memo,
+  body.printing-preview .print-sheet-empty {
+    color: #444;
+  }
+
+  body.printing-preview .register-print-table {
+    width: 100%;
+    font-size: 10pt;
+    line-height: 1.35;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  body.printing-preview[data-print-orient="landscape"] .register-print-table {
+    font-size: 10pt;
+  }
+
+  body.printing-preview .register-print-table th,
+  body.printing-preview .register-print-table td {
+    border: none;
+    border-bottom: 0.5pt solid #ccc;
+    color: black;
+    padding: 0.32rem 0.42rem;
+    vertical-align: middle;
+  }
+
+  body.printing-preview .register-print-table thead {
+    display: table-header-group;
+  }
+
+  body.printing-preview .register-print-table thead th {
+    background: #eee;
+    color: #333;
+    border-bottom: 1pt solid #222;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  body.printing-preview .register-print-table tfoot td {
+    background: #f3f3f3;
+    border-bottom: none;
+    border-top: 1pt solid #222;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  body.printing-preview .register-print-table tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  body.printing-preview .register-print-table tbody tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  body.printing-preview .register-print-table .col-date,
+  body.printing-preview .register-print-table .col-type,
+  body.printing-preview .register-print-table .col-num,
+  body.printing-preview .register-print-table .col-bank,
+  body.printing-preview .register-print-table .col-status,
+  body.printing-preview .register-print-table .col-money {
+    white-space: nowrap;
+  }
+
+  body.printing-preview .register-print-table span[class*="rounded-full"] {
+    font-size: 8pt;
+    padding: 0.08rem 0.4rem;
+  }
+
+  body.printing-preview .text-debit,
+  body.printing-preview .text-credit {
+    color: black !important;
+  }
+}
+
+/* Unlayered so register type size beats Tailwind h-11 / text-sm / text-xs. */
+.register-matrix .register-bank-select {
+  height: 1.85em;
+  min-height: 1.85em;
+  font-size: 1em;
+  line-height: 1.2;
+}
+
+.register-matrix .register-bank-select svg {
+  width: 1em;
+  height: 1em;
+}
+
+.register-matrix .col-status span {
+  font-size: 0.85em;
+  padding: 0.12em 0.65em;
+  line-height: 1.25;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

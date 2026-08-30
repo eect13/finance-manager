@@ -1,0 +1,38 @@
+{
+  "url": "http://127.0.0.1:8080/register",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Finance Manager",
+      "hasCanvas": false,
+      "bodyTextLen": 1751,
+      "bodyTextHash": "4d218babdf07dab52b28ed55ec22bb44582bd0c7f62f76c159e26f409e166b23",
+      "bodyTextPrefix": "Finance Manager TREASURY Desk Register Calendar Banks Receipts C",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/register-built.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Finance Manager",
+      "hasCanvas": false,
+      "bodyTextLen": 1656,
+      "bodyTextHash": "505dd56300edecd51283ba8bece393985d6502f9d7a8e5156ef75110b4e8d4ff",
+      "bodyTextPrefix": "Pacific Harbor Trading Aug 30, 2026 Export Desk Register Calenda",
+      "horizontalOverflow": true,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/register-built-mobile.png"
+    }
+  },
+  "brandWarnings": [
+    "BRAND NOTE: no custom public/og.jpg — the platform will serve the og.grok.me placeholder. Custom cards are the default for games of every kind (DOM board/word games included), whimsical apps, creative tools, and brand-forward pages — only plain utilities (converters, CRUD trackers, admin dashboards) keep the placeholder. If this app is not a plain utility, finish the brand-asset pass per /workspace/.grok/skills/og/SKILL.md."
+  ],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/register-built.json"
+}

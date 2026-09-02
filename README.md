@@ -1,4 +1,4 @@
-# Finance Manager v3.53
+# Finance Manager v3.54
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, and a **bank register**.
 
@@ -28,7 +28,7 @@ Vite is installed with the rest of the packages — you do not need a global `vi
 
 Lists (banks, register, receipts, checks, reports, reconcile) wrap actions and keep peso amounts on one line on a phone. Long lists scroll inside the card (sticky headers), same as reports. **Reports → Aging** stacks Receivables then Payables (never two skinny columns) so Open amounts like `₱15,253,430.00` stay whole — swipe sideways on a phone if the row is wider than the card. Reconcile proof is two boards — statement vs book — stacked on a phone, side by side on a desk. Book cash lives on the desk, not in the header, so the company name does not collide with Find.
 
-**Windows `deploy.bat`:** Vite 8 used to crash if the folder name had parentheses (a second zip extract is `finance-manager-main (1)`). The desktop pack now uses a relative `desktop.html`, so that path builds. Node 24 peers: `.npmrc` has `legacy-peer-deps=true`. After this installer, **delete the leftover white shortcut** and pin the new one — shortcut and taskbar both use the navy pillars tile.
+**Windows `deploy.bat`:** Vite 8 used to crash if the folder name had parentheses (a second zip extract is `finance-manager-main (1)`). The desktop pack now uses a relative `desktop.html`, so that path builds. Node 24 peers: `.npmrc` has `legacy-peer-deps=true`. After this installer, **delete the leftover white shortcut** and pin the new one — shortcut and taskbar both use the navy pillars tile. (v3.53 pointed the window icon one folder too high and cargo stopped; v3.54 reads `src-tauri/icons/icon.png`.)
 
 
 ## Screenshots

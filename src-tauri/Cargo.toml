@@ -1,0 +1,19 @@
+[package]
+name = "finance-manager"
+version = "3.47.0"
+description = "Finance Manager — Peachtree-style ledger in a desktop window"
+edition = "2021"
+rust-version = "1.77"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true

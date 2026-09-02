@@ -1,7 +1,8 @@
-# Web pack
+# Web (static HTML)
 
-`build.bat` writes `web/index.html` plus one HTML file per route and the hashed `assets/`.
+Remix from Grok is the live app. This pack is a folder of HTML you can serve with any static host.
 
-`serve.bat` serves that folder. Do not open `index.html` as a file — ES modules will not load.
+1. Double-click `build.bat` (needs Node 22). It writes `web/` at the repo root.
+2. Double-click `serve.bat` — opens `http://127.0.0.1:4173/`. Do not open `index.html` as `file://`.
 
-Remix from Grok is the published web app (SSR). This pack is a snapshot for static hosts.
+`web/` is a build artifact. It is not committed.

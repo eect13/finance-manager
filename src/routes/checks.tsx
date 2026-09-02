@@ -21,12 +21,6 @@ import { useColWidths } from "@/components/use-col-widths";
 import { useListPointer } from "@/components/use-list-pointer";
 import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -55,7 +49,7 @@ const CHK_COLS = {
   post: 118,
   amount: 128,
   status: 118,
-  actions: 180,
+  actions: 52,
 } as const;
 
 const CHK_SORT = [
@@ -133,6 +127,7 @@ function ChecksPage() {
     <AppShell
       title="Check register"
       description="Issue, post-date, clear, void, or bounce. Pending checks stay visible until they hit the bank."
+      wide
       actions={
         <>
           <CsvButton filename="check-register.csv" rows={checkRegisterRows(data)} />
@@ -243,37 +238,31 @@ function ChecksPage() {
                   </td>
                   <td className="col-actions px-4 py-3" onDoubleClick={stopOpen}>
                     <RowActions
-                      primary={
-                        check.status === "pending" ? (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button size="sm" variant="outline">
-                                Update
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => setCheckStatus(check.id, "cleared")}>Clear</DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => {
+                      items={[
+                        ...(check.status === "pending"
+                          ? [
+                              {
+                                label: "Clear",
+                                onSelect: () => setCheckStatus(check.id, "cleared"),
+                              },
+                              {
+                                label: "Void",
+                                onSelect: () => {
                                   setCheckStatus(check.id, "voided");
                                   toast.success("Check voided and reversed.");
-                                }}
-                              >
-                                Void
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => {
+                                },
+                              },
+                              {
+                                label: "Bounce",
+                                onSelect: () => {
                                   setCheckStatus(check.id, "bounced");
                                   toast.success("Marked bounced and reversed.");
-                                }}
-                              >
-                                Bounce
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        ) : undefined
-                      }
-                      items={[{ label: "Delete", danger: true, onSelect: () => setDeleting(check) }]}
+                                },
+                              },
+                            ]
+                          : []),
+                        { label: "Delete", danger: true, onSelect: () => setDeleting(check) },
+                      ]}
                     />
                   </td>
                 </tr>

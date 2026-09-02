@@ -211,42 +211,71 @@
     grid-template-columns: 1fr;
   }
 
-  .proof-strip {
+  .proof-board {
     display: grid;
-    gap: 0.5rem;
-    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    grid-template-columns: 1fr;
   }
 
-  .proof-strip > div {
+  .proof-board > section {
     min-width: 0;
-    padding: 0.65rem 0.75rem;
+    padding: 0.85rem 1rem 0.7rem;
     border-radius: var(--radius-lg);
     background: color-mix(in oklab, var(--color-foreground) 4.5%, var(--color-muted));
   }
 
-  .proof-strip dt {
-    font-size: 0.7rem;
+  .proof-board h3 {
+    margin: 0 0 0.55rem;
+    font-size: 0.65rem;
     font-weight: 500;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--color-muted-foreground);
   }
 
-  .proof-strip dd {
-    margin: 0.2rem 0 0;
-    font-size: 0.95rem;
+  .proof-board dl {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .proof-board dl > div {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    min-width: 0;
+    min-height: 1.7rem;
+  }
+
+  .proof-board dt {
+    font-size: 0.8125rem;
+    color: var(--color-muted-foreground);
+    min-width: 0;
+  }
+
+  .proof-board dd {
+    margin: 0;
+    font-size: 0.9375rem;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
-    letter-spacing: -0.02em;
-    overflow-wrap: anywhere;
+    letter-spacing: -0.03em;
+    white-space: nowrap;
   }
 
-  .proof-strip > [data-proof="diff"] {
-    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-debit) 32%, transparent);
+  .proof-board [data-proof="diff"] {
+    margin-top: 0.35rem;
+    padding-top: 0.35rem;
+    border-top: 1px solid color-mix(in oklab, var(--color-foreground) 10%, transparent);
   }
 
-  .proof-strip > [data-proof="ok"] {
-    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-credit) 26%, transparent);
+  .proof-board [data-proof="ok"] dd {
+    color: var(--color-credit);
+  }
+
+  .proof-board [data-proof="diff"] dd {
+    color: var(--color-debit);
   }
 
   .close-meta .stat-value {
@@ -271,16 +300,14 @@
 
   .page-actions {
     display: flex;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     gap: 0.5rem;
     min-width: 0;
-    overflow-x: auto;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
   }
 
-  .page-actions::-webkit-scrollbar {
-    display: none;
+  .page-actions > * {
+    flex: 0 0 auto;
   }
 
   .sidebar-scroll {
@@ -290,8 +317,9 @@
   }
 
   .app-header-bar {
-    background: transparent;
+    background: var(--color-background);
     border-bottom: 1px solid color-mix(in oklab, var(--color-foreground) 8%, transparent);
+    z-index: 20;
   }
 
   .filter-pills {
@@ -386,7 +414,7 @@
 
   .list-grid colgroup col.col-actions {
     width: max-content;
-    min-width: 5.5rem;
+    min-width: 2.75rem;
     max-width: none;
   }
 
@@ -948,8 +976,8 @@
       grid-template-columns: 1fr 1fr;
     }
 
-    .proof-strip {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+    .proof-board {
+      grid-template-columns: 1fr 1fr;
     }
   }
 
@@ -1027,10 +1055,6 @@
 
     .stat-grid-4 {
       grid-template-columns: repeat(4, 1fr);
-    }
-
-    .proof-strip {
-      grid-template-columns: repeat(8, minmax(0, 1fr));
     }
   }
 
@@ -2043,38 +2067,6 @@
 .list-card.list-grid[data-overflow-x]::before {
   content: none !important;
   display: none !important;
-}
-
-.proof-strip {
-  display: grid;
-  gap: 0.5rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-@container workspace (min-width: 36rem) {
-  .proof-strip {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-
-@container workspace (min-width: 64rem) {
-  .proof-strip {
-    grid-template-columns: repeat(8, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 35.99rem) {
-  .proof-strip {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-.proof-strip > [data-proof="diff"] {
-  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-debit) 32%, transparent);
-}
-
-.proof-strip > [data-proof="ok"] {
-  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-credit) 26%, transparent);
 }
 
 @container printstage (max-width: 28rem) {

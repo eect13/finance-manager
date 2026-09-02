@@ -133,6 +133,7 @@ function InvoicesPage() {
     <AppShell
       title="Invoices"
       description="Bill customers, collect into a bank, and print a clean invoice for paper or PDF."
+      wide
       actions={
         <>
           <CsvButton filename="invoices.csv" rows={invoiceRows(data)} />

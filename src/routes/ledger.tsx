@@ -68,6 +68,7 @@ function LedgerPage() {
     <AppShell
       title="General ledger"
       description="Every movement is double-entry. This is the view you hand an accountant."
+      wide
       actions={
         <>
           <CsvButton filename="general-ledger.csv" rows={ledgerRows(data)} />

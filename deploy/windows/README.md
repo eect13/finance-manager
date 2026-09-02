@@ -1,22 +1,23 @@
 # Windows (priority)
 
-This is a **PWA**, not an `.exe` / MSI / Tauri installer. The pack opens Edge or Chrome as an **app window** (no address bar), then you Install app to pin it.
+This is a **Tauri 2 desktop app**. Double-click `deploy.bat` at the repo root for an NSIS setup (and MSI if WiX v3 is installed). Copy that installer to other PCs — they do not need Node or Rust.
 
 ## One-click on this PC
 
-1. Double-click `deploy.bat` at the repo root (or this folder’s `deploy.bat`).
-2. Double-click `run.bat`. It waits until the local preview is up, then opens **Edge** (or Chrome) with `--app` — no second browser tab.
-3. In that window: **⋯ → Install app** (Edge) or **Install Finance Manager** (Chrome). Pin to taskbar / Start.
+1. Install **Node 22** and **Visual Studio Build Tools** with “Desktop development with C++”.
+2. Double-click `desktop-setup.bat` once — it can install Rust and open the app in a desktop window.
+3. Double-click `deploy.bat` for the installer. First compile is slow (cargo release).
+4. Run the NSIS setup from `src-tauri/target/release/bundle/nsis/`. Pin the installed app to the taskbar.
 
-Node 22 is required for the local build. Vite is installed with the rest of the packages — you do not need a global `vite` command. After **Remix from Grok**, any PC can skip the build: open the published URL → Install app.
+`run.bat` launches the compiled `.exe` if a release build is already on disk.
 
 ## What you get
 
 | File | Role |
 | --- | --- |
-| `run.bat` | Starts the production preview and opens Edge/Chrome `--app` once it answers |
-| `deploy.bat` | `npm install` + production build |
-| `scripts/windows-app.mjs` | Finds Edge/Chrome under Program Files, waits, opens the app window |
-| `dist/` | Built server + static assets (not a folder of HTML — see `deploy/web`) |
+| `deploy.bat` (repo root) | `npm install` + Vite desktop UI + cargo release + NSIS/MSI |
+| `desktop-setup.bat` | Installs Rust if needed and runs `tauri dev` |
+| `run.bat` | Starts the release `.exe` after a local compile |
+| `src-tauri/target/release/bundle/` | NSIS setup and MSI |
 
-Books stay in **this browser profile**. Download a backup to move them.
+Books stay in **this computer’s WebView2 profile** (IndexedDB). Download a backup to move them.

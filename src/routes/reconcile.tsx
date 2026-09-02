@@ -174,7 +174,8 @@ function ReconcilePage() {
   return (
     <AppShell
       title="Reconcile"
-      description="Beginning is the last finished ending, not a re-sum of ticks. Outstanding and in-transit prove the book. Finish only when cleared and explained are both zero. Last statement is the document."
+      description="Beginning is the last finished ending, not a re-sum of ticks. Outstanding and in-transit prove the book. Finish only when both differences are zero. Last statement is the document."
+      wide
       actions={
         <>
           <Button
@@ -265,56 +266,66 @@ function ReconcilePage() {
         </div>
       </div>
 
-      <dl className="proof-strip mb-4">
-        <div>
-          <dt className="text-muted-foreground">Beginning</dt>
-          <dd>
-            <Money amount={beginning} currency={data.settings.currency} />
-          </dd>
-        </div>
-        <div>
-          <dt className="text-muted-foreground">Cleared in</dt>
-          <dd>
-            <Money amount={clearedIn} currency={data.settings.currency} />
-          </dd>
-        </div>
-        <div>
-          <dt className="text-muted-foreground">Cleared out</dt>
-          <dd>
-            <Money amount={clearedOut} currency={data.settings.currency} />
-          </dd>
-        </div>
-        <div>
-          <dt className="text-muted-foreground">Outstanding</dt>
-          <dd>
-            <Money amount={explain.outstandingTotal} currency={data.settings.currency} />
-          </dd>
-        </div>
-        <div>
-          <dt className="text-muted-foreground">In transit</dt>
-          <dd>
-            <Money amount={explain.inTransitTotal} currency={data.settings.currency} />
-          </dd>
-        </div>
-        <div>
-          <dt className="text-muted-foreground">Book</dt>
-          <dd>
-            <Money amount={book} currency={data.settings.currency} />
-          </dd>
-        </div>
-        <div data-proof={difference === 0 ? "ok" : "diff"}>
-          <dt className="text-muted-foreground">Cleared diff</dt>
-          <dd className={cn(difference === 0 ? "text-credit" : "text-debit")}>
-            <Money amount={difference} currency={data.settings.currency} signed />
-          </dd>
-        </div>
-        <div data-proof={explained === 0 ? "ok" : "diff"}>
-          <dt className="text-muted-foreground">Explained</dt>
-          <dd className={cn(explained === 0 ? "text-credit" : "text-debit")}>
-            <Money amount={explained} currency={data.settings.currency} signed />
-          </dd>
-        </div>
-      </dl>
+      <div className="proof-board mb-4">
+        <section>
+          <h3>Statement</h3>
+          <dl>
+            <div>
+              <dt>Beginning</dt>
+              <dd>
+                <Money amount={beginning} currency={data.settings.currency} />
+              </dd>
+            </div>
+            <div>
+              <dt>Cleared in</dt>
+              <dd>
+                <Money amount={clearedIn} currency={data.settings.currency} />
+              </dd>
+            </div>
+            <div>
+              <dt>Cleared out</dt>
+              <dd>
+                <Money amount={clearedOut} currency={data.settings.currency} />
+              </dd>
+            </div>
+            <div data-proof={difference === 0 ? "ok" : "diff"}>
+              <dt>Cleared difference</dt>
+              <dd className={cn(difference === 0 ? "text-credit" : "text-debit")}>
+                <Money amount={difference} currency={data.settings.currency} signed />
+              </dd>
+            </div>
+          </dl>
+        </section>
+        <section>
+          <h3>Book</h3>
+          <dl>
+            <div>
+              <dt>Book</dt>
+              <dd>
+                <Money amount={book} currency={data.settings.currency} />
+              </dd>
+            </div>
+            <div>
+              <dt>Outstanding</dt>
+              <dd>
+                <Money amount={explain.outstandingTotal} currency={data.settings.currency} />
+              </dd>
+            </div>
+            <div>
+              <dt>In transit</dt>
+              <dd>
+                <Money amount={explain.inTransitTotal} currency={data.settings.currency} />
+              </dd>
+            </div>
+            <div data-proof={explained === 0 ? "ok" : "diff"}>
+              <dt>Explained difference</dt>
+              <dd className={cn(explained === 0 ? "text-credit" : "text-debit")}>
+                <Money amount={explained} currency={data.settings.currency} signed />
+              </dd>
+            </div>
+          </dl>
+        </section>
+      </div>
       {ages.lateCount > 0 ? (
         <p className="mb-3 text-sm text-debit">
           {ages.lateCount} uncleared {ages.lateCount === 1 ? "item is" : "items are"} 90+ days old.

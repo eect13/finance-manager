@@ -3,7 +3,7 @@ import { useMemo, useRef, useState } from "react";
 import { Printer } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { DateInput } from "@/components/date-input";
-import { CsvButton, ExportMenu } from "@/components/export-menu";
+import { CsvButton } from "@/components/export-menu";
 import { ListToolbar } from "@/components/filter-pills";
 import { ReportsPrint } from "@/components/period-print";
 import { Money } from "@/components/money";
@@ -59,10 +59,10 @@ function ReportsPage() {
     <AppShell
       title="Reports"
       description="Trial balance, profit and loss, and 30/60/90 aging as of a date."
+      wide
       actions={
         <>
           <CsvButton filename="trial-balance.csv" rows={trialBalanceRows(data)} />
-          <ExportMenu data={data} />
           <Button variant="outline" onClick={requestPrint}>
             <Printer />
             Print
@@ -75,7 +75,7 @@ function ReportsPage() {
         <DateInput value={asOf} onChange={setAsOf} />
       </div>
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="mb-4">
+        <TabsList className="mb-4 w-full justify-start">
           <TabsTrigger value="aging">Aging</TabsTrigger>
           <TabsTrigger value="tb">Trial balance</TabsTrigger>
           <TabsTrigger value="pl">Profit and loss</TabsTrigger>
@@ -184,7 +184,7 @@ function AgingTable({
                   <td className="px-3 py-2" data-col="number">{row.number}</td>
                   <td className="px-3 py-2 whitespace-nowrap" data-col="due">{formatDate(row.dueDate)}</td>
                   <td className="px-3 py-2" data-col="age">{AGE_LABEL[row.bucket]}</td>
-                  <td className="px-3 py-2 text-right" data-col="amount">
+                  <td className="px-3 py-2 text-right whitespace-nowrap" data-col="amount">
                     <Money amount={row.amount} currency={currency} />
                   </td>
                 </tr>

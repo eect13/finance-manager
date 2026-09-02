@@ -13,10 +13,7 @@ if errorlevel 1 (
   exit /b 1
 )
 
-echo Building Finance Manager installers...
-echo Leave this window open. First build can take a long time.
-echo When it finishes, install the NSIS setup on this PC or another.
-echo.
-node scripts\deploy.mjs
+echo Running Finance Manager desktop setup...
+node scripts\desktop-setup.mjs --run
 echo.
 pause

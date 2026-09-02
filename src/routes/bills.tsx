@@ -145,6 +145,7 @@ function BillsPage() {
     <AppShell
       title="Bills"
       description="Vendor invoices on accounts payable. Pay from a bank, or void and delete once reversed."
+      wide
       actions={
         <>
           <CsvButton filename="bills.csv" rows={billRows(data)} />

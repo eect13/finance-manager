@@ -54,7 +54,7 @@ const RCP_COLS = {
   kind: 120,
   amount: 128,
   status: 118,
-  actions: 108,
+  actions: 52,
 } as const;
 
 const RCP_SORT = [
@@ -167,6 +167,7 @@ function ReceiptsPage() {
     <AppShell
       title="Receipts"
       description="Cash, customer checks, and money on account. Delete a ticket to take it off the books if you mistyped it."
+      wide
       actions={
         <>
           <CsvButton filename="receipts.csv" rows={receiptRows(data)} />
@@ -174,11 +175,12 @@ function ReceiptsPage() {
             <Printer />
             Print
           </Button>
-          <Button variant="outline" onClick={() => openCreate("payment")} disabled={openInvoices.length === 0}>
+          <Button variant="outline" className="hidden sm:inline-flex" onClick={() => openCreate("payment")} disabled={openInvoices.length === 0}>
             On account
           </Button>
           <Button
             variant="outline"
+            className="hidden sm:inline-flex"
             onClick={() => openCreate("payment", "check")}
             disabled={openInvoices.length === 0}
           >

@@ -1,12 +1,39 @@
+# deps / build
 node_modules/
-.project_id
-.github_repo
+src-tauri/target/
+src-tauri/gen/
+.vercel/
+.output/
+dist/
+/web/
+*.log
+.DS_Store
+
+# env / platform
 .env
 .env.*
-.vercel/
+!.env.example
+.project_id
+.github_repo
 .grok/
-dist/
-screenshots/
+
+# qa / local uploads
+/screenshots/
+artifacts/
+attachments/
+playwright-report/
+test-results/
 deploy/android/start-url.txt
 deploy/android/twa/
-*.log
+
+# generated installers
+*.msi
+*.exe
+!desktop-setup.bat
+!deploy.bat
+!run.bat
+
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/tasks.json

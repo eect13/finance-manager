@@ -1,29 +1,44 @@
-# Finance Manager v3.44
+# Finance Manager v3.47
 
-Treasury books in the browser. Banks, receipts, checks, invoices, bills, and a **bank register**.
+Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, and a **bank register**.
 
 Pacific Harbor Trading is the default **sample company** — a 2026 year of trading (rent, payroll, utilities, invoices, bills) plus extra trade so the file sits near **1,000 documents**. Payee is the customer or vendor name; memo is the reason (Ayala Land / Warehouse rent — never one string). Every payee is on file. Listed A–Z. Activity through late August is posted; later months sit pending. Create more companies from the name in the header or from Settings. **Remove sample** (Settings) deletes that file from this browser; **Restore last local copy** puts back the last automatic snapshot, and Reload sample brings the demo back. If it was the only company, a blank file takes its place.
 
 **License:** MIT. **Style:** ledger, light or dark (the treasury mark in the menu and favicon inverts with the theme). **Tags:** finance, accounting, bank register.
 
-No accounts, no server setup. Remix from Grok to publish. Books stay in this browser (IndexedDB, asked to persist) until you download a backup. There is no cloud.
+No accounts, no server setup. Books stay on this computer (IndexedDB, asked to persist) until you download a backup. There is no cloud.
 
 ## Install and deploy
 
-This is a **PWA** (same books in the browser that installed it). Windows `deploy.bat` also writes a **`.exe`**. It is not Tauri, not an MSI, and not listed on the App Store or Play Store.
+This is a **Tauri 2 desktop app** — the same stack as Font Manager — plus a web build. Double-click `deploy.bat` on Windows for an installer you can copy to other PCs. They do not need Node or Rust.
 
 | Target | One-click | What you get |
 | --- | --- | --- |
-| **Windows (priority)** | `deploy.bat` then `run.bat` | Production build plus **`dist/FinanceManager.exe`**. The exe serves `dist/app/` and opens Edge/Chrome as an **app window** (no address bar). Keep the `app` folder next to the exe. In that window: **⋯ → Install app** and pin to taskbar. Same scripts live under `deploy/windows/`. |
-| **Android** | `deploy/android/apk.bat` | Paste the published https URL once (Remix from Grok) — later runs reuse it. Builds a Trusted Web Activity **APK** if Android Studio/SDK is installed. Without the SDK it opens [PWABuilder](https://www.pwabuilder.com) so you can download the package. Chrome → **Add to Home Screen** is the one-tap install that always works. |
-| **Web** | Remix from Grok, **or** `deploy/web/build.bat` | Remix is the live SSR app. The local pack writes `web/index.html` plus one HTML file per route (`web/register/index.html`, …) and `web/assets/`. Serve with `deploy/web/serve.bat` (not `file://`). |
+| **Windows (priority)** | `deploy.bat` | **NSIS setup** (and **MSI** if WiX v3 is installed) under `src-tauri/target/release/bundle/`. Install that on this PC or another. WebView2 is bundled. `desktop-setup.bat` installs Rust once and opens the app. |
+| **Android** | `deploy/android/apk.bat` | Trusted Web Activity **APK** if Android Studio/SDK is installed. Without the SDK, paste the published https URL (Remix from Grok) for a PWABuilder / TWA package. Chrome → **Add to Home Screen** always works on the published URL. |
+| **Web** | Remix from Grok, **or** `deploy/web/build.bat` | Remix is the live SSR app. The local pack writes `web/index.html` + `web/assets/`. Serve with `deploy/web/serve.bat` (not `file://`). |
 | **iPhone / iPad** | Safari → Share → **Add to Home Screen** | Same web app. |
 
-Node 22 is required for local builds. After Remix, other PCs only need the URL. Vite is installed with the rest of the packages — you do not need a global `vite` command. `deploy.bat` / `npm run build` start it from this folder.
+**Windows build needs (once):** Node 22, Rust (the script can install it), and **Visual Studio Build Tools** with “Desktop development with C++”. First compile is slow. After that, other computers only run the installer.
 
-**Android APK cannot wrap a local folder.** The wrapper is a Chrome Custom Tab pointed at your **https** origin. Sideload the APK; there is no Play listing in this cut.
+Vite is installed with the rest of the packages — you do not need a global `vite` command.
+
+Lists (banks, register, receipts, checks, reports, reconcile) wrap actions and keep peso amounts on one line on a phone. Reconcile proof is two boards — statement vs book — stacked on a phone, side by side on a desk.
+
+## Screenshots
+
+![Treasury desk](docs/screenshots/desk.png)
+
+![Banks](docs/screenshots/banks.png)
+
+![Reconcile](docs/screenshots/reconcile.png)
+
+Phone:
+
+![Desk on a phone](docs/screenshots/desk-phone.png)
 
 Books do **not** follow you to another phone or laptop. Download a backup on one device and restore it on the other.
+
 
 ## Bank register
 
@@ -51,7 +66,7 @@ Books do **not** follow you to another phone or laptop. Download a backup on one
 ## Close the month
 
 - **Close** (Books): rec every live bank through the date, post recurring, trial balance in balance. Desk banner **Post rent** (or Post N due) writes every recurrence through month-end and rolls next dates — same as Settings → Recurring → Post. **Print the period pack** (TB, P&L by account for the month and YTD, AR/AP aging as of the date, each finished rec report, open customer statements) — that is the review. There is no aging checkbox. Close posts a **close journal**; those bank balances as of the close date are the **opening fact** for the next month’s register (the first row reads Closed through that date). Reopen is a dated audit event (type REOPEN), not a toggle.
-- **Reconcile**: beginning is the **last finished statement ending** (or bank opening). Tick what is on the paper — the tick column is always on this page (Move is only on the register). Outstanding checks and deposits in transit stay off the statement and prove the book. The eight proof figures (Beginning, Cleared in/out, Outstanding, In transit, Book, Cleared diff, Explained) sit in a compact card grid — two-up on a phone, eight-across on a wide desk. **Cleared difference** and **explained difference** must both be **0**. Post a service charge or interest from this screen if the bank has a line the books do not — those freeze as adjustments on the rec document. **Last statement** prints the frozen rec (named outstanding, DIT, adjustments, 30/60/90). **Undo last** requires UNDO and is blocked inside a closed period. Register click only cycles Pending ↔ C. **R is Finish statement**, not a register click, and it survives a restore. Uncleared 90+ days is called out.
+- **Reconcile**: beginning is the **last finished statement ending** (or bank opening). Tick what is on the paper — the tick column is always on this page (Move is only on the register). Outstanding checks and deposits in transit stay off the statement and prove the book. Proof is two boards: **Statement** (beginning, cleared in/out, cleared difference) and **Book** (book, outstanding, in transit, explained difference). Amounts stay on one line. **Cleared difference** and **explained difference** must both be **0**. Post a service charge or interest from this screen if the bank has a line the books do not — those freeze as adjustments on the rec document. **Last statement** prints the frozen rec (named outstanding, DIT, adjustments, 30/60/90). **Undo last** requires UNDO and is blocked inside a closed period. Register click only cycles Pending ↔ C. **R is Finish statement**, not a register click, and it survives a restore. Uncleared 90+ days is called out.
 - **Audit** on Close: who (this browser), what, old/new, timestamp. Export CSV. Merge writes both sides.
 - **Settings → Company file**: one JSON that **is** this company (recon, close, audit included). **Save company file** / Open. Open replaces this company or adds that file. There is no “download this company” and no “download all companies” — the local copy in this browser is first; Settings → **Save company file** is the off-device backup (header Export is spreadsheets only). After every successful save this browser also writes a **local copy** (IndexedDB, one slot per company, timestamped). **Restore last local copy** puts that snapshot back for the company you are in; if you removed the sample, that is how it returns without Reload sample. Settings → Storage shows IndexedDB vs fallback, whether the browser granted **persistent** storage (so it is less likely to evict the books), and usage. There is no cloud. Tables are flat: banks, customers, vendors, invoices, bills, receipts, checks, journals (lines stay on the journal), and the rest. Parties do not nest transactions. New ids are UUIDs.
 - **Settings → Recurring**: warehouse rent is due in the sample (1 Aug) so August cannot close until you post it.

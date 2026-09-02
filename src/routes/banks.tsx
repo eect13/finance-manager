@@ -12,6 +12,7 @@ import { ListCard, listColClass } from "@/components/list-table";
 import { ListPrint } from "@/components/list-print";
 import { Money } from "@/components/money";
 import { requestPrint } from "@/components/print-preview";
+import { RowActions } from "@/components/row-actions";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -45,7 +46,7 @@ const BANK_COLS = {
   status: 100,
   book: 128,
   pending: 128,
-  actions: 88,
+  actions: 52,
 } as const;
 
 const BANK_SORT = [
@@ -131,7 +132,8 @@ function BanksPage() {
   return (
     <AppShell
       title="Banks"
-      description="Balances across every account. List matches the register. Double-click a row to edit, or tap a card. Delete lives on the list and inside the bank — not on every card."
+      description="Balances across every account. List matches the register. Double-click a row to edit, or tap a card. Delete is in ⋯ on the list — not on every card."
+      wide
       actions={
         <>
           <CsvButton filename="banks.csv" rows={bankRows(data)} />
@@ -248,7 +250,7 @@ function BanksPage() {
                     <td className="px-4 py-3 text-right" data-col="book"><Money amount={book} currency={settings.currency} /></td>
                     <td className="px-4 py-3 text-right" data-col="pending"><Money amount={pending} currency={settings.currency} /></td>
                     <td className="col-actions px-4 py-3 text-right" data-col="actions" onClick={stopOpen} onDoubleClick={stopOpen} onPointerDown={stopOpen}>
-                      <Button size="sm" variant="ghost" onClick={() => setDeletingId(bank.id)}>Delete</Button>
+                      <RowActions items={[{ label: "Delete", onSelect: () => setDeletingId(bank.id), danger: true }]} />
                     </td>
                   </tr>
                 );

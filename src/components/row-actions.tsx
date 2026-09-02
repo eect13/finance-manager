@@ -10,17 +10,13 @@ export type RowMenuItem = {
   danger?: boolean;
 };
 
-/** One primary action on the row; the rest sit in ⋯ so Status is never covered. */
+/** Primary action stays on the row; every extra item sits in ⋯ so Delete never paints a column. */
 export function RowActions({ primary, items }: { primary?: ReactNode; items?: RowMenuItem[] }) {
   const extra = (items ?? []).filter(Boolean);
   return (
     <div className="flex flex-nowrap items-center justify-end gap-1" onClick={stopOpen} onPointerDown={stopOpen}>
       {primary}
-      {extra.length === 1 && !primary ? (
-        <Button size="sm" variant="ghost" onClick={extra[0].onSelect}>
-          {extra[0].label}
-        </Button>
-      ) : extra.length > 0 ? (
+      {extra.length > 0 ? (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button size="sm" variant="ghost" aria-label="More" className="px-2">

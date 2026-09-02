@@ -6,6 +6,21 @@ import appCss from "../styles.css?url";
 
 const APP_NAME = "Finance Manager";
 
+function Frame() {
+  return (
+    <>
+      <PreviewHostBridge />
+      <AuthProvider>
+        <Outlet />
+      </AuthProvider>
+    </>
+  );
+}
+
+function isDesktopSpa() {
+  return typeof document !== "undefined" && Boolean(document.getElementById("fm-root"));
+}
+
 export const Route = createRootRoute({
   head: () => ({
     meta: [
@@ -30,19 +45,19 @@ export const Route = createRootRoute({
       { rel: "apple-touch-icon", href: "/__grok/icon-180.png" },
     ],
   }),
-  component: () => (
-    <html lang="en" className="antialiased" suppressHydrationWarning>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} />
-        <HeadContent />
-      </head>
-      <body>
-        <PreviewHostBridge />
-        <AuthProvider>
-          <Outlet />
-        </AuthProvider>
-        <Scripts />
-      </body>
-    </html>
-  ),
+  component: () => {
+    if (isDesktopSpa()) return <Frame />;
+    return (
+      <html lang="en" className="antialiased" suppressHydrationWarning>
+        <head>
+          <script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} />
+          <HeadContent />
+        </head>
+        <body>
+          <Frame />
+          <Scripts />
+        </body>
+      </html>
+    );
+  },
 });

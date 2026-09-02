@@ -27,7 +27,7 @@ export const ListCard = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement
   ref,
 ) {
   return (
-    <div ref={ref} className={cn("list-card list-grid", className)} {...rest}>
+    <div ref={ref} className={cn("list-card list-grid list-scroll", className)} {...rest}>
       {children}
     </div>
   );

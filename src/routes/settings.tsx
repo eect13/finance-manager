@@ -577,9 +577,15 @@ function StoragePanel() {
       <div>
         <div className="mb-2 flex flex-wrap items-end justify-between gap-2">
           <p className="text-sm font-medium">
-            {quota > 0 ? `${formatBytes(used)} of ${formatBytes(quota)} in this browser` : formatBytes(used)}
+            {quota > 0
+              ? `${formatBytes(used)} used of ${formatBytes(quota)} granted`
+              : formatBytes(used)}
           </p>
-          {quota > 0 ? <p className="text-xs tabular-nums text-muted-foreground">{pct}% used</p> : null}
+          {quota > 0 ? (
+            <p className="text-xs tabular-nums text-muted-foreground">
+              {pct}% · {formatBytes(Math.max(0, quota - used))} free
+            </p>
+          ) : null}
         </div>
         <div className="h-2 overflow-hidden rounded-full bg-muted" aria-hidden="true">
           <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
@@ -595,9 +601,9 @@ function StoragePanel() {
             : browser.persisted === false
               ? " · not persistent — download a company file if you clear site data"
               : ""}
-          . The GB figure is this browser’s current grant, not a cap in Finance Manager. Chrome often
-          reports about 10 GB until the site is persistent; then the grant is a large share of free
-          disk. There is no API to pick a number.
+          . Finance Manager does not cap storage. The grant is this browser’s — often about 10 GB
+          until you tap Keep books, then a large share of free disk. There is no API to type a GB
+          number.
         </p>
         {browser.persisted !== true ? (
           <Button

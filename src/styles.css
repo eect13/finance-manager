@@ -372,19 +372,26 @@
     box-shadow: var(--shadow-elevation);
   }
 
-  /* Same node is list-card + list-grid: keep radius clip on Y, allow X scroll when tight. */
+  /* Same node is list-card + list-grid: X scroll when tight; Y scroll like reports. */
   .list-card.list-grid {
     display: block;
     position: relative;
     width: 100%;
     max-width: 100%;
     min-width: 0;
-    overflow-x: auto !important;
-    overflow-y: hidden;
+    max-height: min(40rem, calc(100dvh - 12.5rem));
+    overflow: auto !important;
     background: var(--color-card);
     background-image: none;
     scrollbar-width: thin;
     scrollbar-color: color-mix(in oklab, var(--color-foreground) 28%, transparent) transparent;
+  }
+
+  .list-card.list-grid thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--color-card);
   }
 
   .list-card.list-grid[data-overflow-x]::before,
@@ -399,6 +406,7 @@
 
   .list-card.list-grid::-webkit-scrollbar {
     height: 8px;
+    width: 8px;
   }
 
   .list-card.list-grid::-webkit-scrollbar-thumb {

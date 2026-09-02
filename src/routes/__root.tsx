@@ -32,6 +32,7 @@ export const Route = createRootRoute({
       { name: "theme-color", content: "#243542" },
     ],
     links: [
+      { rel: "icon", href: "/favicon.ico", sizes: "any" },
       { rel: "icon", type: "image/svg+xml", href: "/favicon.svg", media: "(prefers-color-scheme: light)" },
       { rel: "icon", type: "image/svg+xml", href: "/favicon-dark.svg", media: "(prefers-color-scheme: dark)" },
       { rel: "icon", type: "image/png", sizes: "32x32", href: "/icon-32.png" },

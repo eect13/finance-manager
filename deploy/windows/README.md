@@ -8,7 +8,7 @@ This is a **PWA**, not an `.exe` / MSI / Tauri installer. The pack opens Edge or
 2. Double-click `run.bat`. It waits until the local preview is up, then opens **Edge** (or Chrome) with `--app` — no second browser tab.
 3. In that window: **⋯ → Install app** (Edge) or **Install Finance Manager** (Chrome). Pin to taskbar / Start.
 
-Node 22 is required for the local build. After **Remix from Grok**, any PC can skip the build: open the published URL → Install app.
+Node 22 is required for the local build. Vite is installed with the rest of the packages — you do not need a global `vite` command. After **Remix from Grok**, any PC can skip the build: open the published URL → Install app.
 
 ## What you get
 

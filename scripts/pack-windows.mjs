@@ -66,7 +66,7 @@ The exe is a small local server plus Edge/Chrome **app window** (no address bar)
 2. When it finishes, double-click \`run.bat\` — or \`dist\\FinanceManager.exe\`.
 3. Edge (or Chrome) opens as an app window. **⋯ → Install app** pins it to the taskbar.
 
-Node 22 is required **to build**. Running the exe on another PC does not need Node — keep \`FinanceManager.exe\` and the \`app\\\` folder next to each other.
+Node 22 is required **to build**. Vite is installed with the rest of the packages — you do not need a global \`vite\` command. Running the exe on another PC does not need Node — keep \`FinanceManager.exe\` and the \`app\\\` folder next to each other.
 
 ## What you get
 

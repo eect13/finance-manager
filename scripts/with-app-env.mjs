@@ -18,11 +18,15 @@
  *
  * Vite picks the values up because `loadEnv` prefix-matches entries already in
  * `process.env`, which is why the merge has to happen before Vite starts.
+ *
+ * Local bins (`vite`, …) are started as `node <package>/bin/*.js`, not as the
+ * name on PATH. On Windows `node_modules/.bin/vite` is `vite.cmd`; `spawn`
+ * without a shell cannot run a batch shim, which is `spawn vite ENOENT`.
  */
 import { spawn } from "node:child_process";
-import { readFileSync, realpathSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { constants as osConstants } from "node:os";
-import { dirname, join } from "node:path";
+import { delimiter, dirname, isAbsolute, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 export const APP_ENV_REL_PATH = ".grok/app-env.json";
@@ -104,20 +108,97 @@ export function isMainModule(moduleUrl) {
   }
 }
 
+function isPathLike(command) {
+  return isAbsolute(command) || command.includes("/") || command.includes("\\");
+}
+
+function binFromPackage(pkg, command) {
+  const bin = pkg?.bin;
+  if (typeof bin === "string") return bin;
+  if (bin && typeof bin === "object" && typeof bin[command] === "string") return bin[command];
+  return null;
+}
+
+/**
+ * Absolute JS entry for a local npm bin (`vite` → `node_modules/vite/bin/vite.js`).
+ * Absolute / relative paths and missing packages return null — those stay as typed.
+ */
+export function resolveLocalBinJs(command, root) {
+  if (typeof command !== "string" || !command || isPathLike(command)) return null;
+  const pkgDir = join(root, "node_modules", command);
+  const pkgPath = join(pkgDir, "package.json");
+  if (!existsSync(pkgPath)) return null;
+  let pkg;
+  try {
+    pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
+  } catch {
+    return null;
+  }
+  const rel = binFromPackage(pkg, command);
+  if (!rel) return null;
+  const abs = join(pkgDir, rel);
+  return existsSync(abs) ? abs : null;
+}
+
+/** Windows stores PATH as `Path`; copying onto `PATH` would drop the real key. */
+export function pathEnvKey(env) {
+  return Object.keys(env).find((k) => k.toLowerCase() === "path") ?? (process.platform === "win32" ? "Path" : "PATH");
+}
+
+/** Prepend `node_modules/.bin` so nested bins still resolve after we skip the shim. */
+export function envWithLocalBin(env, root) {
+  const bin = join(root, "node_modules", ".bin");
+  const key = pathEnvKey(env);
+  const current = env[key] ?? "";
+  const parts = current.split(delimiter).filter(Boolean);
+  if (parts.includes(bin)) return env;
+  return { ...env, [key]: [bin, ...parts].join(delimiter) };
+}
+
+/**
+ * `spawn()` target for `<command> [args…]`.
+ *
+ * Local package bins run as `node <js>` (no shell). Bare names on Windows
+ * otherwise use a shell so `.cmd` shims still work. Absolute paths (tests pass
+ * `process.execPath`) are left alone.
+ */
+export function resolveSpawn(command, args, root = projectRoot()) {
+  const js = resolveLocalBinJs(command, root);
+  if (js) {
+    return { file: process.execPath, args: [js, ...args], shell: false };
+  }
+  return {
+    file: command,
+    args,
+    shell: process.platform === "win32" && !isPathLike(command),
+  };
+}
+
 function main(argv) {
   const [command, ...args] = argv;
   if (!command) {
     console.error("usage: node scripts/with-app-env.mjs <command> [args…]");
     process.exit(2);
   }
-  const env = mergeAppEnv(readAppEnv(projectRoot()), process.env);
-  const child = spawn(command, args, { stdio: "inherit", env });
+  const root = projectRoot();
+  const env = envWithLocalBin(mergeAppEnv(readAppEnv(root), process.env), root);
+  const target = resolveSpawn(command, args, root);
+  const child = spawn(target.file, target.args, {
+    stdio: "inherit",
+    env,
+    shell: target.shell,
+  });
   // The dev server is long-running and is stopped by signalling this wrapper.
   for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"]) {
     process.on(signal, () => child.kill(signal));
   }
   child.on("error", (err) => {
     console.error(`[with-app-env] failed to run ${command}:`, err?.message || err);
+    if (err?.code === "ENOENT") {
+      console.error(
+        `[with-app-env] ${command} was not found. Install dependencies in this folder (npm install). On Windows the wrapper runs node_modules/${command} as a JS file — a global install is not required.`,
+      );
+    }
     process.exit(127);
   });
   child.on("exit", (code, signal) => {

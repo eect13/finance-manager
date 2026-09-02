@@ -1,16 +1,20 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, existsSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { delimiter, join } from "node:path";
 import { test } from "node:test";
 import { promisify } from "node:util";
 import {
   APP_ENV_REL_PATH,
+  envWithLocalBin,
   mergeAppEnv,
   parseAppEnv,
+  pathEnvKey,
   projectRoot,
   readAppEnv,
+  resolveLocalBinJs,
+  resolveSpawn,
 } from "./with-app-env.mjs";
 
 const execFileAsync = promisify(execFile);
@@ -125,4 +129,57 @@ test("the CLI still runs when invoked through a symlinked path", async () => {
     PRINT_FLAG,
   ]);
   assert.equal(stdout, "false");
+});
+
+test("local vite is the package JS bin, not a cmd shim", () => {
+  const js = resolveLocalBinJs("vite", projectRoot());
+  assert.ok(js);
+  assert.equal(existsSync(js), true);
+  assert.match(js.replaceAll("\\", "/"), /\/vite\/bin\/vite\.js$/);
+});
+
+test("absolute paths are not treated as local bins", () => {
+  assert.equal(resolveLocalBinJs(process.execPath, projectRoot()), null);
+  assert.equal(resolveLocalBinJs("not-a-real-package", projectRoot()), null);
+});
+
+test("resolveSpawn runs local vite as node …/vite.js without a shell", () => {
+  const js = resolveLocalBinJs("vite", projectRoot());
+  const target = resolveSpawn("vite", ["build"], projectRoot());
+  assert.equal(target.file, process.execPath);
+  assert.deepEqual(target.args, [js, "build"]);
+  assert.equal(target.shell, false);
+});
+
+test("resolveSpawn leaves process.execPath alone so the wrapper tests still run", () => {
+  const target = resolveSpawn(process.execPath, ["-e", "1"], projectRoot());
+  assert.equal(target.file, process.execPath);
+  assert.deepEqual(target.args, ["-e", "1"]);
+  assert.equal(target.shell, false);
+});
+
+test("node_modules/.bin is prepended to PATH", () => {
+  const bin = join(projectRoot(), "node_modules", ".bin");
+  const env = envWithLocalBin({ PATH: "/usr/bin" }, projectRoot());
+  assert.equal(pathEnvKey(env), "PATH");
+  assert.equal(env.PATH.split(delimiter)[0], bin);
+});
+
+test("resolveLocalBinJs reads package.json bin as a string or a map", () => {
+  const root = mkdtempSync(join(tmpdir(), "app-env-bin-"));
+  mkdirSync(join(root, "node_modules", "tool", "cli"), { recursive: true });
+  writeFileSync(
+    join(root, "node_modules", "tool", "package.json"),
+    JSON.stringify({ name: "tool", bin: "cli/run.js" }),
+  );
+  writeFileSync(join(root, "node_modules", "tool", "cli", "run.js"), "console.log(1)");
+  assert.equal(resolveLocalBinJs("tool", root), join(root, "node_modules", "tool", "cli", "run.js"));
+
+  mkdirSync(join(root, "node_modules", "map-tool"), { recursive: true });
+  writeFileSync(
+    join(root, "node_modules", "map-tool", "package.json"),
+    JSON.stringify({ name: "map-tool", bin: { "map-tool": "x.js" } }),
+  );
+  writeFileSync(join(root, "node_modules", "map-tool", "x.js"), "");
+  assert.equal(resolveLocalBinJs("map-tool", root), join(root, "node_modules", "map-tool", "x.js"));
 });

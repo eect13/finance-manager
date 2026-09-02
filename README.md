@@ -1,4 +1,4 @@
-# Finance Manager v3.43
+# Finance Manager v3.44
 
 Treasury books in the browser. Banks, receipts, checks, invoices, bills, and a **bank register**.
 
@@ -19,7 +19,7 @@ This is a **PWA** (same books in the browser that installed it). Windows `deploy
 | **Web** | Remix from Grok, **or** `deploy/web/build.bat` | Remix is the live SSR app. The local pack writes `web/index.html` plus one HTML file per route (`web/register/index.html`, …) and `web/assets/`. Serve with `deploy/web/serve.bat` (not `file://`). |
 | **iPhone / iPad** | Safari → Share → **Add to Home Screen** | Same web app. |
 
-Node 22 is required for local builds. After Remix, other PCs only need the URL.
+Node 22 is required for local builds. After Remix, other PCs only need the URL. Vite is installed with the rest of the packages — you do not need a global `vite` command. `deploy.bat` / `npm run build` start it from this folder.
 
 **Android APK cannot wrap a local folder.** The wrapper is a Chrome Custom Tab pointed at your **https** origin. Sideload the APK; there is no Play listing in this cut.
 

@@ -1,4 +1,4 @@
-# Finance Manager v3.50
+# Finance Manager v3.51
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, and a **bank register**.
 
@@ -8,7 +8,7 @@ Pacific Harbor Trading is the default **sample company** — a 2026 year of trad
 
 No accounts, no server setup. Books stay on this computer (IndexedDB). Settings → Storage asks this browser to **keep the books** (persistent). The GB number there is the browser’s grant — often about 10 GB until persistent, then a large share of free disk. Finance Manager does not cap it. Download a backup. There is no cloud.
 
-The app mark is a **navy tile with cream pillars**. Web tab uses the SVG favicon (and a `.ico` fallback). The Windows installer uses that same mark as `icon.ico` — not a white square.
+The app mark is a **navy tile with cream pillars**. Web uses the SVG favicon (`.ico` fallback). Windows gets a BMP `.ico` (16/24/32/48/256) so Explorer, the desktop shortcut, and the taskbar all show that mark — PNG-in-ICO was a white square. If an old shortcut is still blank, delete it and run the new installer (Windows caches the last icon).
 
 
 ## Install and deploy
@@ -28,7 +28,7 @@ Vite is installed with the rest of the packages — you do not need a global `vi
 
 Lists (banks, register, receipts, checks, reports, reconcile) wrap actions and keep peso amounts on one line on a phone. Long lists scroll inside the card (sticky headers), same as reports. **Reports → Aging** stacks Receivables then Payables (never two skinny columns) so Open amounts like `₱15,253,430.00` stay whole — swipe sideways on a phone if the row is wider than the card. Reconcile proof is two boards — statement vs book — stacked on a phone, side by side on a desk. Book cash lives on the desk, not in the header, so the company name does not collide with Find.
 
-**Windows `desktop-setup.bat` / `npm install`:** Node 24 is strict about peers. This repo pins `eslint-plugin-react-hooks` 7 (eslint 10) and ships a `.npmrc` with `legacy-peer-deps=true`, so one-click setup no longer dies on ERESOLVE. After a pull, run `desktop-setup.bat` again (or `deploy.bat` for an installer) — a v3.46 window will not pick up these fixes until that install finishes.
+**Windows `desktop-setup.bat` / `npm install`:** Node 24 is strict about peers. This repo pins `eslint-plugin-react-hooks` 7 (eslint 10) and ships a `.npmrc` with `legacy-peer-deps=true`, so one-click setup no longer dies on ERESOLVE. After a pull, run `desktop-setup.bat` again (or `deploy.bat` for an installer) — a v3.46 window will not pick up these fixes until that install finishes. A build that started before this icon fix still ships a white shortcut; pull v3.51 and run `deploy.bat` again, then delete any leftover blank shortcut.
 
 
 ## Screenshots

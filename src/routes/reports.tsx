@@ -154,7 +154,7 @@ function AgingTable({
           </span>
         ))}
       </p>
-      <div ref={gridRef} className="list-grid overflow-x-auto rounded-2xl bg-card elevation">
+      <div ref={gridRef} className="list-grid list-scroll overflow-auto rounded-2xl bg-card elevation">
         <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
           <colgroup>
             {(Object.keys(AGE_COLS) as Array<keyof typeof AGE_COLS>).map((id) => (
@@ -232,7 +232,7 @@ function TrialTable({ rows, currency }: { rows: TbRow[]; currency: string }) {
     cols.setWidth(id, fitColumnWidth({ table, selector: `td[data-col="${id}"]`, header: label }));
   }
   return (
-    <div ref={gridRef} className="list-grid overflow-x-auto rounded-2xl bg-card elevation">
+    <div ref={gridRef} className="list-grid list-scroll overflow-auto rounded-2xl bg-card elevation">
       <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
         <colgroup>
           {(Object.keys(TB_COLS) as Array<keyof typeof TB_COLS>).map((id) => (
@@ -288,7 +288,7 @@ function PlTable({ rows, net, currency }: { rows: PlRow[]; net: number; currency
     cols.setWidth(id, fitColumnWidth({ table, selector: `td[data-col="${id}"]`, header: label }));
   }
   return (
-    <div ref={gridRef} className="list-grid overflow-x-auto rounded-2xl bg-card elevation">
+    <div ref={gridRef} className="list-grid list-scroll overflow-auto rounded-2xl bg-card elevation">
       <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
         <colgroup>
           {(Object.keys(PL_COLS) as Array<keyof typeof PL_COLS>).map((id) => (

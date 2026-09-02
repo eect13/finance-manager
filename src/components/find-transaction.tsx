@@ -168,13 +168,13 @@ export function FindButton({ onClick }: { onClick: () => void }) {
   }, []);
   return (
     <>
-      <Button variant="outline" size="icon" className="sm:hidden" aria-label="Find transaction" onClick={onClick}>
+      <Button variant="outline" size="icon" className="lg:hidden" aria-label="Find transaction" onClick={onClick}>
         <Search />
       </Button>
       <button
         type="button"
         onClick={onClick}
-        className="hidden h-11 min-h-11 min-w-48 items-center gap-2 rounded-xl bg-muted px-3 text-sm text-muted-foreground hover:bg-accent hover:text-foreground sm:inline-flex"
+        className="hidden h-11 min-h-11 min-w-48 items-center gap-2 rounded-xl bg-muted px-3 text-sm text-muted-foreground hover:bg-accent hover:text-foreground lg:inline-flex"
       >
         <Search className="size-4 shrink-0" />
         <span className="flex-1 text-left">Find</span>

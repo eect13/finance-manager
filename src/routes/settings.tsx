@@ -23,7 +23,7 @@ import { fitColumnWidth } from "@/lib/finance/fit-column";
 import { formatDate, todayIso } from "@/lib/finance/format";
 import { useEntrySort } from "@/lib/finance/sort";
 import { useFinanceData, useFinanceStore } from "@/lib/finance/store";
-import { browserStorage, countEntries, formatBytes, jsonSize } from "@/lib/finance/storage-usage";
+import { browserStorage, countEntries, formatBytes, jsonSize, requestPersistentStorage } from "@/lib/finance/storage-usage";
 import { CURRENCIES, type RecurringItem } from "@/lib/finance/types";
 import { useShallow } from "zustand/react/shallow";
 import { AppearancePicker } from "@/components/theme-toggle";
@@ -556,6 +556,7 @@ function StoragePanel() {
   }>({ usage: 0, quota: 0, persisted: null, engine: "unknown" });
   const [through, setThrough] = useState(`${new Date().getFullYear() - 1}-12-31`);
   const [purging, setPurging] = useState(false);
+  const [asking, setAsking] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -594,8 +595,32 @@ function StoragePanel() {
             : browser.persisted === false
               ? " · not persistent — download a company file if you clear site data"
               : ""}
-          . Local backup is a second snapshot of each company in this browser, not the cloud.
+          . The GB figure is this browser’s current grant, not a cap in Finance Manager. Chrome often
+          reports about 10 GB until the site is persistent; then the grant is a large share of free
+          disk. There is no API to pick a number.
         </p>
+        {browser.persisted !== true ? (
+          <Button
+            className="mt-3"
+            variant="outline"
+            disabled={asking}
+            onClick={() => {
+              setAsking(true);
+              void (async () => {
+                try {
+                  const ok = await requestPersistentStorage();
+                  setBrowser(await browserStorage());
+                  if (ok) toast.success("This browser will keep the books.");
+                  else toast.message("This browser did not raise the grant. Download a company file as backup.");
+                } finally {
+                  setAsking(false);
+                }
+              })();
+            }}
+          >
+            Keep books on this computer
+          </Button>
+        ) : null}
       </div>
       <dl className="stat-grid stat-grid-4">
         <Stat label="This company" value={formatBytes(companyBytes)} hint={`${counts.total} entries`} />

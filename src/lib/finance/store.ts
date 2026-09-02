@@ -64,7 +64,7 @@ import { listLocalBackups, readLocalBackup, writeLocalBackups } from "./local-ba
 import { normalizeBooks } from "./normalize";
 import { createSeed, emptyBooks, SAMPLE_COMPANY_ID } from "./seed";
 import { booksStorage, createDebouncedPersistStorage } from "./storage";
-import { requestPersistentStorage } from "./storage-usage";
+import { watchPersistentStorage } from "./storage-usage";
 import type {
   Bank,
   Bill,
@@ -561,7 +561,7 @@ export function bootBooks(): Promise<void> {
         useFinanceStore.getState().hydrate();
         const s = useFinanceStore.getState();
         if (Object.keys(s.companies).length > 0) void writeLocalBackups(s.companies);
-        void requestPersistentStorage();
+        watchPersistentStorage();
       });
   }
   return boot;

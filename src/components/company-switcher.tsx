@@ -50,7 +50,7 @@ export function CompanySwitcher() {
           >
             <span className="min-w-0">
               <span className="block truncate text-sm font-medium">{name}</span>
-              <span className="block text-xs text-muted-foreground">{formatDate(todayIso())}</span>
+              <span className="block truncate whitespace-nowrap text-xs text-muted-foreground">{formatDate(todayIso())}</span>
             </span>
             <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
           </button>

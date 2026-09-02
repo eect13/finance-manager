@@ -1,4 +1,4 @@
-# Finance Manager v3.47
+# Finance Manager v3.48
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, and a **bank register**.
 
@@ -6,7 +6,7 @@ Pacific Harbor Trading is the default **sample company** — a 2026 year of trad
 
 **License:** MIT. **Style:** ledger, light or dark (the treasury mark in the menu and favicon inverts with the theme). **Tags:** finance, accounting, bank register.
 
-No accounts, no server setup. Books stay on this computer (IndexedDB, asked to persist) until you download a backup. There is no cloud.
+No accounts, no server setup. Books stay on this computer (IndexedDB). Settings → Storage asks this browser to **keep the books** (persistent). The GB number there is the browser’s grant — often about 10 GB until persistent, then a large share of free disk. Finance Manager does not cap it. Download a backup. There is no cloud.
 
 ## Install and deploy
 
@@ -111,7 +111,7 @@ Press **Ctrl+K** (Windows/Linux) or **⌘K** (Mac) to search payee, number, amou
 
 ## Phone
 
-A phone is a check-in, not a second desktop. The hamburger is the menu — the treasury mark lives there, not in the header (it cannot fit next to Find and undo). There is no chip strip and no tab bar (it would sit on the Grok pill). Dialogs come up from the bottom. Desk figures sit two-up from the first paint so peso amounts do not wait for a wide window. Customer and vendor list/detail swap until the workspace is wide enough for both. Bank tabs and filter pills scroll sideways instead of wrapping. The register stays a list with a running balance; it does not turn into cards. History tables keep Date, No., Amount, and Balance so `RCPT-2026-001` is not clipped to `RCPT-202`. The customer/vendor directory list keeps Name and Open (Contact, Email, Phone wait for a wide screen). Tap a history line to open it. Bank **cards** show name, nickname, book amount, then pending — Delete is on the list and inside the bank record, not on every card. The column rule is a larger hit target on a touch screen; the hairline stays thin.
+A phone is a check-in, not a second desktop. The hamburger is the menu — the treasury mark lives there, not in the header (it cannot fit next to Find and undo). Book cash is on the desk, not in the header, so the company name and date do not collide. There is no chip strip and no tab bar (it would sit on the Grok pill). Dialogs come up from the bottom. Desk figures sit two-up from the first paint so peso amounts do not wait for a wide window. Customer and vendor list/detail swap until the workspace is wide enough for both. Bank tabs and filter pills scroll sideways instead of wrapping. The register stays a list with a running balance; it does not turn into cards. History tables keep Date, No., Amount, and Balance so `RCPT-2026-001` is not clipped to `RCPT-202`. The customer/vendor directory list keeps Name and Open (Contact, Email, Phone wait for a wide screen). Tap a history line to open it. Bank **cards** show name, nickname, book amount, then pending — Delete is on the list and inside the bank record, not on every card. The column rule is a larger hit target on a touch screen; the hairline stays thin.
 
 ## Speed
 

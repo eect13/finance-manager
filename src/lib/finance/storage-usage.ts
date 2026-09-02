@@ -93,3 +93,20 @@ export async function requestPersistentStorage(): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * persist() is more likely to succeed after a click. Boot once, then retry
+ * on the first pointer. There is no API to pick a GB cap — the grant is the
+ * browser's, and persistent origins typically get a much larger share of disk
+ * than the ~10 GB Chrome reports for a throwaway origin.
+ */
+export function watchPersistentStorage(): void {
+  if (typeof window === "undefined") return;
+  void requestPersistentStorage();
+  const retry = () => {
+    window.removeEventListener("pointerdown", retry);
+    void requestPersistentStorage();
+  };
+  window.addEventListener("pointerdown", retry, { once: true, passive: true });
+}
+

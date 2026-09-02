@@ -343,8 +343,22 @@
 
   .list-grid {
     min-width: 0;
-    overflow-x: auto;
+    overflow: auto;
     -webkit-overflow-scrolling: touch;
+  }
+
+  .list-scroll {
+    max-height: min(36rem, calc(100dvh - 14rem));
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
+  .list-scroll thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--color-card);
   }
 
   .list-card {

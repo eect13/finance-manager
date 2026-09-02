@@ -27,13 +27,11 @@ import {
 import { toast, Toaster } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { totalCash } from "@/lib/finance/ledger";
 import { bootBooks, useFinanceData, useFinanceStore } from "@/lib/finance/store";
 import { cn } from "@/lib/utils";
 import { CompanySwitcher } from "./company-switcher";
 import { ExportMenu } from "./export-menu";
 import { FindButton, FindTransaction } from "./find-transaction";
-import { Money } from "./money";
 import { RecordSheet } from "./record-sheet";
 import { PrintStage } from "./print-preview";
 import { AppMark } from "./app-mark";
@@ -288,8 +286,6 @@ export function AppShell({
     );
   }
 
-  const cash = totalCash(data);
-
   return (
     <div className="flex h-dvh min-h-0 min-w-0 overflow-hidden bg-background text-foreground">
       <ThemeSync />
@@ -315,12 +311,8 @@ export function AppShell({
                 <SidebarBody onNavigate={() => setOpen(false)} />
               </SheetContent>
             </Sheet>
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 flex-1 overflow-hidden">
               <CompanySwitcher />
-            </div>
-            <div className="hidden text-right sm:block">
-              <p className="eyebrow">Book cash</p>
-              <Money amount={cash} currency={data.settings.currency} className="text-sm font-medium" />
             </div>
             <div className="flex shrink-0 items-center gap-1 sm:gap-2">
               <div className="flex">

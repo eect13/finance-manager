@@ -503,6 +503,44 @@ function startOfISOWeekYear(date, options) {
 	return startOfISOWeek(fourthOfJanuary);
 }
 //#endregion
+//#region node_modules/date-fns/isSameDay.js
+/**
+* The {@link isSameDay} function options.
+*/
+/**
+* @name isSameDay
+* @category Day Helpers
+* @summary Are the given dates in the same day (and year and month)?
+*
+* @description
+* Are the given dates in the same day (and year and month)?
+*
+* @param laterDate - The first date to check
+* @param earlierDate - The second date to check
+* @param options - An object with options
+*
+* @returns The dates are in the same day (and year and month)
+*
+* @example
+* // Are 4 September 06:00:00 and 4 September 18:00:00 in the same day?
+* const result = isSameDay(new Date(2014, 8, 4, 6, 0), new Date(2014, 8, 4, 18, 0))
+* //=> true
+*
+* @example
+* // Are 4 September and 4 October in the same day?
+* const result = isSameDay(new Date(2014, 8, 4), new Date(2014, 9, 4))
+* //=> false
+*
+* @example
+* // Are 4 September, 2014 and 4 September, 2015 in the same day?
+* const result = isSameDay(new Date(2014, 8, 4), new Date(2015, 8, 4))
+* //=> false
+*/
+function isSameDay(laterDate, earlierDate, options) {
+	const [dateLeft_, dateRight_] = normalizeDates(options?.in, laterDate, earlierDate);
+	return +startOfDay(dateLeft_) === +startOfDay(dateRight_);
+}
+//#endregion
 //#region node_modules/date-fns/isDate.js
 /**
 * @name isDate
@@ -2439,6 +2477,39 @@ function cleanEscapedString(input) {
 	return matched[1].replace(doubleQuoteRegExp, "'");
 }
 //#endregion
+//#region node_modules/date-fns/isSameMonth.js
+/**
+* The {@link isSameMonth} function options.
+*/
+/**
+* @name isSameMonth
+* @category Month Helpers
+* @summary Are the given dates in the same month (and year)?
+*
+* @description
+* Are the given dates in the same month (and year)?
+*
+* @param laterDate - The first date to check
+* @param earlierDate - The second date to check
+* @param options - An object with options
+*
+* @returns The dates are in the same month (and year)
+*
+* @example
+* // Are 2 September 2014 and 25 September 2014 in the same month?
+* const result = isSameMonth(new Date(2014, 8, 2), new Date(2014, 8, 25))
+* //=> true
+*
+* @example
+* // Are 2 September 2014 and 25 September 2015 in the same month?
+* const result = isSameMonth(new Date(2014, 8, 2), new Date(2015, 8, 25))
+* //=> false
+*/
+function isSameMonth(laterDate, earlierDate, options) {
+	const [laterDate_, earlierDate_] = normalizeDates(options?.in, laterDate, earlierDate);
+	return laterDate_.getFullYear() === earlierDate_.getFullYear() && laterDate_.getMonth() === earlierDate_.getMonth();
+}
+//#endregion
 //#region node_modules/date-fns/parseISO.js
 /**
 * The {@link parseISO} function options.
@@ -2637,4 +2708,34 @@ function validateTimezone(_hours, minutes) {
 	return minutes >= 0 && minutes <= 59;
 }
 //#endregion
-export { eachDayOfInterval as a, startOfWeek as c, startOfMonth as i, addMonths as l, format as n, endOfMonth as o, endOfWeek as r, isValid as s, parseISO as t, addDays as u };
+//#region node_modules/date-fns/subMonths.js
+/**
+* The subMonths function options.
+*/
+/**
+* @name subMonths
+* @category Month Helpers
+* @summary Subtract the specified number of months from the given date.
+*
+* @description
+* Subtract the specified number of months from the given date.
+*
+* @typeParam DateType - The `Date` type, the function operates on. Gets inferred from passed arguments. Allows to use extensions like [`UTCDate`](https://github.com/date-fns/utc).
+* @typeParam ResultDate - The result `Date` type, it is the type returned from the context function if it is passed, or inferred from the arguments.
+*
+* @param date - The date to be changed
+* @param amount - The amount of months to be subtracted.
+* @param options - An object with options
+*
+* @returns The new date with the months subtracted
+*
+* @example
+* // Subtract 5 months from 1 February 2015:
+* const result = subMonths(new Date(2015, 1, 1), 5)
+* //=> Mon Sep 01 2014 00:00:00
+*/
+function subMonths(date, amount, options) {
+	return addMonths(date, -amount, options);
+}
+//#endregion
+export { endOfWeek as a, endOfMonth as c, differenceInCalendarDays as d, startOfWeek as f, format as i, isValid as l, addDays as m, parseISO as n, startOfMonth as o, addMonths as p, isSameMonth as r, eachDayOfInterval as s, subMonths as t, isSameDay as u };

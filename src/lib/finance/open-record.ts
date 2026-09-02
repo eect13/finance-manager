@@ -15,18 +15,19 @@ export function openProps(kind: OpenKind, id: string, opts?: { click?: boolean }
     "data-open": "true" as const,
     tabIndex: 0,
     title: click ? "Tap to open and edit" : "Double-click or press Enter to open",
-    onClick: click
-      ? (e: MouseEvent<HTMLElement>) => {
-          e.preventDefault();
-          openTxn(kind, id);
+    ...(click
+      ? {
+          onClick: (e: MouseEvent<HTMLElement>) => {
+            e.preventDefault();
+            openTxn(kind, id);
+          },
         }
-      : undefined,
-    onDoubleClick: click
-      ? undefined
-      : (e: MouseEvent<HTMLElement>) => {
-          e.preventDefault();
-          openTxn(kind, id);
-        },
+      : {
+          onDoubleClick: (e: MouseEvent<HTMLElement>) => {
+            e.preventDefault();
+            openTxn(kind, id);
+          },
+        }),
     onKeyDown: (e: KeyboardEvent<HTMLElement>) => {
       if (e.key !== "Enter" || e.currentTarget !== e.target) return;
       e.preventDefault();

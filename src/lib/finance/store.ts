@@ -1,6 +1,5 @@
 import { create } from "zustand";
-import { createJSONStorage, persist } from "zustand/middleware";
-import { useShallow } from "zustand/react/shallow";
+import { persist } from "zustand/middleware";
 import {
   addBank,
   addCustomer,
@@ -45,13 +44,27 @@ import {
   voidReceipt,
   reassignCashBank,
   reassignCashBanks,
+  setCashRecon,
   purgeClosedThrough,
+  closeBooks,
+  reopenBooks,
+  finishRecon,
+  undoLastRecon,
+  postReconAdjustment,
+  mergeCustomers,
+  mergeVendors,
+  upsertRecurring,
+  removeRecurring,
+  postRecurring,
+  postDueRecurring,
 } from "./actions";
 import { parseBackupFile } from "./export";
 import { newId } from "./ids";
+import { listLocalBackups, readLocalBackup, writeLocalBackups } from "./local-backup";
 import { normalizeBooks } from "./normalize";
 import { createSeed, emptyBooks, SAMPLE_COMPANY_ID } from "./seed";
-import { booksStorage } from "./storage";
+import { booksStorage, createDebouncedPersistStorage } from "./storage";
+import { requestPersistentStorage } from "./storage-usage";
 import type {
   Bank,
   Bill,
@@ -63,6 +76,7 @@ import type {
   OpenKind,
   OpenTarget,
   Receipt,
+  RecurringItem,
   Settings,
   Vendor,
 } from "./types";
@@ -82,8 +96,22 @@ function sliceData(next: FinanceData): FinanceData {
     checks: next.checks,
     journals: next.journals,
     budgetItems: next.budgetItems,
+    recurrences: next.recurrences,
+    reconHistory: next.reconHistory ?? [],
+    closeHistory: next.closeHistory ?? [],
+    audit: next.audit ?? [],
     nextNumbers: next.nextNumbers,
   };
+}
+
+const UNDO_MAX = 40;
+
+function snapshot(data: FinanceData): FinanceData {
+  return structuredClone(sliceData(data));
+}
+
+function clearHistory(): Pick<FinanceState, "undoStack" | "redoStack"> {
+  return { undoStack: [], redoStack: [] };
 }
 
 function packSeed(): Pick<FinanceState, "companies" | "companyOrder" | "activeCompanyId"> {
@@ -124,7 +152,7 @@ function migrateBooks(persisted: unknown, version: number): Pick<FinanceState, "
   for (const id of Object.keys(companies)) {
     if (!order.includes(id)) order.push(id);
   }
-  if (version < 6 && companies[SAMPLE_COMPANY_ID]) {
+  if (version < 14 && companies[SAMPLE_COMPANY_ID]) {
     companies[SAMPLE_COMPANY_ID] = createSeed();
   }
   const active = p.activeCompanyId && companies[p.activeCompanyId] ? p.activeCompanyId : order[0];
@@ -137,21 +165,23 @@ export interface FinanceState {
   activeCompanyId: string;
   hydrated: boolean;
   hydrate: () => void;
+  ensureBooks: () => void;
   patch: (fn: DataFn) => void;
   resetDemo: () => void;
   startFresh: () => void;
   importBackup: (raw: string) => "company" | "workspace";
+  restoreLocalCopy: () => Promise<{ name: string; savedAt: string; revived: boolean }>;
   addCompany: (name: string) => string;
   switchCompany: (id: string) => void;
   removeCompany: (id: string) => void;
   addBank: (input: Parameters<typeof addBank>[1]) => void;
   updateBank: (id: string, patch: Partial<Pick<Bank, "name" | "nickname" | "accountNumber" | "archived">>) => void;
   removeBank: (id: string) => void;
-  addCustomer: (input: Omit<Customer, "id">) => void;
+  addCustomer: (input: Omit<Customer, "id"> & { id?: string }) => void;
   updateCustomer: (id: string, patch: Partial<Omit<Customer, "id">>) => void;
   removeCustomer: (id: string) => void;
   reorderCustomers: (ids: string[]) => void;
-  addVendor: (input: Omit<Vendor, "id">) => void;
+  addVendor: (input: Omit<Vendor, "id"> & { id?: string }) => void;
   updateVendor: (id: string, patch: Partial<Omit<Vendor, "id">>) => void;
   removeVendor: (id: string) => void;
   reorderVendors: (ids: string[]) => void;
@@ -194,13 +224,36 @@ export interface FinanceState {
   updateInvoiceRecord: (id: string, patch: Parameters<typeof updateInvoiceRecord>[2]) => void;
   reassignCashBank: (input: Parameters<typeof reassignCashBank>[1]) => void;
   reassignCashBanks: (lines: Parameters<typeof reassignCashBanks>[1], bankId: string) => void;
+  setCashRecon: (input: Parameters<typeof setCashRecon>[1]) => void;
   purgeClosedThrough: (throughDate: string) => number;
+  closeBooks: (throughDate: string, packetPrinted?: boolean) => void;
+  reopenBooks: (reason?: string) => void;
+  finishRecon: (input: Parameters<typeof finishRecon>[1]) => void;
+  undoLastRecon: (bankId: string) => void;
+  postReconAdjustment: (input: Parameters<typeof postReconAdjustment>[1]) => string;
+  mergeCustomers: (keepId: string, dropId: string) => void;
+  mergeVendors: (keepId: string, dropId: string) => void;
+  upsertRecurring: (item: Omit<RecurringItem, "id"> & { id?: string }) => void;
+  removeRecurring: (id: string) => void;
+  postRecurring: (id: string) => void;
+  postDueRecurring: (through: string) => Array<{ name: string; date: string }>;
   openRecord: OpenTarget | null;
   openTxn: (kind: OpenKind, id: string) => void;
   closeTxn: () => void;
+  undoStack: FinanceData[];
+  redoStack: FinanceData[];
+  undo: () => boolean;
+  redo: () => boolean;
 }
 
-const packed = packSeed();
+const packed: Pick<FinanceState, "companies" | "companyOrder" | "activeCompanyId"> = {
+  companies: {},
+  companyOrder: [],
+  activeCompanyId: SAMPLE_COMPANY_ID,
+};
+
+/** Stable empty snapshot so selectors never allocate a new books object on every read. */
+const EMPTY_BOOKS: FinanceData = emptyBooks();
 
 export const useFinanceStore = create<FinanceState>()(
   persist(
@@ -209,24 +262,55 @@ export const useFinanceStore = create<FinanceState>()(
         const s = get();
         const id = s.activeCompanyId;
         const current = s.companies[id] ?? emptyBooks();
-        set({ companies: { ...s.companies, [id]: sliceData(fn(current)) } });
+        const next = sliceData(fn(current));
+        set({
+          companies: { ...s.companies, [id]: next },
+          undoStack: [...(s.undoStack ?? []), snapshot(current)].slice(-UNDO_MAX),
+          redoStack: [],
+        });
       };
       return {
         ...packed,
         hydrated: false,
+        undoStack: [],
+        redoStack: [],
         hydrate: () => set({ hydrated: true }),
+        ensureBooks: () => {
+          const s = get();
+          if (Object.keys(s.companies).length === 0) {
+            set({ ...packSeed(), openRecord: null });
+            return;
+          }
+          if (!s.companies[s.activeCompanyId]) {
+            const id = s.companyOrder.find((x) => s.companies[x]) ?? Object.keys(s.companies)[0];
+            if (id) set({ activeCompanyId: id });
+          }
+        },
         patch: apply,
         resetDemo: () => {
           const s = get();
-          const order = s.companyOrder.includes(SAMPLE_COMPANY_ID)
-            ? s.companyOrder
-            : [...s.companyOrder, SAMPLE_COMPANY_ID];
+          const companies = { ...s.companies };
+          const order = s.companyOrder.filter((id) => {
+            if (id === SAMPLE_COMPANY_ID) return true;
+            const books = companies[id];
+            const unused =
+              !!books &&
+              books.settings.companyName === "Your Company" &&
+              books.banks.length === 0 &&
+              books.journals.length === 0;
+            if (unused) {
+              delete companies[id];
+              return false;
+            }
+            return Boolean(books);
+          });
           set({
-            companies: { ...s.companies, [SAMPLE_COMPANY_ID]: createSeed() },
-            companyOrder: order,
+            companies: { ...companies, [SAMPLE_COMPANY_ID]: createSeed() },
+            companyOrder: order.includes(SAMPLE_COMPANY_ID) ? order : [...order, SAMPLE_COMPANY_ID],
             activeCompanyId: SAMPLE_COMPANY_ID,
             hydrated: true,
             openRecord: null,
+            ...clearHistory(),
           });
         },
         startFresh: () => {
@@ -238,6 +322,7 @@ export const useFinanceStore = create<FinanceState>()(
             companies: { ...s.companies, [s.activeCompanyId]: books },
             hydrated: true,
             openRecord: null,
+            ...clearHistory(),
           });
         },
         importBackup: (raw) => {
@@ -249,6 +334,7 @@ export const useFinanceStore = create<FinanceState>()(
               activeCompanyId: file.activeCompanyId,
               hydrated: true,
               openRecord: null,
+              ...clearHistory(),
             });
             return "workspace";
           }
@@ -257,8 +343,35 @@ export const useFinanceStore = create<FinanceState>()(
             companies: { ...s.companies, [s.activeCompanyId]: file.data },
             hydrated: true,
             openRecord: null,
+            ...clearHistory(),
           });
           return "company";
+        },
+        restoreLocalCopy: async () => {
+          const s = get();
+          const mine = await readLocalBackup(s.activeCompanyId);
+          if (mine) {
+            set({
+              companies: { ...s.companies, [s.activeCompanyId]: sliceData(mine.data) },
+              hydrated: true,
+              openRecord: null,
+              ...clearHistory(),
+            });
+            return { name: mine.data.settings.companyName, savedAt: mine.savedAt, revived: false };
+          }
+          const newest = (await listLocalBackups()).sort((a, b) => b.savedAt.localeCompare(a.savedAt))[0];
+          if (!newest) throw new Error("No local copy in this browser yet.");
+          const companies = { ...s.companies, [newest.id]: sliceData(newest.data) };
+          const order = s.companyOrder.includes(newest.id) ? s.companyOrder : [...s.companyOrder, newest.id];
+          set({
+            companies,
+            companyOrder: order,
+            activeCompanyId: newest.id,
+            hydrated: true,
+            openRecord: null,
+            ...clearHistory(),
+          });
+          return { name: newest.data.settings.companyName, savedAt: newest.savedAt, revived: true };
         },
         addCompany: (name) => {
           const id = newId();
@@ -271,21 +384,30 @@ export const useFinanceStore = create<FinanceState>()(
             companyOrder: [...s.companyOrder, id],
             activeCompanyId: id,
             openRecord: null,
+            ...clearHistory(),
           });
           return id;
         },
         switchCompany: (id) => {
           const s = get();
           if (!s.companies[id] || id === s.activeCompanyId) return;
-          set({ activeCompanyId: id, openRecord: null });
+          set({ activeCompanyId: id, openRecord: null, ...clearHistory() });
         },
         removeCompany: (id) => {
           const s = get();
-          if (s.companyOrder.length < 2 || !s.companies[id]) return;
-          const { [id]: _, ...rest } = s.companies;
-          const order = s.companyOrder.filter((x) => x !== id);
-          const active = s.activeCompanyId === id ? order[0] : s.activeCompanyId;
-          set({ companies: rest, companyOrder: order, activeCompanyId: active, openRecord: null });
+          if (!s.companies[id]) return;
+          const { [id]: _dropped, ...rest } = s.companies;
+          let companies = rest;
+          let order = s.companyOrder.filter((x) => x !== id);
+          let active = s.activeCompanyId === id ? order[0] : s.activeCompanyId;
+          if (order.length === 0) {
+            const blankId = newId();
+            const books = emptyBooks();
+            companies = { [blankId]: books };
+            order = [blankId];
+            active = blankId;
+          }
+          set({ companies, companyOrder: order, activeCompanyId: active, openRecord: null, ...clearHistory() });
         },
         addBank: (input) => apply((d) => addBank(d, input)),
         updateBank: (id, patch) => apply((d) => updateBank(d, id, patch)),
@@ -330,23 +452,88 @@ export const useFinanceStore = create<FinanceState>()(
         updateInvoiceRecord: (id, patch) => apply((d) => updateInvoiceRecord(d, id, patch)),
         reassignCashBank: (input) => apply((d) => reassignCashBank(d, input)),
         reassignCashBanks: (lines, bankId) => apply((d) => reassignCashBanks(d, lines, bankId)),
+        setCashRecon: (input) => apply((d) => setCashRecon(d, input)),
         purgeClosedThrough: (throughDate) => {
           const s = get();
           const id = s.activeCompanyId;
           const current = s.companies[id] ?? emptyBooks();
           const result = purgeClosedThrough(current, throughDate);
-          set({ companies: { ...s.companies, [id]: sliceData(result.data) } });
+          set({
+            companies: { ...s.companies, [id]: sliceData(result.data) },
+            undoStack: [...(s.undoStack ?? []), snapshot(current)].slice(-UNDO_MAX),
+            redoStack: [],
+          });
           return result.removed;
+        },
+        closeBooks: (throughDate, packetPrinted) => apply((d) => closeBooks(d, throughDate, packetPrinted)),
+        reopenBooks: (reason) => apply((d) => reopenBooks(d, reason)),
+        finishRecon: (input) => apply((d) => finishRecon(d, input)),
+        undoLastRecon: (bankId) => apply((d) => undoLastRecon(d, bankId)),
+        postReconAdjustment: (input) => {
+          let journalId = "";
+          apply((d) => {
+            const result = postReconAdjustment(d, input);
+            journalId = result.journalId;
+            return result.data;
+          });
+          return journalId;
+        },
+        mergeCustomers: (keepId, dropId) => apply((d) => mergeCustomers(d, keepId, dropId)),
+        mergeVendors: (keepId, dropId) => apply((d) => mergeVendors(d, keepId, dropId)),
+        upsertRecurring: (item) => apply((d) => upsertRecurring(d, item)),
+        removeRecurring: (id) => apply((d) => removeRecurring(d, id)),
+        postRecurring: (id) => apply((d) => postRecurring(d, id)),
+        postDueRecurring: (through) => {
+          const s = get();
+          const id = s.activeCompanyId;
+          const current = s.companies[id] ?? emptyBooks();
+          const result = postDueRecurring(current, through);
+          set({
+            companies: { ...s.companies, [id]: sliceData(result.data) },
+            undoStack: [...(s.undoStack ?? []), snapshot(current)].slice(-UNDO_MAX),
+            redoStack: [],
+          });
+          return result.posted;
         },
         openRecord: null,
         openTxn: (kind, id) => set({ openRecord: { kind, id } }),
         closeTxn: () => set({ openRecord: null }),
+        undo: () => {
+          const s = get();
+          const stack = s.undoStack ?? [];
+          const prev = stack.at(-1);
+          if (!prev) return false;
+          const id = s.activeCompanyId;
+          const current = s.companies[id] ?? emptyBooks();
+          set({
+            companies: { ...s.companies, [id]: sliceData(prev) },
+            undoStack: stack.slice(0, -1),
+            redoStack: [...(s.redoStack ?? []), snapshot(current)].slice(-UNDO_MAX),
+            openRecord: null,
+          });
+          return true;
+        },
+        redo: () => {
+          const s = get();
+          const stack = s.redoStack ?? [];
+          const next = stack.at(-1);
+          if (!next) return false;
+          const id = s.activeCompanyId;
+          const current = s.companies[id] ?? emptyBooks();
+          set({
+            companies: { ...s.companies, [id]: sliceData(next) },
+            redoStack: stack.slice(0, -1),
+            undoStack: [...(s.undoStack ?? []), snapshot(current)].slice(-UNDO_MAX),
+            openRecord: null,
+          });
+          return true;
+        },
       };
     },
     {
       name: "finance-manager-v1",
-      version: 6,
-      storage: createJSONStorage(() => booksStorage),
+      version: 14,
+      storage: createDebouncedPersistStorage(booksStorage),
       skipHydration: true,
       migrate: (persisted, version) => migrateBooks(persisted, version),
       partialize: (state) => ({
@@ -359,7 +546,27 @@ export const useFinanceStore = create<FinanceState>()(
 );
 
 export function useFinanceData(): FinanceData {
-  return useFinanceStore(
-    useShallow((s) => sliceData(s.companies[s.activeCompanyId] ?? emptyBooks())),
-  );
+  return useFinanceStore((s) => s.companies[s.activeCompanyId] ?? EMPTY_BOOKS);
+}
+
+let boot: Promise<void> | null = null;
+
+/** Rehydrate IndexedDB once, then seed Pacific Harbor if this browser has no file yet. */
+export function bootBooks(): Promise<void> {
+  if (!boot) {
+    boot = Promise.resolve(useFinanceStore.persist.rehydrate())
+      .catch(() => undefined)
+      .finally(() => {
+        useFinanceStore.getState().ensureBooks();
+        useFinanceStore.getState().hydrate();
+        const s = useFinanceStore.getState();
+        if (Object.keys(s.companies).length > 0) void writeLocalBackups(s.companies);
+        void requestPersistentStorage();
+      });
+  }
+  return boot;
+}
+
+if (typeof window !== "undefined") {
+  void bootBooks();
 }

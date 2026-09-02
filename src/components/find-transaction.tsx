@@ -39,7 +39,10 @@ export function FindTransaction({ open, onClose }: { open: boolean; onClose: () 
     }
   }, [open]);
 
-  const raw = useMemo(() => cashRegisterLines(data).filter((l) => l.kind !== "opening"), [data]);
+  const raw = useMemo(
+    () => (open ? cashRegisterLines(data).filter((l) => l.kind !== "opening") : []),
+    [open, data],
+  );
   const filtered = useMemo(() => {
     const q = query.trim();
     const byFields = filterCashLines(raw, {

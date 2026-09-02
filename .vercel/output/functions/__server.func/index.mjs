@@ -13,7 +13,9 @@ var install_page_default = "<!DOCTYPE html>\n<html lang=\"en\" class=\"device-de
 //#region \0virtual:grok-og-identity
 var grokOgIdentity = { "site": {
 	"title": "Finance Manager",
-	"color": "243542"
+	"card": "custom",
+	"color": "243542",
+	"image": "/og.jpg"
 } };
 //#endregion
 //#region scripts/grok-pwa-shared.mjs

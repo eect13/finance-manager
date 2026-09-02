@@ -1,14 +1,24 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Plus } from "lucide-react";
-import { useMemo, useState } from "react";
+import { DateInput } from "@/components/date-input";
+import { PartyCombo } from "@/components/party-combo";
+import { Plus, Printer } from "lucide-react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { ConfirmDelete } from "@/components/confirm-delete";
 import { CsvButton } from "@/components/export-menu";
+import { ListToolbar } from "@/components/filter-pills";
+import { ListFilters, applySortValue, useListPeriod } from "@/components/list-filters";
+import { ListCard, listColClass } from "@/components/list-table";
+import { RowActions } from "@/components/row-actions";
 import { Field } from "@/components/field";
+import { ListPrint } from "@/components/list-print";
 import { Money } from "@/components/money";
+import { requestPrint } from "@/components/print-preview";
 import { CheckBadge } from "@/components/status-badge";
 import { SortHeader } from "@/components/sort-header";
+import { useColWidths } from "@/components/use-col-widths";
+import { useListPointer } from "@/components/use-list-pointer";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -27,24 +37,48 @@ import {
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { checkRegisterRows } from "@/lib/finance/export";
-import { formatDate, parseAmountToCents, todayIso } from "@/lib/finance/format";
-import { openProps, stopOpen } from "@/lib/finance/open-record";
+import { fitColumnWidth } from "@/lib/finance/fit-column";
+import { formatDate, formatMoney, parseAmountToCents, todayIso } from "@/lib/finance/format";
+import { newId } from "@/lib/finance/ids";
+import { openProps, openTxn, stopOpen } from "@/lib/finance/open-record";
 import { useEntrySort } from "@/lib/finance/sort";
 import { useFinanceData, useFinanceStore } from "@/lib/finance/store";
-import type { CheckRecord } from "@/lib/finance/types";
+import { EMPTY_VENDOR, type CheckRecord } from "@/lib/finance/types";
 
 export const Route = createFileRoute("/checks")({ component: ChecksPage });
+
+const CHK_COLS = {
+  number: 100,
+  payee: 200,
+  bank: 128,
+  issued: 118,
+  post: 118,
+  amount: 128,
+  status: 118,
+  actions: 180,
+} as const;
+
+const CHK_SORT = [
+  { value: "issued:desc", label: "Issued · newest" },
+  { value: "issued:asc", label: "Issued · oldest" },
+  { value: "number:asc", label: "Check number" },
+  { value: "payee:asc", label: "Payee A–Z" },
+  { value: "amount:desc", label: "Amount high–low" },
+];
 
 function ChecksPage() {
   const data = useFinanceData();
   const issueCheck = useFinanceStore((s) => s.issueCheck);
+  const addVendor = useFinanceStore((s) => s.addVendor);
   const setCheckStatus = useFinanceStore((s) => s.setCheckStatus);
   const removeCheck = useFinanceStore((s) => s.removeCheck);
   const expenseAccounts = data.accounts.filter((a) => a.type === "expense");
 
   const [open, setOpen] = useState(false);
   const [bankFilter, setBankFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "cleared" | "voided" | "bounced">("all");
+  const period = useListPeriod("all");
+  const [query, setQuery] = useState("");
   const [deleting, setDeleting] = useState<CheckRecord | null>(null);
   const [form, setForm] = useState({
     bankId: "",
@@ -59,10 +93,15 @@ function ChecksPage() {
   });
 
   const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
     return data.checks
       .filter((c) => (bankFilter === "all" ? true : c.bankId === bankFilter))
-      .filter((c) => (statusFilter === "all" ? true : c.status === statusFilter));
-  }, [data.checks, bankFilter, statusFilter]);
+      .filter((c) => (statusFilter === "all" ? true : c.status === statusFilter))
+      .filter((c) => period.inRange(c.issueDate))
+      .filter((c) =>
+        !q ? true : [c.checkNumber, c.payee, c.memo].join(" ").toLowerCase().includes(q),
+      );
+  }, [data.checks, bankFilter, statusFilter, query, period.inRange]);
 
   const getters = useMemo(
     () => ({
@@ -77,6 +116,18 @@ function ChecksPage() {
     [data.banks],
   );
   const sort = useEntrySort(filtered, "issued", getters, "desc");
+  const cols = useColWidths("finance-manager-checks-cols", CHK_COLS);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const openCheck = useCallback((id: string) => openTxn("check", id), []);
+  const pointer = useListPointer(
+    sort.sorted.map((c) => c.id),
+    openCheck,
+  );
+  function fit(id: keyof typeof CHK_COLS, label: string) {
+    const table = gridRef.current?.querySelector("table");
+    if (!table) return;
+    cols.setWidth(id, fitColumnWidth({ table, selector: `td[data-col="${id}"]`, header: label }));
+  }
 
   return (
     <AppShell
@@ -85,6 +136,10 @@ function ChecksPage() {
       actions={
         <>
           <CsvButton filename="check-register.csv" rows={checkRegisterRows(data)} />
+          <Button variant="outline" onClick={requestPrint}>
+            <Printer />
+            Print
+          </Button>
           <Button onClick={() => setOpen(true)}>
             <Plus />
             Issue check
@@ -92,115 +147,160 @@ function ChecksPage() {
         </>
       }
     >
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row">
-        <Select value={bankFilter} onValueChange={setBankFilter}>
-          <SelectTrigger className="sm:w-48">
-            <SelectValue placeholder="All banks" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All banks</SelectItem>
-            {data.banks.map((b) => (
-              <SelectItem key={b.id} value={b.id}>
-                {b.nickname}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="sm:w-48">
-            <SelectValue placeholder="All statuses" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All statuses</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="cleared">Cleared</SelectItem>
-            <SelectItem value="voided">Voided</SelectItem>
-            <SelectItem value="bounced">Bounced</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      <ListToolbar
+        query={query}
+        onQuery={setQuery}
+        placeholder="Search check or payee"
+        label="Search checks"
+      >
+        <ListFilters
+          datePreset={period.preset}
+          dateFrom={period.from}
+          dateTo={period.to}
+          onPreset={period.applyPreset}
+          onDateFrom={period.setDateFrom}
+          onDateTo={period.setDateTo}
+          defaultPreset="all"
+          selects={[
+            {
+              label: "Bank",
+              value: bankFilter,
+              options: [
+                { value: "all", label: "All banks" },
+                ...data.banks.map((b) => ({ value: b.id, label: b.nickname })),
+              ],
+              onChange: setBankFilter,
+            },
+            {
+              label: "Status",
+              value: statusFilter,
+              options: [
+                { value: "all", label: "All" },
+                { value: "pending", label: "Pending" },
+                { value: "cleared", label: "Cleared" },
+                { value: "voided", label: "Voided" },
+                { value: "bounced", label: "Bounced" },
+              ],
+              onChange: (v) => setStatusFilter(v as typeof statusFilter),
+            },
+          ]}
+          sortValue={`${sort.key}:${sort.dir}`}
+          sortOptions={CHK_SORT}
+          onSort={(v) => applySortValue(sort.set, v)}
+          onClear={() => {
+            setBankFilter("all");
+            setStatusFilter("all");
+            period.reset();
+          }}
+        />
+      </ListToolbar>
 
-      <div className="overflow-x-auto rounded-3xl bg-card elevation">
-        <table className="w-full min-w-3xl text-sm">
+      <ListCard ref={gridRef}>
+        <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
+          <colgroup>
+            {(Object.keys(CHK_COLS) as Array<keyof typeof CHK_COLS>).map((id) => (
+              <col key={id} className={listColClass(id)} style={{ width: cols.widths[id] }} />
+            ))}
+          </colgroup>
           <thead>
             <tr className="border-b border-border text-muted-foreground">
-              <SortHeader label="Check" column="number" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} />
-              <SortHeader label="Payee" column="payee" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} />
-              <SortHeader label="Bank" column="bank" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} />
-              <SortHeader label="Issued" column="issued" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} />
-              <SortHeader label="Post" column="post" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} />
-              <SortHeader
-                label="Amount"
-                column="amount"
-                sortKey={sort.key}
-                dir={sort.dir}
-                onToggle={sort.toggle}
-                align="right"
-              />
-              <SortHeader label="Status" column="status" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} />
-              <th className="px-4 py-3" />
+              <SortHeader label="Check" column="number" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.number} onWidth={(n) => cols.setWidth("number", n)} onFit={() => fit("number", "Check")} />
+              <SortHeader label="Payee" column="payee" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.payee} onWidth={(n) => cols.setWidth("payee", n)} onFit={() => fit("payee", "Payee")} />
+              <SortHeader label="Bank" column="bank" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.bank} onWidth={(n) => cols.setWidth("bank", n)} onFit={() => fit("bank", "Bank")} />
+              <SortHeader label="Issued" column="issued" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.issued} onWidth={(n) => cols.setWidth("issued", n)} onFit={() => fit("issued", "Issued")} />
+              <SortHeader label="Post" column="post" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.post} onWidth={(n) => cols.setWidth("post", n)} onFit={() => fit("post", "Post")} />
+              <SortHeader label="Amount" column="amount" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} align="right" width={cols.widths.amount} onWidth={(n) => cols.setWidth("amount", n)} onFit={() => fit("amount", "Amount")} />
+              <SortHeader label="Status" column="status" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.status} onWidth={(n) => cols.setWidth("status", n)} onFit={() => fit("status", "Status")} />
+              <th className="col-actions relative px-4 py-3">
+                <span className="sr-only">Actions</span>
+              </th>
             </tr>
           </thead>
           <tbody>
             {sort.sorted.map((check) => {
               const bank = data.banks.find((b) => b.id === check.bankId);
               return (
-                <tr key={check.id} className="border-b border-border/70 last:border-0" {...openProps("check", check.id)}>
-                  <td className="px-4 py-3 tabular-nums font-medium">#{check.checkNumber}</td>
-                  <td className="px-4 py-3">
+                <tr
+                  key={check.id}
+                  className="border-b border-border/70 last:border-0"
+                  data-active={pointer.activeId === check.id ? "true" : undefined}
+                  {...openProps("check", check.id)}
+                  onClick={() => pointer.setActiveId(check.id)}
+                >
+                  <td className="px-4 py-3 tabular-nums font-medium" data-col="number">#{check.checkNumber}</td>
+                  <td className="px-4 py-3" data-col="payee">
                     <p>{check.payee}</p>
                     {check.memo ? <p className="text-xs text-muted-foreground">{check.memo}</p> : null}
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground">{bank?.nickname}</td>
-                  <td className="px-4 py-3 whitespace-nowrap">{formatDate(check.issueDate)}</td>
-                  <td className="px-4 py-3 whitespace-nowrap">{formatDate(check.postDate)}</td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-4 py-3 text-muted-foreground" data-col="bank">{bank?.nickname}</td>
+                  <td className="px-4 py-3 whitespace-nowrap" data-col="issued">{formatDate(check.issueDate)}</td>
+                  <td className="px-4 py-3 whitespace-nowrap" data-col="post">{formatDate(check.postDate)}</td>
+                  <td className="px-4 py-3 text-right" data-col="amount">
                     <Money amount={check.amount} currency={data.settings.currency} />
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3" data-col="status">
                     <CheckBadge status={check.status} />
                   </td>
-                  <td className="px-4 py-3" onDoubleClick={stopOpen}>
-                    <div className="flex flex-wrap justify-end gap-1">
-                    {check.status === "pending" ? (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button size="sm" variant="outline">
-                            Update
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => setCheckStatus(check.id, "cleared")}>Clear</DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setCheckStatus(check.id, "voided");
-                              toast.success("Check voided and reversed.");
-                            }}
-                          >
-                            Void
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setCheckStatus(check.id, "bounced");
-                              toast.success("Marked bounced and reversed.");
-                            }}
-                          >
-                            Bounce
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    ) : null}
-                    <Button size="sm" variant="ghost" onClick={() => setDeleting(check)}>
-                      Delete
-                    </Button>
-                    </div>
+                  <td className="col-actions px-4 py-3" onDoubleClick={stopOpen}>
+                    <RowActions
+                      primary={
+                        check.status === "pending" ? (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button size="sm" variant="outline">
+                                Update
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => setCheckStatus(check.id, "cleared")}>Clear</DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setCheckStatus(check.id, "voided");
+                                  toast.success("Check voided and reversed.");
+                                }}
+                              >
+                                Void
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setCheckStatus(check.id, "bounced");
+                                  toast.success("Marked bounced and reversed.");
+                                }}
+                              >
+                                Bounce
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        ) : undefined
+                      }
+                      items={[{ label: "Delete", danger: true, onSelect: () => setDeleting(check) }]}
+                    />
                   </td>
                 </tr>
               );
             })}
           </tbody>
         </table>
-      </div>
+      </ListCard>
+      <ListPrint
+        title="Check register"
+        columns={[
+          { key: "number", label: "Check" },
+          { key: "payee", label: "Payee" },
+          { key: "bank", label: "Bank" },
+          { key: "issued", label: "Issued" },
+          { key: "amount", label: "Amount", align: "right" },
+          { key: "status", label: "Status" },
+        ]}
+        rows={sort.sorted.map((c) => ({
+          number: `#${c.checkNumber}`,
+          payee: c.payee,
+          bank: data.banks.find((b) => b.id === c.bankId)?.nickname ?? "",
+          issued: formatDate(c.issueDate),
+          amount: formatMoney(c.amount, data.settings.currency),
+          status: c.status,
+        }))}
+      />
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
@@ -237,42 +337,28 @@ function ChecksPage() {
                 <Input value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} inputMode="decimal" />
               </Field>
             </div>
-            {data.vendors.length > 0 ? (
-              <Field label="Vendor (optional)">
-                <Select
-                  value={form.vendorId || "none"}
-                  onValueChange={(v) => {
-                    if (v === "none") {
-                      setForm({ ...form, vendorId: "", payee: form.payee });
-                      return;
-                    }
-                    const vendor = data.vendors.find((x) => x.id === v);
-                    setForm({ ...form, vendorId: v, payee: vendor?.name ?? form.payee });
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Type a payee or pick a vendor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No vendor</SelectItem>
-                    {data.vendors.map((v) => (
-                      <SelectItem key={v.id} value={v.id}>
-                        {v.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
-            ) : null}
-            <Field label="Payee">
-              <Input value={form.payee} onChange={(e) => setForm({ ...form, payee: e.target.value })} />
+            <Field label="Vendor">
+              <PartyCombo
+                items={data.vendors}
+                valueId={form.vendorId}
+                valueName={data.vendors.find((v) => v.id === form.vendorId)?.name ?? ""}
+                label="Vendor"
+                placeholder="Pick a vendor"
+                invalid={!form.vendorId}
+                onChoose={(id, name) => setForm({ ...form, vendorId: id, payee: name })}
+                onCreate={(name) => {
+                  const id = newId();
+                  addVendor({ ...EMPTY_VENDOR, id, name });
+                  return { id, name };
+                }}
+              />
             </Field>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Issue date">
-                <Input type="date" value={form.issueDate} onChange={(e) => setForm({ ...form, issueDate: e.target.value })} />
+                <DateInput value={form.issueDate} onChange={(issueDate) => setForm({ ...form, issueDate })} />
               </Field>
               <Field label="Post date">
-                <Input type="date" value={form.postDate} onChange={(e) => setForm({ ...form, postDate: e.target.value })} />
+                <DateInput value={form.postDate} onChange={(postDate) => setForm({ ...form, postDate })} />
               </Field>
             </div>
             <Field label="Charge to">
@@ -297,16 +383,20 @@ function ChecksPage() {
             <Button
               onClick={() => {
                 try {
+                  if (!form.vendorId) {
+                    toast.error("Payee must be a registered vendor. Click + Add to create.");
+                    return;
+                  }
                   issueCheck({
                     bankId: form.bankId,
                     checkNumber: form.checkNumber,
-                    payee: form.payee,
+                    payee: data.vendors.find((v) => v.id === form.vendorId)?.name ?? form.payee,
                     issueDate: form.issueDate,
                     postDate: form.postDate,
                     amount: parseAmountToCents(form.amount),
                     memo: form.memo,
                     accountId: form.accountId,
-                    vendorId: form.vendorId || undefined,
+                    vendorId: form.vendorId,
                   });
                   setOpen(false);
                   toast.success("Check issued.");

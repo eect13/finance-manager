@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import type { BillStatus, CheckStatus, InvoiceStatus, ReceiptMethod, ReceiptStatus } from "@/lib/finance/types";
+import type { BillStatus, CheckStatus, InvoiceStatus, ReceiptMethod, ReceiptStatus, ReconStatus } from "@/lib/finance/types";
 
 function titleCase(value: string) {
   return value
@@ -65,4 +65,10 @@ export function ReceiptBadge({
 export function StatusLabel({ status }: { status: string }) {
   if (!status) return null;
   return <Badge>{titleCase(status)}</Badge>;
+}
+
+export function ReconBadge({ recon }: { recon: ReconStatus }) {
+  if (recon === "cleared") return <Badge variant="cleared">C</Badge>;
+  if (recon === "reconciled") return <Badge variant="reconciled">R</Badge>;
+  return <Badge variant="pending">Pending</Badge>;
 }

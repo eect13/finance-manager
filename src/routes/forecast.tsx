@@ -1,11 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { AppShell } from "@/components/app-shell";
 import { Field } from "@/components/field";
+import { FilterPills } from "@/components/filter-pills";
 import { Money } from "@/components/money";
+import { Sparkline } from "@/components/sparkline";
+import { listColClass } from "@/components/list-table";
+import { SortHeader } from "@/components/sort-header";
+import { useColWidths } from "@/components/use-col-widths";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -19,11 +23,21 @@ import {
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cashForecast, projectedCash } from "@/lib/finance/forecast";
-import { currentMonth, formatDate, formatMoney, parseAmountToCents } from "@/lib/finance/format";
+import { fitColumnWidth } from "@/lib/finance/fit-column";
+import { currentMonth, formatMoney, parseAmountToCents } from "@/lib/finance/format";
 import { openReceivables, pendingChecksTotal, totalCash } from "@/lib/finance/ledger";
+import { useEntrySort } from "@/lib/finance/sort";
 import { useFinanceData, useFinanceStore } from "@/lib/finance/store";
+import type { BudgetItem } from "@/lib/finance/types";
 
 export const Route = createFileRoute("/forecast")({ component: ForecastPage });
+
+const BUDGET_COLS = {
+  name: 200,
+  kind: 110,
+  start: 120,
+  amount: 128,
+} as const;
 
 function ForecastPage() {
   const data = useFinanceData();
@@ -31,7 +45,6 @@ function ForecastPage() {
   const upsertBudget = useFinanceStore((s) => s.upsertBudget);
   const removeBudget = useFinanceStore((s) => s.removeBudget);
 
-  const [ready, setReady] = useState(false);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
     name: "",
@@ -40,25 +53,33 @@ function ForecastPage() {
     startMonth: currentMonth(),
   });
 
-  useEffect(() => setReady(true), []);
-
   const points = useMemo(
     () => cashForecast(data, 90),
     [data.settings, data.checks, data.invoices, data.bills, data.budgetItems, data.journals],
   );
-  const chart = points.map((p) => ({
-    date: formatDate(p.date),
-    label: p.date.slice(5),
-    cash: p.cash / 100,
-    inflows: p.inflows / 100,
-    outflows: p.outflows / 100,
-  }));
   const end = points[points.length - 1];
+  const [kindFilter, setKindFilter] = useState<"all" | "inflow" | "outflow">("all");
+  const budgetVisible = useMemo(
+    () => (kindFilter === "all" ? budgetItems : budgetItems.filter((i) => i.kind === kindFilter)),
+    [budgetItems, kindFilter],
+  );
+  const budgetGetters = useMemo(
+    () => ({
+      name: (i: BudgetItem) => i.name,
+      kind: (i: BudgetItem) => i.kind,
+      start: (i: BudgetItem) => i.startMonth,
+      amount: (i: BudgetItem) => (i.kind === "outflow" ? -i.amount : i.amount),
+    }),
+    [],
+  );
+  const budgetSort = useEntrySort(budgetVisible, "name", budgetGetters, "asc");
+  const budgetCols = useColWidths("finance-manager-budget-cols", BUDGET_COLS);
+  const budgetRef = useRef<HTMLDivElement>(null);
 
   return (
     <AppShell
       title="Cash forecast"
-      description="Rolling ninety days: bank estimate, pending checks, invoice due dates, then monthly budget items."
+      description="Ninety-day cash from the bank estimate, pending checks, invoice due dates, then monthly budget items."
       actions={
         <Button onClick={() => setOpen(true)}>
           <Plus />
@@ -66,17 +87,17 @@ function ForecastPage() {
         </Button>
       }
     >
-      <section className="grid gap-3 sm:grid-cols-3">
+      <section className="stat-grid stat-grid-3">
         <Card>
-          <CardContent className="p-5">
+          <CardContent>
             <p className="eyebrow">Book cash</p>
-            <Money amount={totalCash(data)} currency={settings.currency} className="mt-2 text-2xl font-medium" />
+            <Money amount={totalCash(data)} currency={settings.currency} className="stat-value" />
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-5">
+          <CardContent>
             <p className="eyebrow">Now + open invoices</p>
-            <Money amount={projectedCash(data)} currency={settings.currency} className="mt-2 text-2xl font-medium" />
+            <Money amount={projectedCash(data)} currency={settings.currency} className="stat-value" />
             <p className="mt-1 text-xs text-muted-foreground">
               Collect {formatMoney(openReceivables(data), settings.currency)} · pending checks{" "}
               {formatMoney(pendingChecksTotal(data), settings.currency)}
@@ -84,47 +105,16 @@ function ForecastPage() {
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-5">
+          <CardContent>
             <p className="eyebrow">In 90 days</p>
-            <Money amount={end?.cash ?? 0} currency={settings.currency} className="mt-2 text-2xl font-medium" />
+            <Money amount={end?.cash ?? 0} currency={settings.currency} className="stat-value" />
           </CardContent>
         </Card>
       </section>
-
-      <Card className="mt-4">
-        <CardHeader>
-          <CardTitle>Projection</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-72">
-            {ready ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chart} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="forecastFill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--color-primary)" stopOpacity={0.18} />
-                      <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0.02} />
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="label" tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }} axisLine={false} tickLine={false} interval={13} />
-                  <YAxis
-                    tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }}
-                    axisLine={false}
-                    tickLine={false}
-                    width={64}
-                    tickFormatter={(v: number) => new Intl.NumberFormat("en-PH", { notation: "compact" }).format(v)}
-                  />
-                  <Tooltip
-                    formatter={(value: number | string) => formatMoney(Number(value) * 100, settings.currency)}
-                    contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 12, fontSize: 12 }}
-                  />
-                  <Area type="monotone" dataKey="cash" stroke="var(--color-primary)" fill="url(#forecastFill)" strokeWidth={1.75} />
-                </AreaChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-full rounded-xl bg-muted" />
-            )}
-          </div>
+      <Card className="mt-3">
+        <CardContent className="p-4 sm:p-5">
+          <p className="eyebrow">90-day path</p>
+          <Sparkline values={points.map((p) => p.cash)} className="mt-2 h-12 w-full" label="Ninety-day cash path" />
         </CardContent>
       </Card>
 
@@ -133,31 +123,80 @@ function ForecastPage() {
           <CardTitle>Monthly budget</CardTitle>
           <p className="text-sm text-muted-foreground">Applied on the first of each future month. Keep rent and payroll here so the forecast stays honest.</p>
         </CardHeader>
-        <CardContent className="flex flex-col gap-3">
+        <CardContent>
           {budgetItems.length === 0 ? (
             <p className="text-sm text-muted-foreground">No recurring items yet.</p>
           ) : (
-            budgetItems.map((item) => (
-              <div key={item.id} className="flex items-center justify-between gap-3 rounded-xl bg-muted/70 px-4 py-3">
-                <div>
-                  <p className="text-sm font-medium">{item.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {item.kind === "inflow" ? "Inflow" : "Outflow"} · from {item.startMonth}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Money
-                    amount={item.kind === "outflow" ? -item.amount : item.amount}
-                    currency={settings.currency}
-                    signed
-                    className="text-sm font-medium"
-                  />
-                  <Button size="sm" variant="ghost" onClick={() => removeBudget(item.id)}>
-                    Remove
-                  </Button>
-                </div>
+            <>
+              <div className="mb-3">
+                <FilterPills
+                  value={kindFilter}
+                  onChange={setKindFilter}
+                  label="Budget"
+                  options={[
+                    { id: "all", label: "All" },
+                    { id: "outflow", label: "Out" },
+                    { id: "inflow", label: "In" },
+                  ]}
+                />
               </div>
-            ))
+              <div ref={budgetRef} className="list-grid overflow-x-auto rounded-2xl bg-card elevation">
+                <table ref={budgetCols.tableRef} className="text-sm" style={{ width: "100%" }}>
+                  <colgroup>
+                    {(Object.keys(BUDGET_COLS) as Array<keyof typeof BUDGET_COLS>).map((id) => (
+                      <col key={id} className={listColClass(id)} style={{ width: budgetCols.widths[id] }} />
+                    ))}
+                    <col className="col-actions" style={{ width: 88 }} />
+                  </colgroup>
+                  <thead>
+                    <tr className="border-b border-border text-muted-foreground">
+                      <SortHeader label="Name" column="name" sortKey={budgetSort.key} dir={budgetSort.dir} onToggle={budgetSort.toggle} width={budgetCols.widths.name} onWidth={(n) => budgetCols.setWidth("name", n)} onFit={() => {
+                        const table = budgetRef.current?.querySelector("table");
+                        if (!table) return;
+                        budgetCols.setWidth("name", fitColumnWidth({ table, selector: `td[data-col="name"]`, header: "Name" }));
+                      }} />
+                      <SortHeader label="Kind" column="kind" sortKey={budgetSort.key} dir={budgetSort.dir} onToggle={budgetSort.toggle} width={budgetCols.widths.kind} onWidth={(n) => budgetCols.setWidth("kind", n)} onFit={() => {
+                        const table = budgetRef.current?.querySelector("table");
+                        if (!table) return;
+                        budgetCols.setWidth("kind", fitColumnWidth({ table, selector: `td[data-col="kind"]`, header: "Kind" }));
+                      }} />
+                      <SortHeader label="From" column="start" sortKey={budgetSort.key} dir={budgetSort.dir} onToggle={budgetSort.toggle} width={budgetCols.widths.start} onWidth={(n) => budgetCols.setWidth("start", n)} onFit={() => {
+                        const table = budgetRef.current?.querySelector("table");
+                        if (!table) return;
+                        budgetCols.setWidth("start", fitColumnWidth({ table, selector: `td[data-col="start"]`, header: "From" }));
+                      }} />
+                      <SortHeader label="Amount" column="amount" sortKey={budgetSort.key} dir={budgetSort.dir} onToggle={budgetSort.toggle} align="right" width={budgetCols.widths.amount} onWidth={(n) => budgetCols.setWidth("amount", n)} onFit={() => {
+                        const table = budgetRef.current?.querySelector("table");
+                        if (!table) return;
+                        budgetCols.setWidth("amount", fitColumnWidth({ table, selector: `td[data-col="amount"]`, header: "Amount" }));
+                      }} />
+                      <th className="col-actions px-4 py-3" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {budgetSort.sorted.map((item) => (
+                      <tr key={item.id} className="border-b border-border/70 last:border-0">
+                        <td className="px-4 py-2" data-col="name">{item.name}</td>
+                        <td className="px-4 py-2" data-col="kind">{item.kind === "inflow" ? "Inflow" : "Outflow"}</td>
+                        <td className="px-4 py-2" data-col="start">{item.startMonth}</td>
+                        <td className="px-4 py-2 text-right" data-col="amount">
+                          <Money
+                            amount={item.kind === "outflow" ? -item.amount : item.amount}
+                            currency={settings.currency}
+                            signed
+                          />
+                        </td>
+                        <td className="col-actions px-4 py-2 text-right">
+                          <Button size="sm" variant="ghost" onClick={() => removeBudget(item.id)}>
+                            Remove
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

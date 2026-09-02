@@ -2,13 +2,27 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Printer } from "lucide-react";
 import { InvoiceDocument } from "@/components/invoice-document";
 import { Button } from "@/components/ui/button";
-import { useFinanceData } from "@/lib/finance/store";
+import { bootBooks, useFinanceData, useFinanceStore } from "@/lib/finance/store";
+import { useEffect } from "react";
 
 export const Route = createFileRoute("/print/$invoiceId")({ component: PrintInvoice });
 
 function PrintInvoice() {
   const { invoiceId } = Route.useParams();
+  const hydrated = useFinanceStore((s) => s.hydrated);
   const { invoices, customers, settings } = useFinanceData();
+  useEffect(() => {
+    void bootBooks();
+  }, []);
+
+  if (!hydrated) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background p-8 text-sm text-muted-foreground">
+        Opening the books…
+      </main>
+    );
+  }
+
   const invoice = invoices.find((i) => i.id === invoiceId);
   const customer = invoice ? customers.find((c) => c.id === invoice.customerId) : undefined;
 

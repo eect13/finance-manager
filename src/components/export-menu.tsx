@@ -1,32 +1,26 @@
 import { Download } from "lucide-react";
 import { toast } from "sonner";
-import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
   bankRows,
-  backupPayload,
   billRows,
   cashRegisterRows,
   checkRegisterRows,
   customerRows,
-  downloadText,
   exportCsv,
   invoiceRows,
   ledgerRows,
   receiptRows,
   trialBalanceRows,
   vendorRows,
-  workspaceBackupPayload,
 } from "@/lib/finance/export";
-import { useFinanceStore } from "@/lib/finance/store";
 import type { FinanceData } from "@/lib/finance/types";
 
 function stamp() {
@@ -39,20 +33,13 @@ function saveCsv(filename: string, rows: Array<Record<string, string | number>>)
 }
 
 export function ExportMenu({ data }: { data: FinanceData }) {
-  const workspace = useFinanceStore(
-    useShallow((s) => ({
-      companies: s.companies,
-      companyOrder: s.companyOrder,
-      activeCompanyId: s.activeCompanyId,
-    })),
-  );
   const day = stamp();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline">
+        <Button variant="outline" size="icon" className="sm:h-11 sm:w-auto sm:px-4" aria-label="Export">
           <Download />
-          Export
+          <span className="hidden sm:inline">Export</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
@@ -86,24 +73,6 @@ export function ExportMenu({ data }: { data: FinanceData }) {
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => saveCsv(`banks-${day}.csv`, bankRows(data))}>
           Banks CSV
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuLabel>Backup</DropdownMenuLabel>
-        <DropdownMenuItem
-          onClick={() => {
-            downloadText(`finance-manager-${day}.json`, workspaceBackupPayload(workspace), "application/json");
-            toast.success("Downloaded backup.");
-          }}
-        >
-          All companies JSON
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => {
-            downloadText(`finance-manager-company-${day}.json`, backupPayload(data), "application/json");
-            toast.success("Downloaded this company.");
-          }}
-        >
-          This company JSON
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

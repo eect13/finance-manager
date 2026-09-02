@@ -16,6 +16,8 @@ import type {
   JournalEntry,
   Receipt,
   ReceiptMethod,
+  RecurringItem,
+  ReconStatus,
   Vendor,
 } from "./types";
 import { DEFAULT_SETTINGS } from "./types";
@@ -25,10 +27,12 @@ const IDS = {
   bpi: "bank-bpi",
   metro: "bank-metro",
   safe: "bank-safe",
+  pnb: "bank-pnb",
   cashBdo: "acct-1000",
   cashBpi: "acct-1010",
   cashMetro: "acct-1020",
   cashSafe: "acct-1030",
+  cashPnb: "acct-1040",
   ar: "acct-1200",
   ap: "acct-2000",
   equity: "acct-3000",
@@ -43,11 +47,40 @@ const IDS = {
   custCebu: "cust-cebu",
   custMetro: "cust-metro",
   custDavao: "cust-davao",
+  custBatangas: "cust-batangas",
+  custIloilo: "cust-iloilo",
+  custQuezon: "cust-quezon",
+  custSubic: "cust-subic",
+  custHarbor: "cust-harbor",
+  custApex: "cust-apex",
+  custNorth: "cust-north",
+  custPampanga: "cust-pampanga",
+  custCagayan: "cust-cagayan",
+  custBacolod: "cust-bacolod",
+  custZambo: "cust-zambo",
+  custBaguio: "cust-baguio",
+  custClark: "cust-clark",
+  custNaga: "cust-naga",
+  custGensan: "cust-gensan",
   vendAyala: "vend-ayala",
   vendMeralco: "vend-meralco",
   vendSantos: "vend-santos",
   vendDelta: "vend-delta",
   vendHarbor: "vend-harbor",
+  vendGlobe: "vend-globe",
+  vendPetron: "vend-petron",
+  vendPldt: "vend-pldt",
+  vendVisao: "vend-visao",
+  vendPayroll: "vend-payroll",
+  vendSm: "vend-sm",
+  vendLala: "vend-lala",
+  vendWater: "vend-water",
+  vendOffice: "vend-office",
+  vendJrs: "vend-jrs",
+  vendConverge: "vend-converge",
+  vendPhoenix: "vend-phoenix",
+  vend2go: "vend-2go",
+  vendRustan: "vend-rustan",
 };
 
 export const SYSTEM_ACCOUNTS: Account[] = [
@@ -55,6 +88,7 @@ export const SYSTEM_ACCOUNTS: Account[] = [
   { id: IDS.cashBpi, code: "1010", name: "Cash — BPI Savings", type: "asset", bankId: IDS.bpi, system: true },
   { id: IDS.cashMetro, code: "1020", name: "Cash — Metrobank Payroll", type: "asset", bankId: IDS.metro, system: true },
   { id: IDS.cashSafe, code: "1030", name: "Cash — Safekeeping", type: "asset", bankId: IDS.safe, system: true },
+  { id: IDS.cashPnb, code: "1040", name: "Cash — PNB (closed)", type: "asset", bankId: IDS.pnb, system: true },
   { id: IDS.ar, code: "1200", name: "Accounts Receivable", type: "asset", system: true },
   { id: IDS.ap, code: "2000", name: "Accounts Payable", type: "liability", system: true },
   { id: IDS.equity, code: "3000", name: "Opening Balance Equity", type: "equity", system: true },
@@ -101,6 +135,11 @@ function checkStatus(postDate: string): CheckStatus {
   return postDate <= AS_OF ? "cleared" : "pending";
 }
 
+/** Sample books never write R — that is Reconcile → Finish statement. Cleared through as-of, pending after. */
+function seedCashRecon(date: string): ReconStatus {
+  return date <= AS_OF ? "cleared" : "pending";
+}
+
 export function emptyBooks(): FinanceData {
   return {
     settings: { ...DEFAULT_SETTINGS },
@@ -114,6 +153,10 @@ export function emptyBooks(): FinanceData {
     checks: [],
     journals: [],
     budgetItems: [],
+    recurrences: [],
+    reconHistory: [],
+    closeHistory: [],
+    audit: [],
     nextNumbers: { invoice: 1, check: {}, receipt: 1, bill: 1 },
   };
 }
@@ -128,6 +171,7 @@ export function createSeed(): FinanceData {
       openingBalance: P(3_400_000),
       accountId: IDS.cashBdo,
       archived: false,
+      lastStatementDate: "2026-03-31",
     },
     {
       id: IDS.bpi,
@@ -137,6 +181,7 @@ export function createSeed(): FinanceData {
       openingBalance: P(486_250),
       accountId: IDS.cashBpi,
       archived: false,
+      lastStatementDate: "2026-03-31",
     },
     {
       id: IDS.metro,
@@ -146,6 +191,7 @@ export function createSeed(): FinanceData {
       openingBalance: P(380_000),
       accountId: IDS.cashMetro,
       archived: false,
+      lastStatementDate: "2026-03-31",
     },
     {
       id: IDS.safe,
@@ -155,6 +201,15 @@ export function createSeed(): FinanceData {
       openingBalance: 0,
       accountId: IDS.cashSafe,
       archived: false,
+    },
+    {
+      id: IDS.pnb,
+      name: "Philippine National Bank",
+      nickname: "Old operating",
+      accountNumber: "•••• 0091",
+      openingBalance: 0,
+      accountId: IDS.cashPnb,
+      archived: true,
     },
   ];
 
@@ -167,7 +222,7 @@ export function createSeed(): FinanceData {
       phone: "+63 49 555 0188",
       address: "Brgy. Banlic, Cabuyao, Laguna",
       terms: "Net 30",
-      notes: "Preferred delivery Tuesday mornings.",
+      notes: "Preferred delivery Tuesday mornings. TIN 301-882-114-000.",
       sortOrder: 0,
     },
     {
@@ -202,6 +257,171 @@ export function createSeed(): FinanceData {
       terms: "Due on receipt",
       notes: "",
       sortOrder: 3,
+    },
+    {
+      id: IDS.custBatangas,
+      name: "Batangas Cold Storage",
+      contact: "Liza Mendoza",
+      email: "ap@batangascold.ph",
+      phone: "+63 43 555 2201",
+      address: "Sta. Rita, Batangas",
+      terms: "Net 30",
+      notes: "Reefer pickups Fridays.",
+      sortOrder: 4,
+    },
+    {
+      id: IDS.custIloilo,
+      name: "Iloilo Fresh Mart",
+      contact: "Carlo Guanco",
+      email: "carlo@iloilofresh.ph",
+      phone: "+63 33 555 7712",
+      address: "Jaro, Iloilo City",
+      terms: "Net 15",
+      notes: "",
+      sortOrder: 5,
+    },
+    {
+      id: IDS.custQuezon,
+      name: "Quezon Bakery Group",
+      contact: "Ana Villanueva",
+      email: "billing@quezonbakery.ph",
+      phone: "+63 42 555 4408",
+      address: "Lucena City, Quezon",
+      terms: "Net 30",
+      notes: "Flour and carton runs.",
+      sortOrder: 6,
+    },
+    {
+      id: IDS.custSubic,
+      name: "Subic Industrial Parts",
+      contact: "Mark Dizon",
+      email: "purchasing@subicparts.ph",
+      phone: "+63 47 555 1180",
+      address: "Subic Bay Freeport",
+      terms: "Net 45",
+      notes: "Duty-free packing list on every invoice.",
+      sortOrder: 7,
+    },
+    {
+      id: IDS.custHarbor,
+      name: "Harbor Point Counter",
+      contact: "Cashier",
+      email: "counter@pacificharbor.ph",
+      phone: "+63 2 8800 4410",
+      address: "Unit 12, Harbor Point, Las Piñas",
+      terms: "Due on receipt",
+      notes: "Over-the-counter cash sales. Always this customer — never a walk-in without a name on file.",
+      sortOrder: 8,
+    },
+    {
+      id: IDS.custApex,
+      name: "Apex Logistics",
+      contact: "Nina Reyes",
+      email: "ap@apexlogistics.ph",
+      phone: "+63 2 8555 6701",
+      address: "Parañaque",
+      terms: "Net 30",
+      notes: "",
+      sortOrder: 9,
+    },
+    {
+      id: IDS.custNorth,
+      name: "North Harbor Wholesale",
+      contact: "Rico Lim",
+      email: "rico@northharbor.ph",
+      phone: "+63 2 8555 2290",
+      address: "Tondo, Manila",
+      terms: "Net 15",
+      notes: "",
+      sortOrder: 10,
+    },
+    {
+      id: IDS.custPampanga,
+      name: "Pampanga Grain Co.",
+      contact: "Beth Navarro",
+      email: "beth@pampangagrain.ph",
+      phone: "+63 45 555 1188",
+      address: "San Fernando, Pampanga",
+      terms: "Net 30",
+      notes: "",
+      sortOrder: 11,
+    },
+    {
+      id: IDS.custCagayan,
+      name: "Cagayan Ice Plant",
+      contact: "Jun Bautista",
+      email: "jun@cagayanice.ph",
+      phone: "+63 78 555 4412",
+      address: "Tuguegarao",
+      terms: "Net 30",
+      notes: "",
+      sortOrder: 12,
+    },
+    {
+      id: IDS.custBacolod,
+      name: "Bacolod Sugar House",
+      contact: "Lia Montelibano",
+      email: "lia@bacolodsugar.ph",
+      phone: "+63 34 555 2204",
+      address: "Bacolod City",
+      terms: "Net 15",
+      notes: "",
+      sortOrder: 13,
+    },
+    {
+      id: IDS.custZambo,
+      name: "Zamboanga Catch",
+      contact: "Omar Hassan",
+      email: "omar@zamboangacatch.ph",
+      phone: "+63 62 555 3301",
+      address: "Zamboanga City",
+      terms: "Due on receipt",
+      notes: "",
+      sortOrder: 14,
+    },
+    {
+      id: IDS.custBaguio,
+      name: "Baguio Cold Chain",
+      contact: "Faith Dominguez",
+      email: "faith@baguiocold.ph",
+      phone: "+63 74 555 1180",
+      address: "Baguio City",
+      terms: "Net 30",
+      notes: "",
+      sortOrder: 15,
+    },
+    {
+      id: IDS.custClark,
+      name: "Clark Aero Parts",
+      contact: "Kevin Sy",
+      email: "kevin@clarkaero.ph",
+      phone: "+63 45 555 8802",
+      address: "Clark Freeport",
+      terms: "Net 45",
+      notes: "",
+      sortOrder: 16,
+    },
+    {
+      id: IDS.custNaga,
+      name: "Naga Farm Supply",
+      contact: "Ella Borja",
+      email: "ella@nagafarm.ph",
+      phone: "+63 54 555 7703",
+      address: "Naga City",
+      terms: "Net 30",
+      notes: "",
+      sortOrder: 17,
+    },
+    {
+      id: IDS.custGensan,
+      name: "General Santos Tuna",
+      contact: "Paolo Diaz",
+      email: "paolo@gensantuna.ph",
+      phone: "+63 83 555 4419",
+      address: "General Santos City",
+      terms: "Net 15",
+      notes: "",
+      sortOrder: 18,
     },
   ];
 
@@ -266,20 +486,197 @@ export function createSeed(): FinanceData {
       accountNumber: "HP-18",
       sortOrder: 4,
     },
+    {
+      id: IDS.vendGlobe,
+      name: "Globe Telecom",
+      contact: "Enterprise desk",
+      email: "biz@globe.com.ph",
+      phone: "+63 2 7730 1000",
+      address: "BGC, Taguig",
+      terms: "Due on the 15th",
+      notes: "Warehouse SIM and data.",
+      accountNumber: "GLO-8821",
+      sortOrder: 5,
+    },
+    {
+      id: IDS.vendPetron,
+      name: "Petron Fleet Card",
+      contact: "Fleet billing",
+      email: "fleet@petron.com",
+      phone: "+63 2 8884 9200",
+      address: "Makati",
+      terms: "Due on receipt",
+      notes: "Delivery trucks.",
+      accountNumber: "PET-4410",
+      sortOrder: 6,
+    },
+    {
+      id: IDS.vendPldt,
+      name: "PLDT Enterprise",
+      contact: "Account manager",
+      email: "enterprise@pldt.com.ph",
+      phone: "+63 2 8888 8888",
+      address: "Makati CBD",
+      terms: "Due on the 20th",
+      notes: "Fiber at Harbor Point.",
+      accountNumber: "PLDT-1902",
+      sortOrder: 7,
+    },
+    {
+      id: IDS.vendVisao,
+      name: "Visao Security Agency",
+      contact: "Capt. Ramos",
+      email: "billing@visaosecurity.ph",
+      phone: "+63 2 8555 3310",
+      address: "Pasay",
+      terms: "Net 15",
+      notes: "Night watch at the warehouse.",
+      accountNumber: "VSA-77",
+      sortOrder: 8,
+    },
+    {
+      id: IDS.vendPayroll,
+      name: "Staff payroll",
+      contact: "HR desk",
+      email: "payroll@pacificharbor.ph",
+      phone: "+63 2 8800 4410",
+      address: "Unit 12, Harbor Point, Las Piñas",
+      terms: "Due on payday",
+      notes: "Semi-monthly and 13th-month payroll clearing.",
+      accountNumber: "PAY-2026",
+      sortOrder: 9,
+    },
+    {
+      id: IDS.vendSm,
+      name: "SM Prime Holdings",
+      contact: "Lease billing",
+      email: "ar@smprime.com",
+      phone: "+63 2 8831 1000",
+      address: "Pasay",
+      terms: "Due on the 10th",
+      notes: "Mall stall — not the warehouse.",
+      accountNumber: "SMP-2201",
+      sortOrder: 10,
+    },
+    {
+      id: IDS.vendLala,
+      name: "Lalamove Corporate",
+      contact: "Fleet desk",
+      email: "corp@lalamove.com",
+      phone: "+63 2 7795 1111",
+      address: "BGC, Taguig",
+      terms: "Net 15",
+      notes: "",
+      accountNumber: "LL-8841",
+      sortOrder: 11,
+    },
+    {
+      id: IDS.vendWater,
+      name: "Manila Water",
+      contact: "Business center",
+      email: "business@manilawater.com",
+      phone: "+63 2 1627",
+      address: "Quezon City",
+      terms: "Due on receipt",
+      notes: "",
+      accountNumber: "MW-10221",
+      sortOrder: 12,
+    },
+    {
+      id: IDS.vendOffice,
+      name: "National Book Store",
+      contact: "Corporate sales",
+      email: "corp@nationalbookstore.com",
+      phone: "+63 2 8894 1111",
+      address: "Mandaluyong",
+      terms: "Net 30",
+      notes: "Office supplies.",
+      accountNumber: "NBS-440",
+      sortOrder: 13,
+    },
+    {
+      id: IDS.vendJrs,
+      name: "JRS Express",
+      contact: "Account desk",
+      email: "accounts@jrsexpress.ph",
+      phone: "+63 2 8531 8000",
+      address: "Makati",
+      terms: "Net 15",
+      notes: "",
+      accountNumber: "JRS-19",
+      sortOrder: 14,
+    },
+    {
+      id: IDS.vendConverge,
+      name: "Converge ICT",
+      contact: "Enterprise",
+      email: "enterprise@convergeict.com",
+      phone: "+63 2 8667 1800",
+      address: "Clark, Pampanga",
+      terms: "Due on the 15th",
+      notes: "",
+      accountNumber: "CVG-331",
+      sortOrder: 15,
+    },
+    {
+      id: IDS.vendPhoenix,
+      name: "Phoenix Petroleum",
+      contact: "Fleet card",
+      email: "fleet@phoenixfuels.ph",
+      phone: "+63 82 235 8888",
+      address: "Davao City",
+      terms: "Net 15",
+      notes: "",
+      accountNumber: "PHX-77",
+      sortOrder: 16,
+    },
+    {
+      id: IDS.vend2go,
+      name: "2GO Freight",
+      contact: "Cargo billing",
+      email: "cargo@2go.com.ph",
+      phone: "+63 2 8528 7000",
+      address: "Manila South Harbor",
+      terms: "Net 30",
+      notes: "",
+      accountNumber: "2GO-104",
+      sortOrder: 17,
+    },
+    {
+      id: IDS.vendRustan,
+      name: "Rustan Supercenters",
+      contact: "Wholesale",
+      email: "wholesale@rustans.com.ph",
+      phone: "+63 2 8634 1111",
+      address: "Mandaluyong",
+      terms: "Net 30",
+      notes: "",
+      accountNumber: "RSC-12",
+      sortOrder: 18,
+    },
   ];
+
+  customers.sort((a, b) => a.name.localeCompare(b.name, "en", { sensitivity: "base" }));
+  customers.forEach((c, i) => {
+    c.sortOrder = i;
+  });
+  vendors.sort((a, b) => a.name.localeCompare(b.name, "en", { sensitivity: "base" }));
+  vendors.forEach((v, i) => {
+    v.sortOrder = i;
+  });
 
   const journals: JournalEntry[] = [];
   const invoices: Invoice[] = [];
   const bills: Bill[] = [];
   const receipts: Receipt[] = [];
   const checks: CheckRecord[] = [];
-  const checkNext: Record<string, number> = { [IDS.bdo]: 4401, [IDS.bpi]: 2201, [IDS.metro]: 1101, [IDS.safe]: 1 };
+  const checkNext: Record<string, number> = { [IDS.bdo]: 4401, [IDS.bpi]: 2201, [IDS.metro]: 1101, [IDS.safe]: 1, [IDS.pnb]: 1 };
   let invoiceN = 1;
   let receiptN = 1;
   let billN = 1;
 
-  function post(input: Parameters<typeof makeJournal>[0], id: string): JournalEntry {
-    const entry = { ...makeJournal(input), id };
+  function post(input: Parameters<typeof makeJournal>[0], id: string, recon?: ReconStatus): JournalEntry {
+    const entry = { ...makeJournal(input), id, recon: recon ?? "pending" };
     journals.push(entry);
     return entry;
   }
@@ -319,6 +716,7 @@ export function createSeed(): FinanceData {
       postDate: input.postDate,
       amount: input.amount,
       status: checkStatus(input.postDate),
+      recon: seedCashRecon(input.postDate),
       memo: input.memo,
       accountId: input.accountId,
       journalId,
@@ -394,6 +792,7 @@ export function createSeed(): FinanceData {
         memo: `Payment ${number}`,
         journalId: payJournal,
         sortOrder: receipts.length,
+        recon: seedCashRecon(pay.date),
       });
       paidCents += pay.amount;
     }
@@ -458,6 +857,7 @@ export function createSeed(): FinanceData {
       memo: input.memo,
       journalId,
       sortOrder: receipts.length,
+      recon: seedCashRecon(input.date),
     });
   }
 
@@ -513,6 +913,7 @@ export function createSeed(): FinanceData {
         amount: input.amount,
         bankId: input.paid.bankId,
         journalId: payJournal,
+        recon: seedCashRecon(input.paid.date),
       });
       status = "paid";
     }
@@ -547,6 +948,7 @@ export function createSeed(): FinanceData {
         ],
       },
       `j-${id}`,
+      seedCashRecon(date),
     );
   }
 
@@ -572,30 +974,32 @@ export function createSeed(): FinanceData {
   for (let m = 1; m <= 12; m++) {
     addCheck({
       bankId: IDS.bdo,
-      payee: "Ayala Land — Warehouse rent",
+      payee: "Ayala Land",
       vendorId: IDS.vendAyala,
       issueDate: d(m, 1),
       postDate: d(m, 5),
       amount: P(85_000),
-      memo: `${monthName(d(m, 1))} warehouse`,
+      memo: "Warehouse rent",
       accountId: IDS.rent,
     });
     addCheck({
       bankId: IDS.metro,
-      payee: `Staff payroll — 1st half ${monthName(d(m, 1))}`,
+      payee: "Staff payroll",
+      vendorId: IDS.vendPayroll,
       issueDate: d(m, 13),
       postDate: d(m, 14),
       amount: P(126_400),
-      memo: "Semi-monthly payroll",
+      memo: `1st half ${monthName(d(m, 1))}`,
       accountId: IDS.payroll,
     });
     addCheck({
       bankId: IDS.metro,
-      payee: `Staff payroll — 2nd half ${monthName(d(m, 1))}`,
+      payee: "Staff payroll",
+      vendorId: IDS.vendPayroll,
       issueDate: d(m, 27),
       postDate: d(m, 28),
       amount: P(126_400),
-      memo: "Semi-monthly payroll",
+      memo: `2nd half ${monthName(d(m, 1))}`,
       accountId: IDS.payroll,
     });
     addCheck({
@@ -612,7 +1016,8 @@ export function createSeed(): FinanceData {
 
   addCheck({
     bankId: IDS.metro,
-    payee: "Staff payroll — 13th month",
+    payee: "Staff payroll",
+    vendorId: IDS.vendPayroll,
     issueDate: d(12, 12),
     postDate: d(12, 15),
     amount: P(252_800),
@@ -783,9 +1188,78 @@ export function createSeed(): FinanceData {
     notes: "Peak harvest window.",
   });
 
+  addInvoice({
+    customerId: IDS.custBatangas,
+    date: d(3, 12),
+    dueDate: d(4, 11),
+    lines: [
+      { description: "Insulated liners (200)", quantity: 200, unitPrice: P(420) },
+      { description: "Reefer labels", quantity: 1, unitPrice: P(4_800) },
+    ],
+    notes: "",
+    paid: [{ date: d(4, 4), amount: P(88_800), bankId: IDS.bdo, method: "check", checkNumber: "4419" }],
+  });
+  addInvoice({
+    customerId: IDS.custBatangas,
+    date: d(8, 14),
+    dueDate: d(9, 13),
+    lines: [{ description: "Cold-room film (August)", quantity: 1, unitPrice: P(74_500) }],
+    notes: "Hold until Friday pickup.",
+    paid: [{ date: d(8, 20), amount: P(30_000), bankId: IDS.bdo, method: "cash" }],
+  });
+  addInvoice({
+    customerId: IDS.custIloilo,
+    date: d(5, 6),
+    dueDate: d(5, 21),
+    lines: [{ description: "Dry goods pallet", quantity: 4, unitPrice: P(18_750) }],
+    notes: "",
+    paid: [{ date: d(5, 18), amount: P(75_000), bankId: IDS.bpi, method: "check", checkNumber: "5530" }],
+  });
+  addInvoice({
+    customerId: IDS.custIloilo,
+    date: d(8, 22),
+    dueDate: d(9, 6),
+    lines: [{ description: "Dry goods pallet", quantity: 3, unitPrice: P(19_200) }],
+    notes: "Ro-ro via Batangas.",
+  });
+  addInvoice({
+    customerId: IDS.custQuezon,
+    date: d(6, 11),
+    dueDate: d(7, 11),
+    lines: [
+      { description: "Bakery cartons (1,200)", quantity: 1200, unitPrice: P(42) },
+      { description: "Tape cases", quantity: 8, unitPrice: P(680) },
+    ],
+    notes: "",
+    paid: [{ date: d(6, 28), amount: P(28_000), bankId: IDS.bdo, method: "cash" }],
+  });
+  addInvoice({
+    customerId: IDS.custSubic,
+    date: d(7, 9),
+    dueDate: d(8, 23),
+    lines: [{ description: "Industrial fittings lot 9", quantity: 1, unitPrice: P(128_400) }],
+    notes: "",
+    paid: [{ date: d(8, 8), amount: P(128_400), bankId: IDS.bdo, method: "check", checkNumber: "4488" }],
+  });
+  addInvoice({
+    customerId: IDS.custSubic,
+    date: d(8, 26),
+    dueDate: d(10, 10),
+    lines: [{ description: "Industrial fittings lot 10 (booked)", quantity: 1, unitPrice: P(96_800) }],
+    notes: "Freeport packing list attached.",
+  });
+  addInvoice({
+    customerId: IDS.custSubic,
+    date: d(4, 18),
+    dueDate: d(5, 3),
+    lines: [{ description: "Demurrage — still open", quantity: 1, unitPrice: P(48_600) }],
+    notes: "Collections: called 20 May and 12 June. 90+ days as of close.",
+  });
+
   addCashSale({
     date: d(1, 16),
-    receivedFrom: "Walk-in — Harbor stall",
+    receivedFrom: "Harbor Point Counter",
+    customerId: IDS.custHarbor,
     bankId: IDS.bdo,
     description: "Counter sale — dry goods",
     amount: P(9_800),
@@ -793,7 +1267,8 @@ export function createSeed(): FinanceData {
   });
   addCashSale({
     date: d(2, 21),
-    receivedFrom: "Walk-in — Harbor stall",
+    receivedFrom: "Harbor Point Counter",
+    customerId: IDS.custHarbor,
     bankId: IDS.bdo,
     description: "Counter sale — hardware",
     amount: P(11_200),
@@ -801,7 +1276,8 @@ export function createSeed(): FinanceData {
   });
   addCashSale({
     date: d(4, 18),
-    receivedFrom: "Walk-in — Harbor stall",
+    receivedFrom: "Harbor Point Counter",
+    customerId: IDS.custHarbor,
     bankId: IDS.safe,
     description: "Counter sale — tape and film",
     amount: P(8_450),
@@ -809,7 +1285,8 @@ export function createSeed(): FinanceData {
   });
   addCashSale({
     date: d(5, 27),
-    receivedFrom: "Walk-in — Harbor stall",
+    receivedFrom: "Harbor Point Counter",
+    customerId: IDS.custHarbor,
     bankId: IDS.bdo,
     description: "Counter sale — dry goods",
     amount: P(13_100),
@@ -817,7 +1294,8 @@ export function createSeed(): FinanceData {
   });
   addCashSale({
     date: d(7, 23),
-    receivedFrom: "Walk-in — Harbor stall",
+    receivedFrom: "Harbor Point Counter",
+    customerId: IDS.custHarbor,
     bankId: IDS.bdo,
     description: "Counter sale — mixed",
     amount: P(10_600),
@@ -825,7 +1303,8 @@ export function createSeed(): FinanceData {
   });
   addCashSale({
     date: d(8, 21),
-    receivedFrom: "Walk-in — Harbor stall",
+    receivedFrom: "Harbor Point Counter",
+    customerId: IDS.custHarbor,
     bankId: IDS.bdo,
     description: "Counter sale — dry goods",
     amount: P(12_400),
@@ -844,9 +1323,10 @@ export function createSeed(): FinanceData {
   });
   addCashSale({
     date: d(12, 19),
-    receivedFrom: "Walk-in — Christmas bazaar",
+    receivedFrom: "Harbor Point Counter",
+    customerId: IDS.custHarbor,
     bankId: IDS.bdo,
-    description: "Bazaar counter sale",
+    description: "Christmas market counter",
     amount: P(24_800),
     memo: "Harbor Point Christmas market.",
   });
@@ -977,6 +1457,161 @@ export function createSeed(): FinanceData {
     memo: "Southbound hauling — Davao November",
     reference: "DFL-1114",
   });
+  addBill({
+    vendorId: IDS.vendGlobe,
+    date: d(7, 1),
+    dueDate: d(7, 15),
+    amount: P(4_890),
+    accountId: IDS.utilities,
+    memo: "Warehouse SIMs — July",
+    reference: "GLO-071",
+    paid: { date: d(7, 12), bankId: IDS.bdo },
+  });
+  addBill({
+    vendorId: IDS.vendGlobe,
+    date: d(8, 1),
+    dueDate: d(8, 15),
+    amount: P(4_890),
+    accountId: IDS.utilities,
+    memo: "Warehouse SIMs — August",
+    reference: "GLO-081",
+    paid: { date: d(8, 14), bankId: IDS.bdo },
+  });
+  addBill({
+    vendorId: IDS.vendPetron,
+    date: d(8, 5),
+    dueDate: d(8, 20),
+    amount: P(38_600),
+    accountId: IDS.opex,
+    memo: "Fleet card — August",
+    reference: "PET-808",
+    paid: { date: d(8, 18), bankId: IDS.bdo },
+  });
+  addBill({
+    vendorId: IDS.vendPldt,
+    date: d(8, 1),
+    dueDate: d(8, 20),
+    amount: P(6_450),
+    accountId: IDS.utilities,
+    memo: "Fiber — Harbor Point August",
+    reference: "PLDT-0826",
+    paid: { date: d(8, 19), bankId: IDS.bdo },
+  });
+  addBill({
+    vendorId: IDS.vendVisao,
+    date: d(8, 1),
+    dueDate: d(8, 16),
+    amount: P(28_000),
+    accountId: IDS.opex,
+    memo: "Night watch — August",
+    reference: "VSA-0801",
+  });
+  addBill({
+    vendorId: IDS.vendVisao,
+    date: d(9, 1),
+    dueDate: d(9, 16),
+    amount: P(28_000),
+    accountId: IDS.opex,
+    memo: "Night watch — September",
+    reference: "VSA-0901",
+  });
+
+  const extraCustomers = customers.filter((c) => c.id !== IDS.custHarbor);
+  const extraVendors = vendors.filter((v) => v.id !== IDS.vendPayroll);
+  const goods = [
+    "Dry goods lot",
+    "Marine fittings",
+    "Industrial fittings",
+    "Carton run",
+    "Reefer packing",
+    "Spare parts",
+    "Film and tape",
+    "Ice and salt",
+  ];
+  const billMemos = [
+    "Office supplies",
+    "Fleet fuel",
+    "Freight outbound",
+    "Last-mile delivery",
+    "Water",
+    "Internet",
+    "Mall stall dues",
+    "Cargo handling",
+  ];
+  const billAccounts = [IDS.opex, IDS.misc, IDS.fees, IDS.utilities];
+
+  for (let i = 0; i < 240; i++) {
+    const month = 1 + (i % 8);
+    const day = 2 + (i % 26);
+    const cust = extraCustomers[i % extraCustomers.length];
+    const qty = 1 + (i % 5);
+    const unit = P(8_400 + (i % 48) * 720);
+    const total = qty * unit;
+    const paidOn = d(month, Math.min(28, day + 12));
+    addInvoice({
+      customerId: cust.id,
+      date: d(month, day),
+      dueDate: d(month, Math.min(28, day + 15)),
+      lines: [{ description: goods[i % goods.length], quantity: qty, unitPrice: unit }],
+      notes: "",
+      paid:
+        paidOn <= AS_OF && i % 5 !== 0
+          ? [{ date: paidOn, amount: total, bankId: i % 4 === 0 ? IDS.bpi : IDS.bdo, method: i % 2 === 0 ? "check" : "cash", checkNumber: i % 2 === 0 ? String(5000 + i) : "" }]
+          : undefined,
+    });
+  }
+
+  for (let i = 0; i < 250; i++) {
+    const month = 1 + (i % 8);
+    const day = 3 + (i % 24);
+    const vendor = extraVendors[i % extraVendors.length];
+    const amount = P(4_200 + (i % 36) * 380);
+    const payDate = d(month, Math.min(28, day + 10));
+    addBill({
+      vendorId: vendor.id,
+      date: d(month, day),
+      dueDate: d(month, Math.min(28, day + 14)),
+      amount,
+      accountId: billAccounts[i % billAccounts.length],
+      memo: billMemos[i % billMemos.length],
+      reference: `X-${String(i + 1).padStart(4, "0")}`,
+      paid: payDate <= AS_OF && i % 4 !== 0 ? { date: payDate, bankId: i % 3 === 0 ? IDS.bpi : IDS.bdo } : undefined,
+    });
+  }
+
+  for (let i = 0; i < 120; i++) {
+    const month = 1 + (i % 8);
+    const day = 4 + (i % 22);
+    const cust = extraCustomers[(i * 3) % extraCustomers.length];
+    addCashSale({
+      date: d(month, day),
+      receivedFrom: cust.name,
+      customerId: cust.id,
+      bankId: i % 7 === 0 ? IDS.safe : IDS.bdo,
+      description: goods[(i + 2) % goods.length],
+      amount: P(3_100 + (i % 20) * 290),
+      memo: goods[(i + 2) % goods.length],
+    });
+  }
+
+  const fleetVendors = [IDS.vendPetron, IDS.vendPhoenix, IDS.vendLala, IDS.vendGlobe, IDS.vendJrs, IDS.vendWater, IDS.vendOffice];
+  const fleetMemos = ["Fleet fuel", "Fleet fuel", "Last-mile delivery", "Mobile data", "Courier", "Water", "Office supplies"];
+  for (let i = 0; i < 70; i++) {
+    const month = 1 + (i % 8);
+    const day = 6 + (i % 20);
+    const vendor = vendors.find((v) => v.id === fleetVendors[i % fleetVendors.length]);
+    if (!vendor) continue;
+    addCheck({
+      bankId: i % 5 === 0 ? IDS.bpi : IDS.bdo,
+      payee: vendor.name,
+      vendorId: vendor.id,
+      issueDate: d(month, day),
+      postDate: d(month, Math.min(28, day + 3)),
+      amount: P(2_800 + (i % 18) * 410),
+      memo: fleetMemos[i % fleetMemos.length],
+      accountId: i % 3 === 0 ? IDS.utilities : IDS.opex,
+    });
+  }
 
   const budgetItems: BudgetItem[] = [
     { id: "bud-rent", name: "Warehouse rent", kind: "outflow", amount: P(85_000), cadence: "monthly", startMonth: "2026-01", accountId: IDS.rent },
@@ -985,11 +1620,66 @@ export function createSeed(): FinanceData {
     { id: "bud-sales", name: "Trade sales", kind: "inflow", amount: P(420_000), cadence: "monthly", startMonth: "2026-01", accountId: IDS.sales },
   ];
 
+  const recurrences: RecurringItem[] = [
+    {
+      id: "rec-rent",
+      kind: "check",
+      name: "Warehouse rent",
+      vendorId: IDS.vendAyala,
+      amount: P(85_000),
+      bankId: IDS.bdo,
+      accountId: IDS.rent,
+      memo: "Monthly warehouse",
+      dayOfMonth: 1,
+      nextDate: "2026-08-01",
+      active: true,
+    },
+    {
+      id: "rec-pay1",
+      kind: "check",
+      name: "Payroll 1st half",
+      vendorId: IDS.vendPayroll,
+      amount: P(126_400),
+      bankId: IDS.metro,
+      accountId: IDS.payroll,
+      memo: "Semi-monthly payroll",
+      dayOfMonth: 13,
+      nextDate: "2026-09-13",
+      active: true,
+    },
+    {
+      id: "rec-pay2",
+      kind: "check",
+      name: "Payroll 2nd half",
+      vendorId: IDS.vendPayroll,
+      amount: P(126_400),
+      bankId: IDS.metro,
+      accountId: IDS.payroll,
+      memo: "Semi-monthly payroll",
+      dayOfMonth: 27,
+      nextDate: "2026-09-27",
+      active: true,
+    },
+    {
+      id: "rec-power",
+      kind: "check",
+      name: "Warehouse power",
+      vendorId: IDS.vendMeralco,
+      amount: P(19_500),
+      bankId: IDS.bdo,
+      accountId: IDS.utilities,
+      memo: "Meralco",
+      dayOfMonth: 22,
+      nextDate: "2026-09-22",
+      active: true,
+    },
+  ];
+
   return {
     settings: {
       ...DEFAULT_SETTINGS,
       companyName: "Pacific Harbor Trading",
-      companyAddress: "Unit 12, Harbor Point, Las Piñas, Metro Manila",
+      companyAddress: "Unit 12, Harbor Point, Las Piñas, Metro Manila\nTIN 009-774-221-000",
       companyPhone: "+63 2 8800 4410",
       companyEmail: "treasury@pacificharbor.ph",
     },
@@ -1003,6 +1693,10 @@ export function createSeed(): FinanceData {
     checks,
     journals,
     budgetItems,
+    recurrences,
+    reconHistory: [],
+    closeHistory: [],
+    audit: [],
     nextNumbers: {
       invoice: invoiceN,
       check: checkNext,

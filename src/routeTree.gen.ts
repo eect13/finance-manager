@@ -14,11 +14,13 @@ import { Route as BanksRouteImport } from './routes/banks'
 import { Route as BillsRouteImport } from './routes/bills'
 import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as ChecksRouteImport } from './routes/checks'
+import { Route as CloseRouteImport } from './routes/close'
 import { Route as CustomersRouteImport } from './routes/customers'
 import { Route as ForecastRouteImport } from './routes/forecast'
 import { Route as InvoicesRouteImport } from './routes/invoices'
 import { Route as LedgerRouteImport } from './routes/ledger'
 import { Route as ReceiptsRouteImport } from './routes/receipts'
+import { Route as ReconcileRouteImport } from './routes/reconcile'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as SettingsRouteImport } from './routes/settings'
@@ -50,6 +52,11 @@ const ChecksRoute = ChecksRouteImport.update({
   path: '/checks',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CloseRoute = CloseRouteImport.update({
+  id: '/close',
+  path: '/close',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CustomersRoute = CustomersRouteImport.update({
   id: '/customers',
   path: '/customers',
@@ -73,6 +80,11 @@ const LedgerRoute = LedgerRouteImport.update({
 const ReceiptsRoute = ReceiptsRouteImport.update({
   id: '/receipts',
   path: '/receipts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReconcileRoute = ReconcileRouteImport.update({
+  id: '/reconcile',
+  path: '/reconcile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RegisterRoute = RegisterRouteImport.update({
@@ -107,11 +119,13 @@ export interface FileRoutesByFullPath {
   '/bills': typeof BillsRoute
   '/calendar': typeof CalendarRoute
   '/checks': typeof ChecksRoute
+  '/close': typeof CloseRoute
   '/customers': typeof CustomersRoute
   '/forecast': typeof ForecastRoute
   '/invoices': typeof InvoicesRoute
   '/ledger': typeof LedgerRoute
   '/receipts': typeof ReceiptsRoute
+  '/reconcile': typeof ReconcileRoute
   '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
@@ -124,11 +138,13 @@ export interface FileRoutesByTo {
   '/bills': typeof BillsRoute
   '/calendar': typeof CalendarRoute
   '/checks': typeof ChecksRoute
+  '/close': typeof CloseRoute
   '/customers': typeof CustomersRoute
   '/forecast': typeof ForecastRoute
   '/invoices': typeof InvoicesRoute
   '/ledger': typeof LedgerRoute
   '/receipts': typeof ReceiptsRoute
+  '/reconcile': typeof ReconcileRoute
   '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
@@ -142,11 +158,13 @@ export interface FileRoutesById {
   '/bills': typeof BillsRoute
   '/calendar': typeof CalendarRoute
   '/checks': typeof ChecksRoute
+  '/close': typeof CloseRoute
   '/customers': typeof CustomersRoute
   '/forecast': typeof ForecastRoute
   '/invoices': typeof InvoicesRoute
   '/ledger': typeof LedgerRoute
   '/receipts': typeof ReceiptsRoute
+  '/reconcile': typeof ReconcileRoute
   '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
@@ -161,11 +179,13 @@ export interface FileRouteTypes {
     | '/bills'
     | '/calendar'
     | '/checks'
+    | '/close'
     | '/customers'
     | '/forecast'
     | '/invoices'
     | '/ledger'
     | '/receipts'
+    | '/reconcile'
     | '/register'
     | '/reports'
     | '/settings'
@@ -178,11 +198,13 @@ export interface FileRouteTypes {
     | '/bills'
     | '/calendar'
     | '/checks'
+    | '/close'
     | '/customers'
     | '/forecast'
     | '/invoices'
     | '/ledger'
     | '/receipts'
+    | '/reconcile'
     | '/register'
     | '/reports'
     | '/settings'
@@ -195,11 +217,13 @@ export interface FileRouteTypes {
     | '/bills'
     | '/calendar'
     | '/checks'
+    | '/close'
     | '/customers'
     | '/forecast'
     | '/invoices'
     | '/ledger'
     | '/receipts'
+    | '/reconcile'
     | '/register'
     | '/reports'
     | '/settings'
@@ -213,11 +237,13 @@ export interface RootRouteChildren {
   BillsRoute: typeof BillsRoute
   CalendarRoute: typeof CalendarRoute
   ChecksRoute: typeof ChecksRoute
+  CloseRoute: typeof CloseRoute
   CustomersRoute: typeof CustomersRoute
   ForecastRoute: typeof ForecastRoute
   InvoicesRoute: typeof InvoicesRoute
   LedgerRoute: typeof LedgerRoute
   ReceiptsRoute: typeof ReceiptsRoute
+  ReconcileRoute: typeof ReconcileRoute
   RegisterRoute: typeof RegisterRoute
   ReportsRoute: typeof ReportsRoute
   SettingsRoute: typeof SettingsRoute
@@ -262,6 +288,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChecksRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/close': {
+      id: '/close'
+      path: '/close'
+      fullPath: '/close'
+      preLoaderRoute: typeof CloseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/customers': {
       id: '/customers'
       path: '/customers'
@@ -295,6 +328,13 @@ declare module '@tanstack/react-router' {
       path: '/receipts'
       fullPath: '/receipts'
       preLoaderRoute: typeof ReceiptsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reconcile': {
+      id: '/reconcile'
+      path: '/reconcile'
+      fullPath: '/reconcile'
+      preLoaderRoute: typeof ReconcileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/register': {
@@ -341,11 +381,13 @@ const rootRouteChildren: RootRouteChildren = {
   BillsRoute: BillsRoute,
   CalendarRoute: CalendarRoute,
   ChecksRoute: ChecksRoute,
+  CloseRoute: CloseRoute,
   CustomersRoute: CustomersRoute,
   ForecastRoute: ForecastRoute,
   InvoicesRoute: InvoicesRoute,
   LedgerRoute: LedgerRoute,
   ReceiptsRoute: ReceiptsRoute,
+  ReconcileRoute: ReconcileRoute,
   RegisterRoute: RegisterRoute,
   ReportsRoute: ReportsRoute,
   SettingsRoute: SettingsRoute,

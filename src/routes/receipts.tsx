@@ -1,16 +1,27 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Plus } from "lucide-react";
-import { useMemo, useState } from "react";
+import { CustomerPayment } from "@/components/customer-payment";
+import { DateInput } from "@/components/date-input";
+import { PartyCombo } from "@/components/party-combo";
+import { Plus, Printer } from "lucide-react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { ConfirmDelete } from "@/components/confirm-delete";
 import { DragHandle } from "@/components/drag-handle";
 import { EntryLines, type DraftLine } from "@/components/entry-lines";
 import { CsvButton } from "@/components/export-menu";
+import { ListToolbar } from "@/components/filter-pills";
+import { ListFilters, applySortValue, useListPeriod } from "@/components/list-filters";
+import { ListCard, listColClass } from "@/components/list-table";
+import { RowActions } from "@/components/row-actions";
 import { Field } from "@/components/field";
+import { ListPrint } from "@/components/list-print";
 import { Money } from "@/components/money";
+import { requestPrint } from "@/components/print-preview";
 import { ReceiptBadge } from "@/components/status-badge";
 import { SortHeader } from "@/components/sort-header";
+import { useColWidths } from "@/components/use-col-widths";
+import { useListPointer } from "@/components/use-list-pointer";
 import { useRowDrag } from "@/components/use-row-drag";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -26,19 +37,38 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { receiptRows } from "@/lib/finance/export";
-import { invoiceBalance } from "@/lib/finance/ledger";
-import { openProps, stopOpen } from "@/lib/finance/open-record";
-import { addDaysIso, formatDate, parseAmountToCents, todayIso } from "@/lib/finance/format";
+import { fitColumnWidth } from "@/lib/finance/fit-column";
+import { openProps, openTxn, stopOpen } from "@/lib/finance/open-record";
+import { formatDate, formatMoney, parseAmountToCents, todayIso } from "@/lib/finance/format";
+import { newId } from "@/lib/finance/ids";
 import { useEntrySort } from "@/lib/finance/sort";
 import { useFinanceData, useFinanceStore } from "@/lib/finance/store";
-import type { Receipt, ReceiptMethod } from "@/lib/finance/types";
+import { EMPTY_CUSTOMER, type Receipt, type ReceiptMethod } from "@/lib/finance/types";
 
 export const Route = createFileRoute("/receipts")({ component: ReceiptsPage });
+
+const RCP_COLS = {
+  number: 140,
+  date: 118,
+  from: 200,
+  kind: 120,
+  amount: 128,
+  status: 118,
+  actions: 108,
+} as const;
+
+const RCP_SORT = [
+  { value: "date:desc", label: "Date · newest" },
+  { value: "date:asc", label: "Date · oldest" },
+  { value: "number:asc", label: "Number" },
+  { value: "from:asc", label: "Payee A–Z" },
+  { value: "amount:desc", label: "Amount high–low" },
+];
 
 function ReceiptsPage() {
   const data = useFinanceData();
   const createCashSale = useFinanceStore((s) => s.createCashSale);
-  const recordInvoicePayment = useFinanceStore((s) => s.recordInvoicePayment);
+  const addCustomer = useFinanceStore((s) => s.addCustomer);
   const voidReceipt = useFinanceStore((s) => s.voidReceipt);
   const removeReceipt = useFinanceStore((s) => s.removeReceipt);
   const reorderReceipts = useFinanceStore((s) => s.reorderReceipts);
@@ -48,6 +78,9 @@ function ReceiptsPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [kind, setKind] = useState<"cash-sale" | "payment">("cash-sale");
   const [deleting, setDeleting] = useState<Receipt | null>(null);
+  const [query, setQuery] = useState("");
+  const [kindFilter, setKindFilter] = useState<"all" | "cash-sale" | "payment" | "void">("all");
+  const period = useListPeriod("all");
   const [form, setForm] = useState({
     date: today,
     bankId: "",
@@ -74,13 +107,36 @@ function ReceiptsPage() {
     }),
     [],
   );
-  const sort = useEntrySort(data.receipts, dragEnabled ? "order" : "date", getters, "desc");
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return data.receipts.filter((r) => {
+      if (kindFilter === "void" && r.status !== "void") return false;
+      if (kindFilter === "cash-sale" && (r.kind !== "cash-sale" || r.status === "void")) return false;
+      if (kindFilter === "payment" && (r.kind !== "payment" || r.status === "void")) return false;
+      if (!period.inRange(r.date)) return false;
+      if (!q) return true;
+      return [r.number, r.receivedFrom, r.memo, r.checkNumber].join(" ").toLowerCase().includes(q);
+    });
+  }, [data.receipts, query, kindFilter, period.inRange]);
+  const sort = useEntrySort(filtered, dragEnabled ? "order" : "date", getters, "desc");
   const dragOn = dragEnabled && sort.key === "order";
   const drag = useRowDrag(
     dragOn,
     sort.sorted.map((r) => r.id),
     reorderReceipts,
   );
+  const cols = useColWidths("finance-manager-receipts-cols", RCP_COLS);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const openReceipt = useCallback((id: string) => openTxn("receipt", id), []);
+  const pointer = useListPointer(
+    sort.sorted.map((r) => r.id),
+    openReceipt,
+  );
+  function fit(id: keyof typeof RCP_COLS, label: string) {
+    const table = gridRef.current?.querySelector("table");
+    if (!table) return;
+    cols.setWidth(id, fitColumnWidth({ table, selector: `td[data-col="${id}"]`, header: label }));
+  }
 
   const posted = data.receipts.filter((r) => r.status === "posted");
   const todaySales = posted.filter((r) => r.kind === "cash-sale" && r.method !== "check" && r.date === today).reduce((s, r) => s + r.amount, 0);
@@ -88,7 +144,6 @@ function ReceiptsPage() {
   const todayOnAccount = posted.filter((r) => r.kind === "payment" && r.method !== "check" && r.date === today).reduce((s, r) => s + r.amount, 0);
 
   const openInvoices = data.invoices.filter((i) => i.status === "sent" || i.status === "partial");
-  const customerInvoices = openInvoices.filter((i) => !form.customerId || i.customerId === form.customerId);
 
   function openCreate(nextKind: "cash-sale" | "payment", method: ReceiptMethod = "cash") {
     setKind(nextKind);
@@ -115,6 +170,10 @@ function ReceiptsPage() {
       actions={
         <>
           <CsvButton filename="receipts.csv" rows={receiptRows(data)} />
+          <Button variant="outline" onClick={requestPrint}>
+            <Printer />
+            Print
+          </Button>
           <Button variant="outline" onClick={() => openCreate("payment")} disabled={openInvoices.length === 0}>
             On account
           </Button>
@@ -132,33 +191,71 @@ function ReceiptsPage() {
         </>
       }
     >
-      <section className="mb-4 grid gap-3 sm:grid-cols-3">
+      <section className="stat-grid stat-grid-3 mb-4">
         <Stat label="Cash sales today" value={todaySales} currency={data.settings.currency} />
         <Stat label="Checks today" value={todayChecks} currency={data.settings.currency} />
         <Stat label="On account today" value={todayOnAccount} currency={data.settings.currency} />
       </section>
 
-      <div className="overflow-x-auto rounded-3xl bg-card elevation">
-        <table className="w-full min-w-4xl text-sm">
+      <ListToolbar
+        query={query}
+        onQuery={setQuery}
+        placeholder="Search number or payee"
+        label="Search receipts"
+      >
+        <ListFilters
+          datePreset={period.preset}
+          dateFrom={period.from}
+          dateTo={period.to}
+          onPreset={period.applyPreset}
+          onDateFrom={period.setDateFrom}
+          onDateTo={period.setDateTo}
+          defaultPreset="all"
+          selects={[
+            {
+              label: "Kind",
+              value: kindFilter,
+              options: [
+                { value: "all", label: "All" },
+                { value: "cash-sale", label: "Cash sale" },
+                { value: "payment", label: "On account" },
+                { value: "void", label: "Void" },
+              ],
+              onChange: (v) => setKindFilter(v as typeof kindFilter),
+            },
+          ]}
+          sortValue={`${sort.key}:${sort.dir}`}
+          sortOptions={RCP_SORT}
+          onSort={(v) => applySortValue(sort.set, v)}
+          onClear={() => {
+            setKindFilter("all");
+            period.reset();
+          }}
+        />
+      </ListToolbar>
+
+      <ListCard ref={gridRef} className="doc-list">
+        <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
+          <colgroup>
+            {dragEnabled ? <col style={{ width: 44 }} /> : null}
+            {(Object.keys(RCP_COLS) as Array<keyof typeof RCP_COLS>).map((id) => (
+              <col key={id} className={listColClass(id)} style={{ width: cols.widths[id] }} />
+            ))}
+          </colgroup>
           <thead>
             <tr className="border-b border-border text-muted-foreground">
               {dragEnabled ? (
                 <SortHeader label="Order" column="order" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} />
               ) : null}
-              <SortHeader label="Number" column="number" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} />
-              <SortHeader label="Date" column="date" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} />
-              <SortHeader label="Received from" column="from" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} />
-              <SortHeader label="Kind" column="kind" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} />
-              <SortHeader
-                label="Amount"
-                column="amount"
-                sortKey={sort.key}
-                dir={sort.dir}
-                onToggle={sort.toggle}
-                align="right"
-              />
-              <SortHeader label="Status" column="status" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} />
-              <th className="px-4 py-3" />
+              <SortHeader label="Number" column="number" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.number} onWidth={(n) => cols.setWidth("number", n)} onFit={() => fit("number", "Number")} />
+              <SortHeader label="Date" column="date" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.date} onWidth={(n) => cols.setWidth("date", n)} onFit={() => fit("date", "Date")} />
+              <SortHeader label="Received from" column="from" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.from} onWidth={(n) => cols.setWidth("from", n)} onFit={() => fit("from", "Received from")} />
+              <SortHeader label="Kind" column="kind" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.kind} onWidth={(n) => cols.setWidth("kind", n)} onFit={() => fit("kind", "Kind")} />
+              <SortHeader label="Amount" column="amount" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} align="right" width={cols.widths.amount} onWidth={(n) => cols.setWidth("amount", n)} onFit={() => fit("amount", "Amount")} />
+              <SortHeader label="Status" column="status" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.status} onWidth={(n) => cols.setWidth("status", n)} onFit={() => fit("status", "Status")} />
+              <th className="col-actions relative px-4 py-3">
+                <span className="sr-only">Actions</span>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -172,46 +269,52 @@ function ReceiptsPage() {
               sort.sorted.map((receipt) => {
                 const bank = data.banks.find((b) => b.id === receipt.bankId);
                 return (
-                  <tr key={receipt.id} className="border-b border-border/70 last:border-0" {...drag.bind(receipt.id)} {...openProps("receipt", receipt.id)}>
+                  <tr
+                    key={receipt.id}
+                    className="border-b border-border/70 last:border-0"
+                    data-active={pointer.activeId === receipt.id ? "true" : undefined}
+                    {...drag.bind(receipt.id)}
+                    {...openProps("receipt", receipt.id)}
+                    onClick={() => pointer.setActiveId(receipt.id)}
+                  >
                     {dragEnabled ? (
                       <td className="px-4 py-3">
                         <DragHandle enabled={dragOn} />
                       </td>
                     ) : null}
-                    <td className="px-4 py-3 font-medium">{receipt.number}</td>
-                    <td className="px-4 py-3 whitespace-nowrap">{formatDate(receipt.date)}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 font-medium" data-col="number">{receipt.number}</td>
+                    <td className="px-4 py-3 whitespace-nowrap" data-col="date">{formatDate(receipt.date)}</td>
+                    <td className="px-4 py-3" data-col="from">
                       <p>{receipt.receivedFrom}</p>
                       <p className="text-xs text-muted-foreground">
                         {bank?.nickname}
                         {receipt.checkNumber ? ` · Chk ${receipt.checkNumber}` : ""}
                       </p>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3" data-col="kind">
                       <ReceiptBadge status={receipt.status} kind={receipt.kind} method={receipt.method} />
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3 text-right" data-col="amount">
                       <Money amount={receipt.amount} currency={data.settings.currency} />
                     </td>
-                    <td className="px-4 py-3 capitalize text-muted-foreground">{receipt.status}</td>
-                    <td className="px-4 py-3" onDoubleClick={stopOpen}>
-                      <div className="flex justify-end gap-1">
-                        {receipt.status === "posted" ? (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => {
-                              voidReceipt(receipt.id);
-                              toast.success("Receipt voided.");
-                            }}
-                          >
-                            Void
-                          </Button>
-                        ) : null}
-                        <Button size="sm" variant="ghost" onClick={() => setDeleting(receipt)}>
-                          Delete
-                        </Button>
-                      </div>
+                    <td className="px-4 py-3 capitalize text-muted-foreground" data-col="status">{receipt.status}</td>
+                    <td className="col-actions px-4 py-3" onDoubleClick={stopOpen}>
+                      <RowActions
+                        items={[
+                          ...(receipt.status === "posted"
+                            ? [
+                                {
+                                  label: "Void",
+                                  onSelect: () => {
+                                    voidReceipt(receipt.id);
+                                    toast.success("Receipt voided.");
+                                  },
+                                },
+                              ]
+                            : []),
+                          { label: "Delete", danger: true, onSelect: () => setDeleting(receipt) },
+                        ]}
+                      />
                     </td>
                   </tr>
                 );
@@ -219,33 +322,48 @@ function ReceiptsPage() {
             )}
           </tbody>
         </table>
-      </div>
+      </ListCard>
+      <ListPrint
+        title="Receipts"
+        columns={[
+          { key: "number", label: "Number" },
+          { key: "date", label: "Date" },
+          { key: "from", label: "Received from" },
+          { key: "kind", label: "Kind" },
+          { key: "amount", label: "Amount", align: "right" },
+          { key: "status", label: "Status" },
+        ]}
+        rows={sort.sorted.map((r) => ({
+          number: r.number,
+          date: formatDate(r.date),
+          from: r.receivedFrom,
+          kind: r.kind === "payment" ? "On account" : "Cash sale",
+          amount: formatMoney(r.amount, data.settings.currency),
+          status: r.status,
+        }))}
+      />
       <p className="mt-3 text-xs text-muted-foreground">
         Void keeps a cancelled stub. Delete takes the ticket off the ledger so you can re-enter it.
       </p>
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        {kind === "payment" ? (
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogTitle className="sr-only">Receive payment</DialogTitle>
+            {createOpen ? (
+              <CustomerPayment initialMethod={form.method} onClose={() => setCreateOpen(false)} />
+            ) : null}
+          </DialogContent>
+        ) : (
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>
-              {kind === "cash-sale"
-                ? form.method === "check"
-                  ? "Cash sale by check"
-                  : "Cash sale"
-                : form.method === "check"
-                  ? "Check payment"
-                  : "Receive on account"}
-            </DialogTitle>
-            <DialogDescription>
-              {kind === "cash-sale"
-                ? "Walk-in or named customer. Debits the bank, credits income."
-                : "Apply money to an open invoice. Debits the bank, credits receivables."}
-            </DialogDescription>
+            <DialogTitle>{form.method === "check" ? "Cash sale by check" : "Cash sale"}</DialogTitle>
+            <DialogDescription>Named customer on file. Debits the bank, credits income.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Date">
-                <Input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
+                <DateInput value={form.date} onChange={(date) => setForm({ ...form, date })} />
               </Field>
               <Field label="Deposit to">
                 <Select value={form.bankId} onValueChange={(v) => setForm({ ...form, bankId: v })}>
@@ -265,75 +383,38 @@ function ReceiptsPage() {
               </Field>
             </div>
             <Field label="Customer">
-              <Select
-                value={form.customerId || "none"}
-                onValueChange={(v) => setForm({ ...form, customerId: v === "none" ? "" : v, invoiceId: "" })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Optional" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">{kind === "cash-sale" ? "Walk-in" : "Choose customer"}</SelectItem>
-                  {data.customers.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <PartyCombo
+                items={data.customers}
+                valueId={form.customerId}
+                valueName={data.customers.find((c) => c.id === form.customerId)?.name ?? ""}
+                label="Customer"
+                placeholder="Customer on file — type Add to save a new name"
+                onChoose={(id, name) => setForm({ ...form, customerId: id, receivedFrom: name, invoiceId: "" })}
+                onName={(name) => setForm({ ...form, receivedFrom: name, customerId: form.customerId })}
+                onCreate={(name) => {
+                  const id = newId();
+                  addCustomer({ ...EMPTY_CUSTOMER, id, name });
+                  return { id, name };
+                }}
+              />
             </Field>
-            {kind === "cash-sale" ? (
-              <>
-                <Field label="Received from">
-                  <Input
-                    value={form.receivedFrom}
-                    onChange={(e) => setForm({ ...form, receivedFrom: e.target.value })}
-                    placeholder="Walk-in name if no customer"
-                  />
-                </Field>
-                {data.settings.taxEnabled ? (
-                  <Field label="Tax %">
-                    <Input value={form.taxRate} onChange={(e) => setForm({ ...form, taxRate: e.target.value })} inputMode="decimal" />
-                  </Field>
-                ) : null}
-                <EntryLines
-                  lines={form.lines}
-                  onChange={(lines) => setForm({ ...form, lines })}
-                  dragEnabled={dragEnabled}
-                />
-              </>
-            ) : (
-              <>
-                <Field label="Invoice">
-                  <Select value={form.invoiceId} onValueChange={(v) => setForm({ ...form, invoiceId: v })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Open invoice" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {customerInvoices.map((inv) => {
-                        const customer = data.customers.find((c) => c.id === inv.customerId);
-                        const due = invoiceBalance(data, inv.id);
-                        return (
-                          <SelectItem key={inv.id} value={inv.id}>
-                            {inv.number} · {customer?.name} · due {addDaysIso(inv.dueDate, 0)} · {due / 100}
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-                </Field>
-                <Field label="Amount">
-                  <Input
-                    value={form.amount}
-                    onChange={(e) => setForm({ ...form, amount: e.target.value })}
-                    inputMode="decimal"
-                    placeholder={
-                      form.invoiceId ? String(invoiceBalance(data, form.invoiceId) / 100) : "0.00"
-                    }
-                  />
-                </Field>
-              </>
-            )}
+            <Field label="Received from">
+              <Input
+                value={form.receivedFrom}
+                onChange={(e) => setForm({ ...form, receivedFrom: e.target.value })}
+                placeholder="Leave blank to use the customer name"
+              />
+            </Field>
+            {data.settings.taxEnabled ? (
+              <Field label="Tax %">
+                <Input value={form.taxRate} onChange={(e) => setForm({ ...form, taxRate: e.target.value })} inputMode="decimal" />
+              </Field>
+            ) : null}
+            <EntryLines
+              lines={form.lines}
+              onChange={(lines) => setForm({ ...form, lines })}
+              dragEnabled={dragEnabled}
+            />
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Tender">
                 <Select
@@ -372,36 +453,22 @@ function ReceiptsPage() {
             <Button
               onClick={() => {
                 try {
-                  if (kind === "cash-sale") {
-                    createCashSale({
-                      date: form.date,
-                      bankId: form.bankId,
-                      customerId: form.customerId || undefined,
-                      receivedFrom: form.receivedFrom,
-                      notes: form.notes,
-                      taxRate: data.settings.taxEnabled ? Number(form.taxRate) || 0 : 0,
-                      method: form.method,
-                      checkNumber: form.checkNumber,
-                      lines: form.lines.map((l) => ({
-                        description: l.description,
-                        quantity: Number(l.quantity) || 0,
-                        unitPrice: parseAmountToCents(l.unitPrice),
-                      })),
-                    });
-                    toast.success(form.method === "check" ? "Check receipt posted." : "Cash sale posted.");
-                  } else {
-                    if (!form.invoiceId) throw new Error("Choose an invoice.");
-                    recordInvoicePayment({
-                      invoiceId: form.invoiceId,
-                      date: form.date,
-                      amount: parseAmountToCents(form.amount) || invoiceBalance(data, form.invoiceId),
-                      bankId: form.bankId,
-                      memo: form.notes,
-                      method: form.method,
-                      checkNumber: form.checkNumber,
-                    });
-                    toast.success(form.method === "check" ? "Check payment posted." : "Receipt posted.");
-                  }
+                  createCashSale({
+                    date: form.date,
+                    bankId: form.bankId,
+                    customerId: form.customerId,
+                    receivedFrom: form.receivedFrom,
+                    notes: form.notes,
+                    taxRate: data.settings.taxEnabled ? Number(form.taxRate) || 0 : 0,
+                    method: form.method,
+                    checkNumber: form.checkNumber,
+                    lines: form.lines.map((l) => ({
+                      description: l.description,
+                      quantity: Number(l.quantity) || 0,
+                      unitPrice: parseAmountToCents(l.unitPrice),
+                    })),
+                  });
+                  toast.success(form.method === "check" ? "Check receipt posted." : "Cash sale posted.");
                   setCreateOpen(false);
                 } catch (err) {
                   toast.error(err instanceof Error ? err.message : "Could not post receipt.");
@@ -412,6 +479,7 @@ function ReceiptsPage() {
             </Button>
           </DialogFooter>
         </DialogContent>
+        )}
       </Dialog>
 
       <ConfirmDelete
@@ -438,9 +506,9 @@ function ReceiptsPage() {
 function Stat({ label, value, currency }: { label: string; value: number; currency: string }) {
   return (
     <Card>
-      <CardContent className="p-5">
+      <CardContent>
         <p className="eyebrow">{label}</p>
-        <Money amount={value} currency={currency} className="mt-2 text-2xl font-medium" />
+        <Money amount={value} currency={currency} className="stat-value" />
       </CardContent>
     </Card>
   );

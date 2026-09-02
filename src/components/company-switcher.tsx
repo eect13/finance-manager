@@ -45,7 +45,7 @@ export function CompanySwitcher() {
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className="flex min-h-11 min-w-0 max-w-full items-center gap-1 rounded-md text-left hover:bg-accent"
+            className="flex min-h-11 min-w-0 max-w-full items-center gap-1 rounded-md pr-1 text-left hover:bg-accent"
             aria-label="Switch company"
           >
             <span className="min-w-0">
@@ -101,7 +101,7 @@ export function NewCompanyDialog({
         <DialogHeader>
           <DialogTitle>New company</DialogTitle>
           <DialogDescription>
-            Starts a blank set of books. Pacific Harbor Trading stays as the sample you can switch back to.
+            Starts a blank set of books. The Pacific Harbor sample stays unless you remove it in Settings.
           </DialogDescription>
         </DialogHeader>
         <Input

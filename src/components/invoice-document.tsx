@@ -2,6 +2,11 @@ import { formatDate, formatMoney } from "@/lib/finance/format";
 import { invoiceSubtotal, invoiceTax, invoiceTotal } from "@/lib/finance/ledger";
 import type { Customer, Invoice, Settings } from "@/lib/finance/types";
 
+function contactLine(address?: string, phone?: string, email?: string) {
+  const addr = (address ?? "").replace(/\s*\n+\s*/g, " · ").trim();
+  return [addr || null, phone || null, email || null].filter(Boolean).join(" · ");
+}
+
 export function InvoiceDocument({
   invoice,
   customer,
@@ -23,6 +28,10 @@ export function InvoiceDocument({
       checks: [],
       journals: [],
       budgetItems: [],
+      recurrences: [],
+      reconHistory: [],
+      closeHistory: [],
+      audit: [],
       nextNumbers: { invoice: 0, check: {}, receipt: 1, bill: 1 },
       vendors: [],
       bills: [],
@@ -31,97 +40,89 @@ export function InvoiceDocument({
     invoice.id,
   );
   const paid = invoice.payments.reduce((s, p) => s + p.amount, 0);
+  const meta = contactLine(settings.companyAddress, settings.companyPhone, settings.companyEmail);
+  const status = invoice.status === "sent" ? "Open" : invoice.status;
 
   return (
-    <article className="mx-auto w-full max-w-3xl bg-card p-8 text-card-foreground md:p-12">
-      <header className="flex flex-col gap-6 border-b border-border pb-8 sm:flex-row sm:justify-between">
-        <div>
-          <p className="eyebrow">Invoice</p>
-          <h1 className="font-display mt-1 text-3xl font-medium tracking-tight">{invoice.number}</h1>
-          <p className="mt-4 text-sm font-medium">{settings.companyName}</p>
-          {settings.companyAddress ? <p className="text-sm text-muted-foreground">{settings.companyAddress}</p> : null}
-          {settings.companyEmail ? <p className="text-sm text-muted-foreground">{settings.companyEmail}</p> : null}
-          {settings.companyPhone ? <p className="text-sm text-muted-foreground">{settings.companyPhone}</p> : null}
+    <article className="invoice-doc mx-auto w-full max-w-3xl bg-card px-6 py-5 text-card-foreground md:px-8 md:py-6">
+      <header className="invoice-doc-head">
+        <div className="invoice-doc-who">
+          <p className="invoice-doc-company">{settings.companyName}</p>
+          {meta ? <p className="invoice-doc-meta">{meta}</p> : null}
         </div>
-        <div className="text-sm sm:text-right">
+        <div className="invoice-doc-what">
+          <p className="invoice-doc-kicker">Invoice</p>
+          <h1>{invoice.number}</h1>
           <p>
-            <span className="text-muted-foreground">Date </span>
-            {formatDate(invoice.date)}
+            {formatDate(invoice.date)} · Due {formatDate(invoice.dueDate)} · <span className="capitalize">{status}</span>
           </p>
-          <p>
-            <span className="text-muted-foreground">Due </span>
-            {formatDate(invoice.dueDate)}
-          </p>
-          <p className="mt-2 capitalize">{invoice.status === "sent" ? "Open" : invoice.status}</p>
         </div>
       </header>
 
-      <section className="mt-8">
-        <p className="eyebrow">Bill to</p>
-        <p className="mt-1 font-medium">{customer.name}</p>
+      <section className="invoice-doc-billto">
+        <p className="invoice-doc-kicker">Bill to</p>
+        <p className="font-medium">{customer.name}</p>
         {customer.contact ? <p className="text-sm text-muted-foreground">{customer.contact}</p> : null}
         {customer.address ? <p className="text-sm text-muted-foreground">{customer.address}</p> : null}
         {customer.email ? <p className="text-sm text-muted-foreground">{customer.email}</p> : null}
       </section>
 
-      <table className="mt-8 w-full text-sm">
+      <table className="invoice-doc-table">
         <thead>
-          <tr className="border-b border-border text-left text-muted-foreground">
-            <th className="py-2 font-medium">Description</th>
-            <th className="py-2 text-right font-medium">Qty</th>
-            <th className="py-2 text-right font-medium">Unit</th>
-            <th className="py-2 text-right font-medium">Amount</th>
+          <tr>
+            <th>Description</th>
+            <th className="num">Qty</th>
+            <th className="num">Unit</th>
+            <th className="num">Amount</th>
           </tr>
         </thead>
         <tbody>
           {invoice.lines.map((line) => (
-            <tr key={line.id} className="border-b border-border/70">
-              <td className="py-3">{line.description}</td>
-              <td className="py-3 text-right tabular-nums">{line.quantity}</td>
-              <td className="py-3 text-right tabular-nums">{formatMoney(line.unitPrice, settings.currency)}</td>
-              <td className="py-3 text-right tabular-nums">
-                {formatMoney(Math.round(line.quantity * line.unitPrice), settings.currency)}
-              </td>
+            <tr key={line.id}>
+              <td>{line.description}</td>
+              <td className="num">{line.quantity}</td>
+              <td className="num">{formatMoney(line.unitPrice, settings.currency)}</td>
+              <td className="num">{formatMoney(Math.round(line.quantity * line.unitPrice), settings.currency)}</td>
             </tr>
           ))}
         </tbody>
       </table>
 
-      <div className="mt-6 ml-auto w-full max-w-xs space-y-2 text-sm">
-        <div className="flex justify-between">
+      <div className="invoice-doc-totals">
+        <div>
           <span className="text-muted-foreground">Subtotal</span>
           <span className="tabular-nums">{formatMoney(sub, settings.currency)}</span>
         </div>
         {settings.taxEnabled ? (
-          <div className="flex justify-between">
+          <div>
             <span className="text-muted-foreground">Tax {invoice.taxRate}%</span>
             <span className="tabular-nums">{formatMoney(tax, settings.currency)}</span>
           </div>
         ) : null}
-        <div className="flex justify-between border-t border-border pt-2 text-base font-medium">
+        <div className="invoice-doc-total">
           <span>Total</span>
           <span className="tabular-nums">{formatMoney(total, settings.currency)}</span>
         </div>
         {paid > 0 ? (
-          <div className="flex justify-between text-credit">
+          <div className="text-credit">
             <span>Paid</span>
             <span className="tabular-nums">{formatMoney(paid, settings.currency)}</span>
           </div>
         ) : null}
-        <div className="flex justify-between font-medium">
+        <div className="invoice-doc-total">
           <span>Balance due</span>
           <span className="tabular-nums">{formatMoney(Math.max(0, total - paid), settings.currency)}</span>
         </div>
       </div>
 
       {invoice.notes ? (
-        <p className="mt-10 text-sm text-muted-foreground">
+        <p className="invoice-doc-notes">
           <span className="font-medium text-foreground">Notes. </span>
           {invoice.notes}
         </p>
       ) : null}
 
-      {customer.terms ? <p className="mt-4 text-sm text-muted-foreground">Terms: {customer.terms}</p> : null}
+      {customer.terms ? <p className="invoice-doc-notes">Terms: {customer.terms}</p> : null}
     </article>
   );
 }

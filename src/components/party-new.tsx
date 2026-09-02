@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { DateInput } from "@/components/date-input";
 import { toast } from "sonner";
 import { CustomerPayment } from "@/components/customer-payment";
 import { EntryLines, type DraftLine } from "@/components/entry-lines";
@@ -36,7 +37,7 @@ export function CustomerCreateDialog({
     <>
       <PartyInvoiceDialog customerId={customerId} open={kind === "invoice"} onClose={onClose} />
       <Dialog open={kind === "receive"} onOpenChange={(o) => !o && onClose()}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogTitle className="sr-only">Receive payment</DialogTitle>
           {kind === "receive" ? <CustomerPayment customerId={customerId} onClose={onClose} /> : null}
         </DialogContent>
@@ -104,10 +105,10 @@ function PartyInvoiceDialog({
         <div className="grid gap-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Invoice date">
-              <Input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
+              <DateInput value={form.date} onChange={(date) => setForm({ ...form, date })} />
             </Field>
             <Field label="Due date">
-              <Input type="date" value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} />
+              <DateInput value={form.dueDate} onChange={(dueDate) => setForm({ ...form, dueDate })} />
             </Field>
           </div>
           {data.settings.taxEnabled ? (
@@ -201,7 +202,7 @@ function PartyCashSaleDialog({
         <div className="grid gap-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Date">
-              <Input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
+              <DateInput value={form.date} onChange={(date) => setForm({ ...form, date })} />
             </Field>
             <Field label="Deposit to">
               <Select value={form.bankId} onValueChange={(v) => setForm({ ...form, bankId: v })}>
@@ -334,10 +335,10 @@ function PartyBillDialog({
         <div className="grid gap-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Bill date">
-              <Input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
+              <DateInput value={form.date} onChange={(date) => setForm({ ...form, date })} />
             </Field>
             <Field label="Due date">
-              <Input type="date" value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} />
+              <DateInput value={form.dueDate} onChange={(dueDate) => setForm({ ...form, dueDate })} />
             </Field>
           </div>
           <Field label="Amount">
@@ -468,10 +469,10 @@ function PartyCheckDialog({
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Issue date">
-              <Input type="date" value={form.issueDate} onChange={(e) => setForm({ ...form, issueDate: e.target.value })} />
+              <DateInput value={form.issueDate} onChange={(issueDate) => setForm({ ...form, issueDate })} />
             </Field>
             <Field label="Post date">
-              <Input type="date" value={form.postDate} onChange={(e) => setForm({ ...form, postDate: e.target.value })} />
+              <DateInput value={form.postDate} onChange={(postDate) => setForm({ ...form, postDate })} />
             </Field>
           </div>
           <Field label="Charge to">

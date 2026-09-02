@@ -216,6 +216,28 @@ export function cashRegisterRows(data: FinanceData, bankId?: string): Array<Reco
 }
 
 export const WORKSPACE_BACKUP_KIND = "finance-manager-backup";
+export const COMPANY_FILE_KIND = "finance-manager-company";
+export const COMPANY_FILE_VERSION = 13;
+
+/** Flat tables in a company file. Parties do not nest transactions. Journal `lines` stay on the journal (two legs, one document). New ids are UUIDs. */
+export const BOOKS_TABLES = [
+  "settings",
+  "banks",
+  "accounts",
+  "customers",
+  "vendors",
+  "invoices",
+  "bills",
+  "receipts",
+  "checks",
+  "journals",
+  "budgetItems",
+  "recurrences",
+  "reconHistory",
+  "closeHistory",
+  "audit",
+  "nextNumbers",
+] as const;
 
 function companyBooksObject(data: FinanceData) {
   return {
@@ -230,12 +252,25 @@ function companyBooksObject(data: FinanceData) {
     checks: data.checks,
     journals: data.journals,
     budgetItems: data.budgetItems,
+    recurrences: data.recurrences ?? [],
+    reconHistory: data.reconHistory ?? [],
+    closeHistory: data.closeHistory ?? [],
+    audit: data.audit ?? [],
     nextNumbers: data.nextNumbers,
   };
 }
 
 export function backupPayload(data: FinanceData): string {
-  return JSON.stringify(companyBooksObject(data), null, 2);
+  return JSON.stringify(
+    {
+      kind: COMPANY_FILE_KIND,
+      version: COMPANY_FILE_VERSION,
+      savedAt: new Date().toISOString(),
+      books: companyBooksObject(data),
+    },
+    null,
+    2,
+  );
 }
 
 export function workspaceBackupPayload(state: {
@@ -250,7 +285,7 @@ export function workspaceBackupPayload(state: {
   return JSON.stringify(
     {
       kind: WORKSPACE_BACKUP_KIND,
-      version: 6,
+      version: COMPANY_FILE_VERSION,
       companies,
       companyOrder: state.companyOrder,
       activeCompanyId: state.activeCompanyId,
@@ -289,6 +324,12 @@ export function parseBackupFile(raw: string): BackupFile {
   } catch {
     throw new Error("That file is not valid JSON.");
   }
+  if (parsed && typeof parsed === "object") {
+    const o = parsed as Record<string, unknown>;
+    if (o.kind === COMPANY_FILE_KIND && o.books) {
+      return { type: "company", data: normalizeBooks(o.books) };
+    }
+  }
   if (isWorkspaceShape(parsed)) {
     const companies: Record<string, FinanceData> = {};
     for (const [id, books] of Object.entries(parsed.companies)) {
@@ -314,5 +355,43 @@ export function parseBackup(raw: string): FinanceData {
   const file = parseBackupFile(raw);
   if (file.type === "company") return file.data;
   return file.companies[file.activeCompanyId] ?? Object.values(file.companies)[0];
+}
+
+export function auditRows(data: FinanceData): Array<Record<string, string | number>> {
+  return (data.audit ?? []).map((ev) => ({
+    When: new Date(ev.at).toISOString(),
+    Who: ev.who || "this browser",
+    Action: ev.action,
+    Detail: ev.detail,
+    Old: ev.old ?? "",
+    New: ev.new ?? "",
+  }));
+}
+
+type FilePickerWindow = Window & {
+  showSaveFilePicker?: (opts: {
+    suggestedName?: string;
+    types?: Array<{ description: string; accept: Record<string, string[]> }>;
+  }) => Promise<{ createWritable: () => Promise<{ write: (data: string) => Promise<void>; close: () => Promise<void> }> }>;
+};
+
+export async function saveCompanyFile(filename: string, content: string): Promise<"saved" | "downloaded"> {
+  const w = window as FilePickerWindow;
+  try {
+    if (typeof w.showSaveFilePicker === "function") {
+      const handle = await w.showSaveFilePicker({
+        suggestedName: filename,
+        types: [{ description: "Company file", accept: { "application/json": [".json"] } }],
+      });
+      const writable = await handle.createWritable();
+      await writable.write(content);
+      await writable.close();
+      return "saved";
+    }
+  } catch (err) {
+    if (err instanceof DOMException && err.name === "AbortError") throw err;
+  }
+  downloadText(filename, content, "application/json");
+  return "downloaded";
 }
 

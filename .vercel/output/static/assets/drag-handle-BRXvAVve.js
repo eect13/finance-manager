@@ -1,1 +1,0 @@
-import{ft as e}from"./app-shell-B6IVLZJ6.js";import{_t as t}from"./store-CmVIRmNh.js";import{l as n}from"./index-B2MONWm5.js";var r=n();function i({enabled:n,className:i}){return n?(0,r.jsx)(`span`,{className:t(`inline-flex cursor-grab text-muted-foreground active:cursor-grabbing`,i),"aria-label":`Drag to reorder`,children:(0,r.jsx)(e,{className:`size-4`})}):null}export{i as t};

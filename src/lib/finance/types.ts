@@ -1,3 +1,18 @@
+export type ReconStatus = "pending" | "cleared" | "reconciled";
+
+export const RECON_STATUSES: ReconStatus[] = ["pending", "cleared", "reconciled"];
+
+export function parseRecon(raw: unknown, fallback: ReconStatus = "pending"): ReconStatus {
+  if (raw === "pending" || raw === "cleared" || raw === "reconciled") return raw;
+  return fallback;
+}
+
+export function nextRecon(current: ReconStatus): ReconStatus {
+  if (current === "pending") return "cleared";
+  if (current === "cleared") return "reconciled";
+  return "pending";
+}
+
 export type AccountType = "asset" | "liability" | "equity" | "income" | "expense";
 
 export type CheckStatus = "pending" | "cleared" | "voided" | "bounced";
@@ -24,7 +39,8 @@ export type JournalSource =
   | "manual"
   | "receipt"
   | "bill"
-  | "bill-payment";
+  | "bill-payment"
+  | "close";
 
 export type OpenKind = "invoice" | "bill" | "receipt" | "check" | "customer" | "vendor" | "bank" | "journal";
 
@@ -105,6 +121,67 @@ export interface Settings {
   dragDropEnabled: boolean;
   registerFontSize: number;
   registerColumns: RegisterCols;
+  /** ISO date. Dates on or before this cannot be posted or edited. Empty = open. */
+  closedThrough: string;
+}
+
+export interface AuditEvent {
+  id: string;
+  at: number;
+  who: string;
+  action: string;
+  detail: string;
+  old: string;
+  new: string;
+}
+
+export interface ReconLineRef {
+  kind: string;
+  sourceId: string;
+}
+
+export interface ReconNamedLine {
+  date: string;
+  party: string;
+  number: string;
+  amount: number;
+  days: number;
+  kind: string;
+  sourceId: string;
+}
+
+export interface ReconStatement {
+  id: string;
+  bankId: string;
+  statementDate: string;
+  statementEnding: number;
+  beginning: number;
+  bookBalance: number;
+  clearedIn: number;
+  clearedOut: number;
+  outstanding: number;
+  depositsInTransit: number;
+  explained: number;
+  finishedAt: number;
+  lines: ReconLineRef[];
+  outstandingLines: ReconNamedLine[];
+  ditLines: ReconNamedLine[];
+  adjustmentLines: ReconNamedLine[];
+  unclearedAging: { d30: number; d60: number; d90: number; late: number; lateCount: number };
+}
+
+export interface CloseSnapshot {
+  through: string;
+  closedAt: number;
+  journalId: string;
+  packetPrinted: boolean;
+  banks: Array<{ bankId: string; nickname: string; balance: number; lastStatementDate: string }>;
+  ar: number;
+  ap: number;
+  tbDebit: number;
+  tbCredit: number;
+  reopenedAt?: number;
+  reopenReason?: string;
 }
 
 export interface Bank {
@@ -115,6 +192,8 @@ export interface Bank {
   openingBalance: number;
   accountId: string;
   archived: boolean;
+  lastStatementDate?: string;
+  lastStatementEnding?: number;
 }
 
 export interface Account {
@@ -178,6 +257,7 @@ export interface Invoice {
   notes: string;
   payments: InvoicePayment[];
   journalId: string;
+  createdAt?: number;
 }
 
 export interface BillPayment {
@@ -186,6 +266,7 @@ export interface BillPayment {
   amount: number;
   bankId: string;
   journalId: string;
+  recon: ReconStatus;
 }
 
 export interface Bill {
@@ -202,6 +283,7 @@ export interface Bill {
   payments: BillPayment[];
   journalId: string;
   sortOrder: number;
+  createdAt?: number;
 }
 
 export interface CheckRecord {
@@ -213,11 +295,13 @@ export interface CheckRecord {
   postDate: string;
   amount: number;
   status: CheckStatus;
+  recon: ReconStatus;
   memo: string;
   accountId: string;
   journalId: string;
   vendorId?: string;
   reversalJournalId?: string;
+  createdAt?: number;
 }
 
 export interface Receipt {
@@ -240,6 +324,8 @@ export interface Receipt {
   journalId: string;
   sortOrder: number;
   reversalJournalId?: string;
+  recon: ReconStatus;
+  createdAt?: number;
 }
 
 export interface JournalLine {
@@ -256,7 +342,23 @@ export interface JournalEntry {
   description: string;
   sourceType: JournalSource;
   sourceId?: string;
+  recon: ReconStatus;
   lines: JournalLine[];
+  createdAt?: number;
+}
+
+export interface RecurringItem {
+  id: string;
+  kind: "check" | "bill";
+  name: string;
+  vendorId: string;
+  amount: number;
+  bankId: string;
+  accountId: string;
+  memo: string;
+  dayOfMonth: number;
+  nextDate: string;
+  active: boolean;
 }
 
 export interface BudgetItem {
@@ -281,6 +383,10 @@ export interface FinanceData {
   checks: CheckRecord[];
   journals: JournalEntry[];
   budgetItems: BudgetItem[];
+  recurrences: RecurringItem[];
+  reconHistory: ReconStatement[];
+  closeHistory: CloseSnapshot[];
+  audit: AuditEvent[];
   nextNumbers: {
     invoice: number;
     check: Record<string, number>;
@@ -337,4 +443,5 @@ export const DEFAULT_SETTINGS: Settings = {
   dragDropEnabled: false,
   registerFontSize: 12,
   registerColumns: DEFAULT_REGISTER_COLS,
+  closedThrough: "",
 };

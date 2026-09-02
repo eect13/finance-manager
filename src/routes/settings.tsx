@@ -1,20 +1,30 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { DateInput } from "@/components/date-input";
+import { FilterPills } from "@/components/filter-pills";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { ConfirmDelete } from "@/components/confirm-delete";
 import { NewCompanyDialog } from "@/components/company-switcher";
 import { Field } from "@/components/field";
+import { Money } from "@/components/money";
+import { listColClass } from "@/components/list-table";
+import { SortHeader } from "@/components/sort-header";
+import { useColWidths } from "@/components/use-col-widths";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { backupPayload, downloadText, workspaceBackupPayload } from "@/lib/finance/export";
+import { backupPayload, saveCompanyFile } from "@/lib/finance/export";
+import { listLocalBackups, readLocalBackup } from "@/lib/finance/local-backup";
 import { SAMPLE_COMPANY_ID } from "@/lib/finance/seed";
+import { fitColumnWidth } from "@/lib/finance/fit-column";
+import { formatDate, todayIso } from "@/lib/finance/format";
+import { useEntrySort } from "@/lib/finance/sort";
 import { useFinanceData, useFinanceStore } from "@/lib/finance/store";
 import { browserStorage, countEntries, formatBytes, jsonSize } from "@/lib/finance/storage-usage";
-import { CURRENCIES } from "@/lib/finance/types";
+import { CURRENCIES, type RecurringItem } from "@/lib/finance/types";
 import { useShallow } from "zustand/react/shallow";
 import { AppearancePicker } from "@/components/theme-toggle";
 
@@ -27,6 +37,7 @@ function SettingsPage() {
   const resetDemo = useFinanceStore((s) => s.resetDemo);
   const startFresh = useFinanceStore((s) => s.startFresh);
   const importBackup = useFinanceStore((s) => s.importBackup);
+  const restoreLocalCopy = useFinanceStore((s) => s.restoreLocalCopy);
   const fileRef = useRef<HTMLInputElement>(null);
   const { order, companies, activeId, switchCompany, addCompany, removeCompany } = useFinanceStore(
     useShallow((s) => ({
@@ -40,6 +51,8 @@ function SettingsPage() {
   );
   const [newOpen, setNewOpen] = useState(false);
   const [dropId, setDropId] = useState<string | null>(null);
+  const [restoring, setRestoring] = useState(false);
+  const [localStamp, setLocalStamp] = useState<string | null>(null);
 
   useEffect(() => {
     function scrollToHash() {
@@ -51,9 +64,21 @@ function SettingsPage() {
     return () => window.removeEventListener("hashchange", scrollToHash);
   }, []);
 
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const mine = await readLocalBackup(activeId);
+      const stamp = mine?.savedAt ?? (await listLocalBackups()).sort((a, b) => b.savedAt.localeCompare(a.savedAt))[0]?.savedAt ?? null;
+      if (alive) setLocalStamp(stamp);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [activeId, data]);
+
   return (
     <AppShell title="Settings" description="Company identity, appearance, currency, list order, backup, and storage for the books.">
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="workspace-split">
         <Card>
           <CardHeader>
             <CardTitle>Company</CardTitle>
@@ -91,7 +116,7 @@ function SettingsPage() {
           <CardHeader>
             <CardTitle>Companies</CardTitle>
             <CardDescription>
-              Each company has its own banks and books. Pacific Harbor Trading stays as the default sample.
+              Each company has its own banks and books. The Pacific Harbor sample can be removed — Reload sample brings it back.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-2">
@@ -111,11 +136,9 @@ function SettingsPage() {
                     ) : null}
                     {on ? <span className="ml-1 font-normal text-muted-foreground">· open</span> : null}
                   </button>
-                  {order.length > 1 ? (
-                    <Button size="sm" variant="ghost" onClick={() => setDropId(id)}>
-                      Remove
-                    </Button>
-                  ) : null}
+                  <Button size="sm" variant="ghost" onClick={() => setDropId(id)}>
+                    Remove
+                  </Button>
                 </div>
               );
             })}
@@ -190,45 +213,35 @@ function SettingsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Backup</CardTitle>
+            <CardTitle>Company file</CardTitle>
             <CardDescription>
-              Download all companies as one JSON file, or just this company. Restore accepts either. Books live in this
-              browser (IndexedDB), not a shared server. Watch space under Storage.
+              This JSON is this company — banks, invoices, receipts, recon, close, and audit. There is no cloud; the
+              file in this browser is the books. Save writes a copy on this device where the browser allows it;
+              otherwise it downloads. Open replaces this company, or adds it if it is a different file. After every
+              save this browser also keeps a local copy, so you can restore the company you are in without leaving the
+              app.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-2">
             <Button
-              variant="outline"
-              onClick={() => {
-                downloadText(
-                  `finance-manager-${new Date().toISOString().slice(0, 10)}.json`,
-                  workspaceBackupPayload({
-                    companies,
-                    companyOrder: order,
-                    activeCompanyId: activeId,
-                  }),
-                  "application/json",
-                );
-                toast.success("Downloaded backup.");
+              onClick={async () => {
+                try {
+                  const name = `finance-manager-company-${new Date().toISOString().slice(0, 10)}.json`;
+                  const how = await saveCompanyFile(name, backupPayload(data));
+                  toast.success(how === "saved" ? "Company file saved." : "Company file downloaded.");
+                } catch (err) {
+                  if (err instanceof DOMException && err.name === "AbortError") return;
+                  toast.error(err instanceof Error ? err.message : "Could not save.");
+                }
               }}
             >
-              Download books
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => {
-                downloadText(
-                  `finance-manager-company-${new Date().toISOString().slice(0, 10)}.json`,
-                  backupPayload(data),
-                  "application/json",
-                );
-                toast.success("Downloaded this company.");
-              }}
-            >
-              This company
+              Save company file
             </Button>
             <Button variant="outline" onClick={() => fileRef.current?.click()}>
-              Restore backup
+              Open company file
+            </Button>
+            <Button variant="outline" onClick={() => setRestoring(true)} disabled={!localStamp}>
+              Restore last local copy
             </Button>
             <input
               ref={fileRef}
@@ -241,22 +254,30 @@ function SettingsPage() {
                 if (!file) return;
                 try {
                   const kind = importBackup(await file.text());
-                  toast.success(kind === "workspace" ? "All companies restored." : "This company restored.");
+                  toast.success(kind === "workspace" ? "Opened companies from that file." : "Company file opened.");
                 } catch (err) {
                   toast.error(err instanceof Error ? err.message : "Could not restore.");
                 }
               }}
             />
+            <p className="w-full text-xs text-muted-foreground">
+              {localStamp
+                ? `Last local copy ${new Date(localStamp).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}.`
+                : "No local copy yet — post or save once and this browser will keep one."}
+            </p>
           </CardContent>
         </Card>
+
+        <CloseBooksCard />
+        <RecurringCard />
 
         <Card className="lg:col-span-2 scroll-mt-6" id="storage">
           <CardHeader>
             <CardTitle>Storage</CardTitle>
             <CardDescription>
               Books live in this browser as IndexedDB (with a localStorage fallback). That is the right place — entries
-              are unlimited. Watch usage here. When it fills, download a backup, purge closed years, or start a new
-              company.
+              are unlimited. This browser is asked to keep them when disk is tight. Watch usage here. When it fills,
+              download a backup, purge closed years, or start a new company. There is no cloud sync.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -268,8 +289,9 @@ function SettingsPage() {
           <CardHeader>
             <CardTitle>Sample data</CardTitle>
             <CardDescription>
-              Pacific Harbor Trading is the default sample. Reload it anytime. Start blank clears the company you are in,
-              not the others.
+              Pacific Harbor Trading is the default sample. Reload it anytime. Remove sample deletes that file from this
+              browser — a blank company takes its place if it was the only one. Restore last local copy brings the last
+              automatic snapshot back without Reload sample. Start blank clears the company you are in, not the others.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-2">
@@ -291,16 +313,29 @@ function SettingsPage() {
             >
               Reload sample
             </Button>
+            {order.includes(SAMPLE_COMPANY_ID) ? (
+              <Button variant="ghost" onClick={() => setDropId(SAMPLE_COMPANY_ID)}>
+                Remove sample
+              </Button>
+            ) : null}
           </CardContent>
         </Card>
       </div>
       <NewCompanyDialog open={newOpen} onClose={() => setNewOpen(false)} onCreate={addCompany} />
       <ConfirmDelete
-        open={dropId !== null}
-        title="Remove this company?"
-        body="Deletes its banks and books from this browser. Other companies stay."
+        open={Boolean(dropId)}
+        title={dropId === SAMPLE_COMPANY_ID ? "Remove the sample company?" : "Remove this company?"}
+        body={
+          dropId === SAMPLE_COMPANY_ID
+            ? order.length <= 1
+              ? "Deletes Pacific Harbor from this browser and opens a blank company. Restore last local copy or Reload sample brings it back."
+              : "Deletes Pacific Harbor from this browser. Other companies stay. Restore last local copy or Reload sample brings the demo back."
+            : order.length <= 1
+              ? "Deletes this file from the browser. A blank company takes its place. Restore last local copy can bring it back."
+              : "Deletes its banks and books from this browser. Other companies stay. Restore last local copy can bring it back."
+        }
         confirmLabel="Remove"
-        requirePhrase={order.length > 1 ? "DELETE" : undefined}
+        requirePhrase="DELETE"
         onClose={() => setDropId(null)}
         onConfirm={() => {
           if (dropId) removeCompany(dropId);
@@ -308,9 +343,203 @@ function SettingsPage() {
           toast.success("Company removed.");
         }}
       />
+      <ConfirmDelete
+        open={restoring}
+        title="Restore last local copy?"
+        body={
+          localStamp
+            ? `Replaces the open company with the snapshot from ${new Date(localStamp).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}. If you removed this file, it comes back. A downloaded JSON is not required.`
+            : "This browser has not saved a local copy yet."
+        }
+        confirmLabel="Restore"
+        requirePhrase="RESTORE"
+        onClose={() => setRestoring(false)}
+        onConfirm={async () => {
+          try {
+            const result = await restoreLocalCopy();
+            setRestoring(false);
+            toast.success(
+              result.revived
+                ? `Restored ${result.name} from the last local copy.`
+                : `Restored ${result.name} to the last local copy.`,
+            );
+          } catch (err) {
+            setRestoring(false);
+            toast.error(err instanceof Error ? err.message : "Could not restore.");
+          }
+        }}
+      />
     </AppShell>
   );
 }
+
+function CloseBooksCard() {
+  const data = useFinanceData();
+  const reopenBooks = useFinanceStore((s) => s.reopenBooks);
+  const closed = data.settings.closedThrough ?? "";
+  const [reopening, setReopening] = useState(false);
+
+  return (
+    <Card className="lg:col-span-2">
+      <CardHeader>
+        <CardTitle>Close the month</CardTitle>
+        <CardDescription>
+          Rec every bank, post recurring, print the period pack, then lock — on Close. Reopen is a dated event.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+        <Button asChild>
+          <Link to="/close">Open close checklist</Link>
+        </Button>
+        {closed ? (
+          <Button variant="outline" onClick={() => setReopening(true)}>
+            Reopen
+          </Button>
+        ) : null}
+        <p className="w-full text-sm text-muted-foreground">
+          {closed ? `Currently closed through ${formatDate(closed)}.` : "Books are open."}
+        </p>
+      </CardContent>
+      <ConfirmDelete
+        open={reopening}
+        title="Reopen the books?"
+        body="This is a dated event. Anyone can post into the previously closed period. The close journal stays."
+        confirmLabel="Reopen"
+        requirePhrase="REOPEN"
+        onClose={() => setReopening(false)}
+        onConfirm={() => {
+          try {
+            reopenBooks("Reopened from Settings.");
+            toast.success("Books are open. Reopen is on the audit.");
+          } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Could not reopen.");
+          }
+          setReopening(false);
+        }}
+      />
+    </Card>
+  );
+}
+
+function RecurringCard() {
+  const data = useFinanceData();
+  const postRecurring = useFinanceStore((s) => s.postRecurring);
+  const items = (data.recurrences ?? []).filter((r) => r.active);
+  const due = items.filter((r) => r.nextDate <= todayIso());
+  const [filter, setFilter] = useState<"all" | "due">("all");
+  const visible = filter === "due" ? due : items;
+  const getters = useMemo(
+    () => ({
+      name: (r: RecurringItem) => r.name,
+      next: (r: RecurringItem) => r.nextDate,
+      amount: (r: RecurringItem) => r.amount,
+    }),
+    [],
+  );
+  const sort = useEntrySort(visible, "next", getters, "asc");
+  const cols = useColWidths("finance-manager-recurring-cols", REC_COLS);
+  const gridRef = useRef<HTMLDivElement>(null);
+  function fit(id: keyof typeof REC_COLS, label: string) {
+    const table = gridRef.current?.querySelector("table");
+    if (!table) return;
+    cols.setWidth(id, fitColumnWidth({ table, selector: `td[data-col="${id}"]`, header: label }));
+  }
+
+  return (
+    <Card className="lg:col-span-2">
+      <CardHeader>
+        <CardTitle>Recurring</CardTitle>
+        <CardDescription>
+          Rent and payroll as documents you post, not seed rows. Post due writes a check (or bill) and rolls the next
+          date forward one month.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {items.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No recurring items in this company.</p>
+        ) : (
+          <>
+            <div className="mb-3">
+              <FilterPills
+                value={filter}
+                onChange={setFilter}
+                label="Recurring"
+                options={[
+                  { id: "all", label: "All" },
+                  { id: "due", label: "Due" },
+                ]}
+              />
+            </div>
+            <div ref={gridRef} className="list-grid overflow-x-auto rounded-2xl bg-card elevation">
+              <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
+                <colgroup>
+                  {(Object.keys(REC_COLS) as Array<keyof typeof REC_COLS>).map((id) => (
+                    <col key={id} className={listColClass(id)} style={{ width: cols.widths[id] }} />
+                  ))}
+                  <col className="col-actions" style={{ width: 88 }} />
+                </colgroup>
+                <thead>
+                  <tr className="border-b border-border text-muted-foreground">
+                    <SortHeader label="Name" column="name" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.name} onWidth={(n) => cols.setWidth("name", n)} onFit={() => fit("name", "Name")} />
+                    <SortHeader label="Next" column="next" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.next} onWidth={(n) => cols.setWidth("next", n)} onFit={() => fit("next", "Next")} />
+                    <SortHeader label="Amount" column="amount" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} align="right" width={cols.widths.amount} onWidth={(n) => cols.setWidth("amount", n)} onFit={() => fit("amount", "Amount")} />
+                    <th className="col-actions px-4 py-3" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {sort.sorted.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-6 text-center text-muted-foreground">
+                        Nothing due.
+                      </td>
+                    </tr>
+                  ) : (
+                    sort.sorted.map((item) => (
+                      <tr key={item.id} className="border-b border-border/70 last:border-0">
+                        <td className="px-4 py-2" data-col="name">{item.name}</td>
+                        <td className="px-4 py-2" data-col="next">{formatDate(item.nextDate)}</td>
+                        <td className="px-4 py-2 text-right" data-col="amount">
+                          <Money amount={item.amount} currency={data.settings.currency} />
+                        </td>
+                        <td className="col-actions px-4 py-2 text-right">
+                          <Button
+                            size="sm"
+                            variant={item.nextDate <= todayIso() ? "default" : "ghost"}
+                            onClick={() => {
+                              try {
+                                postRecurring(item.id);
+                                toast.success(`Posted ${item.name}.`);
+                              } catch (err) {
+                                toast.error(err instanceof Error ? err.message : "Could not post.");
+                              }
+                            }}
+                          >
+                            Post
+                          </Button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+        {due.length > 0 ? (
+          <p className="mt-3 text-sm text-muted-foreground">
+            {due.length} due on or before today.
+          </p>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
+const REC_COLS = {
+  name: 200,
+  next: 128,
+  amount: 128,
+} as const;
 
 function StoragePanel() {
   const data = useFinanceData();
@@ -319,7 +548,12 @@ function StoragePanel() {
   const counts = countEntries(data);
   const companyBytes = useMemo(() => jsonSize(data), [data]);
   const allBytes = useMemo(() => jsonSize(companies), [companies]);
-  const [browser, setBrowser] = useState({ usage: 0, quota: 0 });
+  const [browser, setBrowser] = useState<{
+    usage: number;
+    quota: number;
+    persisted: boolean | null;
+    engine: "indexeddb" | "localstorage" | "unknown";
+  }>({ usage: 0, quota: 0, persisted: null, engine: "unknown" });
   const [through, setThrough] = useState(`${new Date().getFullYear() - 1}-12-31`);
   const [purging, setPurging] = useState(false);
 
@@ -349,8 +583,21 @@ function StoragePanel() {
         <div className="h-2 overflow-hidden rounded-full bg-muted" aria-hidden="true">
           <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
         </div>
+        <p className="mt-2 text-xs text-muted-foreground">
+          {browser.engine === "indexeddb"
+            ? "IndexedDB"
+            : browser.engine === "localstorage"
+              ? "localStorage fallback"
+              : "This browser"}
+          {browser.persisted === true
+            ? " · persistent (this browser will keep the books)"
+            : browser.persisted === false
+              ? " · not persistent — download a company file if you clear site data"
+              : ""}
+          . Local backup is a second snapshot of each company in this browser, not the cloud.
+        </p>
       </div>
-      <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <dl className="stat-grid stat-grid-4">
         <Stat label="This company" value={formatBytes(companyBytes)} hint={`${counts.total} entries`} />
         <Stat label="All companies" value={formatBytes(allBytes)} hint={`${Object.keys(companies).length} files`} />
         <Stat
@@ -367,7 +614,7 @@ function StoragePanel() {
       <div className="flex flex-col gap-3 rounded-2xl bg-muted/70 p-4 sm:flex-row sm:flex-wrap sm:items-end">
         <div className="min-w-0 flex-1">
           <Field label="Purge closed activity through">
-            <Input type="date" value={through} onChange={(e) => setThrough(e.target.value)} />
+            <DateInput value={through} onChange={setThrough} />
           </Field>
         </div>
         <Button variant="outline" onClick={() => setPurging(true)} disabled={!through}>
@@ -403,8 +650,8 @@ function StoragePanel() {
 function Stat({ label, value, hint }: { label: string; value: string; hint: string }) {
   return (
     <div className="rounded-2xl bg-muted/70 px-4 py-3">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="mt-1 text-lg font-medium tabular-nums">{value}</p>
+      <p className="eyebrow">{label}</p>
+      <p className="stat-value">{value}</p>
       <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
     </div>
   );

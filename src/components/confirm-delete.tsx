@@ -25,7 +25,7 @@ export function ConfirmDelete({
   confirmLabel?: string;
   requirePhrase?: string;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
 }) {
   const [phrase, setPhrase] = useState("");
   useEffect(() => {

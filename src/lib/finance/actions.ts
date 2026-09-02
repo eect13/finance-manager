@@ -24,9 +24,34 @@ import type {
   ReceiptMethod,
   Settings,
   Vendor,
+  RecurringItem,
 } from "./types";
 import type { CashLineKind } from "./register";
 import { methodNeedsReference, methodLabel } from "./methods";
+import {
+  bookBalanceOn,
+  explainedDifference,
+  isReconAdj,
+  lastReconBefore,
+  lineOnFinishedRecon,
+  namedFromCash,
+  namedReconLines,
+  reconBeginning,
+  reconDifference,
+  reconExplain,
+  unclearedAge,
+  unclearedLines,
+} from "./reconcile";
+import { closeChecklist, closeTotals } from "./close";
+import type { AuditEvent, CloseSnapshot, ReconStatement } from "./types";
+import { addMonths, format, parseISO } from "date-fns";
+
+function assertOpenPeriod(data: FinanceData, date: string) {
+  const closed = (data.settings?.closedThrough ?? "").trim();
+  if (closed && date && date <= closed) {
+    throw new Error(`Books are closed through ${closed}.`);
+  }
+}
 
 export function addBank(data: FinanceData, input): FinanceData {
   const bankId = newId();
@@ -115,7 +140,7 @@ export function addCustomer(data: FinanceData, input): FinanceData {
     ...data,
     customers: [...data.customers, {
       ...input,
-      id: newId(),
+      id: input.id ?? newId(),
       sortOrder: input.sortOrder ?? sortOrder
     }]
   };
@@ -149,7 +174,7 @@ export function addVendor(data: FinanceData, input): FinanceData {
     ...data,
     vendors: [...data.vendors, {
       ...input,
-      id: newId(),
+      id: input.id ?? newId(),
       sortOrder: input.sortOrder ?? sortOrder
     }]
   };
@@ -196,8 +221,12 @@ function applyOrder(items, ids) {
   return ordered;
 }
 export function issueCheck(data: FinanceData, input): FinanceData {
+  assertOpenPeriod(data, input.issueDate);
   const bank = data.banks.find((b) => b.id === input.bankId);
   if (!bank) throw new Error("Bank not found");
+  if (!input.vendorId || !data.vendors.some((v) => v.id === input.vendorId)) {
+    throw new Error("Payee must be a registered vendor. Click + Add to create.");
+  }
   if (input.amount <= 0) throw new Error("Amount must be greater than zero");
   const next = data.nextNumbers.check[bank.id] ?? 1;
   const checkNumber = input.checkNumber?.trim() || String(next).padStart(4, "0");
@@ -229,10 +258,12 @@ export function issueCheck(data: FinanceData, input): FinanceData {
       postDate: input.postDate || input.issueDate,
       amount: input.amount,
       status: "pending",
+      recon: "pending",
       memo: input.memo,
       accountId: input.accountId,
       journalId: journal.id,
-      vendorId: input.vendorId
+      vendorId: input.vendorId,
+      createdAt: journal.createdAt
     }],
     journals: [...data.journals, journal],
     nextNumbers: {
@@ -247,6 +278,7 @@ export function issueCheck(data: FinanceData, input): FinanceData {
 export function setCheckStatus(data: FinanceData, id, status, date = todayIso()): FinanceData {
   const check = data.checks.find((c) => c.id === id);
   if (!check) throw new Error("Check not found");
+  if (check.recon === "reconciled") throw new Error("This line is reconciled. Unlock it first.");
   if (check.status === status) return data;
   if (status === "voided" || status === "bounced") {
     if (check.status === "voided" || check.status === "bounced") return data;
@@ -280,6 +312,7 @@ export function removeCheck(data: FinanceData, id): FinanceData {
   }, [check.journalId, check.reversalJournalId]);
 }
 export function createInvoice(data: FinanceData, input): FinanceData {
+  assertOpenPeriod(data, input.date);
   const customer = data.customers.find((c) => c.id === input.customerId);
   if (!customer) throw new Error("Customer not found");
   const lines = input.lines.filter((l) => l.description.trim() && l.quantity > 0).map((l) => ({
@@ -331,7 +364,8 @@ export function createInvoice(data: FinanceData, input): FinanceData {
       status,
       notes: input.notes,
       payments: [],
-      journalId
+      journalId,
+      createdAt: Date.now()
     }],
     journals,
     nextNumbers: {
@@ -344,6 +378,7 @@ function nextReceiptNumber(data: FinanceData, date) {
   return `RCPT-${date.slice(0, 4)}-${String(data.nextNumbers.receipt).padStart(3, "0")}`;
 }
 export function recordInvoicePayment(data: FinanceData, input): FinanceData {
+  assertOpenPeriod(data, input.date);
   const invoice = data.invoices.find((i) => i.id === input.invoiceId);
   if (!invoice) throw new Error("Invoice not found");
   if (invoice.status === "void" || invoice.status === "paid") throw new Error("Invoice cannot accept payment");
@@ -408,7 +443,9 @@ export function recordInvoicePayment(data: FinanceData, input): FinanceData {
     status: "posted",
     memo: input.memo || `Payment ${invoice.number}`,
     journalId: journal.id,
-    sortOrder: data.receipts.length
+    sortOrder: data.receipts.length,
+    recon: "pending",
+    createdAt: journal.createdAt
   };
   return {
     ...data,
@@ -426,6 +463,7 @@ export function recordInvoicePayment(data: FinanceData, input): FinanceData {
   };
 }
 export function applyCustomerPayments(data: FinanceData, input): FinanceData {
+  assertOpenPeriod(data, input.date);
   let next = data;
   for (const app of input.applications) {
     if (app.amount <= 0) continue;
@@ -483,8 +521,11 @@ export function removeInvoice(data: FinanceData, id): FinanceData {
   }, ids);
 }
 export function createCashSale(data: FinanceData, input): FinanceData {
+  assertOpenPeriod(data, input.date);
   const bank = data.banks.find((b) => b.id === input.bankId);
   if (!bank) throw new Error("Bank not found");
+  const customer = data.customers.find((c) => c.id === input.customerId);
+  if (!customer) throw new Error("Pick a customer on file, or add them first.");
   const method = input.method ?? "cash";
   const checkNumber = input.checkNumber?.trim() ?? "";
   if (methodNeedsReference(method) && !checkNumber) throw new Error(`Enter the ${methodLabel(method).toLowerCase()} reference.`);
@@ -501,7 +542,7 @@ export function createCashSale(data: FinanceData, input): FinanceData {
   if (!sales) throw new Error("Income account missing");
   const id = newId();
   const number = nextReceiptNumber(data, input.date);
-  const receivedFrom = input.receivedFrom.trim() || data.customers.find((c) => c.id === input.customerId)?.name || "Walk-in";
+  const receivedFrom = customer.name;
   const checkBit = method === "check" ? `Check ${checkNumber} ` : method === "card" ? `Card ${checkNumber} ` : method === "echeck" ? `e-Check ${checkNumber} ` : "";
   const journal = makeJournal({
     date: input.date,
@@ -534,7 +575,9 @@ export function createCashSale(data: FinanceData, input): FinanceData {
     status: "posted",
     memo: input.notes,
     journalId: journal.id,
-    sortOrder: data.receipts.length
+    sortOrder: data.receipts.length,
+    recon: "pending",
+    createdAt: journal.createdAt
   };
   return {
     ...data,
@@ -622,6 +665,7 @@ export function reorderReceipts(data: FinanceData, ids): FinanceData {
   };
 }
 export function createBill(data: FinanceData, input): FinanceData {
+  assertOpenPeriod(data, input.date);
   const vendor = data.vendors.find((v) => v.id === input.vendorId);
   if (!vendor) throw new Error("Vendor not found");
   if (input.amount <= 0) throw new Error("Amount must be greater than zero");
@@ -659,7 +703,8 @@ export function createBill(data: FinanceData, input): FinanceData {
     reference: input.reference,
     payments: [],
     journalId: journal.id,
-    sortOrder: data.bills.length
+    sortOrder: data.bills.length,
+    createdAt: journal.createdAt
   };
   return {
     ...data,
@@ -672,6 +717,7 @@ export function createBill(data: FinanceData, input): FinanceData {
   };
 }
 export function payBill(data: FinanceData, input): FinanceData {
+  assertOpenPeriod(data, input.date);
   const bill = data.bills.find((b) => b.id === input.billId);
   if (!bill) throw new Error("Bill not found");
   if (bill.status === "void" || bill.status === "paid") throw new Error("Bill cannot accept payment");
@@ -704,7 +750,8 @@ export function payBill(data: FinanceData, input): FinanceData {
     date: input.date,
     amount,
     bankId: bank.id,
-    journalId: journal.id
+    journalId: journal.id,
+    recon: "pending"
   }];
   const status = payments.reduce((s, p) => s + p.amount, 0) >= bill.amount ? "paid" : "partial";
   return {
@@ -767,6 +814,7 @@ export function removeBillPayment(data: FinanceData, paymentId): FinanceData {
 }
 export function removeCashLine(data: FinanceData, line): FinanceData {
   if (!line.sourceId || line.kind === "opening") throw new Error("This line cannot be deleted.");
+  assertUnlocked(data, line.kind, line.sourceId);
   if (line.kind === "check") return removeCheck(data, line.sourceId);
   if (line.kind === "receipt" || line.kind === "payment") return removeReceipt(data, line.sourceId);
   if (line.kind === "bill-payment") return removeBillPayment(data, line.sourceId);
@@ -790,6 +838,7 @@ export function reorderBills(data: FinanceData, ids): FinanceData {
   };
 }
 export function addDeposit(data: FinanceData, input): FinanceData {
+  assertOpenPeriod(data, input.date);
   const bank = data.banks.find((b) => b.id === input.bankId);
   if (!bank) throw new Error("Bank not found");
   const income = input.accountId ? data.accounts.find((a) => a.id === input.accountId) : data.accounts.find((a) => a.code === "4000");
@@ -815,6 +864,7 @@ export function addDeposit(data: FinanceData, input): FinanceData {
   };
 }
 export function addExpense(data: FinanceData, input): FinanceData {
+  assertOpenPeriod(data, input.date);
   const bank = data.banks.find((b) => b.id === input.bankId);
   if (!bank) throw new Error("Bank not found");
   const journal = makeJournal({
@@ -838,6 +888,7 @@ export function addExpense(data: FinanceData, input): FinanceData {
   };
 }
 export function transferBanks(data: FinanceData, input): FinanceData {
+  assertOpenPeriod(data, input.date);
   if (input.fromId === input.toId) throw new Error("Pick two different banks");
   const from = data.banks.find((b) => b.id === input.fromId);
   const to = data.banks.find((b) => b.id === input.toId);
@@ -885,9 +936,14 @@ export function removeBudget(data: FinanceData, id): FinanceData {
   };
 }
 export function rescheduleCashLine(data: FinanceData, input): FinanceData {
+  assertOpenPeriod(data, input.date);
+  assertUnlocked(data, input.kind, input.sourceId);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(input.date)) throw new Error("Pick a valid date.");
   if (input.kind === "check") return rescheduleCheck(data, input.sourceId, input.date);
   if (input.kind === "receipt") return rescheduleReceipt(data, input.sourceId, input.date);
+  if (input.kind === "journal" || input.kind === "transfer" || input.kind === "deposit" || input.kind === "expense") {
+    return setJournalDate(data, input.sourceId, input.date);
+  }
   return rescheduleBillPayment(data, input.sourceId, input.date);
 }
 function setJournalDate(data: FinanceData, journalId, date) {
@@ -1200,6 +1256,7 @@ export function updateSettings(data: FinanceData, patch): FinanceData {
 }
 export function reassignCashBank(data: FinanceData, input): FinanceData {
   if (input.kind === "opening") throw new Error("Opening balance stays on its banks.");
+  assertUnlocked(data, input.kind, input.sourceId);
   const bank = data.banks.find((b) => b.id === input.bankId);
   if (!bank || bank.archived) throw new Error("Bank not found");
   if (input.kind === "check") return updateCheck(data, input.sourceId, { bankId: input.bankId });
@@ -1259,6 +1316,98 @@ function reassignJournalBank(data: FinanceData, journalId, toBankId, fromBankId)
       };
     })
   };
+}
+
+function cashReconOf(data: FinanceData, kind, sourceId): "pending" | "cleared" | "reconciled" {
+  if (kind === "check") return data.checks.find((c) => c.id === sourceId)?.recon ?? "pending";
+  if (kind === "receipt" || kind === "payment") return data.receipts.find((r) => r.id === sourceId)?.recon ?? "pending";
+  if (kind === "bill-payment") {
+    for (const bill of data.bills) {
+      const pay = bill.payments.find((p) => p.id === sourceId);
+      if (pay) return pay.recon ?? "pending";
+    }
+  }
+  if (kind === "deposit" || kind === "expense" || kind === "transfer" || kind === "journal") {
+    return data.journals.find((j) => j.id === sourceId)?.recon ?? "pending";
+  }
+  return "pending";
+}
+
+function assertUnlocked(data: FinanceData, kind, sourceId) {
+  if (cashReconOf(data, kind, sourceId) === "reconciled") {
+    throw new Error("This line is reconciled. Unlock it first.");
+  }
+}
+
+export function setCashRecon(data: FinanceData, input): FinanceData {
+  if (input.recon === "reconciled") {
+    throw new Error("Mark reconciled from Reconcile → Finish statement.");
+  }
+  const locked = lineOnFinishedRecon(data, input.kind, input.sourceId);
+  if (locked) {
+    throw new Error(`This line is on the ${locked.statementDate} statement. Undo that rec first.`);
+  }
+  const date = cashLineDate(data, input.kind, input.sourceId);
+  if (date) assertOpenPeriod(data, date);
+  return applyCashRecon(data, input);
+}
+
+function cashLineDate(data: FinanceData, kind, sourceId): string {
+  if (kind === "check") return data.checks.find((c) => c.id === sourceId)?.issueDate ?? "";
+  if (kind === "receipt" || kind === "payment") return data.receipts.find((r) => r.id === sourceId)?.date ?? "";
+  if (kind === "bill-payment") {
+    for (const bill of data.bills) {
+      const pay = bill.payments.find((p) => p.id === sourceId);
+      if (pay) return pay.date;
+    }
+  }
+  if (kind === "deposit" || kind === "expense" || kind === "transfer" || kind === "journal") {
+    return data.journals.find((j) => j.id === sourceId)?.date ?? "";
+  }
+  return "";
+}
+
+function applyCashRecon(data: FinanceData, input): FinanceData {
+  const recon = input.recon === "cleared" || input.recon === "reconciled" ? input.recon : "pending";
+  if (input.kind === "check") {
+    const check = data.checks.find((c) => c.id === input.sourceId);
+    if (!check) throw new Error("Check not found");
+    if (check.status === "voided" || check.status === "bounced") throw new Error("Voided checks stay as they are.");
+    const status = recon === "pending" ? "pending" : "cleared";
+    return {
+      ...data,
+      checks: data.checks.map((c) => c.id === input.sourceId ? { ...c, recon, status } : c)
+    };
+  }
+  if (input.kind === "receipt" || input.kind === "payment") {
+    const receipt = data.receipts.find((r) => r.id === input.sourceId);
+    if (!receipt) throw new Error("Receipt not found");
+    if (receipt.status === "void") throw new Error("Voided receipts stay as they are.");
+    return {
+      ...data,
+      receipts: data.receipts.map((r) => r.id === input.sourceId ? { ...r, recon } : r)
+    };
+  }
+  if (input.kind === "bill-payment") {
+    const bill = data.bills.find((b) => b.payments.some((p) => p.id === input.sourceId));
+    if (!bill) throw new Error("Payment not found");
+    return {
+      ...data,
+      bills: data.bills.map((b) => b.id === bill.id ? {
+        ...b,
+        payments: b.payments.map((p) => p.id === input.sourceId ? { ...p, recon } : p)
+      } : b)
+    };
+  }
+  if (input.kind === "deposit" || input.kind === "expense" || input.kind === "transfer" || input.kind === "journal") {
+    const journal = data.journals.find((j) => j.id === input.sourceId);
+    if (!journal) throw new Error("Entry not found");
+    return {
+      ...data,
+      journals: data.journals.map((j) => j.id === input.sourceId ? { ...j, recon } : j)
+    };
+  }
+  throw new Error("This line cannot be reconciled.");
 }
 
 /** Drop closed documents through a date and post one condensed journal so balances stay put. */
@@ -1355,3 +1504,367 @@ export function purgeClosedThrough(data: FinanceData, throughDate: string): { da
   }
   return { data: next, removed };
 }
+
+const AUDIT_WHO = "this browser";
+
+function appendAudit(
+  data: FinanceData,
+  action: string,
+  detail: string,
+  extra?: { old?: string; new?: string },
+): FinanceData {
+  const event: AuditEvent = {
+    id: newId(),
+    at: Date.now(),
+    who: AUDIT_WHO,
+    action,
+    detail,
+    old: extra?.old ?? "",
+    new: extra?.new ?? "",
+  };
+  const audit = [...(data.audit ?? []), event].slice(-2000);
+  return { ...data, audit };
+}
+
+export function closeBooks(data: FinanceData, throughDate: string, packetPrinted = false): FinanceData {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(throughDate)) throw new Error("Pick a valid date.");
+  const current = (data.settings.closedThrough ?? "").trim();
+  if (current && throughDate < current) {
+    throw new Error(`Already closed through ${current}. Reopen first if you must move the date back.`);
+  }
+  const check = closeChecklist(data, throughDate);
+  if (!check.ok) throw new Error(check.blockers[0] || "Close checklist is not clear.");
+  if (!packetPrinted) throw new Error("Print the period pack first. That is the proof, not a checkbox.");
+  const totals = closeTotals(data, throughDate);
+  const equity = data.accounts.find((a) => a.code === "3000") ?? data.accounts.find((a) => a.type === "equity");
+  if (!equity) throw new Error("Equity account missing.");
+  const journal = {
+    ...makeJournal({
+      date: throughDate,
+      description: `Close through ${throughDate}`,
+      sourceType: "close",
+      lines:
+        totals.banks.length === 0
+          ? [{ accountId: equity.id, debit: 0, credit: 0, memo: "Close" }]
+          : totals.banks.map((b) => ({
+              accountId: equity.id,
+              debit: 0,
+              credit: 0,
+              memo: `${b.nickname} ${(b.balance / 100).toFixed(2)}`,
+            })),
+    }),
+  };
+  const snap: CloseSnapshot = {
+    through: throughDate,
+    closedAt: Date.now(),
+    journalId: journal.id,
+    packetPrinted: true,
+    banks: totals.banks,
+    ar: totals.ar,
+    ap: totals.ap,
+    tbDebit: totals.tbDebit,
+    tbCredit: totals.tbCredit,
+  };
+  const next = updateSettings(
+    { ...data, journals: [...data.journals, journal] },
+    { closedThrough: throughDate },
+  );
+  return appendAudit(
+    { ...next, closeHistory: [...(next.closeHistory ?? []).filter((s) => s.through !== throughDate), snap] },
+    "close",
+    `Closed through ${throughDate}. Bank balances posted as the opening fact.`,
+    { old: current, new: throughDate },
+  );
+}
+
+export function reopenBooks(data: FinanceData, reason = ""): FinanceData {
+  const current = (data.settings.closedThrough ?? "").trim();
+  if (!current) throw new Error("Books are already open.");
+  const note = reason.trim() || "Reopened from this browser.";
+  const history = (data.closeHistory ?? []).map((s) =>
+    s.through === current && !s.reopenedAt ? { ...s, reopenedAt: Date.now(), reopenReason: note } : s,
+  );
+  return appendAudit(updateSettings({ ...data, closeHistory: history }, { closedThrough: "" }), "reopen", note, {
+    old: current,
+    new: "",
+  });
+}
+
+export function finishRecon(
+  data: FinanceData,
+  input: {
+    bankId: string;
+    statementDate: string;
+    statementEnding: number;
+    lines: Array<{ kind: CashLineKind; sourceId: string }>;
+  },
+): FinanceData {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.statementDate)) throw new Error("Pick a statement date.");
+  const bank = data.banks.find((b) => b.id === input.bankId);
+  if (!bank) throw new Error("Bank not found");
+  const last = lastReconBefore(data, input.bankId, input.statementDate);
+  const later = (data.reconHistory ?? []).find((r) => r.bankId === input.bankId && r.statementDate >= input.statementDate);
+  if (later) throw new Error(`A statement is already finished on or after ${later.statementDate}. Undo it first.`);
+  const uncleared = unclearedLines(data, input.bankId, input.statementDate);
+  const ticked = input.lines.map((sel) => {
+    const line = uncleared.find((l) => l.kind === sel.kind && l.sourceId === sel.sourceId);
+    if (!line) throw new Error("A ticked line is not on this statement.");
+    return line;
+  });
+  const beginning = reconBeginning(data, input.bankId, input.statementDate);
+  const diff = reconDifference(beginning, input.statementEnding, ticked);
+  if (diff !== 0) throw new Error("Cleared difference must be zero — post a fee or interest, or tick the missing lines.");
+  const tickedKeys = new Set(ticked.map((l) => `${l.kind}:${l.sourceId}`));
+  const explain = reconExplain(uncleared, tickedKeys, (l) => `${l.kind}:${l.sourceId}`);
+  const book = bookBalanceOn(data, input.bankId, input.statementDate);
+  const explained = explainedDifference(input.statementEnding, explain.inTransitTotal, explain.outstandingTotal, book);
+  if (explained !== 0) throw new Error("Explained difference must be zero — outstanding and in-transit must prove the book.");
+  let next = data;
+  for (const line of ticked) {
+    next = applyCashRecon(next, { kind: line.kind, sourceId: line.sourceId, recon: "reconciled" });
+  }
+  const leftover = [...explain.outstanding, ...explain.inTransit];
+  const report: ReconStatement = {
+    id: newId(),
+    bankId: input.bankId,
+    statementDate: input.statementDate,
+    statementEnding: input.statementEnding,
+    beginning,
+    bookBalance: book,
+    clearedIn: ticked.reduce((s, l) => s + l.deposit, 0),
+    clearedOut: ticked.reduce((s, l) => s + l.payment, 0),
+    outstanding: explain.outstandingTotal,
+    depositsInTransit: explain.inTransitTotal,
+    explained,
+    finishedAt: Date.now(),
+    lines: ticked.map((l) => ({ kind: l.kind, sourceId: l.sourceId })),
+    outstandingLines: namedReconLines(explain.outstanding, input.statementDate, "payment"),
+    ditLines: namedReconLines(explain.inTransit, input.statementDate, "deposit"),
+    adjustmentLines: namedFromCash(ticked.filter(isReconAdj), input.statementDate),
+    unclearedAging: unclearedAge(leftover, input.statementDate),
+  };
+  next = {
+    ...next,
+    banks: next.banks.map((b) =>
+      b.id === input.bankId
+        ? { ...b, lastStatementDate: input.statementDate, lastStatementEnding: input.statementEnding }
+        : b,
+    ),
+    reconHistory: [...(next.reconHistory ?? []), report],
+  };
+  return appendAudit(next, "recon", `Finished ${bank.nickname} statement ${input.statementDate}.`, {
+    old: last ? String(last.statementEnding) : String(beginning),
+    new: String(input.statementEnding),
+  });
+}
+
+export function undoLastRecon(data: FinanceData, bankId: string): FinanceData {
+  const history = (data.reconHistory ?? []).filter((r) => r.bankId === bankId);
+  const last = history.at(-1);
+  if (!last) throw new Error("No finished statement on this bank.");
+  const closed = (data.settings.closedThrough ?? "").trim();
+  if (closed && last.statementDate <= closed) {
+    throw new Error(`That statement is inside the closed period (${closed}). Reopen first.`);
+  }
+  let next = data;
+  for (const line of last.lines) {
+    next = applyCashRecon(next, { kind: line.kind, sourceId: line.sourceId, recon: "pending" });
+  }
+  const rest = (next.reconHistory ?? []).filter((r) => r.id !== last.id);
+  const prev = rest.filter((r) => r.bankId === bankId).at(-1);
+  const bank = next.banks.find((b) => b.id === bankId);
+  next = {
+    ...next,
+    reconHistory: rest,
+    banks: next.banks.map((b) =>
+      b.id === bankId
+        ? {
+            ...b,
+            lastStatementDate: prev?.statementDate,
+            lastStatementEnding: prev?.statementEnding,
+          }
+        : b,
+    ),
+  };
+  return appendAudit(next, "recon-undo", `Undid ${bank?.nickname ?? "bank"} statement ${last.statementDate}.`, {
+    old: String(last.statementEnding),
+    new: prev ? String(prev.statementEnding) : "",
+  });
+}
+
+export function postReconAdjustment(
+  data: FinanceData,
+  input: { bankId: string; date: string; amount: number; kind: "fee" | "interest"; memo?: string },
+): { data: FinanceData; journalId: string } {
+  const amount = Math.round(input.amount);
+  if (amount <= 0) throw new Error("Amount must be greater than zero.");
+  const fees = data.accounts.find((a) => a.code === "5500") ?? data.accounts.find((a) => a.type === "expense");
+  const income = data.accounts.find((a) => a.code === "4000") ?? data.accounts.find((a) => a.type === "income");
+  if (!fees || !income) throw new Error("Accounts missing.");
+  const next =
+    input.kind === "fee"
+      ? addExpense(data, {
+          bankId: input.bankId,
+          date: input.date,
+          amount,
+          accountId: fees.id,
+          memo: input.memo || "Bank service charge",
+        })
+      : addDeposit(data, {
+          bankId: input.bankId,
+          date: input.date,
+          amount,
+          accountId: income.id,
+          memo: input.memo || "Interest earned",
+        });
+  const journal = next.journals[next.journals.length - 1];
+  return { data: appendAudit(next, "recon-adj", `${input.kind === "fee" ? "Service charge" : "Interest"} ${amount}`, { new: String(amount) }), journalId: journal?.id ?? "" };
+}
+
+export function mergeCustomers(data: FinanceData, keepId: string, dropId: string): FinanceData {
+  if (keepId === dropId) throw new Error("Pick two different customers.");
+  const keep = data.customers.find((c) => c.id === keepId);
+  const drop = data.customers.find((c) => c.id === dropId);
+  if (!keep || !drop) throw new Error("Customer not found.");
+  const invoicesMoved = data.invoices.filter((i) => i.customerId === dropId).map((i) => i.number);
+  const receiptsMoved = data.receipts.filter((r) => r.customerId === dropId).map((r) => r.number);
+  return appendAudit(
+    {
+      ...data,
+      invoices: data.invoices.map((i) => (i.customerId === dropId ? { ...i, customerId: keepId } : i)),
+      receipts: data.receipts.map((r) =>
+        r.customerId === dropId ? { ...r, customerId: keepId, receivedFrom: keep.name } : r,
+      ),
+      customers: data.customers.filter((c) => c.id !== dropId),
+    },
+    "merge",
+    `Merged customer ${drop.name} into ${keep.name}.`,
+    {
+      old: `${drop.name} (${drop.id}) invoices ${invoicesMoved.join(", ") || "none"} receipts ${receiptsMoved.join(", ") || "none"}`,
+      new: `${keep.name} (${keep.id})`,
+    },
+  );
+}
+
+export function mergeVendors(data: FinanceData, keepId: string, dropId: string): FinanceData {
+  if (keepId === dropId) throw new Error("Pick two different vendors.");
+  const keep = data.vendors.find((v) => v.id === keepId);
+  const drop = data.vendors.find((v) => v.id === dropId);
+  if (!keep || !drop) throw new Error("Vendor not found.");
+  const billsMoved = data.bills.filter((b) => b.vendorId === dropId).map((b) => b.number);
+  const checksMoved = data.checks.filter((c) => c.vendorId === dropId).map((c) => c.checkNumber);
+  return appendAudit(
+    {
+      ...data,
+      bills: data.bills.map((b) => (b.vendorId === dropId ? { ...b, vendorId: keepId } : b)),
+      checks: data.checks.map((c) =>
+        c.vendorId === dropId ? { ...c, vendorId: keepId, payee: keep.name } : c,
+      ),
+      recurrences: (data.recurrences ?? []).map((r) => (r.vendorId === dropId ? { ...r, vendorId: keepId } : r)),
+      vendors: data.vendors.filter((v) => v.id !== dropId),
+    },
+    "merge",
+    `Merged vendor ${drop.name} into ${keep.name}.`,
+    {
+      old: `${drop.name} (${drop.id}) bills ${billsMoved.join(", ") || "none"} checks ${checksMoved.join(", ") || "none"}`,
+      new: `${keep.name} (${keep.id})`,
+    },
+  );
+}
+
+export function upsertRecurring(data: FinanceData, item: Omit<RecurringItem, "id"> & { id?: string }): FinanceData {
+  const id = item.id ?? newId();
+  const next: RecurringItem = {
+    id,
+    kind: item.kind === "bill" ? "bill" : "check",
+    name: item.name.trim() || "Recurring",
+    vendorId: item.vendorId,
+    amount: Math.round(item.amount),
+    bankId: item.bankId,
+    accountId: item.accountId,
+    memo: item.memo ?? "",
+    dayOfMonth: Math.min(28, Math.max(1, Math.round(item.dayOfMonth) || 1)),
+    nextDate: item.nextDate,
+    active: item.active !== false,
+  };
+  const exists = (data.recurrences ?? []).some((r) => r.id === id);
+  return {
+    ...data,
+    recurrences: exists
+      ? (data.recurrences ?? []).map((r) => (r.id === id ? next : r))
+      : [...(data.recurrences ?? []), next],
+  };
+}
+
+export function removeRecurring(data: FinanceData, id: string): FinanceData {
+  return { ...data, recurrences: (data.recurrences ?? []).filter((r) => r.id !== id) };
+}
+
+function bumpMonthly(iso: string, dayOfMonth: number): string {
+  const next = addMonths(parseISO(iso), 1);
+  const y = next.getFullYear();
+  const m = next.getMonth();
+  const d = Math.min(dayOfMonth, 28);
+  return format(new Date(y, m, d), "yyyy-MM-dd");
+}
+
+export function postRecurring(data: FinanceData, id: string): FinanceData {
+  const item = (data.recurrences ?? []).find((r) => r.id === id);
+  if (!item || !item.active) throw new Error("Recurring item not found.");
+  const vendor = data.vendors.find((v) => v.id === item.vendorId);
+  if (!vendor) throw new Error("Vendor is no longer on file.");
+  let next = data;
+  if (item.kind === "check") {
+    next = issueCheck(next, {
+      bankId: item.bankId,
+      payee: vendor.name,
+      vendorId: vendor.id,
+      issueDate: item.nextDate,
+      postDate: item.nextDate,
+      amount: item.amount,
+      memo: item.memo || item.name,
+      accountId: item.accountId,
+    });
+  } else {
+    next = createBill(next, {
+      vendorId: vendor.id,
+      date: item.nextDate,
+      dueDate: item.nextDate,
+      amount: item.amount,
+      accountId: item.accountId,
+      memo: item.memo || item.name,
+      reference: item.name,
+    });
+  }
+  return appendAudit(
+    {
+      ...next,
+      recurrences: (next.recurrences ?? []).map((r) =>
+        r.id === id ? { ...r, nextDate: bumpMonthly(r.nextDate, r.dayOfMonth) } : r,
+      ),
+    },
+    "recurring",
+    `Posted ${item.name} for ${item.nextDate}.`,
+    { new: item.nextDate },
+  );
+}
+
+/** Catch up every active recurrence through `through` (rent for Aug and Sep if both are due). */
+export function postDueRecurring(
+  data: FinanceData,
+  through: string,
+): { data: FinanceData; posted: Array<{ name: string; date: string }> } {
+  let next = data;
+  const posted: Array<{ name: string; date: string }> = [];
+  for (let i = 0; i < 48; i += 1) {
+    const due = (next.recurrences ?? [])
+      .filter((r) => r.active && r.nextDate <= through)
+      .sort((a, b) => a.nextDate.localeCompare(b.nextDate));
+    const item = due[0];
+    if (!item) break;
+    posted.push({ name: item.name, date: item.nextDate });
+    next = postRecurring(next, item.id);
+  }
+  return { data: next, posted };
+}
+

@@ -11,7 +11,7 @@ export function Card({ className, ...props }: React.ComponentProps<"div">) {
 }
 
 export function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
-  return <div className={cn("flex flex-col gap-1 p-5 pb-0", className)} {...props} />;
+  return <div className={cn("flex flex-col gap-1 p-4 pb-0 sm:p-5 sm:pb-0", className)} {...props} />;
 }
 
 export function CardTitle({ className, ...props }: React.ComponentProps<"h3">) {
@@ -23,9 +23,9 @@ export function CardDescription({ className, ...props }: React.ComponentProps<"p
 }
 
 export function CardContent({ className, ...props }: React.ComponentProps<"div">) {
-  return <div className={cn("p-5", className)} {...props} />;
+  return <div className={cn("p-4 sm:p-5", className)} {...props} />;
 }
 
 export function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
-  return <div className={cn("flex items-center p-5 pt-0", className)} {...props} />;
+  return <div className={cn("flex items-center p-4 pt-0 sm:p-5 sm:pt-0", className)} {...props} />;
 }

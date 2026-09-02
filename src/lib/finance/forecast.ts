@@ -9,38 +9,36 @@ export interface ForecastPoint {
   outflows: number;
 }
 
+function bump(map: Map<string, number>, date: string, amount: number) {
+  if (!amount) return;
+  map.set(date, (map.get(date) ?? 0) + amount);
+}
+
 export function cashForecast(data: FinanceData, days = 90): ForecastPoint[] {
   const start = todayIso();
   const thisMonth = start.slice(0, 7);
   let cash = totalCash(data) + pendingChecksTotal(data);
   const points: ForecastPoint[] = [];
+  const inByDate = new Map<string, number>();
+  const outByDate = new Map<string, number>();
 
-  const openInvoices = data.invoices
-    .filter((i) => i.status === "sent" || i.status === "partial")
-    .map((i) => ({ date: i.dueDate, amount: invoiceBalance(data, i.id) }));
-
-  const pendingChecks = data.checks
-    .filter((c) => c.status === "pending")
-    .map((c) => ({ date: c.postDate || c.issueDate, amount: c.amount }));
-
-  const openBills = (data.bills ?? [])
-    .filter((b) => b.status === "open" || b.status === "partial")
-    .map((b) => ({ date: b.dueDate, amount: billBalance(b) }));
+  for (const inv of data.invoices) {
+    if (inv.status !== "sent" && inv.status !== "partial") continue;
+    bump(inByDate, inv.dueDate, invoiceBalance(data, inv.id));
+  }
+  for (const chk of data.checks) {
+    if (chk.status !== "pending") continue;
+    bump(outByDate, chk.postDate || chk.issueDate, chk.amount);
+  }
+  for (const bill of data.bills ?? []) {
+    if (bill.status !== "open" && bill.status !== "partial") continue;
+    bump(outByDate, bill.dueDate, billBalance(bill));
+  }
 
   for (let i = 0; i < days; i += 1) {
     const date = addDaysIso(start, i);
-    let inflows = 0;
-    let outflows = 0;
-
-    for (const inv of openInvoices) {
-      if (inv.date === date) inflows += inv.amount;
-    }
-    for (const chk of pendingChecks) {
-      if (chk.date === date) outflows += chk.amount;
-    }
-    for (const bill of openBills) {
-      if (bill.date === date) outflows += bill.amount;
-    }
+    let inflows = inByDate.get(date) ?? 0;
+    let outflows = outByDate.get(date) ?? 0;
 
     const month = date.slice(0, 7);
     if (date.slice(8, 10) === "01" && month > thisMonth) {

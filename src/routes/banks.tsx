@@ -1,13 +1,18 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { ArrowLeftRight, Landmark, Plus } from "lucide-react";
-import { useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { DateInput } from "@/components/date-input";
+import { ArrowLeftRight, Plus, Printer } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { ConfirmDelete } from "@/components/confirm-delete";
 import { Field } from "@/components/field";
+import { ListToolbar } from "@/components/filter-pills";
+import { ListFilters, applySortValue } from "@/components/list-filters";
+import { ListCard, listColClass } from "@/components/list-table";
+import { ListPrint } from "@/components/list-print";
 import { Money } from "@/components/money";
+import { requestPrint } from "@/components/print-preview";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -18,14 +23,37 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SortHeader } from "@/components/sort-header";
+import { useColWidths } from "@/components/use-col-widths";
 import { CsvButton } from "@/components/export-menu";
+import { ViewToggle, useListView } from "@/components/view-toggle";
 import { bankRows } from "@/lib/finance/export";
-import { parseAmountToCents, todayIso } from "@/lib/finance/format";
-import { bankBookBalance, pendingChecksTotal } from "@/lib/finance/ledger";
+import { fitColumnWidth } from "@/lib/finance/fit-column";
+import { formatMoney, parseAmountToCents, todayIso } from "@/lib/finance/format";
+import { bookByBankId, pendingByBankId } from "@/lib/finance/ledger";
 import { openProps, stopOpen } from "@/lib/finance/open-record";
+import { useEntrySort } from "@/lib/finance/sort";
 import { useFinanceData, useFinanceStore } from "@/lib/finance/store";
+import type { Bank } from "@/lib/finance/types";
 
 export const Route = createFileRoute("/banks")({ component: BanksPage });
+
+const BANK_COLS = {
+  nickname: 140,
+  name: 220,
+  number: 128,
+  status: 100,
+  book: 128,
+  pending: 128,
+  actions: 88,
+} as const;
+
+const BANK_SORT = [
+  { value: "nickname:asc", label: "Nickname A–Z" },
+  { value: "name:asc", label: "Bank A–Z" },
+  { value: "book:desc", label: "Book high–low" },
+  { value: "pending:desc", label: "Pending high–low" },
+];
 
 function BanksPage() {
   const data = useFinanceData();
@@ -38,6 +66,9 @@ function BanksPage() {
 
   const [dialog, setDialog] = useState<"bank" | "money" | "transfer" | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [view, setView] = useListView("banks");
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "closed">("all");
   const [bankForm, setBankForm] = useState({ name: "", nickname: "", accountNumber: "", opening: "" });
   const [moneyForm, setMoneyForm] = useState({
     bankId: "",
@@ -57,14 +88,60 @@ function BanksPage() {
 
   const expenseAccounts = accounts.filter((a) => a.type === "expense");
   const incomeAccounts = accounts.filter((a) => a.type === "income");
+  const books = useMemo(() => bookByBankId(data), [data]);
+  const pendingMap = useMemo(() => pendingByBankId(data), [data]);
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return banks.filter((b) => {
+      if (statusFilter === "active" && b.archived) return false;
+      if (statusFilter === "closed" && !b.archived) return false;
+      if (!q) return true;
+      return [b.name, b.nickname, b.accountNumber].join(" ").toLowerCase().includes(q);
+    });
+  }, [banks, query, statusFilter]);
+  const getters = useMemo(
+    () => ({
+      nickname: (b: Bank) => b.nickname,
+      name: (b: Bank) => b.name,
+      number: (b: Bank) => b.accountNumber,
+      status: (b: Bank) => (b.archived ? "Closed" : "Active"),
+      book: (b: Bank) => books[b.id] ?? 0,
+      pending: (b: Bank) => pendingMap[b.id] ?? 0,
+    }),
+    [books, pendingMap],
+  );
+  const sort = useEntrySort(visible, "nickname", getters, "asc");
+  const sorted = sort.sorted;
+  const cols = useColWidths("finance-manager-banks-cols", BANK_COLS);
+  const gridRef = useRef<HTMLDivElement>(null);
+  function fit(id: keyof typeof BANK_COLS, label: string) {
+    const table = gridRef.current?.querySelector("table");
+    if (!table) return;
+    cols.setWidth(id, fitColumnWidth({ table, selector: `td[data-col="${id}"]`, header: label }));
+  }
+  const printRows = sorted.map((b) => ({
+    nickname: b.nickname,
+    name: b.name,
+    number: b.accountNumber,
+    book: formatMoney(books[b.id] ?? 0, settings.currency),
+    pending: formatMoney(pendingMap[b.id] ?? 0, settings.currency),
+    status: b.archived ? "Closed" : "Active",
+  }));
 
   return (
     <AppShell
       title="Banks"
-      description="Balances across every account. Double-click a card to edit. Delete is blocked while the bank still has activity."
+      description="Balances across every account. List matches the register. Double-click a row to edit, or tap a card. Delete lives on the list and inside the bank — not on every card."
       actions={
         <>
           <CsvButton filename="banks.csv" rows={bankRows(data)} />
+          <Button variant="outline" onClick={requestPrint}>
+            <Printer />
+            Print
+          </Button>
+          <Button asChild variant="outline">
+            <Link to="/reconcile">Reconcile</Link>
+          </Button>
           <Button variant="outline" onClick={() => setDialog("transfer")}>
             <ArrowLeftRight />
             Transfer
@@ -79,45 +156,119 @@ function BanksPage() {
         </>
       }
     >
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {banks
-          .filter((b) => !b.archived)
-          .map((bank) => {
-            const book = bankBookBalance(data, bank.id);
-            const pending = pendingChecksTotal(data, bank.id);
+      <ListToolbar
+        query={query}
+        onQuery={setQuery}
+        placeholder="Search bank name or account"
+        label="Search banks"
+      >
+        <ListFilters
+          selects={[
+            {
+              label: "Status",
+              value: statusFilter,
+              options: [
+                { value: "all", label: "All" },
+                { value: "active", label: "Active" },
+                { value: "closed", label: "Closed" },
+              ],
+              onChange: (v) => setStatusFilter(v as typeof statusFilter),
+            },
+          ]}
+          sortValue={`${sort.key}:${sort.dir}`}
+          sortOptions={BANK_SORT}
+          onSort={(v) => applySortValue(sort.set, v)}
+          onClear={() => setStatusFilter("all")}
+        />
+        <ViewToggle value={view} onChange={setView} />
+      </ListToolbar>
+      {view === "grid" ? (
+      <div className="item-cards">
+        {sorted.map((bank) => {
+            const book = books[bank.id] ?? 0;
+            const pending = pendingMap[bank.id] ?? 0;
             return (
-              <Card key={bank.id} {...openProps("bank", bank.id)}>
-                <CardContent className="p-5">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="eyebrow">{bank.name}</p>
-                      <h2 className="font-display mt-1 text-2xl font-medium tracking-tight">{bank.nickname}</h2>
-                      <p className="mt-1 text-sm text-muted-foreground">{bank.accountNumber}</p>
-                    </div>
-                    <div className="flex size-10 items-center justify-center rounded-lg bg-muted">
-                      <Landmark className="size-4" />
-                    </div>
-                  </div>
-                  <p className="mt-6 eyebrow">Book balance</p>
-                  <Money amount={book} currency={settings.currency} className="text-2xl font-medium" />
-                  <div className="mt-4 flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Pending checks</span>
-                    <Money amount={pending} currency={settings.currency} />
-                  </div>
-                  <div className="mt-1 flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Still in bank (est.)</span>
-                    <Money amount={book + pending} currency={settings.currency} />
-                  </div>
-                  <div className="mt-4 flex justify-end gap-1" onDoubleClick={stopOpen}>
-                    <Button size="sm" variant="ghost" onClick={() => setDeletingId(bank.id)}>
-                      Delete
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <button
+                key={bank.id}
+                type="button"
+                className="item-card"
+                {...openProps("bank", bank.id, { click: true })}
+              >
+                <span className="flex items-start justify-between gap-2">
+                  <span className="block min-w-0 truncate font-medium">{bank.name}</span>
+                  <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+                    {bank.archived ? "Closed" : "Active"}
+                  </span>
+                </span>
+                <span className="block truncate text-xs text-muted-foreground">
+                  {bank.nickname} · {bank.accountNumber}
+                </span>
+                <Money amount={book} currency={settings.currency} className="mt-auto pt-2 text-xl font-medium tabular-nums" />
+                <span className="text-xs text-muted-foreground">
+                  Pending <Money amount={pending} currency={settings.currency} />
+                </span>
+              </button>
             );
           })}
       </div>
+      ) : (
+        <ListCard ref={gridRef}>
+          <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
+            <colgroup>
+              {(Object.keys(BANK_COLS) as Array<keyof typeof BANK_COLS>).map((id) => (
+                <col key={id} className={listColClass(id)} style={{ width: cols.widths[id] }} />
+              ))}
+            </colgroup>
+            <thead>
+              <tr className="border-b border-border text-muted-foreground">
+                <SortHeader label="Nickname" column="nickname" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.nickname} onWidth={(n) => cols.setWidth("nickname", n)} onFit={() => fit("nickname", "Nickname")} />
+                <SortHeader label="Bank" column="name" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.name} onWidth={(n) => cols.setWidth("name", n)} onFit={() => fit("name", "Bank")} />
+                <SortHeader label="Number" column="number" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.number} onWidth={(n) => cols.setWidth("number", n)} onFit={() => fit("number", "Number")} />
+                <SortHeader label="Status" column="status" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.status} onWidth={(n) => cols.setWidth("status", n)} onFit={() => fit("status", "Status")} />
+                <SortHeader label="Book" column="book" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} align="right" width={cols.widths.book} onWidth={(n) => cols.setWidth("book", n)} onFit={() => fit("book", "Book")} />
+                <SortHeader label="Pending" column="pending" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} align="right" width={cols.widths.pending} onWidth={(n) => cols.setWidth("pending", n)} onFit={() => fit("pending", "Pending")} />
+                <th className="col-actions px-4 py-3"><span className="sr-only">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              {sorted.map((bank) => {
+                const book = books[bank.id] ?? 0;
+                const pending = pendingMap[bank.id] ?? 0;
+                return (
+                  <tr
+                    key={bank.id}
+                    className="border-b border-border/70 last:border-0"
+                    {...openProps("bank", bank.id)}
+                    style={bank.archived ? { opacity: 0.55 } : undefined}
+                  >
+                    <td className="px-4 py-3 font-medium" data-col="nickname">{bank.nickname}</td>
+                    <td className="px-4 py-3 text-muted-foreground" data-col="name">{bank.name}</td>
+                    <td className="px-4 py-3 text-muted-foreground" data-col="number">{bank.accountNumber}</td>
+                    <td className="px-4 py-3 text-muted-foreground" data-col="status">{bank.archived ? "Closed" : "Active"}</td>
+                    <td className="px-4 py-3 text-right" data-col="book"><Money amount={book} currency={settings.currency} /></td>
+                    <td className="px-4 py-3 text-right" data-col="pending"><Money amount={pending} currency={settings.currency} /></td>
+                    <td className="col-actions px-4 py-3 text-right" data-col="actions" onClick={stopOpen} onDoubleClick={stopOpen} onPointerDown={stopOpen}>
+                      <Button size="sm" variant="ghost" onClick={() => setDeletingId(bank.id)}>Delete</Button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </ListCard>
+      )}
+      <ListPrint
+        title="Banks"
+        columns={[
+          { key: "nickname", label: "Nickname" },
+          { key: "name", label: "Bank" },
+          { key: "number", label: "Number" },
+          { key: "status", label: "Status" },
+          { key: "book", label: "Book", align: "right" },
+          { key: "pending", label: "Pending", align: "right" },
+        ]}
+        rows={printRows}
+      />
 
       <Dialog open={dialog === "bank"} onOpenChange={(o) => !o && setDialog(null)}>
         <DialogContent>
@@ -193,7 +344,7 @@ function BanksPage() {
               </Select>
             </Field>
             <Field label="Date">
-              <Input type="date" value={moneyForm.date} onChange={(e) => setMoneyForm({ ...moneyForm, date: e.target.value })} />
+              <DateInput value={moneyForm.date} onChange={(date) => setMoneyForm({ ...moneyForm, date })} />
             </Field>
             <Field label="Amount">
               <Input value={moneyForm.amount} onChange={(e) => setMoneyForm({ ...moneyForm, amount: e.target.value })} inputMode="decimal" />
@@ -289,7 +440,7 @@ function BanksPage() {
               </Select>
             </Field>
             <Field label="Date">
-              <Input type="date" value={transferForm.date} onChange={(e) => setTransferForm({ ...transferForm, date: e.target.value })} />
+              <DateInput value={transferForm.date} onChange={(date) => setTransferForm({ ...transferForm, date })} />
             </Field>
             <Field label="Amount">
               <Input value={transferForm.amount} onChange={(e) => setTransferForm({ ...transferForm, amount: e.target.value })} inputMode="decimal" />

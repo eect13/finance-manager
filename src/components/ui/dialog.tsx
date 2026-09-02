@@ -11,22 +11,37 @@ export const DialogPortal = DialogPrimitive.Portal;
 export function DialogOverlay({ className, ...props }: React.ComponentProps<typeof DialogPrimitive.Overlay>) {
   return (
     <DialogPrimitive.Overlay
-      className={cn("fixed inset-0 z-50 bg-foreground/40 data-[state=open]:animate-in data-[state=closed]:animate-out", className)}
+      className={cn("fixed inset-0 z-50 bg-foreground/40", className)}
       {...props}
     />
   );
 }
 
-export function DialogContent({ className, children, ...props }: React.ComponentProps<typeof DialogPrimitive.Content>) {
+export function DialogContent({ className, children, onPointerDownOutside, onInteractOutside, onFocusOutside, ...props }: React.ComponentProps<typeof DialogPrimitive.Content>) {
+  function keepDateCal(event: { target: EventTarget | null; preventDefault: () => void }) {
+    const node = event.target;
+    if (node instanceof Element && node.closest("[data-date-cal]")) event.preventDefault();
+  }
   return (
     <DialogPortal>
       <DialogOverlay />
       <DialogPrimitive.Content
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 grid w-[calc(100%-2rem)] max-w-lg max-h-screen -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-3xl bg-card p-6 text-card-foreground elevation",
-          "duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out",
+          "dialog-sheet z-50 grid w-[calc(100%-2rem)] max-w-lg overflow-y-auto rounded-3xl bg-card p-6 text-card-foreground elevation overscroll-contain",
           className,
         )}
+        onPointerDownOutside={(event) => {
+          keepDateCal(event);
+          onPointerDownOutside?.(event);
+        }}
+        onInteractOutside={(event) => {
+          keepDateCal(event);
+          onInteractOutside?.(event);
+        }}
+        onFocusOutside={(event) => {
+          keepDateCal(event);
+          onFocusOutside?.(event);
+        }}
         {...props}
       >
         {children}

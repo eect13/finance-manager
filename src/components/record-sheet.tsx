@@ -1,4 +1,5 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { DateInput } from "@/components/date-input";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { ConfirmDelete } from "@/components/confirm-delete";
@@ -8,6 +9,8 @@ import { Field } from "@/components/field";
 import { Money } from "@/components/money";
 import { PartyFields } from "@/components/party-form";
 import { PartyTxnTable } from "@/components/party-center";
+import { SortHeader } from "@/components/sort-header";
+import { useColWidths } from "@/components/use-col-widths";
 import { BillBadge, CheckBadge, InvoiceBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,6 +24,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { parseAmountToCents, todayIso, formatDate } from "@/lib/finance/format";
+import { useEntrySort } from "@/lib/finance/sort";
+import { fitColumnWidth } from "@/lib/finance/fit-column";
 import {
   billBalance,
   bankBookBalance,
@@ -129,19 +134,17 @@ function InvoiceBody({ id, onClose }: { id: string; onClose: () => void }) {
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Invoice date">
-          <Input
-            type="date"
+          <DateInput
             value={edit.date}
             disabled={invoice.status === "void"}
-            onChange={(e) => setEdit({ ...edit, date: e.target.value })}
+            onChange={(date) => setEdit({ ...edit, date })}
           />
         </Field>
         <Field label="Due date">
-          <Input
-            type="date"
+          <DateInput
             value={edit.dueDate}
             disabled={invoice.status === "void"}
-            onChange={(e) => setEdit({ ...edit, dueDate: e.target.value })}
+            onChange={(dueDate) => setEdit({ ...edit, dueDate })}
           />
         </Field>
         <Field label="Notes">
@@ -307,10 +310,10 @@ function BillBody({ id, onClose }: { id: string; onClose: () => void }) {
       {bill.memo ? <p className="text-sm text-muted-foreground">{bill.memo}</p> : null}
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Bill date">
-          <Input type="date" value={edit.date} disabled={bill.status === "void"} onChange={(e) => setEdit({ ...edit, date: e.target.value })} />
+          <DateInput value={edit.date} disabled={bill.status === "void"} onChange={(date) => setEdit({ ...edit, date })} />
         </Field>
         <Field label="Due date">
-          <Input type="date" value={edit.dueDate} disabled={bill.status === "void"} onChange={(e) => setEdit({ ...edit, dueDate: e.target.value })} />
+          <DateInput value={edit.dueDate} disabled={bill.status === "void"} onChange={(dueDate) => setEdit({ ...edit, dueDate })} />
         </Field>
         <Field label="Amount">
           <Input value={edit.amount} disabled={bill.status === "void"} inputMode="decimal" onChange={(e) => setEdit({ ...edit, amount: e.target.value })} />
@@ -472,7 +475,7 @@ function CheckBody({ id, onClose }: { id: string; onClose: () => void }) {
   if (!check) return null;
 
   const bank = data.banks.find((b) => b.id === check.bankId);
-  const locked = check.status === "voided" || check.status === "bounced";
+  const locked = check.status === "voided" || check.status === "bounced" || check.recon === "reconciled";
   const expenseAccounts = data.accounts.filter((a) => a.type === "expense");
 
   return (
@@ -484,16 +487,16 @@ function CheckBody({ id, onClose }: { id: string; onClose: () => void }) {
         </DialogDescription>
       </DialogHeader>
       <CheckBadge status={check.status} />
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="Check number">
-          <Input value={form.checkNumber} disabled={locked} onChange={(e) => setForm({ ...form, checkNumber: e.target.value })} />
-        </Field>
-        <Field label="Payee">
-          <Input value={form.payee} disabled={locked} onChange={(e) => setForm({ ...form, payee: e.target.value })} />
+      {check.recon === "reconciled" ? (
+        <p className="text-sm text-muted-foreground">Reconciled — unlock from the register status column to edit.</p>
+      ) : null}
+      <div className="txn-context">
+        <Field label="Date">
+          <DateInput value={form.issueDate} disabled={locked} tabIndex={-1} onChange={(issueDate) => setForm({ ...form, issueDate, postDate: issueDate })} />
         </Field>
         <Field label="Bank">
           <Select value={form.bankId} onValueChange={(v) => setForm({ ...form, bankId: v })} disabled={locked}>
-            <SelectTrigger>
+            <SelectTrigger tabIndex={-1}>
               <SelectValue placeholder="Select bank" />
             </SelectTrigger>
             <SelectContent>
@@ -505,32 +508,36 @@ function CheckBody({ id, onClose }: { id: string; onClose: () => void }) {
             </SelectContent>
           </Select>
         </Field>
+      </div>
+      <div className="grid gap-3">
+        <Field label="Payee">
+          <Input value={form.payee} disabled={locked} onChange={(e) => setForm({ ...form, payee: e.target.value })} />
+        </Field>
         <Field label="Amount">
           <Input value={form.amount} disabled={locked} inputMode="decimal" onChange={(e) => setForm({ ...form, amount: e.target.value })} />
-        </Field>
-        <Field label="Expense account">
-          <Select value={form.accountId} onValueChange={(v) => setForm({ ...form, accountId: v })} disabled={locked}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {expenseAccounts.map((a) => (
-                <SelectItem key={a.id} value={a.id}>
-                  {a.code} {a.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </Field>
-        <Field label="Issued">
-          <Input type="date" value={form.issueDate} disabled={locked} onChange={(e) => setForm({ ...form, issueDate: e.target.value })} />
-        </Field>
-        <Field label="Post date">
-          <Input type="date" value={form.postDate} disabled={locked} onChange={(e) => setForm({ ...form, postDate: e.target.value })} />
         </Field>
         <Field label="Memo">
           <Input value={form.memo} disabled={locked} onChange={(e) => setForm({ ...form, memo: e.target.value })} />
         </Field>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="Check number">
+            <Input value={form.checkNumber} disabled={locked} tabIndex={-1} onChange={(e) => setForm({ ...form, checkNumber: e.target.value })} />
+          </Field>
+          <Field label="Expense account">
+            <Select value={form.accountId} onValueChange={(v) => setForm({ ...form, accountId: v })} disabled={locked}>
+              <SelectTrigger tabIndex={-1}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {expenseAccounts.map((a) => (
+                  <SelectItem key={a.id} value={a.id}>
+                    {a.code} {a.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+        </div>
       </div>
       <DialogFooter className="flex-wrap gap-2">
         {locked ? null : (
@@ -855,7 +862,8 @@ function JournalBody({ id, onClose }: { id: string; onClose: () => void }) {
   if (!entry) return null;
 
   const canEdit =
-    entry.sourceType === "deposit" || entry.sourceType === "expense" || entry.sourceType === "transfer";
+    (entry.sourceType === "deposit" || entry.sourceType === "expense" || entry.sourceType === "transfer") &&
+    entry.recon !== "reconciled";
 
   return (
     <>
@@ -868,7 +876,7 @@ function JournalBody({ id, onClose }: { id: string; onClose: () => void }) {
       {canEdit ? (
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Date">
-            <Input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
+            <DateInput value={form.date} onChange={(date) => setForm({ ...form, date })} />
           </Field>
           <Field label="Amount">
             <Input value={form.amount} inputMode="decimal" onChange={(e) => setForm({ ...form, amount: e.target.value })} />
@@ -878,26 +886,7 @@ function JournalBody({ id, onClose }: { id: string; onClose: () => void }) {
           </Field>
         </div>
       ) : null}
-      <table className="w-full text-sm">
-        <tbody>
-          {entry.lines.map((line) => {
-            const account = data.accounts.find((a) => a.id === line.accountId);
-            return (
-              <tr key={line.id} className="border-b border-border/70">
-                <td className="py-2 text-muted-foreground">
-                  {account ? `${account.code} ${account.name}` : line.accountId}
-                </td>
-                <td className="py-2 text-right">
-                  {line.debit ? <Money amount={line.debit} currency={data.settings.currency} /> : "—"}
-                </td>
-                <td className="py-2 text-right">
-                  {line.credit ? <Money amount={line.credit} currency={data.settings.currency} /> : "—"}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      <JournalLineTable entry={entry} currency={data.settings.currency} />
       {canEdit ? (
         <DialogFooter>
           <Button
@@ -928,6 +917,67 @@ function Meta({ label, value }: { label: string; value: ReactNode }) {
     <div>
       <p className="eyebrow">{label}</p>
       <div className="mt-1 font-medium">{value}</div>
+    </div>
+  );
+}
+
+const JL_COLS = { account: 240, debit: 120, credit: 120 };
+
+function JournalLineTable({
+  entry,
+  currency,
+}: {
+  entry: { lines: Array<{ id: string; accountId: string; debit: number; credit: number }> };
+  currency: string;
+}) {
+  const data = useFinanceData();
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const cols = useColWidths("finance-manager-journal-line-cols", JL_COLS);
+  const getters = useMemo(
+    () => ({
+      account: (line: (typeof entry.lines)[number]) => {
+        const account = data.accounts.find((a) => a.id === line.accountId);
+        return account ? `${account.code} ${account.name}` : line.accountId;
+      },
+      debit: (line: (typeof entry.lines)[number]) => line.debit,
+      credit: (line: (typeof entry.lines)[number]) => line.credit,
+    }),
+    [data.accounts, entry.lines],
+  );
+  const sort = useEntrySort(entry.lines, "account", getters, "asc");
+  function fit(id: keyof typeof JL_COLS, label: string) {
+    const table = wrapRef.current?.querySelector("table");
+    if (!table) return;
+    cols.setWidth(id, fitColumnWidth({ table, selector: `td[data-col="${id}"]`, header: label }));
+  }
+  return (
+    <div ref={wrapRef} className="list-grid overflow-x-auto">
+      <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
+        <colgroup>
+          {(Object.keys(JL_COLS) as Array<keyof typeof JL_COLS>).map((id) => (
+            <col key={id} style={{ width: cols.widths[id] }} />
+          ))}
+        </colgroup>
+        <thead>
+          <tr className="border-b border-border text-muted-foreground">
+            <SortHeader compact label="Account" column="account" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.account} onWidth={(n) => cols.setWidth("account", n)} onFit={() => fit("account", "Account")} />
+            <SortHeader compact label="Debit" column="debit" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} align="right" width={cols.widths.debit} onWidth={(n) => cols.setWidth("debit", n)} onFit={() => fit("debit", "Debit")} />
+            <SortHeader compact label="Credit" column="credit" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} align="right" width={cols.widths.credit} onWidth={(n) => cols.setWidth("credit", n)} onFit={() => fit("credit", "Credit")} />
+          </tr>
+        </thead>
+        <tbody>
+          {sort.sorted.map((line) => {
+            const account = data.accounts.find((a) => a.id === line.accountId);
+            return (
+              <tr key={line.id} className="border-b border-border/70 last:border-0">
+                <td className="py-2 text-muted-foreground" data-col="account">{account ? `${account.code} ${account.name}` : line.accountId}</td>
+                <td className="py-2 text-right" data-col="debit">{line.debit ? <Money amount={line.debit} currency={currency} /> : "—"}</td>
+                <td className="py-2 text-right" data-col="credit">{line.credit ? <Money amount={line.credit} currency={currency} /> : "—"}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }

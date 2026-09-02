@@ -30,6 +30,23 @@ export function resolvedTheme(mode: ThemeMode): "light" | "dark" {
   return mode;
 }
 
+function applyFavicon(dark: boolean) {
+  if (typeof document === "undefined") return;
+  const href = dark ? "/favicon-dark.svg" : "/favicon.svg";
+  const links = document.querySelectorAll('link[rel="icon"][type="image/svg+xml"]');
+  if (links.length === 0) {
+    const link = document.createElement("link");
+    link.rel = "icon";
+    link.type = "image/svg+xml";
+    link.href = href;
+    document.head.appendChild(link);
+    return;
+  }
+  links.forEach((node) => {
+    (node as HTMLLinkElement).href = href;
+  });
+}
+
 export function applyTheme(mode: ThemeMode) {
   if (typeof document === "undefined") return;
   const dark = mode === "dark";
@@ -38,6 +55,7 @@ export function applyTheme(mode: ThemeMode) {
   root.style.colorScheme = dark ? "dark" : "light";
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.setAttribute("content", dark ? "#141311" : "#243542");
+  applyFavicon(dark);
 }
 
 export function writeTheme(mode: ThemeMode) {
@@ -79,4 +97,4 @@ export function useTheme() {
   return { theme, resolved: theme, setTheme };
 }
 
-export const THEME_BOOT = `(function(){try{var k=${JSON.stringify(KEY)};var t=localStorage.getItem(k);if(t!=="light"&&t!=="dark"){t=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";try{localStorage.setItem(k,t)}catch(e){}}var d=t==="dark";var r=document.documentElement;r.classList.toggle("dark",d);r.style.colorScheme=d?"dark":"light";var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",d?"#141311":"#243542");}catch(e){}})();`;
+export const THEME_BOOT = `(function(){try{var k=${JSON.stringify(KEY)};var t=localStorage.getItem(k);if(t!=="light"&&t!=="dark"){t=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";try{localStorage.setItem(k,t)}catch(e){}}var d=t==="dark";var r=document.documentElement;r.classList.toggle("dark",d);r.style.colorScheme=d?"dark":"light";var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",d?"#141311":"#243542");document.querySelectorAll('link[rel="icon"][type="image/svg+xml"]').forEach(function(n){n.setAttribute("href",d?"/favicon-dark.svg":"/favicon.svg")});}catch(e){}})();`;

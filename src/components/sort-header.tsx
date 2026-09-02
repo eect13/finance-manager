@@ -2,6 +2,65 @@ import { ArrowDown, ArrowUp } from "lucide-react";
 import type { SortDir } from "@/lib/finance/sort";
 import { cn } from "@/lib/utils";
 
+export function ColResize({
+  width,
+  onWidth,
+  onFit,
+}: {
+  width: number;
+  onWidth: (next: number) => void;
+  onFit?: () => void;
+}) {
+  return (
+    <span
+      role="separator"
+      aria-orientation="vertical"
+      aria-label="Resize column"
+      title="Drag to resize · double-click to auto-fit"
+      className="col-resize-handle no-print"
+      onDoubleClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onFit?.();
+      }}
+      onPointerDown={(e) => {
+        if (e.detail > 1) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const startX = e.clientX;
+        const startW = width;
+        const node = e.currentTarget;
+        try {
+          node.setPointerCapture(e.pointerId);
+        } catch {
+          /* synthetic pointer events may not support capture */
+        }
+        node.dataset.dragging = "true";
+        let latest = startW;
+        let frame = 0;
+        function flush() {
+          frame = 0;
+          onWidth(latest);
+        }
+        function move(ev: PointerEvent) {
+          latest = startW + (ev.clientX - startX);
+          if (frame) return;
+          frame = requestAnimationFrame(flush);
+        }
+        function up() {
+          node.dataset.dragging = "";
+          if (frame) cancelAnimationFrame(frame);
+          onWidth(latest);
+          window.removeEventListener("pointermove", move);
+          window.removeEventListener("pointerup", up);
+        }
+        window.addEventListener("pointermove", move);
+        window.addEventListener("pointerup", up);
+      }}
+    />
+  );
+}
+
 export function SortHeader({
   label,
   column,
@@ -11,6 +70,9 @@ export function SortHeader({
   align = "left",
   compact = false,
   className,
+  width,
+  onWidth,
+  onFit,
 }: {
   label: string;
   column: string;
@@ -20,33 +82,36 @@ export function SortHeader({
   align?: "left" | "right" | "center";
   compact?: boolean;
   className?: string;
+  width?: number;
+  onWidth?: (next: number) => void;
+  onFit?: () => void;
 }) {
   const active = sortKey === column;
   return (
     <th
       className={cn(
-        "font-medium",
+        "relative text-center font-medium",
         compact ? "py-2" : "px-4 py-3",
-        compact && align !== "right" && "px-2",
-        align === "right" ? "text-right" : align === "center" ? "text-center" : "text-left",
+        compact && "px-2",
         className,
       )}
+      style={width ? { minWidth: width, width } : undefined}
+      data-align={align}
+      data-col={column}
     >
       <button
         type="button"
         onClick={() => onToggle(column)}
         className={cn(
-          "inline-flex items-center gap-1 font-medium",
+          "inline-flex w-full items-center justify-center gap-1 text-center font-medium",
           compact ? "min-h-8 whitespace-nowrap text-xs tracking-wide uppercase" : "min-h-11 text-sm",
-          align === "right" && "w-full flex-row-reverse justify-start",
           active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
         )}
       >
         {label}
-        {active ? dir === "asc" ? <ArrowUp className="size-3.5" /> : <ArrowDown className="size-3.5" /> : compact ? null : (
-          <span className="size-3.5" />
-        )}
+        {active ? dir === "asc" ? <ArrowUp className="size-3.5" /> : <ArrowDown className="size-3.5" /> : null}
       </button>
+      {onWidth && width != null ? <ColResize width={width} onWidth={onWidth} onFit={onFit} /> : null}
     </th>
   );
 }

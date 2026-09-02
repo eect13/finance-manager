@@ -1,15 +1,25 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Plus } from "lucide-react";
-import { useMemo, useState } from "react";
+import { DateInput } from "@/components/date-input";
+import { PartyCombo } from "@/components/party-combo";
+import { Plus, Printer } from "lucide-react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { ConfirmDelete } from "@/components/confirm-delete";
 import { DragHandle } from "@/components/drag-handle";
 import { CsvButton } from "@/components/export-menu";
+import { ListToolbar } from "@/components/filter-pills";
+import { ListFilters, applySortValue, useListPeriod } from "@/components/list-filters";
+import { ListCard, listColClass } from "@/components/list-table";
+import { RowActions } from "@/components/row-actions";
 import { Field } from "@/components/field";
+import { ListPrint } from "@/components/list-print";
 import { Money } from "@/components/money";
+import { requestPrint } from "@/components/print-preview";
 import { BillBadge } from "@/components/status-badge";
 import { SortHeader } from "@/components/sort-header";
+import { useColWidths } from "@/components/use-col-widths";
+import { useListPointer } from "@/components/use-list-pointer";
 import { useRowDrag } from "@/components/use-row-drag";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,18 +34,41 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { billRows } from "@/lib/finance/export";
-import { addDaysIso, formatDate, parseAmountToCents, todayIso } from "@/lib/finance/format";
+import { fitColumnWidth } from "@/lib/finance/fit-column";
+import { addDaysIso, formatDate, formatMoney, parseAmountToCents, todayIso } from "@/lib/finance/format";
+import { newId } from "@/lib/finance/ids";
 import { billBalance } from "@/lib/finance/ledger";
-import { openProps, stopOpen } from "@/lib/finance/open-record";
+import { openProps, openTxn, stopOpen } from "@/lib/finance/open-record";
 import { useEntrySort } from "@/lib/finance/sort";
 import { useFinanceData, useFinanceStore } from "@/lib/finance/store";
-import type { Bill } from "@/lib/finance/types";
+import { EMPTY_VENDOR, type Bill } from "@/lib/finance/types";
 
 export const Route = createFileRoute("/bills")({ component: BillsPage });
+
+const BILL_COLS = {
+  number: 128,
+  vendor: 180,
+  date: 118,
+  due: 118,
+  amount: 120,
+  balance: 120,
+  status: 118,
+  actions: 108,
+} as const;
+
+const BILL_SORT = [
+  { value: "date:desc", label: "Date · newest" },
+  { value: "date:asc", label: "Date · oldest" },
+  { value: "number:asc", label: "Number" },
+  { value: "vendor:asc", label: "Vendor A–Z" },
+  { value: "due:asc", label: "Due · soonest" },
+  { value: "balance:desc", label: "Balance high–low" },
+];
 
 function BillsPage() {
   const data = useFinanceData();
   const createBill = useFinanceStore((s) => s.createBill);
+  const addVendor = useFinanceStore((s) => s.addVendor);
   const payBill = useFinanceStore((s) => s.payBill);
   const voidBill = useFinanceStore((s) => s.voidBill);
   const removeBill = useFinanceStore((s) => s.removeBill);
@@ -47,6 +80,9 @@ function BillsPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [payId, setPayId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<Bill | null>(null);
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "open" | "paid" | "void">("all");
+  const period = useListPeriod("all");
   const [payForm, setPayForm] = useState({ amount: "", date: today, bankId: "" });
   const [form, setForm] = useState({
     vendorId: "",
@@ -71,7 +107,19 @@ function BillsPage() {
     }),
     [data.vendors],
   );
-  const sort = useEntrySort(data.bills, dragEnabled ? "order" : "date", getters, "desc");
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return data.bills.filter((b) => {
+      if (statusFilter === "open" && (b.status === "paid" || b.status === "void")) return false;
+      if (statusFilter === "paid" && b.status !== "paid") return false;
+      if (statusFilter === "void" && b.status !== "void") return false;
+      if (!period.inRange(b.date)) return false;
+      if (!q) return true;
+      const name = data.vendors.find((v) => v.id === b.vendorId)?.name ?? "";
+      return [b.number, name, b.memo, b.reference].join(" ").toLowerCase().includes(q);
+    });
+  }, [data.bills, data.vendors, query, statusFilter, period.inRange]);
+  const sort = useEntrySort(filtered, dragEnabled ? "order" : "date", getters, "desc");
   const dragOn = dragEnabled && sort.key === "order";
   const drag = useRowDrag(
     dragOn,
@@ -80,6 +128,18 @@ function BillsPage() {
   );
 
   const paying = data.bills.find((b) => b.id === payId);
+  const cols = useColWidths("finance-manager-bills-cols", BILL_COLS);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const openBill = useCallback((id: string) => openTxn("bill", id), []);
+  const pointer = useListPointer(
+    sort.sorted.map((b) => b.id),
+    openBill,
+  );
+  function fit(id: keyof typeof BILL_COLS, label: string) {
+    const table = gridRef.current?.querySelector("table");
+    if (!table) return;
+    cols.setWidth(id, fitColumnWidth({ table, selector: `td[data-col="${id}"]`, header: label }));
+  }
 
   return (
     <AppShell
@@ -88,7 +148,11 @@ function BillsPage() {
       actions={
         <>
           <CsvButton filename="bills.csv" rows={billRows(data)} />
-          <Button onClick={() => setCreateOpen(true)} disabled={data.vendors.length === 0}>
+          <Button variant="outline" onClick={requestPrint}>
+            <Printer />
+            Print
+          </Button>
+          <Button onClick={() => setCreateOpen(true)}>
             <Plus />
             New bill
           </Button>
@@ -96,38 +160,69 @@ function BillsPage() {
       }
     >
       {data.vendors.length === 0 ? (
-        <p className="mb-4 text-sm text-muted-foreground">Add a vendor before you enter a bill.</p>
+        <p className="mb-4 text-sm text-muted-foreground">Type a new vendor on the bill and press Enter to add them.</p>
       ) : null}
 
-      <div className="overflow-x-auto rounded-3xl bg-card elevation">
-        <table className="w-full min-w-4xl text-sm">
+      <ListToolbar
+        query={query}
+        onQuery={setQuery}
+        placeholder="Search number or vendor"
+        label="Search bills"
+      >
+        <ListFilters
+          datePreset={period.preset}
+          dateFrom={period.from}
+          dateTo={period.to}
+          onPreset={period.applyPreset}
+          onDateFrom={period.setDateFrom}
+          onDateTo={period.setDateTo}
+          defaultPreset="all"
+          selects={[
+            {
+              label: "Status",
+              value: statusFilter,
+              options: [
+                { value: "all", label: "All" },
+                { value: "open", label: "Open" },
+                { value: "paid", label: "Paid" },
+                { value: "void", label: "Void" },
+              ],
+              onChange: (v) => setStatusFilter(v as typeof statusFilter),
+            },
+          ]}
+          sortValue={`${sort.key}:${sort.dir}`}
+          sortOptions={BILL_SORT}
+          onSort={(v) => applySortValue(sort.set, v)}
+          onClear={() => {
+            setStatusFilter("all");
+            period.reset();
+          }}
+        />
+      </ListToolbar>
+
+      <ListCard ref={gridRef} className="doc-list">
+        <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
+          <colgroup>
+            {dragEnabled ? <col style={{ width: 44 }} /> : null}
+            {(Object.keys(BILL_COLS) as Array<keyof typeof BILL_COLS>).map((id) => (
+              <col key={id} className={listColClass(id)} style={{ width: cols.widths[id] }} />
+            ))}
+          </colgroup>
           <thead>
             <tr className="border-b border-border text-muted-foreground">
               {dragEnabled ? (
                 <SortHeader label="Order" column="order" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} />
               ) : null}
-              <SortHeader label="Number" column="number" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} />
-              <SortHeader label="Vendor" column="vendor" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} />
-              <SortHeader label="Date" column="date" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} />
-              <SortHeader label="Due" column="due" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} />
-              <SortHeader
-                label="Amount"
-                column="amount"
-                sortKey={sort.key}
-                dir={sort.dir}
-                onToggle={sort.toggle}
-                align="right"
-              />
-              <SortHeader
-                label="Balance"
-                column="balance"
-                sortKey={sort.key}
-                dir={sort.dir}
-                onToggle={sort.toggle}
-                align="right"
-              />
-              <SortHeader label="Status" column="status" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} />
-              <th className="px-4 py-3" />
+              <SortHeader label="Number" column="number" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.number} onWidth={(n) => cols.setWidth("number", n)} onFit={() => fit("number", "Number")} />
+              <SortHeader label="Vendor" column="vendor" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.vendor} onWidth={(n) => cols.setWidth("vendor", n)} onFit={() => fit("vendor", "Vendor")} />
+              <SortHeader label="Date" column="date" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.date} onWidth={(n) => cols.setWidth("date", n)} onFit={() => fit("date", "Date")} />
+              <SortHeader label="Due" column="due" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.due} onWidth={(n) => cols.setWidth("due", n)} onFit={() => fit("due", "Due")} />
+              <SortHeader label="Amount" column="amount" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} align="right" width={cols.widths.amount} onWidth={(n) => cols.setWidth("amount", n)} onFit={() => fit("amount", "Amount")} />
+              <SortHeader label="Balance" column="balance" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} align="right" width={cols.widths.balance} onWidth={(n) => cols.setWidth("balance", n)} onFit={() => fit("balance", "Balance")} />
+              <SortHeader label="Status" column="status" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.status} onWidth={(n) => cols.setWidth("status", n)} onFit={() => fit("status", "Status")} />
+              <th className="col-actions relative px-4 py-3">
+                <span className="sr-only">Actions</span>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -143,59 +238,67 @@ function BillsPage() {
                 const due = billBalance(bill);
                 const overdue = due > 0 && bill.dueDate < today && bill.status !== "void" && bill.status !== "paid";
                 return (
-                  <tr key={bill.id} className="border-b border-border/70 last:border-0" {...drag.bind(bill.id)} {...openProps("bill", bill.id)}>
+                  <tr
+                    key={bill.id}
+                    className="border-b border-border/70 last:border-0"
+                    data-active={pointer.activeId === bill.id ? "true" : undefined}
+                    {...drag.bind(bill.id)}
+                    {...openProps("bill", bill.id)}
+                    onClick={() => pointer.setActiveId(bill.id)}
+                  >
                     {dragEnabled ? (
                       <td className="px-4 py-3">
                         <DragHandle enabled={dragOn} />
                       </td>
                     ) : null}
-                    <td className="px-4 py-3 font-medium">{bill.number}</td>
-                    <td className="px-4 py-3">{vendor?.name ?? "—"}</td>
-                    <td className="px-4 py-3 whitespace-nowrap">{formatDate(bill.date)}</td>
-                    <td className="px-4 py-3 whitespace-nowrap">{formatDate(bill.dueDate)}</td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3 font-medium" data-col="number">{bill.number}</td>
+                    <td className="px-4 py-3" data-col="vendor">{vendor?.name ?? "—"}</td>
+                    <td className="px-4 py-3 whitespace-nowrap" data-col="date">{formatDate(bill.date)}</td>
+                    <td className="px-4 py-3 whitespace-nowrap" data-col="due">{formatDate(bill.dueDate)}</td>
+                    <td className="px-4 py-3 text-right" data-col="amount">
                       <Money amount={bill.amount} currency={data.settings.currency} />
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3 text-right" data-col="balance">
                       <Money amount={due} currency={data.settings.currency} />
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3" data-col="status">
                       <BillBadge status={bill.status} overdue={overdue} />
                     </td>
-                    <td className="px-4 py-3" onDoubleClick={stopOpen}>
-                      <div className="flex flex-wrap justify-end gap-1">
-                        {due > 0 && bill.status !== "void" ? (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setPayId(bill.id);
-                              setPayForm({
-                                amount: String(due / 100),
-                                date: today,
-                                bankId: data.banks[0]?.id ?? "",
-                              });
-                            }}
-                          >
-                            Pay
-                          </Button>
-                        ) : null}
-                        {bill.status !== "void" && bill.status !== "paid" ? (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => {
-                              voidBill(bill.id);
-                              toast.success("Bill voided.");
-                            }}
-                          >
-                            Void
-                          </Button>
-                        ) : null}
-                        <Button size="sm" variant="ghost" onClick={() => setDeleting(bill)}>
-                          Delete
-                        </Button>
-                      </div>
+                    <td className="col-actions px-4 py-3" onDoubleClick={stopOpen}>
+                      <RowActions
+                        primary={
+                          due > 0 && bill.status !== "void" ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setPayId(bill.id);
+                                setPayForm({
+                                  amount: String(due / 100),
+                                  date: today,
+                                  bankId: data.banks[0]?.id ?? "",
+                                });
+                              }}
+                            >
+                              Pay
+                            </Button>
+                          ) : undefined
+                        }
+                        items={[
+                          ...(bill.status !== "void" && bill.status !== "paid"
+                            ? [
+                                {
+                                  label: "Void",
+                                  onSelect: () => {
+                                    voidBill(bill.id);
+                                    toast.success("Bill voided.");
+                                  },
+                                },
+                              ]
+                            : []),
+                          { label: "Delete", danger: true, onSelect: () => setDeleting(bill) },
+                        ]}
+                      />
                     </td>
                   </tr>
                 );
@@ -203,7 +306,28 @@ function BillsPage() {
             )}
           </tbody>
         </table>
-      </div>
+      </ListCard>
+      <ListPrint
+        title="Bills"
+        columns={[
+          { key: "number", label: "Number" },
+          { key: "vendor", label: "Vendor" },
+          { key: "date", label: "Date" },
+          { key: "due", label: "Due" },
+          { key: "amount", label: "Amount", align: "right" },
+          { key: "balance", label: "Balance", align: "right" },
+          { key: "status", label: "Status" },
+        ]}
+        rows={sort.sorted.map((b) => ({
+          number: b.number,
+          vendor: data.vendors.find((v) => v.id === b.vendorId)?.name ?? "",
+          date: formatDate(b.date),
+          due: formatDate(b.dueDate),
+          amount: formatMoney(b.amount, data.settings.currency),
+          balance: formatMoney(billBalance(b), data.settings.currency),
+          status: b.status,
+        }))}
+      />
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent>
@@ -213,25 +337,26 @@ function BillsPage() {
           </DialogHeader>
           <div className="grid gap-4">
             <Field label="Vendor">
-              <Select value={form.vendorId} onValueChange={(v) => setForm({ ...form, vendorId: v })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose vendor" />
-                </SelectTrigger>
-                <SelectContent>
-                  {data.vendors.map((v) => (
-                    <SelectItem key={v.id} value={v.id}>
-                      {v.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <PartyCombo
+                items={data.vendors}
+                valueId={form.vendorId}
+                valueName={data.vendors.find((v) => v.id === form.vendorId)?.name ?? ""}
+                label="Vendor"
+                placeholder="Type a vendor"
+                onChoose={(id) => setForm({ ...form, vendorId: id })}
+                onCreate={(name) => {
+                  const id = newId();
+                  addVendor({ ...EMPTY_VENDOR, id, name });
+                  return { id, name };
+                }}
+              />
             </Field>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Bill date">
-                <Input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
+                <DateInput value={form.date} onChange={(date) => setForm({ ...form, date })} />
               </Field>
               <Field label="Due date">
-                <Input type="date" value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} />
+                <DateInput value={form.dueDate} onChange={(dueDate) => setForm({ ...form, dueDate })} />
               </Field>
             </div>
             <Field label="Amount">
@@ -262,6 +387,10 @@ function BillsPage() {
             <Button
               onClick={() => {
                 try {
+                  if (!form.vendorId) {
+                    toast.error("Payee must be a registered vendor. Click + Add to create.");
+                    return;
+                  }
                   createBill({
                     vendorId: form.vendorId,
                     date: form.date,
@@ -315,7 +444,7 @@ function BillsPage() {
               </Select>
             </Field>
             <Field label="Date">
-              <Input type="date" value={payForm.date} onChange={(e) => setPayForm({ ...payForm, date: e.target.value })} />
+              <DateInput value={payForm.date} onChange={(date) => setPayForm({ ...payForm, date })} />
             </Field>
             <Field label="Amount">
               <Input value={payForm.amount} onChange={(e) => setPayForm({ ...payForm, amount: e.target.value })} inputMode="decimal" />

@@ -1,41 +1,83 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { DateInput } from "@/components/date-input";
+import { FilterPills } from "@/components/filter-pills";
+import { PartyCombo } from "@/components/party-combo";
 import { toast } from "sonner";
 import { ConfirmDelete } from "@/components/confirm-delete";
 import { Field } from "@/components/field";
 import { Money } from "@/components/money";
-import { ShopTick } from "@/components/shop-tick";
 import { ReceiptBadge } from "@/components/status-badge";
+import { ShopTick } from "@/components/shop-tick";
+import { listColClass } from "@/components/list-table";
+import { SortHeader } from "@/components/sort-header";
+import { useColWidths } from "@/components/use-col-widths";
 import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { fitColumnWidth } from "@/lib/finance/fit-column";
 import { formatDate, parseAmountToCents, todayIso } from "@/lib/finance/format";
-import { customerOpenBalance, invoiceBalance, invoiceTotal } from "@/lib/finance/ledger";
+import { newId } from "@/lib/finance/ids";
+import { allocateOldest, customerOpenBalance, invoiceBalance, invoiceTotal } from "@/lib/finance/ledger";
 import { methodNeedsReference, methodRefLabel, PAYMENT_METHODS } from "@/lib/finance/methods";
+import { findDuplicateCashLine } from "@/lib/finance/register";
+import { useEntrySort } from "@/lib/finance/sort";
 import { useFinanceData, useFinanceStore } from "@/lib/finance/store";
-import type { ReceiptMethod } from "@/lib/finance/types";
+import { EMPTY_CUSTOMER, type FinanceData, type ReceiptMethod } from "@/lib/finance/types";
 import { cn } from "@/lib/utils";
+
+const OPEN_CAP = 80;
+const APPLY_COL = 40;
+const ALLOC_COLS = {
+  date: 110,
+  number: 108,
+  orig: 112,
+  due: 112,
+  payment: 128,
+} as const;
+
+function centsToField(cents: number) {
+  return cents ? String(cents / 100) : "";
+}
+
+function openCustomerInvoices(data: FinanceData, customerId: string, keepId?: string) {
+  const rows: Array<{ id: string; date: string; number: string; due: number; orig: number }> = [];
+  for (const inv of data.invoices) {
+    if (inv.customerId !== customerId) continue;
+    if (inv.status === "void" || inv.status === "draft") continue;
+    const due = invoiceBalance(data, inv.id);
+    if (due <= 0 && keepId !== inv.id) continue;
+    rows.push({ id: inv.id, date: inv.date, number: inv.number, due, orig: invoiceTotal(data, inv.id) });
+  }
+  rows.sort((a, b) => a.date.localeCompare(b.date) || a.number.localeCompare(b.number));
+  return rows.slice(0, OPEN_CAP);
+}
 
 export function CustomerPayment({
   receiptId,
   invoiceId,
   customerId: seedCustomerId,
+  initialMethod = "cash",
   onClose,
   onBack,
 }: {
   receiptId?: string;
   invoiceId?: string;
   customerId?: string;
+  initialMethod?: ReceiptMethod;
   onClose: () => void;
   onBack?: () => void;
 }) {
   const data = useFinanceData();
   const updateReceipt = useFinanceStore((s) => s.updateReceipt);
   const applyCustomerPayments = useFinanceStore((s) => s.applyCustomerPayments);
+  const addCustomer = useFinanceStore((s) => s.addCustomer);
   const voidReceipt = useFinanceStore((s) => s.voidReceipt);
   const removeReceipt = useFinanceStore((s) => s.removeReceipt);
   const receipt = receiptId ? data.receipts.find((r) => r.id === receiptId) : undefined;
   const seedInvoice = invoiceId ? data.invoices.find((i) => i.id === invoiceId) : undefined;
+  const customerRef = useRef<HTMLInputElement>(null);
+  const amountRef = useRef<HTMLInputElement>(null);
 
   const [deleting, setDeleting] = useState(false);
   const [cardOpen, setCardOpen] = useState(false);
@@ -46,12 +88,13 @@ export function CustomerPayment({
     amount: "",
     date: todayIso(),
     bankId: data.banks.find((b) => !b.archived)?.id ?? "",
-    method: "cash" as ReceiptMethod,
+    method: initialMethod,
     checkNumber: "",
     memo: "",
   });
   const [applied, setApplied] = useState<Record<string, string>>({});
-  const [picked, setPicked] = useState<string[]>([]);
+  const [invQuery, setInvQuery] = useState("");
+  const [invFilter, setInvFilter] = useState<"all" | "applied" | "open">("all");
 
   useEffect(() => {
     if (receiptId && !receipt) {
@@ -64,6 +107,7 @@ export function CustomerPayment({
   }, [receiptId, receipt, invoiceId, seedInvoice, onClose]);
 
   useEffect(() => {
+    const bankId = data.banks.find((b) => !b.archived)?.id ?? "";
     if (receipt) {
       setForm({
         customerId: receipt.customerId ?? "",
@@ -75,10 +119,7 @@ export function CustomerPayment({
         checkNumber: receipt.checkNumber,
         memo: receipt.memo,
       });
-      if (receipt.invoiceId) {
-        setPicked([receipt.invoiceId]);
-        setApplied({ [receipt.invoiceId]: String(receipt.amount / 100) });
-      }
+      if (receipt.invoiceId) setApplied({ [receipt.invoiceId]: String(receipt.amount / 100) });
       return;
     }
     if (seedInvoice) {
@@ -87,46 +128,35 @@ export function CustomerPayment({
       setForm({
         customerId: seedInvoice.customerId,
         receivedFrom: customer?.name ?? seedInvoice.number,
-        amount: String(due / 100),
+        amount: centsToField(due),
         date: todayIso(),
-        bankId: data.banks.find((b) => !b.archived)?.id ?? "",
-        method: "cash",
+        bankId,
+        method: initialMethod,
         checkNumber: "",
         memo: `Payment ${seedInvoice.number}`,
       });
-      setPicked([seedInvoice.id]);
-      setApplied({ [seedInvoice.id]: String(due / 100) });
+      const map = allocateOldest(
+        openCustomerInvoices(data, seedInvoice.customerId).map((row) => ({ id: row.id, due: row.due })),
+        due,
+      );
+      const next: Record<string, string> = {};
+      for (const [id, value] of Object.entries(map)) next[id] = centsToField(value);
+      setApplied(next);
       return;
     }
-    if (seedCustomerId) {
-      const customer = data.customers.find((c) => c.id === seedCustomerId);
-      if (!customer) return;
-      const invoices = data.invoices.filter(
-        (inv) => inv.customerId === seedCustomerId && (inv.status === "sent" || inv.status === "partial"),
-      );
-      const dueMap: Record<string, string> = {};
-      const ids: string[] = [];
-      let total = 0;
-      for (const inv of invoices) {
-        const due = invoiceBalance(data, inv.id);
-        if (due <= 0) continue;
-        dueMap[inv.id] = String(due / 100);
-        ids.push(inv.id);
-        total += due;
-      }
-      setForm({
-        customerId: seedCustomerId,
-        receivedFrom: customer.name,
-        amount: total ? String(total / 100) : "",
-        date: todayIso(),
-        bankId: data.banks.find((b) => !b.archived)?.id ?? "",
-        method: "cash",
-        checkNumber: "",
-        memo: "",
-      });
-      setPicked(ids);
-      setApplied(dueMap);
-    }
+    const customer = seedCustomerId ? data.customers.find((c) => c.id === seedCustomerId) : undefined;
+    setForm({
+      customerId: customer?.id ?? "",
+      receivedFrom: customer?.name ?? "",
+      amount: "",
+      date: todayIso(),
+      bankId,
+      method: initialMethod,
+      checkNumber: "",
+      memo: "",
+    });
+    setApplied({});
+    requestAnimationFrame(() => customerRef.current?.focus());
     // Hydrate once per document, not on every books tick.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [receipt?.id, seedInvoice?.id, seedCustomerId]);
@@ -134,21 +164,40 @@ export function CustomerPayment({
   const customerId = form.customerId;
   const customer = data.customers.find((c) => c.id === customerId);
   const openInvoices = useMemo(() => {
-    return data.invoices
-      .filter((inv) => {
-        if (inv.status === "void" || inv.status === "draft") return false;
-        if (customerId && inv.customerId !== customerId) return false;
-        const due = invoiceBalance(data, inv.id);
-        if (receipt?.invoiceId === inv.id) return true;
-        return due > 0;
-      })
-      .sort((a, b) => a.date.localeCompare(b.date) || a.number.localeCompare(b.number));
-  }, [data, customerId, receipt]);
+    if (!customerId) return [];
+    return openCustomerInvoices(data, customerId, receipt?.invoiceId);
+  }, [data, customerId, receipt?.invoiceId]);
+
+  const visibleInvoices = useMemo(() => {
+    const q = invQuery.trim().toLowerCase();
+    return openInvoices.filter((inv) => {
+      const paid = parseAmountToCents(applied[inv.id] ?? "") || 0;
+      if (invFilter === "applied" && paid <= 0) return false;
+      if (invFilter === "open" && paid > 0) return false;
+      if (!q) return true;
+      return [inv.date, inv.number].join(" ").toLowerCase().includes(q);
+    });
+  }, [openInvoices, invQuery, invFilter, applied]);
+
+  const invGetters = useMemo(
+    () => ({
+      date: (r: (typeof openInvoices)[number]) => r.date,
+      number: (r: (typeof openInvoices)[number]) => r.number,
+      orig: (r: (typeof openInvoices)[number]) => r.orig,
+      due: (r: (typeof openInvoices)[number]) => r.due,
+      payment: (r: (typeof openInvoices)[number]) => parseAmountToCents(applied[r.id] ?? "") || 0,
+    }),
+    [applied],
+  );
+  const invSort = useEntrySort(visibleInvoices, "date", invGetters, "asc");
+  const allocCols = useColWidths("finance-manager-receive-alloc-cols", ALLOC_COLS);
+  const allocRef = useRef<HTMLDivElement>(null);
 
   const locked = receipt?.status === "void";
   const balance = customerId ? customerOpenBalance(data, customerId) : 0;
-  const appliedTotal = picked.reduce((sum, id) => sum + (parseAmountToCents(applied[id] ?? "0") || 0), 0);
+  const appliedTotal = Object.values(applied).reduce((sum, raw) => sum + (parseAmountToCents(raw) || 0), 0);
   const payAmount = parseAmountToCents(form.amount) || 0;
+  const leftover = Math.max(0, payAmount - appliedTotal);
   const saleLines = receipt?.kind === "cash-sale" ? receipt.lines : [];
 
   function setMethod(method: ReceiptMethod) {
@@ -156,51 +205,37 @@ export function CustomerPayment({
     if (method === "card") setCardOpen(true);
   }
 
-  function chooseCustomer(id: string) {
-    const next = data.customers.find((c) => c.id === id);
-    setForm((prev) => ({ ...prev, customerId: id, receivedFrom: next?.name ?? prev.receivedFrom }));
-    const invoices = data.invoices.filter((inv) => inv.customerId === id && (inv.status === "sent" || inv.status === "partial"));
-    const dueMap: Record<string, string> = {};
-    const ids: string[] = [];
-    let left = parseAmountToCents(form.amount) || 0;
-    for (const inv of invoices) {
-      const due = invoiceBalance(data, inv.id);
-      if (due <= 0 || left <= 0) continue;
-      const take = Math.min(due, left);
-      dueMap[inv.id] = String(take / 100);
-      ids.push(inv.id);
-      left -= take;
-    }
-    setApplied(dueMap);
-    setPicked(ids);
-  }
-
-  function autoApply() {
-    let left = parseAmountToCents(form.amount) || 0;
+  function applyAmount(cents: number, invoices = openInvoices) {
+    const map = allocateOldest(
+      invoices.map((row) => ({ id: row.id, due: row.due })),
+      cents,
+    );
     const next: Record<string, string> = {};
-    const ids: string[] = [];
-    for (const inv of openInvoices) {
-      const due = invoiceBalance(data, inv.id);
-      if (due <= 0 || left <= 0) continue;
-      const take = Math.min(due, left);
-      next[inv.id] = String(take / 100);
-      ids.push(inv.id);
-      left -= take;
-    }
+    for (const [id, value] of Object.entries(map)) next[id] = centsToField(value);
     setApplied(next);
-    setPicked(ids);
   }
 
-  function toggleInvoice(id: string, on: boolean) {
-    const inv = openInvoices.find((i) => i.id === id);
-    if (!inv) return;
-    if (!on) {
-      setPicked((prev) => prev.filter((x) => x !== id));
-      return;
-    }
-    const due = invoiceBalance(data, id);
-    setPicked((prev) => (prev.includes(id) ? prev : [...prev, id]));
-    setApplied((prev) => ({ ...prev, [id]: prev[id] || String(due / 100) }));
+  function chooseCustomer(id: string, name: string) {
+    setForm((prev) => ({ ...prev, customerId: id, receivedFrom: name }));
+    applyAmount(parseAmountToCents(form.amount) || 0, openCustomerInvoices(data, id));
+  }
+
+  function changeAmount(raw: string) {
+    setForm((prev) => ({ ...prev, amount: raw }));
+    applyAmount(parseAmountToCents(raw) || 0);
+  }
+
+  function toggleInvoice(id: string, due: number) {
+    if (locked) return;
+    const current = parseAmountToCents(applied[id]) || 0;
+    const next = { ...applied, [id]: current > 0 ? "" : centsToField(due) };
+    const total = Object.values(next).reduce((sum, raw) => sum + (parseAmountToCents(raw) || 0), 0);
+    setApplied(next);
+    setForm((prev) => {
+      const entered = parseAmountToCents(prev.amount) || 0;
+      const wasAuto = entered === 0 || entered === appliedTotal;
+      return wasAuto ? { ...prev, amount: centsToField(total) } : prev;
+    });
   }
 
   function finishCard() {
@@ -215,9 +250,23 @@ export function CustomerPayment({
     toast.success(`Card •••• ${last4} ready.`);
   }
 
+  function resetForNext() {
+    setForm((prev) => ({ ...prev, amount: "", checkNumber: "", memo: "" }));
+    setApplied({});
+    requestAnimationFrame(() => {
+      customerRef.current?.focus();
+      customerRef.current?.select();
+    });
+  }
+
   function save() {
     if (locked) return;
     try {
+      if (!form.customerId) {
+        toast.error("Payee must be a registered customer. Click + Add to create.");
+        customerRef.current?.focus();
+        return;
+      }
       if (form.method === "card" && !form.checkNumber) {
         setCardOpen(true);
         return;
@@ -235,10 +284,9 @@ export function CustomerPayment({
           checkNumber: form.checkNumber,
           bankId: form.bankId,
         });
-        const extra = picked
-          .filter((id) => id !== receipt.invoiceId)
-          .map((id) => ({ invoiceId: id, amount: parseAmountToCents(applied[id] ?? "0") || 0 }))
-          .filter((a) => a.amount > 0);
+        const extra = Object.entries(applied)
+          .filter(([id, raw]) => id !== receipt.invoiceId && (parseAmountToCents(raw) || 0) > 0)
+          .map(([id, raw]) => ({ invoiceId: id, amount: parseAmountToCents(raw) || 0 }));
         if (extra.length) {
           applyCustomerPayments({
             date: form.date,
@@ -253,10 +301,20 @@ export function CustomerPayment({
         onClose();
         return;
       }
-      const applications = picked
-        .map((id) => ({ invoiceId: id, amount: parseAmountToCents(applied[id] ?? "0") || 0 }))
-        .filter((a) => a.amount > 0);
-      if (applications.length === 0) throw new Error("Tick at least one invoice to apply this payment.");
+      const applications = Object.entries(applied)
+        .map(([id, raw]) => ({ invoiceId: id, amount: parseAmountToCents(raw) || 0 }))
+        .filter((row) => row.amount > 0);
+      if (applications.length === 0) throw new Error("Apply this payment to at least one invoice.");
+      if (payAmount > 0 && appliedTotal !== payAmount) {
+        throw new Error("Apply the full amount, or lower it to what the open invoices can take.");
+      }
+      const dup = findDuplicateCashLine(data, {
+        date: form.date,
+        bankId: form.bankId,
+        amount: payAmount || applications.reduce((s, a) => s + a.amount, 0),
+        party: form.receivedFrom,
+        kind: "payment",
+      });
       applyCustomerPayments({
         date: form.date,
         bankId: form.bankId,
@@ -265,11 +323,21 @@ export function CustomerPayment({
         checkNumber: form.checkNumber,
         applications,
       });
-      toast.success("Payment recorded.");
-      onClose();
+      toast.success("Payment recorded.", {
+        description: dup ? "Same customer, amount, and date already on this bank. Both kept." : undefined,
+      });
+      resetForNext();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not save payment.");
     }
+  }
+
+  function onFormKey(e: KeyboardEvent<HTMLDivElement>) {
+    if (e.key !== "Enter" || e.nativeEvent.isComposing) return;
+    const target = e.target as HTMLElement;
+    if (target.closest("textarea, [data-party-list]")) return;
+    e.preventDefault();
+    save();
   }
 
   if (receiptId && !receipt) return null;
@@ -282,7 +350,7 @@ export function CustomerPayment({
           <p className="font-display text-xl font-medium tracking-tight">Process credit card</p>
           <p className="text-sm text-muted-foreground">Card details stay on this screen. Only the last four digits are kept on the books.</p>
         </div>
-        <p className="mb-4 text-2xl font-medium tabular-nums">
+        <p className="stat-value mb-4">
           <Money amount={payAmount || appliedTotal} currency={data.settings.currency} />
         </p>
         <div className="grid gap-3">
@@ -338,12 +406,14 @@ export function CustomerPayment({
   }
 
   return (
-    <>
+    <div onKeyDown={onFormKey}>
       <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="font-display text-2xl font-medium tracking-tight">Customer payment</p>
+          <p className="font-display text-2xl font-medium tracking-tight">Receive payment</p>
           <p className="text-sm text-muted-foreground">
-            {receipt ? receipt.number : "Apply cash, check, or card to open invoices."}
+            {receipt
+              ? receipt.number
+              : "Customer, amount, date, ref. Tick invoices or type Payment. Enter posts and stays for the next one."}
           </p>
         </div>
         <div className="text-left sm:text-right">
@@ -354,68 +424,75 @@ export function CustomerPayment({
 
       {receipt ? <ReceiptBadge status={receipt.status} kind={receipt.kind} method={form.method} /> : null}
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_auto]">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Received from">
-            {data.customers.length ? (
-              <Select value={customerId || "walkin"} onValueChange={(v) => (v === "walkin" ? setForm({ ...form, customerId: "" }) : chooseCustomer(v))} disabled={locked}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Customer" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="walkin">{form.receivedFrom || "Walk-in"}</SelectItem>
-                  {data.customers.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : (
-              <Input value={form.receivedFrom} disabled={locked} onChange={(e) => setForm({ ...form, receivedFrom: e.target.value })} />
-            )}
-          </Field>
-          <Field label="Payment amount">
-            <Input
-              value={form.amount}
-              disabled={locked}
-              inputMode="decimal"
-              onChange={(e) => setForm({ ...form, amount: e.target.value })}
-            />
-          </Field>
-          <Field label="Date">
-            <Input type="date" value={form.date} disabled={locked} onChange={(e) => setForm({ ...form, date: e.target.value })} />
-          </Field>
-          <Field label={methodRefLabel(form.method)}>
-            <Input
-              value={form.checkNumber}
-              disabled={locked}
-              placeholder={form.method === "card" ? "Last 4" : "Optional"}
-              onChange={(e) => setForm({ ...form, checkNumber: e.target.value })}
-            />
-          </Field>
-          <Field label="Deposit to">
-            <Select value={form.bankId} onValueChange={(v) => setForm({ ...form, bankId: v })} disabled={locked}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {data.banks
-                  .filter((b) => !b.archived)
-                  .map((b) => (
-                    <SelectItem key={b.id} value={b.id}>
-                      {b.nickname}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-          </Field>
-          <Field label="Memo">
-            <Input value={form.memo} disabled={locked} onChange={(e) => setForm({ ...form, memo: e.target.value })} />
-          </Field>
-        </div>
+      <div className="txn-context mt-4">
+        <Field label="Date">
+          <DateInput
+            value={form.date}
+            disabled={locked}
+            tabIndex={-1}
+            onChange={(date) => setForm((prev) => ({ ...prev, date }))}
+          />
+        </Field>
+        <Field label="Deposit to">
+          <Select value={form.bankId} onValueChange={(v) => setForm((prev) => ({ ...prev, bankId: v }))} disabled={locked}>
+            <SelectTrigger tabIndex={-1}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {data.banks
+                .filter((b) => !b.archived)
+                .map((b) => (
+                  <SelectItem key={b.id} value={b.id}>
+                    {b.nickname}
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+        </Field>
+      </div>
 
-        <div className="grid grid-cols-3 gap-1 sm:grid-cols-5 lg:grid-cols-1 lg:w-36">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label="Customer">
+          <PartyCombo
+            items={data.customers}
+            valueId={customerId}
+            valueName={form.receivedFrom}
+            disabled={locked}
+            inputRef={customerRef}
+            label="Customer"
+            placeholder="Pick a customer"
+            invalid={!form.customerId && Boolean(form.receivedFrom)}
+            onChoose={chooseCustomer}
+            onName={(receivedFrom) => setForm((prev) => ({ ...prev, receivedFrom, customerId: "" }))}
+            onCreate={(name) => {
+              const id = newId();
+              addCustomer({ ...EMPTY_CUSTOMER, id, name });
+              return { id, name };
+            }}
+          />
+        </Field>
+        <Field label="Payment amount">
+          <Input
+            ref={amountRef}
+            value={form.amount}
+            disabled={locked}
+            inputMode="decimal"
+            autoComplete="off"
+            onChange={(e) => changeAmount(e.target.value)}
+          />
+        </Field>
+        <Field label={methodRefLabel(form.method)}>
+          <Input
+            value={form.checkNumber}
+            disabled={locked}
+            placeholder={form.method === "card" ? "Last 4" : "Check / ref no."}
+            autoComplete="off"
+            onChange={(e) => setForm((prev) => ({ ...prev, checkNumber: e.target.value }))}
+          />
+        </Field>
+      </div>
+
+      <div className="mt-4 grid grid-cols-5 gap-1">
           {PAYMENT_METHODS.map((opt) => {
             const Icon = opt.icon;
             const on = form.method === opt.value;
@@ -423,10 +500,11 @@ export function CustomerPayment({
               <button
                 key={opt.value}
                 type="button"
+                tabIndex={-1}
                 disabled={locked}
                 onClick={() => setMethod(opt.value)}
                 className={cn(
-                  "flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-center text-xs font-medium transition-colors",
+                  "flex min-h-11 flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-center text-xs font-medium",
                   on ? "bg-primary text-primary-foreground" : "bg-muted text-foreground hover:bg-accent",
                 )}
               >
@@ -435,7 +513,6 @@ export function CustomerPayment({
               </button>
             );
           })}
-        </div>
       </div>
 
       {saleLines.length > 0 ? (
@@ -456,68 +533,170 @@ export function CustomerPayment({
         </div>
       ) : null}
 
-      {openInvoices.length > 0 ? (
+      {customerId && openInvoices.length > 0 ? (
         <div className="mt-4">
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <p className="text-sm font-medium">Open invoices</p>
-            {locked ? null : (
-              <Button type="button" size="sm" variant="ghost" onClick={autoApply}>
-                Auto apply
-              </Button>
-            )}
+          <p className="mb-2 text-sm font-medium">Open invoices</p>
+          <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center no-print">
+            <Input
+              value={invQuery}
+              onChange={(e) => setInvQuery(e.target.value)}
+              placeholder="Search invoice"
+              aria-label="Search open invoices"
+              className="max-w-md"
+            />
+            <FilterPills
+              className="sm:ml-auto"
+              value={invFilter}
+              onChange={setInvFilter}
+              label="Invoice filter"
+              options={[
+                { id: "all", label: "All" },
+                { id: "open", label: "Unapplied" },
+                { id: "applied", label: "Applied" },
+              ]}
+            />
           </div>
-          <div className="overflow-x-auto rounded-xl bg-muted/40">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-muted-foreground">
-                  <th className="w-10 px-3 py-2" />
-                  <th className="px-3 py-2 text-left font-medium">Date</th>
-                  <th className="px-3 py-2 text-left font-medium">Number</th>
-                  <th className="px-3 py-2 text-right font-medium">Orig.</th>
-                  <th className="px-3 py-2 text-right font-medium">Due</th>
-                  <th className="px-3 py-2 text-right font-medium">Payment</th>
-                </tr>
-              </thead>
-              <tbody>
-                {openInvoices.map((inv) => {
-                  const due = invoiceBalance(data, inv.id);
-                  const orig = invoiceTotal(data, inv.id);
-                  const on = picked.includes(inv.id);
-                  return (
-                    <tr key={inv.id} className="border-t border-border/60" data-selected={on ? "true" : undefined}>
-                      <td className="px-3 py-2">
-                        <ShopTick
-                          checked={on}
-                          onChange={(next) => toggleInvoice(inv.id, next)}
-                          label={`Apply to ${inv.number}`}
-                        />
-                      </td>
-                      <td className="px-3 py-2">{formatDate(inv.date)}</td>
-                      <td className="px-3 py-2 font-medium">{inv.number}</td>
-                      <td className="px-3 py-2 text-right">
-                        <Money amount={orig} currency={data.settings.currency} />
-                      </td>
-                      <td className="px-3 py-2 text-right">
-                        <Money amount={due} currency={data.settings.currency} />
-                      </td>
-                      <td className="px-3 py-2 text-right">
-                        {on ? (
-                          <Input
-                            className="ml-auto h-9 min-h-9 w-28 text-right"
-                            value={applied[inv.id] ?? ""}
-                            disabled={locked}
-                            inputMode="decimal"
-                            onChange={(e) => setApplied((prev) => ({ ...prev, [inv.id]: e.target.value }))}
-                          />
-                        ) : (
-                          "—"
-                        )}
+          <div className="receive-alloc">
+            <div ref={allocRef} className="list-grid">
+              <table ref={allocCols.tableRef} className="text-sm" style={{ width: "100%" }}>
+                <colgroup>
+                  <col style={{ width: APPLY_COL }} />
+                  {(Object.keys(ALLOC_COLS) as Array<keyof typeof ALLOC_COLS>).map((id) => (
+                    <col key={id} className={listColClass(id)} style={{ width: allocCols.widths[id] }} />
+                  ))}
+                </colgroup>
+                <thead>
+                  <tr className="border-b border-border text-muted-foreground">
+                    <th className="col-apply col-check">
+                      <span className="sr-only">Apply</span>
+                    </th>
+                    <SortHeader
+                      compact
+                      label="Date"
+                      column="date"
+                      sortKey={invSort.key}
+                      dir={invSort.dir}
+                      onToggle={invSort.toggle}
+                      width={allocCols.widths.date}
+                      onWidth={(n) => allocCols.setWidth("date", n)}
+                      onFit={() => {
+                        const table = allocRef.current?.querySelector("table");
+                        if (!table) return;
+                        allocCols.setWidth("date", fitColumnWidth({ table, selector: `td[data-col="date"]`, header: "Date" }));
+                      }}
+                    />
+                    <SortHeader
+                      compact
+                      label="Invoice no."
+                      column="number"
+                      sortKey={invSort.key}
+                      dir={invSort.dir}
+                      onToggle={invSort.toggle}
+                      width={allocCols.widths.number}
+                      onWidth={(n) => allocCols.setWidth("number", n)}
+                      onFit={() => {
+                        const table = allocRef.current?.querySelector("table");
+                        if (!table) return;
+                        allocCols.setWidth("number", fitColumnWidth({ table, selector: `td[data-col="number"]`, header: "Invoice no." }));
+                      }}
+                    />
+                    <SortHeader
+                      compact
+                      label="Original"
+                      column="orig"
+                      sortKey={invSort.key}
+                      dir={invSort.dir}
+                      onToggle={invSort.toggle}
+                      align="right"
+                      width={allocCols.widths.orig}
+                      onWidth={(n) => allocCols.setWidth("orig", n)}
+                      onFit={() => {
+                        const table = allocRef.current?.querySelector("table");
+                        if (!table) return;
+                        allocCols.setWidth("orig", fitColumnWidth({ table, selector: `td[data-col="orig"]`, header: "Original" }));
+                      }}
+                    />
+                    <SortHeader
+                      compact
+                      label="Amt. due"
+                      column="due"
+                      sortKey={invSort.key}
+                      dir={invSort.dir}
+                      onToggle={invSort.toggle}
+                      align="right"
+                      width={allocCols.widths.due}
+                      onWidth={(n) => allocCols.setWidth("due", n)}
+                      onFit={() => {
+                        const table = allocRef.current?.querySelector("table");
+                        if (!table) return;
+                        allocCols.setWidth("due", fitColumnWidth({ table, selector: `td[data-col="due"]`, header: "Amt. due" }));
+                      }}
+                    />
+                    <SortHeader
+                      compact
+                      label="Payment"
+                      column="payment"
+                      sortKey={invSort.key}
+                      dir={invSort.dir}
+                      onToggle={invSort.toggle}
+                      align="right"
+                      width={allocCols.widths.payment}
+                      onWidth={(n) => allocCols.setWidth("payment", n)}
+                      onFit={() => {
+                        const table = allocRef.current?.querySelector("table");
+                        if (!table) return;
+                        allocCols.setWidth("payment", fitColumnWidth({ table, selector: `td[data-col="payment"]`, header: "Payment" }));
+                      }}
+                    />
+                  </tr>
+                </thead>
+                <tbody>
+                  {invSort.sorted.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-3 py-6 text-center text-muted-foreground">
+                        No invoices match.
                       </td>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  ) : (
+                    invSort.sorted.map((inv, index) => {
+                      const paid = parseAmountToCents(applied[inv.id] ?? "") || 0;
+                      return (
+                        <tr key={inv.id}>
+                          <td className="col-apply col-check">
+                            <ShopTick
+                              checked={paid > 0}
+                              onChange={() => toggleInvoice(inv.id, inv.due)}
+                              label={`Apply ${inv.number}`}
+                            />
+                          </td>
+                          <td className="whitespace-nowrap" data-col="date">{formatDate(inv.date)}</td>
+                          <td className="font-medium" data-col="number">{inv.number}</td>
+                          <td className="text-right" data-col="orig">
+                            <Money amount={inv.orig} currency={data.settings.currency} />
+                          </td>
+                          <td className="text-right" data-col="due">
+                            <Money amount={inv.due} currency={data.settings.currency} />
+                          </td>
+                          <td className="text-right col-actions" data-col="payment">
+                            <Input
+                              className="ml-auto h-9 min-h-9 w-28 text-right"
+                              value={applied[inv.id] ?? ""}
+                              disabled={locked}
+                              inputMode="decimal"
+                              autoComplete="off"
+                              aria-label={`Payment for ${inv.number}`}
+                              onChange={(e) => setApplied((prev) => ({ ...prev, [inv.id]: e.target.value }))}
+                              autoFocus={false}
+                              tabIndex={index === 0 ? 0 : undefined}
+                            />
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
           <p className="mt-2 text-right text-sm text-muted-foreground">
             Applied <Money amount={appliedTotal} currency={data.settings.currency} />
@@ -526,10 +705,17 @@ export function CustomerPayment({
                 {" · "}Entered <Money amount={payAmount} currency={data.settings.currency} />
               </>
             ) : null}
+            {leftover > 0 ? (
+              <>
+                {" · "}Unapplied <Money amount={leftover} currency={data.settings.currency} />
+              </>
+            ) : null}
           </p>
         </div>
       ) : (
-        <p className="mt-4 text-sm text-muted-foreground">No open invoices for this customer.</p>
+        <p className="mt-4 text-sm text-muted-foreground">
+          {customerId ? "No open invoices for this customer." : "Choose a customer to see open invoices."}
+        </p>
       )}
 
       <DialogFooter className="mt-6 flex-wrap gap-2">
@@ -579,6 +765,6 @@ export function CustomerPayment({
           }}
         />
       ) : null}
-    </>
+    </div>
   );
 }

@@ -1,6 +1,6 @@
-import { DEFAULT_SETTINGS, normalizeRegisterCols } from "./types";
+import { DEFAULT_SETTINGS, normalizeRegisterCols, parseRecon } from "./types";
 import { parseMethod } from "./methods";
-import type { Account, Bank, Bill, Customer, FinanceData, Receipt, Vendor } from "./types";
+import type { Account, AuditEvent, Bank, Bill, CheckRecord, CloseSnapshot, Customer, FinanceData, Invoice, JournalEntry, Receipt, ReconStatement, Vendor } from "./types";
 
 function asArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : [];
@@ -14,6 +14,7 @@ export function normalizeBooks(raw: unknown): FinanceData {
     ...merged,
     registerFontSize: Number.isFinite(font) ? Math.min(18, Math.max(10, Math.round(font))) : 12,
     registerColumns: normalizeRegisterCols(merged.registerColumns),
+    closedThrough: typeof merged.closedThrough === "string" ? merged.closedThrough : "",
   };
   const customers = asArray<Customer>(p.customers).map((c, i) => ({
     ...c,
@@ -24,12 +25,19 @@ export function normalizeBooks(raw: unknown): FinanceData {
     accountNumber: v.accountNumber ?? "",
     sortOrder: typeof v.sortOrder === "number" ? v.sortOrder : i,
   }));
+  const invoices = asArray<Invoice>(p.invoices).map((inv, i) => ({
+    ...inv,
+    createdAt: typeof inv.createdAt === "number" ? inv.createdAt : i,
+  }));
   const bills = asArray<Bill>(p.bills).map((b, i) => ({
     ...b,
-    payments: Array.isArray(b.payments) ? b.payments : [],
+    payments: Array.isArray(b.payments)
+      ? b.payments.map((pay) => ({ ...pay, recon: parseRecon(pay.recon) }))
+      : [],
     reference: b.reference ?? "",
     memo: b.memo ?? "",
     sortOrder: typeof b.sortOrder === "number" ? b.sortOrder : i,
+    createdAt: typeof b.createdAt === "number" ? b.createdAt : i,
   }));
   const receipts = asArray<Receipt>(p.receipts).map((r, i) => ({
     ...r,
@@ -39,6 +47,18 @@ export function normalizeBooks(raw: unknown): FinanceData {
     method: parseMethod(r.method),
     checkNumber: r.checkNumber ?? "",
     sortOrder: typeof r.sortOrder === "number" ? r.sortOrder : i,
+    recon: parseRecon(r.recon),
+    createdAt: typeof r.createdAt === "number" ? r.createdAt : i,
+  }));
+  const checks = asArray<CheckRecord>(p.checks).map((c, i) => ({
+    ...c,
+    recon: parseRecon(c.recon, c.status === "cleared" ? "cleared" : "pending"),
+    createdAt: typeof c.createdAt === "number" ? c.createdAt : i,
+  }));
+  const journals = asArray<JournalEntry>(p.journals).map((j, i) => ({
+    ...j,
+    recon: parseRecon(j.recon),
+    createdAt: typeof j.createdAt === "number" ? j.createdAt : i,
   }));
   const nextNumbers = p.nextNumbers ?? { invoice: 1, check: {}, receipt: 1, bill: 1 };
   const banks = ensureSafekeeping(asArray<Bank>(p.banks), asArray<Account>(p.accounts));
@@ -48,12 +68,33 @@ export function normalizeBooks(raw: unknown): FinanceData {
     accounts: banks.accounts,
     customers,
     vendors,
-    invoices: asArray(p.invoices),
+    invoices,
     bills,
     receipts,
-    checks: asArray(p.checks),
-    journals: asArray(p.journals),
+    checks,
+    journals,
     budgetItems: asArray(p.budgetItems),
+    recurrences: asArray(p.recurrences),
+    reconHistory: asArray<ReconStatement>(p.reconHistory).map((r) => ({
+      ...r,
+      bookBalance: typeof r.bookBalance === "number" ? r.bookBalance : 0,
+      explained: typeof r.explained === "number" ? r.explained : 0,
+      outstandingLines: Array.isArray(r.outstandingLines) ? r.outstandingLines : [],
+      ditLines: Array.isArray(r.ditLines) ? r.ditLines : [],
+      adjustmentLines: Array.isArray(r.adjustmentLines) ? r.adjustmentLines : [],
+      unclearedAging: r.unclearedAging ?? { d30: 0, d60: 0, d90: 0, late: 0, lateCount: 0 },
+    })),
+    closeHistory: asArray<CloseSnapshot>(p.closeHistory).map((s) => ({
+      ...s,
+      journalId: typeof s.journalId === "string" ? s.journalId : "",
+      packetPrinted: Boolean(s.packetPrinted),
+    })),
+    audit: asArray<AuditEvent>(p.audit).map((ev) => ({
+      ...ev,
+      who: ev.who && ev.who.trim() ? ev.who : "this browser",
+      old: typeof ev.old === "string" ? ev.old : "",
+      new: typeof ev.new === "string" ? ev.new : "",
+    })),
     nextNumbers: {
       invoice: nextNumbers.invoice ?? 1,
       check: {

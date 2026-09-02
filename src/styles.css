@@ -130,10 +130,18 @@
     --app-header-h: 4.35rem;
   }
 
+  .app-mark-tile {
+    fill: var(--color-primary);
+  }
+
+  .app-mark-ink {
+    fill: var(--color-primary-foreground);
+  }
+
   .desk-stats {
     display: grid;
-    gap: 0.75rem;
-    grid-template-columns: 1fr;
+    gap: 0.5rem;
+    grid-template-columns: 1fr 1fr;
   }
 
   .desk-split {
@@ -158,6 +166,378 @@
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--color-muted-foreground);
+  }
+
+  .stat-value {
+    display: block;
+    min-width: 0;
+    margin-top: 0.5rem;
+    font-size: clamp(1.0625rem, 0.85rem + 1.4cqi, 1.5rem);
+    font-weight: 500;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+
+  .stat-grid {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .stat-grid-3 > :last-child {
+    grid-column: 1 / -1;
+  }
+
+  .stat-grid-4 {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .close-banner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    overflow-wrap: anywhere;
+    min-width: 0;
+  }
+
+  .close-meta,
+  .field-grid-3 {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: 1fr;
+  }
+
+  .proof-strip {
+    display: grid;
+    gap: 0.5rem;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .proof-strip > div {
+    min-width: 0;
+    padding: 0.65rem 0.75rem;
+    border-radius: var(--radius-lg);
+    background: color-mix(in oklab, var(--color-foreground) 4.5%, var(--color-muted));
+  }
+
+  .proof-strip dt {
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-muted-foreground);
+  }
+
+  .proof-strip dd {
+    margin: 0.2rem 0 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+    overflow-wrap: anywhere;
+  }
+
+  .proof-strip > [data-proof="diff"] {
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-debit) 32%, transparent);
+  }
+
+  .proof-strip > [data-proof="ok"] {
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-credit) 26%, transparent);
+  }
+
+  .close-meta .stat-value {
+    margin-top: 0.25rem;
+    font-size: clamp(1.05rem, 0.9rem + 0.9cqi, 1.25rem);
+  }
+
+  .desk-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    min-width: 0;
+    min-height: 2.75rem;
+    padding: 0.5rem 0.25rem;
+    border-radius: 0.75rem;
+  }
+
+  .desk-row-copy {
+    min-width: 0;
+  }
+
+  .page-actions {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .page-actions::-webkit-scrollbar {
+    display: none;
+  }
+
+  .sidebar-scroll {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .app-header-bar {
+    background: transparent;
+    border-bottom: 1px solid color-mix(in oklab, var(--color-foreground) 8%, transparent);
+  }
+
+  .filter-pills {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.25rem;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    touch-action: pan-x;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .filter-pills::-webkit-scrollbar {
+    display: none;
+  }
+
+  .filter-pills > * {
+    flex-shrink: 0;
+  }
+
+  .list-grid {
+    min-width: 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .list-card {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    border-radius: var(--radius-2xl);
+    background: var(--color-card);
+    color: var(--color-card-foreground);
+    box-shadow: var(--shadow-elevation);
+  }
+
+  /* Same node is list-card + list-grid: keep radius clip on Y, allow X scroll when tight. */
+  .list-card.list-grid {
+    display: block;
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto !important;
+    overflow-y: hidden;
+    background: var(--color-card);
+    background-image: none;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklab, var(--color-foreground) 28%, transparent) transparent;
+  }
+
+  .list-card.list-grid[data-overflow-x]::before,
+  .list-card.list-grid[data-overflow-x]::after,
+  .list-card.list-grid::before,
+  .list-card.list-grid::after {
+    content: none !important;
+    display: none !important;
+    background: none !important;
+    box-shadow: none !important;
+  }
+
+  .list-card.list-grid::-webkit-scrollbar {
+    height: 8px;
+  }
+
+  .list-card.list-grid::-webkit-scrollbar-thumb {
+    background: color-mix(in oklab, var(--color-foreground) 28%, transparent);
+    border-radius: 999px;
+  }
+
+  .list-grid table {
+    width: 100%;
+    min-width: 100%;
+    table-layout: auto;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  /*
+    Grid-track analog on a real <table> (virtualizer + print need table layout):
+    .col-flex = minmax(content, 1fr) — leftover is shared, not dumped on the last col.
+    .col-fit / .col-actions = max-content. Tight card → table min-width + horizontal scroll.
+  */
+  .list-grid colgroup col.col-flex,
+  .register-matrix colgroup col.col-flex,
+  .list-grid colgroup col.col-fill,
+  .register-matrix colgroup col.col-fill {
+    width: auto !important;
+  }
+
+  .list-grid colgroup col.col-actions {
+    width: max-content;
+    min-width: 5.5rem;
+    max-width: none;
+  }
+
+  .list-grid colgroup col.col-fit,
+  .register-matrix colgroup col.col-fit {
+    width: max-content;
+  }
+
+  .list-grid th.col-actions,
+  .list-grid td.col-actions {
+    white-space: nowrap;
+    text-align: right;
+    vertical-align: middle;
+    overflow: visible;
+    min-width: max-content;
+  }
+
+  .list-grid td:not(.col-actions) {
+    overflow: hidden;
+  }
+
+  .list-grid td.col-actions > div {
+    flex-wrap: nowrap !important;
+    justify-content: flex-end;
+  }
+
+  .list-grid thead tr,
+  .list-grid tbody tr,
+  .list-grid tfoot tr,
+  .register-matrix thead tr,
+  .register-matrix tbody tr,
+  .register-matrix tfoot tr {
+    border-bottom-width: 0;
+    border-top-width: 0;
+  }
+
+  .list-grid thead th {
+    position: relative;
+    overflow: visible;
+    pointer-events: none;
+    background: var(--color-muted);
+    font-weight: 500;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .list-grid tbody td {
+    border-bottom: 1px solid color-mix(in oklab, var(--color-border) 65%, transparent);
+  }
+
+  .list-grid tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  .register-matrix thead th {
+    pointer-events: none;
+  }
+
+  .list-grid thead th > *,
+  .register-matrix thead th > * {
+    pointer-events: auto;
+  }
+
+  .list-grid thead th:not(:last-child):not(.col-fill):has(.col-resize-handle) > button,
+  .register-matrix thead th:not(:last-child):not(.col-fill):has(.col-resize-handle) > button {
+    padding-inline: 0.5rem;
+  }
+
+  .list-grid thead th:has(.col-resize-handle:hover),
+  .list-grid thead th:has(.col-resize-handle[data-dragging="true"]),
+  .register-matrix thead th:has(.col-resize-handle:hover),
+  .register-matrix thead th:has(.col-resize-handle[data-dragging="true"]) {
+    z-index: 5;
+  }
+
+  .list-grid thead th:not(:last-child),
+  .register-matrix thead th:not(:last-child) {
+    box-shadow: inset -1px 0 0 color-mix(in oklab, var(--color-foreground) 12%, transparent);
+  }
+
+  .list-grid tbody td:not(:last-child),
+  .register-matrix tbody td:not(:last-child),
+  .register-matrix tfoot td:not(:last-child) {
+    box-shadow: inset -1px 0 0 color-mix(in oklab, var(--color-foreground) 6%, transparent);
+  }
+
+  .col-resize-handle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    z-index: 6;
+    width: 10px;
+    cursor: col-resize;
+    touch-action: none;
+    user-select: none;
+  }
+
+  .col-resize-handle::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: 2px;
+    pointer-events: none;
+    background: transparent;
+  }
+
+  .col-resize-handle:hover::after,
+  .col-resize-handle:focus-visible::after,
+  .col-resize-handle[data-dragging="true"]::after {
+    background: color-mix(in oklab, var(--color-ring) 70%, transparent);
+  }
+
+  .list-grid thead th:last-child .col-resize-handle,
+  .register-matrix thead th:last-child .col-resize-handle,
+  .list-grid thead th.col-fill .col-resize-handle,
+  .register-matrix thead th.col-fill .col-resize-handle {
+    display: none;
+  }
+
+  .list-grid thead th.col-fill,
+  .register-matrix thead th.col-fill,
+  .list-grid tbody td.col-fill,
+  .register-matrix tbody td.col-fill,
+  .register-matrix.hide-status .col-balance,
+  .register-matrix[data-hide-status] .col-balance {
+    box-shadow: none;
+  }
+
+  @media (pointer: coarse) {
+    .col-resize-handle {
+      width: 20px;
+    }
+  }
+
+  .hide-check col.col-check,
+  .hide-check th.col-check,
+  .hide-check td.col-check {
+    display: none !important;
+    border: 0 !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .hide-check th.col-check + th,
+  .hide-check td.col-check + td {
+    padding-left: 1.25rem;
   }
 
   tr[data-selected="true"] td {
@@ -203,6 +583,7 @@
 
   .register-matrix table {
     width: 100%;
+    table-layout: fixed;
     border-collapse: separate;
     border-spacing: 0;
   }
@@ -217,6 +598,7 @@
     position: sticky;
     top: 0;
     z-index: 2;
+    overflow: visible;
     background: var(--color-muted);
     font-weight: 500;
     border-bottom: 1px solid var(--color-border);
@@ -251,34 +633,22 @@
   }
 
   .register-matrix .col-check {
-    width: 2.5rem;
     text-align: center;
   }
 
-  .register-matrix .col-date {
-    width: 8em;
-  }
-
-  .register-matrix .col-type {
-    width: 7em;
+  .register-matrix .col-type,
+  .register-matrix .col-num {
     white-space: nowrap;
   }
 
-  .register-matrix .col-num {
-    width: 6.5em;
-  }
-
   .register-matrix .col-payee {
-    min-width: 10em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .register-matrix .col-memo {
-    min-width: 8em;
     color: var(--color-muted-foreground);
-  }
-
-  .register-matrix .col-bank {
-    width: 9em;
   }
 
   .register-matrix th {
@@ -286,22 +656,40 @@
   }
 
   .register-matrix .col-money {
-    width: 8.5em;
     text-align: right;
     font-variant-numeric: tabular-nums;
   }
 
-  .register-matrix .col-balance {
+  .list-grid th[data-align="right"],
+  .register-matrix th[data-align="right"],
+  .list-grid th.col-money,
+  .register-matrix th.col-money {
+    text-align: center;
+  }
+
+  .list-grid td[data-align="right"],
+  .list-grid td.col-money,
+  .register-matrix td.col-money,
+  .register-matrix tfoot td.col-money {
+    text-align: right;
+  }
+
+  .list-grid th[data-align="right"] > button,
+  .register-matrix th[data-align="right"] > button,
+  .list-grid th.col-money > button,
+  .register-matrix th.col-money > button {
+    justify-content: center;
+    text-align: center;
+  }
+
+  .register-matrix tbody .col-balance,
+  .register-matrix tfoot .col-balance {
     font-weight: 600;
     color: var(--color-foreground);
   }
 
   .register-matrix th.col-money button {
     width: 100%;
-  }
-
-  .register-matrix .col-status {
-    width: 8em;
   }
 
   .register-matrix .register-bank-select {
@@ -375,6 +763,62 @@
     gap: 0.75rem;
   }
 
+  .party-pane-back {
+    display: none;
+  }
+
+  .party-center[data-pane="list"] .party-pane-detail,
+  .party-center[data-pane="detail"] .party-pane-list {
+    display: none;
+  }
+
+  .party-center[data-pane="detail"] .party-pane-back {
+    display: block;
+  }
+
+  .party-dir-cards {
+    display: grid;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    grid-template-columns: 1fr;
+  }
+
+  .item-cards {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: 1fr;
+  }
+
+  .item-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+    min-height: 8.5rem;
+    padding: 1rem 1.1rem;
+    border: 0;
+    border-radius: var(--radius-2xl);
+    background: var(--color-card);
+    color: var(--color-card-foreground);
+    box-shadow: var(--shadow-elevation);
+    text-align: left;
+  }
+
+  .item-card:hover {
+    background: color-mix(in oklab, var(--color-muted) 50%, var(--color-card));
+  }
+
+  .item-card:focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+
+  .workspace-split {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: 1fr;
+  }
+
   .register-select-bar {
     position: sticky;
     bottom: 0.75rem;
@@ -382,9 +826,12 @@
   }
 
   .register-summary {
-    position: sticky;
-    top: var(--app-header-h, 4.35rem);
-    z-index: 16;
+    position: static;
+    z-index: auto;
+  }
+
+  .register-summary span {
+    white-space: nowrap;
   }
 
   .register-view {
@@ -397,6 +844,12 @@
     box-shadow: var(--shadow-elevation);
   }
 
+  .register-chrome {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
   .register-toolbar {
     display: grid;
     gap: 0.5rem;
@@ -407,10 +860,19 @@
     grid-column: 1 / -1;
   }
 
-  @media (max-width: 767px) {
-    .app-workspace {
-      --app-header-h: 7.25rem;
-    }
+  .register-toolbar-actions {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .register-toolbar-actions::-webkit-scrollbar {
+    display: none;
   }
 
   .register-post-well {
@@ -471,7 +933,7 @@
       grid-template-columns: 1fr 1fr;
     }
 
-    .register-toolbar {
+    .party-center[data-pane="list"] .party-dir-cards {
       grid-template-columns: 1fr 1fr;
     }
   }
@@ -481,17 +943,33 @@
       flex: 0 0 5.75rem;
       align-self: center;
     }
+
+    .item-cards {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .proof-strip {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
   }
 
   @container workspace (min-width: 40rem) {
     .desk-trio {
       grid-template-columns: 1fr 1fr;
     }
+
+    .field-grid-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
   }
 
   @container workspace (min-width: 48rem) {
     .desk-split {
       grid-template-columns: 3fr 2fr;
+    }
+
+    .workspace-split {
+      grid-template-columns: 1fr 1fr;
     }
   }
 
@@ -500,12 +978,29 @@
       grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
     }
 
+    .party-pane-list,
+    .party-pane-detail {
+      display: block !important;
+    }
+
+    .party-pane-back {
+      display: none !important;
+    }
+
+    .item-cards {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .party-dir-cards {
+      grid-template-columns: 1fr;
+    }
+
     .register-view-grid {
       grid-template-columns: repeat(4, minmax(0, 1fr));
     }
 
     .register-toolbar {
-      grid-template-columns: minmax(12rem, 1fr) auto auto;
+      grid-template-columns: minmax(12rem, 1fr) auto;
     }
 
     .register-toolbar-search {
@@ -520,6 +1015,22 @@
 
     .desk-trio {
       grid-template-columns: repeat(3, 1fr);
+    }
+
+    .stat-grid-3 {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .stat-grid-3 > :last-child {
+      grid-column: auto;
+    }
+
+    .stat-grid-4 {
+      grid-template-columns: repeat(4, 1fr);
+    }
+
+    .proof-strip {
+      grid-template-columns: repeat(8, minmax(0, 1fr));
     }
   }
 
@@ -548,24 +1059,31 @@
 
   .register-bank-tabs {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap !important;
     gap: 0.25rem;
     width: 100%;
     max-width: 100%;
     min-width: 0;
     overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
     padding: 0.25rem;
     border-radius: var(--radius-xl);
     background: var(--color-muted);
+  }
+
+  .register-bank-tabs::-webkit-scrollbar {
+    display: none;
   }
 
   .register-bank-tabs button {
     display: inline-flex;
     flex-shrink: 0;
     align-items: center;
-    min-height: 2.25rem;
-    height: 2.25rem;
+    min-height: 2.75rem;
+    height: 2.75rem;
     padding: 0 0.75rem;
     border-radius: var(--radius-lg);
     font-size: 0.875rem;
@@ -581,16 +1099,218 @@
     box-shadow: var(--shadow-elevation);
   }
 
-  .register-calendar button[data-today="true"] {
-    box-shadow: inset 0 0 0 1px var(--color-ring);
+  @media screen {
+    @container workspace (max-width: 47.99rem) {
+      .register-matrix col.col-type,
+      .register-matrix th.col-type,
+      .register-matrix td.col-type,
+      .register-matrix col.col-memo,
+      .register-matrix th.col-memo,
+      .register-matrix td.col-memo,
+      .register-matrix col.col-bank,
+      .register-matrix th.col-bank,
+      .register-matrix td.col-bank,
+      .register-matrix col.col-status,
+      .register-matrix th.col-status,
+      .register-matrix td.col-status {
+        display: none !important;
+        width: 0 !important;
+        min-width: 0 !important;
+        max-width: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        border: 0 !important;
+      }
+
+      .register-matrix .col-payee {
+        min-width: 0;
+      }
+
+      .register-matrix th.col-balance,
+      .register-matrix td.col-balance {
+        box-shadow: none;
+      }
+
+      .register-matrix th.col-balance .col-resize-handle {
+        display: none;
+      }
+
+      .party-txn-table col.col-txn-type,
+      .party-txn-table col.col-txn-memo,
+      .party-txn-table col.col-txn-open,
+      .party-txn-table col.col-txn-status,
+      .party-txn-table .col-txn-type,
+      .party-txn-table .col-txn-memo,
+      .party-txn-table .col-txn-open,
+      .party-txn-table .col-txn-status,
+      .party-txn-table td[data-col="type"],
+      .party-txn-table td[data-col="memo"],
+      .party-txn-table td[data-col="open"],
+      .party-txn-table td[data-col="status"] {
+        display: none !important;
+        width: 0 !important;
+        min-width: 0 !important;
+        max-width: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+      }
+
+      .party-txn-table th.col-txn-balance .col-resize-handle {
+        display: none;
+      }
+
+      .party-txn-table table {
+        width: max-content !important;
+      }
+
+      .list-grid td[data-col="number"],
+      .list-grid th[data-col="number"],
+      .party-txn-table td[data-col="number"],
+      .party-txn-table th[data-col="number"] {
+        white-space: nowrap;
+        overflow: visible;
+      }
+
+      .register-chrome .register-toolbar {
+        order: -1;
+      }
+
+      .party-dir-table col.col-dir-contact,
+      .party-dir-table col.col-dir-email,
+      .party-dir-table col.col-dir-phone,
+      .party-dir-table .col-dir-contact,
+      .party-dir-table .col-dir-email,
+      .party-dir-table .col-dir-phone,
+      .party-dir-table th[data-col="contact"],
+      .party-dir-table th[data-col="email"],
+      .party-dir-table th[data-col="phone"],
+      .party-dir-table td[data-col="contact"],
+      .party-dir-table td[data-col="email"],
+      .party-dir-table td[data-col="phone"] {
+        display: none !important;
+        width: 0 !important;
+        min-width: 0 !important;
+        max-width: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        border: 0 !important;
+      }
+
+      .party-dir-table table {
+        width: 100% !important;
+        min-width: 0 !important;
+      }
+
+      .notion-cal-day {
+        min-height: 2.75rem;
+      }
+
+      .notion-cal-pill {
+        min-height: 1.2rem;
+      }
+
+      .notion-cal-day .notion-cal-pill ~ .notion-cal-pill,
+      .notion-cal-more {
+        display: none;
+      }
+    }
   }
 
-  .register-calendar button[data-active="true"] {
-    background: color-mix(in oklab, var(--color-primary) 10%, var(--color-card));
+  @media screen and (max-width: 47.99rem) {
+    .register-matrix col.col-type,
+    .register-matrix th.col-type,
+    .register-matrix td.col-type,
+    .register-matrix col.col-memo,
+    .register-matrix th.col-memo,
+    .register-matrix td.col-memo,
+    .register-matrix col.col-bank,
+    .register-matrix th.col-bank,
+    .register-matrix td.col-bank,
+    .register-matrix col.col-status,
+    .register-matrix th.col-status,
+    .register-matrix td.col-status,
+    .party-txn-table col.col-txn-type,
+    .party-txn-table col.col-txn-memo,
+    .party-txn-table col.col-txn-open,
+    .party-txn-table col.col-txn-status,
+    .party-txn-table .col-txn-type,
+    .party-txn-table .col-txn-memo,
+    .party-txn-table .col-txn-open,
+    .party-txn-table .col-txn-status,
+    .party-txn-table td[data-col="type"],
+    .party-txn-table td[data-col="memo"],
+    .party-txn-table td[data-col="open"],
+    .party-txn-table td[data-col="status"],
+    .party-txn-table th[data-col="type"],
+    .party-txn-table th[data-col="memo"],
+    .party-txn-table th[data-col="open"],
+    .party-txn-table th[data-col="status"] {
+      display: none !important;
+      width: 0 !important;
+      min-width: 0 !important;
+      max-width: 0 !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+      border: 0 !important;
+    }
+
+    .register-chrome .register-toolbar {
+      order: -1;
+    }
+
+    .register-bank-tabs {
+      flex-wrap: nowrap !important;
+    }
+
+    .list-grid td[data-col="number"],
+    .list-grid th[data-col="number"] {
+      white-space: nowrap;
+    }
+
+    .notion-cal-day {
+      min-height: 2.75rem;
+    }
+
+    .notion-cal-pill {
+      min-height: 1.2rem;
+    }
+
+    .notion-cal-day .notion-cal-pill ~ .notion-cal-pill,
+    .notion-cal-more {
+      display: none;
+    }
+
+    .party-dir-table col.col-dir-contact,
+    .party-dir-table col.col-dir-email,
+    .party-dir-table col.col-dir-phone,
+    .party-dir-table .col-dir-contact,
+    .party-dir-table .col-dir-email,
+    .party-dir-table .col-dir-phone,
+    .party-dir-table th[data-col="contact"],
+    .party-dir-table th[data-col="email"],
+    .party-dir-table th[data-col="phone"],
+    .party-dir-table td[data-col="contact"],
+    .party-dir-table td[data-col="email"],
+    .party-dir-table td[data-col="phone"] {
+      display: none !important;
+      width: 0 !important;
+      min-width: 0 !important;
+      max-width: 0 !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+      border: 0 !important;
+    }
+
+    .party-dir-table table {
+      width: 100% !important;
+      min-width: 0 !important;
+    }
   }
 
   .notion-cal {
     overflow: hidden;
+    max-width: 100%;
+    min-width: 0;
     border-radius: 1rem;
     background: var(--color-card);
     box-shadow: var(--shadow-elevation);
@@ -648,8 +1368,12 @@
     background: color-mix(in oklab, var(--color-muted) 40%, var(--color-card));
   }
 
+  .notion-cal-day[data-today="true"] {
+    box-shadow: inset 0 0 0 1px var(--color-ring);
+  }
+
   .notion-cal-day[data-active="true"] {
-    background: color-mix(in oklab, var(--color-primary) 8%, var(--color-card));
+    background: color-mix(in oklab, var(--color-primary) 10%, var(--color-card));
   }
 
   .notion-cal-day[data-drop="true"] {
@@ -668,8 +1392,7 @@
   }
 
   .notion-cal-day[data-today="true"] .notion-cal-num {
-    background: var(--color-primary);
-    color: var(--color-primary-foreground);
+    font-weight: 600;
   }
 
   .notion-cal-count {
@@ -689,6 +1412,14 @@
     padding: 0 0.35rem;
     font-size: 0.7rem;
     line-height: 1.2;
+    white-space: nowrap;
+  }
+
+  .notion-cal-pill > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .notion-cal-pill[data-dir="in"] {
@@ -763,6 +1494,253 @@
     overflow: hidden;
     visibility: hidden;
     pointer-events: none;
+  }
+
+  body.print-preview,
+  body.printing {
+    overflow: hidden;
+  }
+
+  body.print-preview .print-root,
+  body.printing .print-root {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    width: auto;
+    height: auto;
+    overflow: hidden;
+    visibility: visible;
+    pointer-events: auto;
+    background: var(--color-background);
+    color: var(--color-foreground);
+    container-type: inline-size;
+    container-name: printstage;
+  }
+
+  .print-stage-btn {
+    min-height: 2.75rem;
+    height: 2.75rem;
+  }
+
+  @container printstage (max-width: 40rem) {
+    .print-status-full,
+    .print-label-full,
+    .print-action-full,
+    .print-stage-hint {
+      display: none;
+    }
+
+    .print-status-short,
+    .print-label-short,
+    .print-action-short {
+      display: inline;
+    }
+
+    .print-desk {
+      padding: 0.6rem 0.45rem 1.25rem;
+      padding-bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
+    }
+
+    .print-paper-stack {
+      gap: 0.75rem;
+    }
+
+    .print-stage-tools .print-tool-group button {
+      min-height: 2.75rem;
+    }
+  }
+
+  .print-stage-bar {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem 0.65rem;
+    padding-top: max(0.5rem, env(safe-area-inset-top, 0px));
+    padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
+    padding-right: max(0.75rem, env(safe-area-inset-right, 0px));
+    background: var(--color-card);
+    color: var(--color-card-foreground);
+    border-bottom: 1px solid var(--color-border);
+    z-index: 2;
+  }
+
+  .print-stage-top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    min-height: 2.75rem;
+  }
+
+  .print-stage-status {
+    min-width: 0;
+    font-size: 0.8rem;
+    color: var(--color-muted-foreground);
+  }
+
+  .print-stage-actions {
+    display: flex;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+
+  .print-stage-tools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .print-stage-tools::-webkit-scrollbar {
+    display: none;
+  }
+
+  .print-tool-group {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .print-status-short,
+  .print-label-short,
+  .print-action-short {
+    display: none;
+  }
+
+  .print-page-input {
+    width: 3.1rem;
+    height: 2rem;
+    min-height: 2rem;
+    padding: 0 0.4rem;
+    border: 1px solid var(--color-input);
+    border-radius: var(--radius-md);
+    background: var(--color-card);
+    color: var(--color-foreground);
+    font-size: 0.8rem;
+    text-align: center;
+  }
+
+  .print-page-input[aria-invalid="true"] {
+    border-color: var(--color-destructive);
+  }
+
+  .print-page-dash,
+  .print-page-total {
+    font-size: 0.75rem;
+    color: var(--color-muted-foreground);
+  }
+
+  .print-zoom-readout {
+    min-width: 3.5rem;
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--color-muted-foreground);
+  }
+
+  .print-desk {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    background: color-mix(in oklab, var(--color-foreground) 8%, var(--color-muted));
+    padding: 1.25rem 1rem 2rem;
+    padding-left: max(1rem, env(safe-area-inset-left, 0px));
+    padding-right: max(1rem, env(safe-area-inset-right, 0px));
+    padding-bottom: max(2rem, env(safe-area-inset-bottom, 0px));
+  }
+
+  .print-paper-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.25rem;
+    zoom: var(--print-preview-zoom, 1);
+  }
+
+  @supports not (zoom: 1) {
+    .print-paper-stack {
+      transform: scale(var(--print-preview-zoom, 1));
+      transform-origin: top center;
+    }
+  }
+
+  .print-page-card {
+    position: relative;
+    width: var(--print-page-w, 8.5in);
+    height: var(--print-page-h, 11in);
+    overflow: hidden;
+    background: #fff;
+    color: #1a1916;
+    box-shadow:
+      0 0 0 1px rgb(26 25 22 / 0.08),
+      0 12px 28px rgb(26 25 22 / 0.14);
+  }
+
+  .print-page-stub {
+    background: var(--color-muted);
+  }
+
+  .print-page-window {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .print-page-shift {
+    position: relative;
+    top: var(--print-shift, 0);
+  }
+
+  .print-page-num {
+    position: absolute;
+    right: 0.5in;
+    bottom: 0.32in;
+    font-size: 9pt;
+    color: #666;
+  }
+
+  .print-measure {
+    position: absolute;
+    left: -12000px;
+    top: 0;
+    width: var(--print-page-w, 8.5in);
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  @media (max-width: 639px) {
+    .print-status-full,
+    .print-label-full,
+    .print-action-full,
+    .print-stage-hint {
+      display: none;
+    }
+
+    .print-status-short,
+    .print-label-short,
+    .print-action-short {
+      display: inline;
+    }
+
+    .print-desk {
+      padding: 0.6rem 0.45rem 1.25rem;
+      padding-bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
+    }
+
+    .print-paper-stack {
+      gap: 0.75rem;
+    }
   }
 
   .print-preview-dialog {
@@ -852,6 +1830,51 @@
     padding: 0.28rem 0.45rem;
   }
 
+  .print-letterhead {
+    margin-bottom: 0.75rem;
+  }
+
+  .print-letterhead-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem 1.25rem;
+  }
+
+  .print-letterhead .print-company {
+    margin: 0;
+    min-width: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--color-card-foreground);
+  }
+
+  .print-letterhead-what {
+    min-width: 0;
+    text-align: right;
+  }
+
+  .print-letterhead-what h1 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    font-weight: 500;
+    color: var(--color-card-foreground);
+  }
+
+  .print-letterhead-what p,
+  .print-letterhead-meta,
+  .print-letterhead-email {
+    margin: 0.15rem 0 0;
+    font-size: 0.75rem;
+    color: var(--color-muted-foreground);
+    overflow-wrap: anywhere;
+  }
+
+  .print-letterhead-email {
+    display: block;
+  }
+
   .print-sheet .register-print-head {
     text-align: center;
     margin-bottom: 0.85rem;
@@ -884,6 +1907,22 @@
     line-height: 1.35;
   }
 
+  .print-sheet .register-print-table col.col-flex,
+  .print-sheet .register-print-table .col-payee,
+  .print-sheet .register-print-table .col-memo {
+    width: auto;
+  }
+
+  .print-sheet .register-print-table col.col-fit,
+  .print-sheet .register-print-table .col-date,
+  .print-sheet .register-print-table .col-type,
+  .print-sheet .register-print-table .col-num,
+  .print-sheet .register-print-table .col-bank,
+  .print-sheet .register-print-table .col-status,
+  .print-sheet .register-print-table .col-money {
+    width: 1%;
+  }
+
   .print-sheet .register-print-table th,
   .print-sheet .register-print-table td {
     border: none;
@@ -906,8 +1945,20 @@
   .print-sheet .register-print-table .col-type,
   .print-sheet .register-print-table .col-num,
   .print-sheet .register-print-table .col-bank,
-  .print-sheet .register-print-table .col-status {
+  .print-sheet .register-print-table .col-status,
+  .print-sheet .register-print-table .col-status span {
     white-space: nowrap;
+    overflow: visible;
+  }
+
+  .print-sheet .register-print-table .col-status span,
+  .print-sheet .register-print-table span[class*="rounded-full"] {
+    display: inline-flex;
+    font-size: 0.85em;
+    padding: 0.08em 0.5em;
+    line-height: 1.2;
+    white-space: nowrap;
+    max-width: none;
   }
 
   .print-sheet .register-print-table td.num,
@@ -946,6 +1997,325 @@
     .print-pdf-stage {
       padding: 1rem 1.25rem 1.25rem;
     }
+  }
+}
+
+
+/* Unlayered: list tables size to content; money titles sit in the column center. */
+.list-grid table {
+  table-layout: auto;
+}
+
+.list-grid td:not(.col-actions) {
+  overflow: hidden;
+}
+
+.list-grid td.col-actions {
+  overflow: visible;
+  min-width: max-content;
+}
+
+.list-grid td.col-actions > div {
+  flex-wrap: nowrap !important;
+}
+
+.list-grid th[data-align="right"],
+.register-matrix th[data-align="right"],
+.list-grid th.col-money,
+.register-matrix th.col-money {
+  text-align: center;
+}
+
+.list-grid th[data-align="right"] > button,
+.register-matrix th[data-align="right"] > button,
+.list-grid th.col-money > button,
+.register-matrix th.col-money > button {
+  justify-content: center;
+  text-align: center;
+}
+
+.list-card.list-grid {
+  background-image: none;
+  scrollbar-width: thin;
+}
+
+.list-card.list-grid[data-overflow-x]::after,
+.list-card.list-grid[data-overflow-x]::before {
+  content: none !important;
+  display: none !important;
+}
+
+.proof-strip {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@container workspace (min-width: 36rem) {
+  .proof-strip {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@container workspace (min-width: 64rem) {
+  .proof-strip {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 35.99rem) {
+  .proof-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.proof-strip > [data-proof="diff"] {
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-debit) 32%, transparent);
+}
+
+.proof-strip > [data-proof="ok"] {
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-credit) 26%, transparent);
+}
+
+@container printstage (max-width: 28rem) {
+  .print-stage-top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .print-stage-status {
+    width: 100%;
+  }
+
+  .print-stage-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .print-stage-actions .print-stage-btn {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+}
+
+@container printstage (max-width: 26rem) {
+  .print-stage-tools {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .print-tool-group {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+}
+
+/* Unlayered: one rule per edge. Tailwind tr.border-b must not stack on th/td borders. */
+.list-grid thead tr,
+.list-grid tbody tr,
+.list-grid tfoot tr,
+.register-matrix thead tr,
+.register-matrix tbody tr,
+.register-matrix tfoot tr,
+.party-txn-table thead tr,
+.party-txn-table tbody tr {
+  border-bottom-width: 0;
+  border-top-width: 0;
+}
+
+.list-grid thead th:last-child .col-resize-handle,
+.register-matrix thead th:last-child .col-resize-handle,
+.list-grid thead th.col-fill .col-resize-handle,
+.register-matrix thead th.col-fill .col-resize-handle {
+  display: none;
+}
+
+/* Unlayered so the print overlay always covers the app — utilities cannot hide it. */
+body.print-preview,
+body.printing {
+  overflow: hidden;
+}
+
+body.print-preview .print-root,
+body.printing .print-root {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  width: auto;
+  height: 100%;
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+  visibility: visible;
+  pointer-events: auto;
+  background: var(--color-background);
+  color: var(--color-foreground);
+  container-type: inline-size;
+  container-name: printstage;
+}
+
+body.printing .print-root .no-print {
+  display: none !important;
+}
+
+@media print {
+  .print-root .no-print {
+    display: none !important;
+  }
+}
+
+.dialog-sheet {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  z-index: 60;
+  transform: translate(-50%, -50%);
+  max-height: min(90dvh, 44rem);
+}
+
+@media (max-width: 639px) {
+  .dialog-sheet {
+    left: 0.5rem;
+    right: 0.5rem;
+    top: auto;
+    bottom: 0;
+    width: auto;
+    max-width: none;
+    transform: none;
+    max-height: min(92dvh, 44rem);
+    padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+  }
+}
+
+/* Type % is font-size (reflow), not a whole-sheet transform.
+   Smaller type + tighter row padding packs more register lines per page.
+   Fit stays full size and squeezes columns. */
+.print-sheet {
+  font-size: calc(var(--register-font, 12px) * var(--print-type, 1));
+}
+.print-page-window {
+  transform: none;
+}
+body[data-print-scale="fit"] .print-page-window {
+  transform: none;
+}
+
+.print-measure .print-sheet {
+  padding: 0;
+  box-shadow: none;
+  font-size: calc(var(--register-font, 12px) * var(--print-type, 1));
+}
+
+.print-sheet .register-print-table,
+.print-sheet table {
+  font-size: 1em;
+  line-height: 1.22;
+}
+
+.print-sheet .register-print-table th,
+.print-sheet .register-print-table td,
+.print-sheet table th,
+.print-sheet table td {
+  font-size: 1em;
+  padding-block: 0.18em;
+  padding-inline: 0.42em;
+}
+
+body:not([data-print-scale="fit"]) .print-sheet .register-print-table td,
+body:not([data-print-scale="fit"]) .print-sheet .register-print-table th {
+  white-space: nowrap;
+}
+
+body:not([data-print-scale="fit"]) .print-sheet .register-print-table .col-payee,
+body:not([data-print-scale="fit"]) .print-sheet .register-print-table .col-memo {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.print-sheet .print-letterhead {
+  margin-bottom: 0.45em;
+}
+
+.print-sheet .register-print-head h1,
+.print-sheet .print-letterhead-what h1 {
+  font-size: 1.35em;
+}
+
+.print-sheet .print-letterhead .print-company {
+  font-size: 1.05em;
+}
+
+.print-sheet .print-letterhead-what p,
+.print-sheet .print-letterhead-meta,
+.print-sheet .print-letterhead-email,
+.print-sheet .register-print-head p,
+.print-sheet-memo,
+.print-sheet-empty {
+  font-size: 0.82em;
+}
+
+.print-sheet .register-print-table th {
+  font-size: 0.78em;
+}
+
+.print-sheet .text-sm,
+.print-sheet .text-xs {
+  font-size: 1em;
+}
+
+body[data-print-scale="fit"] .print-sheet table {
+  width: 100%;
+  table-layout: auto;
+}
+
+body[data-print-scale="fit"] .print-sheet .col-payee,
+body[data-print-scale="fit"] .print-sheet .col-memo {
+  overflow-wrap: anywhere;
+}
+
+body:not([data-print-scale="fit"]) .print-sheet .col-date,
+body:not([data-print-scale="fit"]) .print-sheet .col-type,
+body:not([data-print-scale="fit"]) .print-sheet .col-num,
+body:not([data-print-scale="fit"]) .print-sheet .col-bank,
+body:not([data-print-scale="fit"]) .print-sheet .col-status,
+body:not([data-print-scale="fit"]) .print-sheet .col-money {
+  width: max-content;
+}
+
+body[data-print-paper="statement"] .print-sheet,
+body[data-print-paper="a5"] .print-sheet {
+  padding: 0.7rem 0.75rem 0.55rem;
+}
+
+body[data-print-paper="statement"] .print-letterhead,
+body[data-print-paper="a5"] .print-letterhead,
+body[data-print-paper="statement"] .register-print-head,
+body[data-print-paper="a5"] .register-print-head {
+  margin-bottom: 0.4rem;
+}
+
+@media print {
+  .print-sheet,
+  body.printing .print-sheet {
+    font-size: calc(var(--register-font, 12px) * var(--print-type, 1));
+    padding: 0;
+  }
+
+  .print-page-window,
+  body.printing .print-page-window {
+    transform: none;
+  }
+
+  body.printing[data-print-scale="fit"] .print-page-window {
+    transform: none;
+  }
+
+  body.printing .print-sheet .register-print-table,
+  body.printing .print-sheet table {
+    font-size: 1em;
+    line-height: 1.22;
   }
 }
 
@@ -1005,6 +2375,7 @@
   .register-matrix thead th {
     background: #eee;
     position: static;
+    left: auto;
     border-bottom: 1px solid #222;
   }
 
@@ -1030,27 +2401,25 @@
   }
 
   .register-print-head h1 {
-    font-size: 14pt;
+    font-size: 1.45em;
     margin: 0.1rem 0;
   }
 
   .register-print-head p {
     margin: 0;
-    font-size: 9pt;
+    font-size: 0.82em;
   }
 
   @page {
-    size: portrait;
-    margin: 0.4in;
+    /* size + margin come from #print-page-size so paper and orient stick */
+    margin: 0.5in;
   }
 
-  body.printing-preview > :not(.print-root),
-  body:has(.print-root) > :not(.print-root) {
+  body.printing > :not(.print-root) {
     display: none !important;
   }
 
-  body.printing-preview .print-root,
-  body:has(.print-root) .print-root {
+  body.printing .print-root {
     display: block !important;
     position: static;
     width: auto;
@@ -1062,7 +2431,34 @@
     color: black;
   }
 
-  body.printing-preview .print-sheet {
+  body.printing .print-stage-bar {
+    display: none !important;
+  }
+
+  body.printing .print-desk,
+  body.printing .print-paper-stack {
+    display: block;
+    overflow: visible;
+    background: white;
+    padding: 0;
+    gap: 0;
+    zoom: 1 !important;
+  }
+
+  body.printing .print-page-card {
+    break-after: page;
+    page-break-after: always;
+    box-shadow: none;
+    outline: none;
+  }
+
+  body.printing .print-page-card:last-child,
+  body.printing .print-page-card[data-last="1"] {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  body.printing .print-sheet {
     display: block;
     width: 100%;
     max-width: none;
@@ -1080,48 +2476,74 @@
     break-inside: avoid;
   }
 
-  body.printing-preview .print-sheet:last-child {
+  body.printing .print-sheet:last-child {
     break-after: auto;
     page-break-after: auto;
   }
 
-  body.printing-preview .print-sheet .register-print-head h1 {
+  body.printing .print-sheet .register-print-head h1 {
     color: black;
-    font-size: 16pt;
+    font-size: 1.45em;
   }
 
-  body.printing-preview .print-sheet .register-print-head p,
-  body.printing-preview .print-sheet-memo,
-  body.printing-preview .print-sheet-empty {
+  body.printing .print-sheet .register-print-head p,
+  body.printing .print-sheet-memo,
+  body.printing .print-sheet-empty {
     color: #444;
   }
 
-  body.printing-preview .register-print-table {
+  body.printing .register-print-table {
     width: 100%;
-    font-size: 10pt;
+    table-layout: auto;
+    font-size: 1em;
     line-height: 1.35;
     border-collapse: separate;
     border-spacing: 0;
   }
 
-  body.printing-preview[data-print-orient="landscape"] .register-print-table {
-    font-size: 10pt;
+  body.printing .register-print-table col.col-flex,
+  body.printing .register-print-table .col-payee,
+  body.printing .register-print-table .col-memo {
+    width: auto;
   }
 
-  body.printing-preview .register-print-table th,
-  body.printing-preview .register-print-table td {
+  body.printing .register-print-table col.col-fit,
+  body.printing .register-print-table .col-date,
+  body.printing .register-print-table .col-type,
+  body.printing .register-print-table .col-num,
+  body.printing .register-print-table .col-bank,
+  body.printing .register-print-table .col-status,
+  body.printing .register-print-table .col-money {
+    width: 1%;
+  }
+
+  body.printing[data-print-orient="landscape"] .register-print-table {
+    font-size: 1em;
+  }
+
+  body.printing .register-print-table th,
+  body.printing .register-print-table td {
     border: none;
     border-bottom: 0.5pt solid #ccc;
     color: black;
-    padding: 0.32rem 0.42rem;
+    padding: 0.16em 0.38em;
     vertical-align: middle;
   }
 
-  body.printing-preview .register-print-table thead {
+  body.printing .register-print-table thead {
     display: table-header-group;
   }
 
-  body.printing-preview .register-print-table thead th {
+
+  body.printing .list-grid th,
+  body.printing .list-grid td,
+  body.printing .register-matrix th,
+  body.printing .register-matrix td {
+    position: static !important;
+    left: auto !important;
+  }
+
+  body.printing .register-print-table thead th {
     background: #eee;
     color: #333;
     border-bottom: 1pt solid #222;
@@ -1129,7 +2551,7 @@
     -webkit-print-color-adjust: exact;
   }
 
-  body.printing-preview .register-print-table tfoot td {
+  body.printing .register-print-table tfoot td {
     background: #f3f3f3;
     border-bottom: none;
     border-top: 1pt solid #222;
@@ -1137,31 +2559,41 @@
     -webkit-print-color-adjust: exact;
   }
 
-  body.printing-preview .register-print-table tbody tr:last-child td {
+  body.printing .register-print-table tbody tr:last-child td {
     border-bottom: 0;
   }
 
-  body.printing-preview .register-print-table tbody tr {
+  body.printing .register-print-table tbody tr {
     break-inside: avoid;
     page-break-inside: avoid;
   }
 
-  body.printing-preview .register-print-table .col-date,
-  body.printing-preview .register-print-table .col-type,
-  body.printing-preview .register-print-table .col-num,
-  body.printing-preview .register-print-table .col-bank,
-  body.printing-preview .register-print-table .col-status,
-  body.printing-preview .register-print-table .col-money {
+  body.printing .register-print-table .col-date,
+  body.printing .register-print-table .col-type,
+  body.printing .register-print-table .col-num,
+  body.printing .register-print-table .col-bank,
+  body.printing .register-print-table .col-status,
+  body.printing .register-print-table .col-money {
     white-space: nowrap;
+    overflow: visible;
   }
 
-  body.printing-preview .register-print-table span[class*="rounded-full"] {
-    font-size: 8pt;
-    padding: 0.08rem 0.4rem;
+  body.printing .register-print-table .col-status span,
+  body.printing .register-print-table span[class*="rounded-full"] {
+    display: inline-flex;
+    font-size: 0.85em;
+    padding: 0.08em 0.5em;
+    line-height: 1.2;
+    white-space: nowrap;
+    max-width: none;
   }
 
-  body.printing-preview .text-debit,
-  body.printing-preview .text-credit {
+  body.printing .print-letterhead-email {
+    display: block;
+  }
+
+  body.printing .text-debit,
+  body.printing .text-credit {
     color: black !important;
   }
 }
@@ -1183,6 +2615,46 @@
   font-size: 0.85em;
   padding: 0.12em 0.65em;
   line-height: 1.25;
+}
+
+@media screen and (max-width: 47.99rem) {
+  .notion-cal-day {
+    min-height: 2.75rem;
+  }
+  .notion-cal-pill {
+    min-height: 1.2rem;
+  }
+  .notion-cal-day .notion-cal-pill ~ .notion-cal-pill,
+  .notion-cal-more {
+    display: none;
+  }
+}
+
+/* Unlayered so 44px print chrome beats Button h-9 / size sm. */
+.print-stage-btn {
+  height: 2.75rem;
+  min-height: 2.75rem;
+}
+
+/* Paper list portals to body at z-50; the print overlay is z-200. Lift the menu
+   so Letter / Legal / A4… can be chosen, and scroll if the list is taller than the desk. */
+body.print-preview [data-radix-popper-content-wrapper]:has(.print-paper-menu),
+body.printing [data-radix-popper-content-wrapper]:has(.print-paper-menu) {
+  z-index: 400 !important;
+}
+.print-paper-menu {
+  z-index: 400;
+  max-height: min(24rem, var(--radix-select-content-available-height, 24rem));
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+@container printstage (max-width: 40rem) {
+  .print-stage-tools .print-tool-group button,
+  .print-stage-tools .print-paper-select {
+    height: 2.75rem;
+    min-height: 2.75rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -688,6 +688,30 @@ var SelectViewport = /* @__PURE__ */ import_react.forwardRef(/* @__PURE__ */ __n
 	})] });
 }, "SelectViewport"));
 var [SelectGroupContextProvider, useSelectGroupContext] = createSelectContext("SelectGroup");
+var SelectGroup = /* @__PURE__ */ import_react.forwardRef(/* @__PURE__ */ __name(function SelectGroup2(props, forwardedRef) {
+	const { __scopeSelect, ...groupProps } = props;
+	const groupId = useId();
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectGroupContextProvider, {
+		scope: __scopeSelect,
+		id: groupId,
+		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Primitive.div, {
+			role: "group",
+			"aria-labelledby": groupId,
+			...groupProps,
+			ref: forwardedRef
+		})
+	});
+}, "SelectGroup"));
+var LABEL_NAME = "SelectLabel";
+var SelectLabel = /* @__PURE__ */ import_react.forwardRef(/* @__PURE__ */ __name(function SelectLabel2(props, forwardedRef) {
+	const { __scopeSelect, ...labelProps } = props;
+	const groupContext = useSelectGroupContext(LABEL_NAME, __scopeSelect);
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Primitive.div, {
+		id: groupContext.id,
+		...labelProps,
+		ref: forwardedRef
+	});
+}, "SelectLabel"));
 var ITEM_NAME = "SelectItem";
 var [SelectItemContextProvider, useSelectItemContext] = createSelectContext(ITEM_NAME);
 var SelectItem = /* @__PURE__ */ import_react.forwardRef(/* @__PURE__ */ __name(function SelectItem2(props, forwardedRef) {
@@ -894,4 +918,4 @@ function wrapArray(array, startIndex) {
 }
 __name(wrapArray, "wrapArray");
 //#endregion
-export { SelectItemIndicator as a, SelectTrigger as c, SelectItem as i, SelectValue as l, SelectContent as n, SelectItemText as o, SelectIcon as r, SelectPortal as s, Select as t, SelectViewport as u };
+export { SelectItem as a, SelectLabel as c, SelectValue as d, SelectViewport as f, SelectIcon as i, SelectPortal as l, SelectContent as n, SelectItemIndicator as o, SelectGroup as r, SelectItemText as s, Select as t, SelectTrigger as u };

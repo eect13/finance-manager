@@ -75,6 +75,13 @@ var isIOSWebKit = () => {
 	const mtp = navigator.maxTouchPoints;
 	return _isIOSResult = navigator.platform === "MacIntel" && mtp !== void 0 && mtp > 0;
 };
+var getRect = (element) => {
+	const { offsetWidth, offsetHeight } = element;
+	return {
+		width: offsetWidth,
+		height: offsetHeight
+	};
+};
 var defaultKeyExtractor = (index) => index;
 var defaultRangeExtractor = (range) => {
 	const start = Math.max(range.startIndex - range.overscan, 0);
@@ -83,22 +90,43 @@ var defaultRangeExtractor = (range) => {
 	for (let i = 0; i < len; i++) arr[i] = start + i;
 	return arr;
 };
-var addEventListenerOptions = { passive: true };
-var observeWindowRect = (instance, cb) => {
+var observeElementRect = (instance, cb) => {
 	const element = instance.scrollElement;
 	if (!element) return;
-	const handler = () => {
+	const targetWindow = instance.targetWindow;
+	if (!targetWindow) return;
+	const handler = (rect) => {
+		const { width, height } = rect;
 		cb({
-			width: element.innerWidth,
-			height: element.innerHeight
+			width: Math.round(width),
+			height: Math.round(height)
 		});
 	};
-	handler();
-	element.addEventListener("resize", handler, addEventListenerOptions);
+	handler(getRect(element));
+	if (!targetWindow.ResizeObserver) return () => {};
+	const observer = new targetWindow.ResizeObserver((entries) => {
+		const run = () => {
+			const entry = entries[0];
+			if (entry == null ? void 0 : entry.borderBoxSize) {
+				const box = entry.borderBoxSize[0];
+				if (box) {
+					handler({
+						width: box.inlineSize,
+						height: box.blockSize
+					});
+					return;
+				}
+			}
+			handler(getRect(element));
+		};
+		instance.options.useAnimationFrameWithResizeObserver ? requestAnimationFrame(run) : run();
+	});
+	observer.observe(element, { box: "border-box" });
 	return () => {
-		element.removeEventListener("resize", handler);
+		observer.unobserve(element);
 	};
 };
+var addEventListenerOptions = { passive: true };
 var supportsScrollend = typeof window == "undefined" ? true : "onscrollend" in window;
 var observeOffset = (instance, cb, readOffset) => {
 	const element = instance.scrollElement;
@@ -123,7 +151,10 @@ var observeOffset = (instance, cb, readOffset) => {
 		fallback?.cancel();
 	};
 };
-var observeWindowOffset = (instance, cb) => observeOffset(instance, cb, (win) => instance.options.horizontal ? win.scrollX : win.scrollY);
+var observeElementOffset = (instance, cb) => observeOffset(instance, cb, (el) => {
+	const { horizontal, isRtl } = instance.options;
+	return horizontal ? el.scrollLeft * (isRtl && -1 || 1) : el.scrollTop;
+});
 var measureElement = (element, entry, instance) => {
 	if (instance.options.useCachedMeasurements) {
 		const index = instance.indexFromElement(element);
@@ -149,7 +180,7 @@ var scrollWithAdjustments = (offset, { adjustments = 0, behavior }, instance) =>
 		behavior
 	});
 };
-var windowScroll = scrollWithAdjustments;
+var elementScroll = scrollWithAdjustments;
 var Virtualizer = class {
 	constructor(opts) {
 		this.unsubs = [];
@@ -1153,15 +1184,13 @@ function useVirtualizerBase({ useFlushSync = true, directDomUpdates = false, dir
 	});
 	return instance;
 }
-function useWindowVirtualizer(options) {
+function useVirtualizer(options) {
 	return useVirtualizerBase({
-		getScrollElement: () => typeof document !== "undefined" ? window : null,
-		observeElementRect: observeWindowRect,
-		observeElementOffset: observeWindowOffset,
-		scrollToFn: windowScroll,
-		initialOffset: () => typeof document !== "undefined" ? window.scrollY : 0,
+		observeElementRect,
+		observeElementOffset,
+		scrollToFn: elementScroll,
 		...options
 	});
 }
 //#endregion
-export { useWindowVirtualizer as t };
+export { useVirtualizer as t };

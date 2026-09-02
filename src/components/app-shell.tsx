@@ -11,30 +11,36 @@ import {
   FileSpreadsheet,
   Handshake,
   LayoutDashboard,
+  Lock,
   Menu,
   NotebookPen,
   PanelLeftClose,
   PanelLeftOpen,
   Receipt,
+  Redo2,
+  Scale,
   ScrollText,
   Settings,
+  Undo2,
   Users,
-  Wallet,
 } from "lucide-react";
-import { Toaster } from "sonner";
+import { toast, Toaster } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { totalCash } from "@/lib/finance/ledger";
-import { useFinanceData, useFinanceStore } from "@/lib/finance/store";
+import { bootBooks, useFinanceData, useFinanceStore } from "@/lib/finance/store";
 import { cn } from "@/lib/utils";
 import { CompanySwitcher } from "./company-switcher";
 import { ExportMenu } from "./export-menu";
 import { FindButton, FindTransaction } from "./find-transaction";
 import { Money } from "./money";
 import { RecordSheet } from "./record-sheet";
+import { PrintStage } from "./print-preview";
+import { AppMark } from "./app-mark";
 import { ThemeToggle } from "./theme-toggle";
 import { applyTheme, useTheme } from "@/lib/theme";
 import { APP_VERSION_LABEL } from "@/lib/version";
+import { isTypingTarget, redoShortcutLabel, undoShortcutLabel } from "@/lib/hotkey";
 
 const NAV = [
   {
@@ -44,6 +50,7 @@ const NAV = [
       { to: "/register", label: "Register", icon: BookMarked },
       { to: "/calendar", label: "Calendar", icon: CalendarDays },
       { to: "/banks", label: "Banks", icon: Building2 },
+      { to: "/reconcile", label: "Reconcile", icon: Scale },
       { to: "/receipts", label: "Receipts", icon: Banknote },
       { to: "/checks", label: "Checks", icon: NotebookPen },
     ],
@@ -71,11 +78,11 @@ const NAV = [
     items: [
       { to: "/ledger", label: "Ledger", icon: BookOpen },
       { to: "/reports", label: "Reports", icon: FileSpreadsheet },
+      { to: "/close", label: "Close", icon: Lock },
     ],
   },
 ];
 
-const FLAT_NAV = [...NAV.flatMap((group) => group.items), { to: "/settings", label: "Settings", icon: Settings }];
 const SIDEBAR_KEY = "finance-manager-sidebar";
 
 function readRail() {
@@ -86,10 +93,18 @@ function readRail() {
   }
 }
 
-function NavLinks({ rail, onNavigate }: { rail?: boolean; onNavigate?: () => void }) {
+function NavLinks({
+  rail,
+  onNavigate,
+  embedded = true,
+}: {
+  rail?: boolean;
+  onNavigate?: () => void;
+  embedded?: boolean;
+}) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   return (
-    <nav className={cn("flex flex-1 flex-col gap-6 py-4", rail ? "px-2" : "px-3")}>
+    <nav className={cn("flex flex-col gap-6 py-4", embedded ? "sidebar-scroll min-h-0 flex-1" : "shrink-0", rail ? "px-2" : "px-3")}>
       {NAV.map((group) => (
         <div key={group.label} className="flex flex-col gap-1">
           {rail ? null : (
@@ -102,14 +117,14 @@ function NavLinks({ rail, onNavigate }: { rail?: boolean; onNavigate?: () => voi
               <Link
                 key={item.to}
                 to={item.to}
-                title={item.label}
-                aria-label={item.label}
                 onClick={onNavigate}
                 className={cn(
                   "flex min-h-11 items-center rounded-xl text-sm",
-                  rail ? "justify-center px-0" : "gap-3 px-3",
+                  rail ? "size-11 justify-center" : "gap-3 px-3",
                   active ? "bg-card text-foreground elevation" : "text-muted-foreground hover:bg-accent hover:text-foreground",
                 )}
+                aria-current={active ? "page" : undefined}
+                title={rail ? item.label : undefined}
               >
                 <Icon className="size-4 shrink-0" />
                 {rail ? null : item.label}
@@ -133,39 +148,27 @@ function SidebarBody({
 }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   return (
-    <>
-      <div className={cn("flex items-center gap-2 py-5", rail ? "justify-center px-2" : "px-5")}>
-        <div
-          className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground"
-          title={`Finance Manager ${APP_VERSION_LABEL}`}
-        >
-          <Wallet className="size-4" />
-        </div>
+    <div className="flex h-full min-h-0 flex-col">
+      <div className={cn("flex items-center gap-2 px-3 py-4", rail && "justify-center px-2")}>
+        <AppMark className="size-9" title="Finance Manager" />
         {rail ? null : (
           <div className="min-w-0">
-            <p className="font-display text-lg leading-none font-medium tracking-tight">Finance</p>
-            <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
-              Manager
-              <span className="rounded-md bg-muted px-1.5 py-px font-medium tracking-wide text-[0.65rem] tabular-nums text-muted-foreground">
-                {APP_VERSION_LABEL}
-              </span>
-            </p>
+            <p className="font-display text-sm font-medium leading-tight">Finance Manager</p>
+            <p className="text-[11px] text-muted-foreground">{APP_VERSION_LABEL}</p>
           </div>
         )}
       </div>
       <NavLinks rail={rail} onNavigate={onNavigate} />
-      <div className={cn("mt-auto flex flex-col gap-1 p-3", rail && "items-center p-2")}>
+      <div className={cn("mt-auto flex flex-col gap-1 border-t border-border py-3", rail ? "px-2" : "px-3")}>
         {onToggleRail ? (
           <button
             type="button"
             onClick={onToggleRail}
-            title={rail ? "Expand menu" : "Collapse menu"}
-            aria-label={rail ? "Expand menu" : "Collapse menu"}
-            aria-pressed={rail}
             className={cn(
               "flex min-h-11 items-center rounded-xl text-sm text-muted-foreground hover:bg-accent hover:text-foreground",
               rail ? "size-11 justify-center" : "gap-3 px-3",
             )}
+            aria-label={rail ? "Expand menu" : "Collapse menu"}
           >
             {rail ? <PanelLeftOpen className="size-4" /> : <PanelLeftClose className="size-4" />}
             {rail ? null : "Collapse"}
@@ -173,7 +176,6 @@ function SidebarBody({
         ) : null}
         <Link
           to="/settings"
-          title="Settings"
           aria-label="Settings"
           onClick={onNavigate}
           className={cn(
@@ -188,7 +190,7 @@ function SidebarBody({
           {rail ? null : "Settings"}
         </Link>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -198,31 +200,6 @@ function ThemeSync() {
     applyTheme(theme);
   }, [theme, resolved]);
   return null;
-}
-
-function MobileNav() {
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
-  return (
-    <nav className="flex min-w-0 max-w-full gap-1 overflow-x-auto px-3 pb-3 md:hidden">
-      {FLAT_NAV.map((item) => {
-        const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
-        const Icon = item.icon;
-        return (
-          <Link
-            key={item.to}
-            to={item.to}
-            className={cn(
-              "inline-flex h-10 shrink-0 items-center gap-2 rounded-full px-3 text-sm",
-              active ? "bg-card elevation" : "text-muted-foreground",
-            )}
-          >
-            <Icon className="size-4" />
-            {item.label}
-          </Link>
-        );
-      })}
-    </nav>
-  );
 }
 
 export function AppShell({
@@ -245,23 +222,45 @@ export function AppShell({
   const [open, setOpen] = useState(false);
   const [findOpen, setFindOpen] = useState(false);
   const [rail, setRail] = useState(false);
-  const hydrate = useFinanceStore((s) => s.hydrate);
+  const hydrated = useFinanceStore((s) => s.hydrated);
   const data = useFinanceData();
   const { resolved } = useTheme();
+  const canUndo = useFinanceStore((s) => (s.undoStack?.length ?? 0) > 0);
+  const canRedo = useFinanceStore((s) => (s.redoStack?.length ?? 0) > 0);
+  const [undoChord, setUndoChord] = useState("Ctrl+Z");
+  const [redoChord, setRedoChord] = useState("Ctrl+Y");
 
   useLayoutEffect(() => {
     setRail(readRail());
   }, []);
 
   useEffect(() => {
-    void Promise.resolve(useFinanceStore.persist.rehydrate()).finally(() => hydrate());
-  }, [hydrate]);
+    void bootBooks();
+  }, []);
+
+  useEffect(() => {
+    setUndoChord(undoShortcutLabel());
+    setRedoChord(redoShortcutLabel());
+  }, []);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setFindOpen(true);
+        return;
+      }
+      if (!(e.metaKey || e.ctrlKey) || e.altKey) return;
+      if (isTypingTarget(e.target)) return;
+      const key = e.key.toLowerCase();
+      if (key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        if (useFinanceStore.getState().undo()) toast.success("Undone.");
+        return;
+      }
+      if (key === "y" || (key === "z" && e.shiftKey)) {
+        e.preventDefault();
+        if (useFinanceStore.getState().redo()) toast.success("Redone.");
       }
     }
     window.addEventListener("keydown", onKey);
@@ -280,26 +279,35 @@ export function AppShell({
     });
   }
 
+  if (!hydrated) {
+    return (
+      <div className="flex h-dvh items-center justify-center bg-background text-foreground">
+        <ThemeSync />
+        <p className="text-sm text-muted-foreground">Opening the books…</p>
+      </div>
+    );
+  }
+
   const cash = totalCash(data);
 
   return (
-    <div className="flex min-h-screen min-w-0 overflow-x-hidden bg-background text-foreground">
+    <div className="flex h-dvh min-h-0 min-w-0 overflow-hidden bg-background text-foreground">
       <ThemeSync />
       <aside
         className={cn(
-          "no-print sticky top-0 hidden h-screen shrink-0 flex-col overflow-hidden border-r border-border bg-sidebar transition-[width] duration-200 ease-out md:flex",
+          "no-print hidden h-full shrink-0 flex-col overflow-hidden border-r border-border bg-sidebar md:flex",
           rail ? "w-16" : "w-60",
         )}
       >
         <SidebarBody rail={rail} onToggleRail={toggleRail} />
       </aside>
 
-      <div className="app-workspace flex min-w-0 flex-1 flex-col">
-        <header className="no-print sticky top-0 z-30 min-w-0 overflow-x-hidden border-b border-border bg-background/90 backdrop-blur-sm">
-          <div className="flex items-center gap-3 px-4 py-3 md:px-8">
+      <div className="app-workspace flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <header className="app-header-bar no-print min-w-0 shrink-0 overflow-x-hidden">
+          <div className="flex items-center gap-1 px-3 py-2 sm:gap-3 md:px-8 md:py-3">
             <Sheet open={open} onOpenChange={setOpen}>
               <SheetTrigger asChild>
-                <Button variant="outline" size="icon" className="md:hidden" aria-label="Open menu">
+                <Button variant="outline" size="icon" className="shrink-0 md:hidden" aria-label="Open menu">
                   <Menu />
                 </Button>
               </SheetTrigger>
@@ -314,48 +322,79 @@ export function AppShell({
               <p className="eyebrow">Book cash</p>
               <Money amount={cash} currency={data.settings.currency} className="text-sm font-medium" />
             </div>
-            <FindButton onClick={() => setFindOpen(true)} />
-            <ThemeToggle compact />
-            <ExportMenu data={data} />
+            <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+              <div className="flex">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="rounded-r-none"
+                  disabled={!canUndo}
+                  aria-label={`Undo ${undoChord}`}
+                  title={`Undo ${undoChord}`}
+                  onClick={() => {
+                    if (useFinanceStore.getState().undo()) toast.success("Undone.");
+                  }}
+                >
+                  <Undo2 />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="-ml-px rounded-l-none"
+                  disabled={!canRedo}
+                  aria-label={`Redo ${redoChord}`}
+                  title={`Redo ${redoChord}`}
+                  onClick={() => {
+                    if (useFinanceStore.getState().redo()) toast.success("Redone.");
+                  }}
+                >
+                  <Redo2 />
+                </Button>
+              </div>
+              <FindButton onClick={() => setFindOpen(true)} />
+              <ThemeToggle compact />
+              <ExportMenu data={data} />
+            </div>
           </div>
-          <MobileNav />
         </header>
 
         <main
+          data-workspace-scroll
           className={cn(
-            "mx-auto w-full min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8",
+            "mx-auto w-full min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-3 py-4 sm:px-4 sm:py-6 md:px-8 md:py-8",
             wide ? "max-w-none" : "max-w-6xl",
           )}
         >
           <div
             className={cn(
               "no-print flex flex-col gap-3",
-              compact ? "mb-3" : "mb-6",
-              align === "center" ? "items-center text-center" : "sm:flex-row sm:items-end sm:justify-between",
+              compact ? "mb-3" : "mb-4 sm:mb-6",
+              align === "center" ? "items-stretch text-left sm:items-center sm:text-center" : "sm:flex-row sm:items-end sm:justify-between",
             )}
           >
-            <div>
+            <div className="min-w-0">
               <h1
                 className={cn(
                   "font-display font-medium tracking-tight",
-                  compact ? "text-2xl whitespace-nowrap md:text-3xl" : "text-3xl md:text-4xl",
+                  compact ? "text-xl sm:text-2xl md:text-3xl" : "text-2xl sm:text-3xl md:text-4xl",
                 )}
               >
                 {title}
               </h1>
               {description ? (
-                <p className={cn("mt-1 text-sm text-muted-foreground", align === "center" ? "mx-auto max-w-2xl" : "max-w-2xl")}>
+                <p className={cn("app-page-hint mt-1 text-sm text-muted-foreground", align === "center" ? "mx-auto max-w-2xl" : "max-w-2xl")}>
                   {description}
                 </p>
               ) : null}
             </div>
-            {actions ? <div className={cn("flex flex-wrap gap-2", align === "center" && "justify-center")}>{actions}</div> : null}
+            {actions ? <div className={cn("page-actions", align === "center" && "sm:justify-center")}>{actions}</div> : null}
           </div>
-          {children}
+          <div className="min-w-0 max-w-full">{children}</div>
         </main>
       </div>
       <Toaster className="no-print" position="bottom-right" theme={resolved} richColors={false} />
       <RecordSheet />
+      <PrintStage />
       <FindTransaction open={findOpen} onClose={() => setFindOpen(false)} />
     </div>
   );

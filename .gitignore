@@ -3,3 +3,10 @@ node_modules/
 .github_repo
 .env
 .env.*
+.vercel/
+.grok/
+dist/
+screenshots/
+deploy/android/start-url.txt
+deploy/android/twa/
+*.log

@@ -12,12 +12,14 @@ export function normalBalance(type: AccountType): "debit" | "credit" {
   return type === "asset" || type === "expense" ? "debit" : "credit";
 }
 
-export function accountBalance(data: FinanceData, accountId: string): number {
+export function accountBalance(data: FinanceData, accountId: string, asOf?: string, from?: string): number {
   const account = data.accounts.find((a) => a.id === accountId);
   if (!account) return 0;
   let debit = 0;
   let credit = 0;
   for (const entry of data.journals) {
+    if (asOf && entry.date > asOf) continue;
+    if (from && entry.date < from) continue;
     for (const line of entry.lines) {
       if (line.accountId !== accountId) continue;
       debit += line.debit;
@@ -27,20 +29,65 @@ export function accountBalance(data: FinanceData, accountId: string): number {
   return normalBalance(account.type) === "debit" ? debit - credit : credit - debit;
 }
 
-export function bankBookBalance(data: FinanceData, bankId: string): number {
+export function bankBookBalance(data: FinanceData, bankId: string, asOf?: string): number {
   const bank = data.banks.find((b) => b.id === bankId);
   if (!bank) return 0;
-  return accountBalance(data, bank.accountId);
+  return accountBalance(data, bank.accountId, asOf);
+}
+
+/** One pass over the journals. Includes closed banks. */
+export function bookByBankId(data: FinanceData): Record<string, number> {
+  const accountToBank = new Map<string, string>();
+  const out: Record<string, number> = {};
+  for (const bank of data.banks) {
+    out[bank.id] = 0;
+    if (bank.accountId) accountToBank.set(bank.accountId, bank.id);
+  }
+  if (accountToBank.size === 0) return out;
+  for (const entry of data.journals) {
+    for (const line of entry.lines) {
+      const bankId = accountToBank.get(line.accountId);
+      if (!bankId) continue;
+      out[bankId] += line.debit - line.credit;
+    }
+  }
+  return out;
+}
+
+export function cashByBankId(data: FinanceData): Record<string, number> {
+  const all = bookByBankId(data);
+  const out: Record<string, number> = {};
+  for (const bank of data.banks) {
+    if (bank.archived) continue;
+    out[bank.id] = all[bank.id] ?? 0;
+  }
+  return out;
 }
 
 export function totalCash(data: FinanceData): number {
-  return data.banks.filter((b) => !b.archived).reduce((sum, b) => sum + bankBookBalance(data, b.id), 0);
+  const byBank = cashByBankId(data);
+  let sum = 0;
+  for (const amount of Object.values(byBank)) sum += amount;
+  return sum;
 }
 
 export function pendingChecksTotal(data: FinanceData, bankId?: string): number {
-  return data.checks
-    .filter((c) => c.status === "pending" && (!bankId || c.bankId === bankId))
-    .reduce((sum, c) => sum + c.amount, 0);
+  let sum = 0;
+  for (const c of data.checks) {
+    if (c.status !== "pending") continue;
+    if (bankId && c.bankId !== bankId) continue;
+    sum += c.amount;
+  }
+  return sum;
+}
+
+export function pendingByBankId(data: FinanceData): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const c of data.checks) {
+    if (c.status !== "pending") continue;
+    out[c.bankId] = (out[c.bankId] ?? 0) + c.amount;
+  }
+  return out;
 }
 
 export function invoiceSubtotal(lines: { quantity: number; unitPrice: number }[]): number {
@@ -63,31 +110,53 @@ export function invoicePaid(invoice: { payments: { amount: number }[] }): number
   return invoice.payments.reduce((sum, p) => sum + p.amount, 0);
 }
 
-export function invoiceBalance(data: FinanceData, invoiceId: string): number {
+export function invoiceBalance(data: FinanceData, invoiceId: string, asOf?: string): number {
   const invoice = data.invoices.find((i) => i.id === invoiceId);
   if (!invoice || invoice.status === "void") return 0;
-  return Math.max(0, invoiceTotal(data, invoiceId) - invoicePaid(invoice));
+  if (asOf && invoice.date > asOf) return 0;
+  const paid = invoice.payments
+    .filter((p) => !asOf || p.date <= asOf)
+    .reduce((sum, p) => sum + p.amount, 0);
+  return Math.max(0, invoiceTotal(data, invoiceId) - paid);
 }
 
-export function openReceivables(data: FinanceData): number {
-  return data.invoices
-    .filter((i) => i.status === "sent" || i.status === "partial" || i.status === "draft")
-    .reduce((sum, i) => sum + invoiceBalance(data, i.id), 0);
+/** Oldest-first apply. `dues` must already be sorted. Stops when amount is exhausted. */
+export function allocateOldest(dues: Array<{ id: string; due: number }>, amount: number): Record<string, number> {
+  const out: Record<string, number> = {};
+  let left = Math.max(0, Math.round(amount));
+  for (const row of dues) {
+    if (left <= 0) break;
+    if (row.due <= 0) continue;
+    const take = Math.min(row.due, left);
+    if (take <= 0) continue;
+    out[row.id] = take;
+    left -= take;
+  }
+  return out;
+}
+
+export function openReceivables(data: FinanceData, asOf?: string): number {
+  return data.invoices.reduce((sum, i) => sum + invoiceBalance(data, i.id, asOf), 0);
 }
 
 export function billPaid(bill: { payments: { amount: number }[] }): number {
   return bill.payments.reduce((sum, p) => sum + p.amount, 0);
 }
 
-export function billBalance(bill: { amount: number; status: string; payments: { amount: number }[] }): number {
+export function billBalance(
+  bill: { amount: number; status: string; date?: string; payments: { amount: number; date?: string }[] },
+  asOf?: string,
+): number {
   if (bill.status === "void") return 0;
-  return Math.max(0, bill.amount - billPaid(bill));
+  if (asOf && bill.date && bill.date > asOf) return 0;
+  const paid = bill.payments
+    .filter((p) => !asOf || !p.date || p.date <= asOf)
+    .reduce((sum, p) => sum + p.amount, 0);
+  return Math.max(0, bill.amount - paid);
 }
 
-export function openPayables(data: FinanceData): number {
-  return (data.bills ?? [])
-    .filter((b) => b.status === "open" || b.status === "partial")
-    .reduce((sum, b) => sum + billBalance(b), 0);
+export function openPayables(data: FinanceData, asOf?: string): number {
+  return (data.bills ?? []).reduce((sum, b) => sum + billBalance(b, asOf), 0);
 }
 
 export function customerOpenBalance(data: FinanceData, customerId: string): number {
@@ -140,7 +209,9 @@ export function makeJournal(input: {
     description: input.description,
     sourceType: input.sourceType,
     sourceId: input.sourceId,
+    recon: "pending",
     lines,
+    createdAt: Date.now(),
   };
 }
 
@@ -159,7 +230,19 @@ export function reverseJournal(entry: JournalEntry, date: string, reason: string
   });
 }
 
-export function trialBalance(data: FinanceData): Array<{
+export function fiscalStartOn(data: FinanceData, through: string): string {
+  const m = Math.min(12, Math.max(1, Math.round(data.settings.fiscalYearStart || 1)));
+  const y = Number(through.slice(0, 4));
+  const month = Number(through.slice(5, 7));
+  if (!Number.isFinite(y) || !Number.isFinite(month)) return `${through.slice(0, 4)}-01-01`;
+  const startYear = month >= m ? y : y - 1;
+  return `${startYear}-${String(m).padStart(2, "0")}-01`;
+}
+
+export function trialBalance(
+  data: FinanceData,
+  asOf?: string,
+): Array<{
   account: Account;
   debit: number;
   credit: number;
@@ -167,7 +250,7 @@ export function trialBalance(data: FinanceData): Array<{
 }> {
   return data.accounts
     .map((account) => {
-      const balance = accountBalance(data, account.id);
+      const balance = accountBalance(data, account.id, asOf);
       const debitNormal = normalBalance(account.type) === "debit";
       return {
         account,
@@ -179,7 +262,11 @@ export function trialBalance(data: FinanceData): Array<{
     .filter((row) => row.balance !== 0 || row.account.system);
 }
 
-export function incomeStatement(data: FinanceData): {
+export function incomeStatement(
+  data: FinanceData,
+  asOf?: string,
+  from?: string,
+): {
   income: number;
   expense: number;
   net: number;
@@ -187,7 +274,7 @@ export function incomeStatement(data: FinanceData): {
 } {
   const byAccount = data.accounts
     .filter((a) => a.type === "income" || a.type === "expense")
-    .map((account) => ({ account, amount: accountBalance(data, account.id) }))
+    .map((account) => ({ account, amount: accountBalance(data, account.id, asOf, from) }))
     .filter((row) => row.amount !== 0);
   const income = byAccount.filter((r) => r.account.type === "income").reduce((s, r) => s + r.amount, 0);
   const expense = byAccount.filter((r) => r.account.type === "expense").reduce((s, r) => s + r.amount, 0);

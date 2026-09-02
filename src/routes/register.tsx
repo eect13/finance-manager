@@ -1,21 +1,21 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useWindowVirtualizer } from "@tanstack/react-virtual";
-import { Filter, Printer, SlidersHorizontal } from "lucide-react";
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type DragEvent } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
+import { ArrowLeftRight, Printer, SlidersHorizontal } from "lucide-react";
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type DragEvent, type MutableRefObject } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
+import { ColumnChips } from "@/components/column-chips";
 import { ConfirmDelete } from "@/components/confirm-delete";
-import { DragHandle } from "@/components/drag-handle";
+import { DragHandle, setCashDragImage } from "@/components/drag-handle";
 import { CsvButton } from "@/components/export-menu";
+import { ListFilters } from "@/components/list-filters";
 import { Money } from "@/components/money";
-import { RegisterPrintPreview } from "@/components/print-preview";
+import { RegisterPrint, requestPrint } from "@/components/print-preview";
 import { RegisterPost } from "@/components/register-post";
 import { RegisterSwap } from "@/components/register-swap";
-import { ColumnChips } from "@/components/column-chips";
 import { ShopTick } from "@/components/shop-tick";
-import { SortHeader } from "@/components/sort-header";
-import { CheckBadge, ReceiptBadge, StatusLabel } from "@/components/status-badge";
-import { Badge } from "@/components/ui/badge";
+import { ColResize, SortHeader } from "@/components/sort-header";
+import { CheckBadge, ReceiptBadge, ReconBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,7 +23,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { cashRegisterRows } from "@/lib/finance/export";
-import { formatDate, formatShortDate, todayIso } from "@/lib/finance/format";
+import { fitColumnWidth, widthsMatch } from "@/lib/finance/fit-column";
+import { formatDate, formatRegisterDate, formatShortDate } from "@/lib/finance/format";
 import { openCashLine, stopOpen } from "@/lib/finance/open-record";
 import {
   boardDates,
@@ -32,11 +33,13 @@ import {
   deletableLines,
   filterCashLines,
   filterDirection,
+  isTransferMate,
   KIND_LABEL,
   movableLines,
   openingForBanks,
   rescheduleKind,
   totals,
+  transferDragCaption,
   TYPE_FILTERS,
   withOpening,
   withRunningBalance,
@@ -46,13 +49,14 @@ import {
   type CashTypeFilter,
   type DatePreset,
 } from "@/lib/finance/register";
-import { useEntrySort } from "@/lib/finance/sort";
+import { useEntrySort, type SortDir } from "@/lib/finance/sort";
 import { useFinanceData, useFinanceStore } from "@/lib/finance/store";
 import {
   DEFAULT_REGISTER_COLS,
   REGISTER_COL_CLASS,
   REGISTER_COLS,
   toggleRegisterCol,
+  type RegisterColId,
   type RegisterCols,
 } from "@/lib/finance/types";
 import { cn } from "@/lib/utils";
@@ -60,7 +64,40 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/register")({ component: RegisterPage });
 
 const UI_KEY = "finance-manager-register-ui";
-const YEAR_RANGE = datePresetRange("year");
+const FIT_MARK = "finance-manager-colfit";
+const FIT_VERSION = "content-1";
+const MONTH_RANGE = datePresetRange("month");
+const CHECK_COL = 40;
+const COL_MIN = 56;
+const COL_MAX = 420;
+const DEFAULT_COL_WIDTHS = {
+  check: CHECK_COL,
+  date: 112,
+  type: 100,
+  number: 88,
+  payee: 200,
+  memo: 148,
+  bank: 128,
+  payment: 120,
+  deposit: 120,
+  balance: 128,
+  status: 108,
+};
+type ColWidths = typeof DEFAULT_COL_WIDTHS;
+
+function clampCol(n: number, min = COL_MIN, max = COL_MAX) {
+  return Math.min(max, Math.max(min, Math.round(n)));
+}
+
+function parseColWidths(raw: unknown): ColWidths {
+  const src = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
+  const next = { ...DEFAULT_COL_WIDTHS };
+  for (const key of Object.keys(next) as Array<keyof ColWidths>) {
+    const value = src[key];
+    if (typeof value === "number" && Number.isFinite(value) && key !== "check") next[key] = clampCol(value);
+  }
+  return next;
+}
 
 const SORT_OPTIONS = [
   { value: "date:asc", label: "Date · oldest" },
@@ -75,20 +112,34 @@ const SORT_OPTIONS = [
   { value: "deposit:desc", label: "Deposit" },
 ];
 
+const COL_LABELS: Record<RegisterColId, string> = {
+  date: "Date",
+  type: "Type",
+  number: "No.",
+  payee: "Payee",
+  memo: "Memo",
+  bank: "Bank",
+  payment: "Payment",
+  deposit: "Deposit",
+  balance: "Balance",
+  status: "Status",
+};
+
 function RegisterPage() {
   const data = useFinanceData();
   const rescheduleCashLine = useFinanceStore((s) => s.rescheduleCashLine);
   const removeCashLines = useFinanceStore((s) => s.removeCashLines);
   const reassignCashBank = useFinanceStore((s) => s.reassignCashBank);
+  const setCashRecon = useFinanceStore((s) => s.setCashRecon);
   const updateSettings = useFinanceStore((s) => s.updateSettings);
   const patch = useFinanceStore((s) => s.patch);
   const [bankFilter, setBankFilter] = useState("all");
   const [direction, setDirection] = useState<CashDirection>("all");
   const [nameFilter, setNameFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState<CashTypeFilter>("all");
-  const [datePreset, setDatePreset] = useState<DatePreset>("year");
-  const [dateFrom, setDateFrom] = useState(YEAR_RANGE.from);
-  const [dateTo, setDateTo] = useState(YEAR_RANGE.to);
+  const [datePreset, setDatePreset] = useState<DatePreset>("month");
+  const [dateFrom, setDateFrom] = useState(MONTH_RANGE.from);
+  const [dateTo, setDateTo] = useState(MONTH_RANGE.to);
   const [uiReady, setUiReady] = useState(false);
   const [dragOn, setDragOn] = useState(false);
   const [extraDates, setExtraDates] = useState<string[]>([]);
@@ -96,9 +147,13 @@ function RegisterPage() {
   const [overDate, setOverDate] = useState<string | null>(null);
   const [overRow, setOverRow] = useState<string | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
-  const [confirm, setConfirm] = useState<"selected" | "all" | null>(null);
+  const [selectOn, setSelectOn] = useState(false);
+  const [confirm, setConfirm] = useState<"all" | "selected" | null>(null);
+  const [editLine, setEditLine] = useState<CashLine | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [allowDelete, setAllowDelete] = useState(false);
-  const [printOpen, setPrintOpen] = useState(false);
+  const [colWidths, setColWidths] = useState<ColWidths>(DEFAULT_COL_WIDTHS);
+  const [needFit, setNeedFit] = useState(false);
   const fontSize = data.settings.registerFontSize ?? 12;
   const cols = data.settings.registerColumns ?? DEFAULT_REGISTER_COLS;
   const dataRef = useRef(data);
@@ -107,60 +162,58 @@ function RegisterPage() {
   banksRef.current = data.banks;
 
   useLayoutEffect(() => {
+    let forceContent = false;
+    try {
+      forceContent = localStorage.getItem(FIT_MARK) !== FIT_VERSION;
+      if (forceContent) localStorage.setItem(FIT_MARK, FIT_VERSION);
+    } catch {
+      forceContent = true;
+    }
     try {
       const raw = localStorage.getItem(UI_KEY);
       if (raw) {
-        const saved = JSON.parse(raw) as {
-          bankFilter?: string;
-          datePreset?: DatePreset;
-          dateFrom?: string;
-          dateTo?: string;
-        };
-        if (saved.bankFilter) setBankFilter(saved.bankFilter);
-        if (saved.datePreset === "month" || saved.datePreset === "year") {
+        const saved = JSON.parse(raw) as Record<string, unknown>;
+        if (typeof saved.bankFilter === "string") setBankFilter(saved.bankFilter);
+        if (saved.colWidths && !forceContent) {
+          const parsed = parseColWidths(saved.colWidths);
+          setColWidths(parsed);
+          setNeedFit(widthsMatch({ ...parsed, check: DEFAULT_COL_WIDTHS.check }, DEFAULT_COL_WIDTHS));
+        } else setNeedFit(true);
+        if (saved.datePreset === "month" || saved.datePreset === "year" || saved.datePreset === "all") {
           const range = datePresetRange(saved.datePreset);
           setDatePreset(saved.datePreset);
           setDateFrom(range.from);
           setDateTo(range.to);
-        } else if (saved.datePreset === "all") {
-          setDatePreset("all");
-          setDateFrom("");
-          setDateTo("");
         } else if (saved.datePreset === "custom") {
           setDatePreset("custom");
-          setDateFrom(saved.dateFrom ?? "");
-          setDateTo(saved.dateTo ?? "");
+          setDateFrom(typeof saved.dateFrom === "string" ? saved.dateFrom : "");
+          setDateTo(typeof saved.dateTo === "string" ? saved.dateTo : "");
         }
-      }
+      } else setNeedFit(true);
     } catch {
-      /* private mode */
+      setNeedFit(true);
     }
     setUiReady(true);
   }, []);
 
   useEffect(() => {
     if (!uiReady) return;
-    try {
-      localStorage.setItem(
-        UI_KEY,
-        JSON.stringify({ bankFilter, datePreset, dateFrom, dateTo }),
-      );
-    } catch {
-      /* private mode */
-    }
-  }, [uiReady, bankFilter, datePreset, dateFrom, dateTo]);
+    const timer = window.setTimeout(() => {
+      try {
+        localStorage.setItem(UI_KEY, JSON.stringify({ bankFilter, datePreset, dateFrom, dateTo, colWidths }));
+      } catch {
+        /* quota */
+      }
+    }, 160);
+    return () => window.clearTimeout(timer);
+  }, [uiReady, bankFilter, datePreset, dateFrom, dateTo, colWidths]);
 
   function applyPreset(preset: DatePreset) {
     setDatePreset(preset);
-    if (preset === "month" || preset === "year") {
+    if (preset === "month" || preset === "year" || preset === "all") {
       const range = datePresetRange(preset);
       setDateFrom(range.from);
       setDateTo(range.to);
-      return;
-    }
-    if (preset === "all") {
-      setDateFrom("");
-      setDateTo("");
     }
   }
 
@@ -175,26 +228,22 @@ function RegisterPage() {
   }
 
   const bankId = bankFilter === "all" ? undefined : bankFilter;
-  const book = useMemo(
-    () => cashBook(data, bankId, { dateFrom, dateTo }),
-    [data, bankId, dateFrom, dateTo],
-  );
+  const book = useMemo(() => cashBook(data, bankId, { dateFrom, dateTo }), [data, bankId, dateFrom, dateTo]);
   const opening = book.opening;
   const raw = book.lines;
   const directed = useMemo(() => filterDirection(raw, direction), [raw, direction]);
   const filtered = useMemo(
-    () =>
-      filterCashLines(directed, {
-        name: nameFilter,
-        type: typeFilter,
-      }),
+    () => filterCashLines(directed, { name: nameFilter, type: typeFilter }),
     [directed, nameFilter, typeFilter],
   );
   const searching = Boolean(nameFilter.trim() || typeFilter !== "all");
   const bankOpen = useMemo(() => openingForBanks(data, bankId), [data, bankId]);
   const asOf = useMemo(
-    () => (dateFrom ? { date: dateFrom, forward: opening !== bankOpen } : undefined),
-    [dateFrom, opening, bankOpen],
+    () =>
+      dateFrom
+        ? { date: dateFrom, forward: opening !== bankOpen, closedThrough: book.freezeThrough || undefined }
+        : undefined,
+    [dateFrom, opening, bankOpen, book.freezeThrough],
   );
   const tableSource = useMemo(
     () => (searching ? filtered : withOpening(filtered, opening, asOf)),
@@ -214,11 +263,12 @@ function RegisterPage() {
     for (const line of deletable) ids.add(line.id);
     return ids;
   }, [movable, deletable]);
+  const keepIdsRef = useRef(keepIds);
+  keepIdsRef.current = keepIds;
   const selectedIds = useMemo(() => selected.filter((id) => keepIds.has(id)), [selected, keepIds]);
   const selectedOn = useMemo(() => new Set(selectedIds), [selectedIds]);
   const allOn = movable.length > 0 && movable.every((l) => selectedOn.has(l.id));
   const someOn = selectedIds.length > 0 && !allOn;
-
   const openingRow = useMemo(() => balanced.find((l) => l.kind === "opening"), [balanced]);
   const dataRows = useMemo(() => balanced.filter((l) => l.kind !== "opening"), [balanced]);
   const getters = useMemo(
@@ -234,18 +284,45 @@ function RegisterPage() {
     }),
     [data.banks],
   );
-  const sort = useEntrySort(dataRows, "date", getters, "asc");
+  const sort = useEntrySort(dataRows, "date", getters, "asc", true);
   const display = useMemo(
     () => (openingRow && !searching ? [openingRow, ...sort.sorted] : sort.sorted),
     [openingRow, searching, sort.sorted],
   );
   const liveBanks = data.banks.filter((b) => !b.archived);
   const bankLabel = bankFilter === "all" ? "All banks" : (data.banks.find((b) => b.id === bankFilter)?.nickname ?? "");
+  const scrollToRow = useRef<(index: number) => void>(() => {});
+  const displayRef = useRef(display);
+  displayRef.current = display;
+  const draggingLine = useMemo(
+    () => (dragging ? (display.find((l) => l.id === dragging) ?? filtered.find((l) => l.id === dragging) ?? null) : null),
+    [dragging, display, filtered],
+  );
+  const draggingSourceId = draggingLine?.kind === "transfer" ? draggingLine.sourceId : null;
+
+  useEffect(() => {
+    if (activeId && display.some((l) => l.id === activeId)) return;
+    const first = display.find((l) => l.kind !== "opening");
+    setActiveId(first?.id ?? null);
+  }, [display, activeId]);
 
   useEffect(() => {
     if (bankFilter === "all") return;
     if (!data.banks.some((b) => !b.archived && b.id === bankFilter)) setBankFilter("all");
   }, [bankFilter, data.banks]);
+
+  useEffect(() => {
+    if (!selectOn) return;
+    const idx = displayRef.current.findIndex((l) => l.reassignable);
+    if (idx < 0) {
+      toast.error("Nothing in this view can move. Undo a rec, or pick a later month.");
+      return;
+    }
+    if (idx > 8) {
+      scrollToRow.current(idx);
+      toast.message("Finished-statement (R) lines stay locked. Showing the first line you can move.");
+    }
+  }, [selectOn]);
 
   const moveLine = useCallback(
     (line: CashLine, date: string) => {
@@ -254,7 +331,8 @@ function RegisterPage() {
       if (line.date === date) return;
       try {
         rescheduleCashLine({ kind, sourceId: line.sourceId, date });
-        toast.success(`${line.number || KIND_LABEL[line.kind]} moved to ${formatDate(date)}.`);
+        if (line.kind === "transfer") toast.success(`Transfer moved to ${formatDate(date)} — both banks.`);
+        else toast.success(`${line.number || KIND_LABEL[line.kind]} moved to ${formatDate(date)}.`);
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Could not move.");
       }
@@ -267,12 +345,7 @@ function RegisterPage() {
       if (!line.reassignable || line.bankId === nextBankId) return;
       const dest = banksRef.current.find((b) => b.id === nextBankId);
       try {
-        reassignCashBank({
-          kind: line.kind,
-          sourceId: line.sourceId,
-          bankId: nextBankId,
-          fromBankId: line.bankId,
-        });
+        reassignCashBank({ kind: line.kind, sourceId: line.sourceId, bankId: nextBankId, fromBankId: line.bankId });
         toast.success(`${line.party} moved to ${dest?.nickname ?? "bank"}.`);
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Could not swap bank.");
@@ -294,6 +367,10 @@ function RegisterPage() {
   );
 
   const toggleOne = useCallback((id: string) => {
+    if (!keepIdsRef.current.has(id)) {
+      toast.error("On a finished statement. Undo that rec to move this line.");
+      return;
+    }
     setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   }, []);
 
@@ -302,17 +379,94 @@ function RegisterPage() {
   }
 
   const handleOpen = useCallback((line: CashLine) => {
-    openCashLine(line, dataRef.current);
+    if (line.kind === "opening") return;
+    if (line.kind === "bill-payment" || line.kind === "payment") {
+      openCashLine(line, dataRef.current);
+      return;
+    }
+    setEditLine(line);
   }, []);
 
-  const handleDragStart = useCallback((id: string) => setDragging(id), []);
+  const onFitted = useCallback((next: ColWidths) => {
+    setColWidths(next);
+    setNeedFit(false);
+  }, []);
 
+  const cycleRecon = useCallback(
+    (line: CashLine) => {
+      if (line.kind === "opening" || line.status === "voided" || line.status === "bounced" || line.status === "void") return;
+      if (line.recon === "reconciled") {
+        toast.error("On a finished statement. Undo that rec to change it.");
+        return;
+      }
+      const next = line.recon === "cleared" ? "pending" : "cleared";
+      try {
+        setCashRecon({ kind: line.kind, sourceId: line.sourceId, recon: next });
+        toast.success(next === "cleared" ? "Cleared." : "Pending.");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Could not update status.");
+      }
+    },
+    [setCashRecon],
+  );
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const target = e.target as HTMLElement | null;
+      if (
+        editLine ||
+        target?.closest(
+          "input, textarea, select, [contenteditable='true'], [role='listbox'], [role='dialog'], [data-radix-select-content], [data-radix-popper-content-wrapper]",
+        )
+      )
+        return;
+      const rows = display.filter((l) => l.kind !== "opening");
+      if (rows.length === 0) return;
+      const idx = Math.max(0, rows.findIndex((l) => l.id === activeId));
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        const next = rows[Math.min(rows.length - 1, idx + 1)];
+        if (!next) return;
+        setActiveId(next.id);
+        const i = display.findIndex((l) => l.id === next.id);
+        if (i >= 0) scrollToRow.current(i);
+        return;
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        const next = rows[Math.max(0, idx - 1)];
+        if (!next) return;
+        setActiveId(next.id);
+        const i = display.findIndex((l) => l.id === next.id);
+        if (i >= 0) scrollToRow.current(i);
+        return;
+      }
+      const row = rows[idx];
+      if (!row) return;
+      if (e.key === "Enter") {
+        e.preventDefault();
+        handleOpen(row);
+        return;
+      }
+      if (e.key === " " && selectOn) {
+        e.preventDefault();
+        if (row.reassignable) {
+          toggleOne(row.id);
+          return;
+        }
+        if (row.recon === "reconciled") toast.error("On a finished statement. Undo that rec to move this line.");
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [editLine, display, activeId, handleOpen, toggleOne, selectOn]);
+
+  const handleDragStart = useCallback((id: string) => setDragging(id), []);
   const handleDragEnd = useCallback(() => {
     setDragging(null);
     setOverDate(null);
     setOverRow(null);
   }, []);
-
   const handleDropRow = useCallback(
     (target: CashLine, e: DragEvent) => {
       const line = parseDrag(e);
@@ -327,7 +481,7 @@ function RegisterPage() {
     return deletable.filter((l) => ids.includes(l.id)).map((l) => ({ kind: l.kind, sourceId: l.sourceId }));
   }
 
-  function runDelete(mode: "selected" | "all") {
+  function runDelete(mode: "all" | "selected") {
     const ids = mode === "all" ? deletable.map((l) => l.id) : selectedIds;
     if (ids.length === 0) return;
     try {
@@ -355,30 +509,31 @@ function RegisterPage() {
       actions={
         <>
           <CsvButton filename="bank-register.csv" rows={cashRegisterRows(data, bankId)} />
-          <Button variant="outline" onClick={() => setPrintOpen(true)}>
+          <Button variant="outline" onClick={requestPrint}>
             <Printer />
             Print
           </Button>
-          <Button asChild variant="ghost">
+          <Button asChild variant="ghost" className="hidden sm:inline-flex">
+            <Link to="/reconcile">Reconcile</Link>
+          </Button>
+          <Button asChild variant="ghost" className="hidden sm:inline-flex">
             <Link to="/checks">Issue check</Link>
           </Button>
-          <Button asChild variant="ghost">
+          <Button asChild variant="ghost" className="hidden sm:inline-flex">
             <Link to="/receipts">Receive</Link>
           </Button>
+          <RegisterPost defaultBankId={bankId} edit={editLine} onClearEdit={() => setEditLine(null)} />
         </>
       }
     >
-      <div className="register-print-head print-only">
-        <p>{data.settings.companyName}</p>
-        <h1>Bank Register</h1>
-        <p>
-          {bankLabel}
-          {" · "}
-          {formatDate(todayIso())}
+      {data.settings.closedThrough ? (
+        <p className="no-print mb-3 text-center text-xs text-muted-foreground">
+          Closed through {formatDate(data.settings.closedThrough)}. Posting on or before that date is blocked.
         </p>
-      </div>
+      ) : null}
 
-      <section className="register-summary no-print mb-2 flex flex-wrap items-center justify-center gap-x-5 gap-y-1 rounded-2xl bg-card px-3 py-2 text-center text-xs elevation">
+      <div className="register-chrome no-print mb-3">
+      <section className="register-summary flex flex-wrap items-center justify-center gap-x-5 gap-y-1 text-center text-xs">
         <span>
           In <Money amount={stats.inflow} currency={data.settings.currency} className="text-credit font-medium" />
         </span>
@@ -395,15 +550,31 @@ function RegisterPage() {
         ) : null}
       </section>
 
-      <div className="register-view no-print mb-2">
-        <div className="register-toolbar">
-          <Input
-            value={nameFilter}
-            onChange={(e) => setNameFilter(e.target.value)}
-            placeholder="Payee, number, memo"
-            aria-label="Search register"
-            className="register-toolbar-search h-9 min-h-9"
-          />
+      <div className="register-toolbar">
+        <Input
+          value={nameFilter}
+          onChange={(e) => setNameFilter(e.target.value)}
+          placeholder="Payee, number, memo"
+          aria-label="Search register"
+          className="register-toolbar-search h-11 min-h-11"
+        />
+        <div className="register-toolbar-actions">
+          <Button
+            type="button"
+            variant={selectOn ? "default" : "outline"}
+            className="h-11 min-h-11"
+            aria-pressed={selectOn}
+            aria-label={selectOn ? "Hide move checkboxes" : "Show move checkboxes"}
+            onClick={() => {
+              setSelectOn((on) => {
+                if (on) setSelected([]);
+                return !on;
+              });
+            }}
+          >
+            <ArrowLeftRight />
+            Move
+          </Button>
           <RegisterFilters
             typeFilter={typeFilter}
             direction={direction}
@@ -424,12 +595,12 @@ function RegisterPage() {
             }}
             onSort={(v) => {
               const [key, dir] = v.split(":");
-              sort.set(key, dir === "desc" ? "desc" : "asc");
+              sort.set(key ?? "date", dir === "desc" ? "desc" : "asc");
             }}
             onClear={() => {
               setTypeFilter("all");
               setDirection("all");
-              applyPreset("year");
+              applyPreset("month");
             }}
           />
           <ViewOptions
@@ -445,13 +616,21 @@ function RegisterPage() {
             onShowAllCols={() => setRegisterCols(() => ({ ...DEFAULT_REGISTER_COLS }))}
           />
         </div>
-        <p className="text-center text-xs text-muted-foreground">
-          {movable.length} {movable.length === 1 ? "entry" : "entries"}
-          {searching ? " match these filters" : ""}
-          {selectedIds.length ? ` · ${selectedIds.length} selected` : " · tick a line to move banks"}
-          {allowDelete ? " · delete unlocked" : ""}
-        </p>
       </div>
+      </div>
+
+      <p className="mb-3 text-center text-xs text-muted-foreground no-print">
+        {movable.length} {movable.length === 1 ? "entry" : "entries"}
+        {searching ? " match these filters" : ""}
+        {selectOn
+          ? selectedIds.length
+            ? ` · ${selectedIds.length} selected`
+            : movable.length
+              ? " · tick a check, sale, receipt, or transfer — R stays locked"
+              : " · nothing unlocked to move — undo Rec or pick a later month"
+          : ""}
+        {allowDelete ? " · delete unlocked" : ""}
+      </p>
 
       <div className="register-bank-tabs no-print mb-3 min-w-0" role="tablist" aria-label="Bank">
         <button
@@ -477,10 +656,6 @@ function RegisterPage() {
         ))}
       </div>
 
-      <section className="no-print mb-3" aria-label="Post">
-        <RegisterPost defaultBankId={bankId} />
-      </section>
-
       {dragOn ? (
         <DateChips
           dates={dates}
@@ -502,19 +677,35 @@ function RegisterPage() {
           currency={data.settings.currency}
           banks={data.banks}
           cols={cols}
+          colWidths={colWidths}
+          needFit={needFit}
           lastBalance={display.at(-1)?.balance ?? ending}
           selected={selectedOn}
+          selectOn={selectOn}
+          hasMovable={movable.length > 0}
           allOn={allOn}
           someOn={someOn}
           dragOn={dragOn}
           dragging={dragging}
+          draggingSourceId={draggingSourceId}
           overRow={overRow}
           sortKey={sort.key}
           sortDir={sort.dir}
+          activeId={activeId}
+          scrollToRow={scrollToRow}
           onSort={sort.toggle}
+          onColWidth={(id, next) =>
+            setColWidths((prev) => ({
+              ...prev,
+              [id]: clampCol(next, id === "check" ? 36 : COL_MIN),
+            }))
+          }
+          onFitted={onFitted}
           onToggle={toggleOne}
           onToggleAll={toggleAll}
           onOpen={handleOpen}
+          onActivate={setActiveId}
+          onCycleRecon={cycleRecon}
           onSwap={swapBank}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
@@ -549,9 +740,7 @@ function RegisterPage() {
         </div>
       ) : null}
 
-      <RegisterPrintPreview
-        open={printOpen}
-        onClose={() => setPrintOpen(false)}
+      <RegisterPrint
         companyName={data.settings.companyName}
         companyAddress={data.settings.companyAddress}
         companyPhone={data.settings.companyPhone}
@@ -562,8 +751,6 @@ function RegisterPage() {
         currency={data.settings.currency}
         fontSize={fontSize}
         cols={cols}
-        onColsChange={(next) => setRegisterCols(() => next)}
-        onToggleCol={(id) => setRegisterCols((current) => toggleRegisterCol(current, id))}
       />
 
       <ConfirmDelete
@@ -577,7 +764,9 @@ function RegisterPage() {
         confirmLabel="Delete"
         requirePhrase={requireDeletePhrase ? "DELETE" : undefined}
         onClose={() => setConfirm(null)}
-        onConfirm={() => confirm && runDelete(confirm)}
+        onConfirm={() => {
+          if (confirm) runDelete(confirm);
+        }}
       />
     </AppShell>
   );
@@ -606,114 +795,39 @@ function RegisterFilters({
   sortValue: string;
   onType: (v: CashTypeFilter) => void;
   onDirection: (v: CashDirection) => void;
-  onPreset: (v: DatePreset) => void;
+  onPreset: (preset: DatePreset) => void;
   onDateFrom: (v: string) => void;
   onDateTo: (v: string) => void;
   onSort: (v: string) => void;
   onClear: () => void;
 }) {
-  const active = [typeFilter !== "all", direction !== "all", datePreset !== "year"].filter(Boolean).length;
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button variant="outline" className="h-9 min-h-9 justify-start" aria-label="Filters">
-          <Filter />
-          Filters
-          {active ? (
-            <span className="ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[0.65rem] font-medium text-primary-foreground">
-              {active}
-            </span>
-          ) : null}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent
-        className="w-80"
-        align="end"
-        onPointerDownOutside={(e) => {
-          const el = e.target as HTMLElement | null;
-          if (el?.closest("[data-radix-select-content]")) e.preventDefault();
-        }}
-      >
-        <p className="mb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">Filters</p>
-        <div className="grid gap-2">
-          <div className="grid grid-cols-3 gap-1" role="group" aria-label="Date range">
-            <Button
-              type="button"
-              size="sm"
-              variant={datePreset === "month" ? "default" : "outline"}
-              aria-label="This month"
-              aria-pressed={datePreset === "month"}
-              onClick={() => onPreset("month")}
-            >
-              Month
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant={datePreset === "year" ? "default" : "outline"}
-              aria-label="This year"
-              aria-pressed={datePreset === "year"}
-              onClick={() => onPreset("year")}
-            >
-              Year
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant={datePreset === "all" ? "default" : "outline"}
-              aria-label="All dates"
-              aria-pressed={datePreset === "all"}
-              onClick={() => onPreset("all")}
-            >
-              All dates
-            </Button>
-          </div>
-          <Select value={typeFilter} onValueChange={(v) => onType(v as CashTypeFilter)}>
-            <SelectTrigger className="h-9 min-h-9" aria-label="Filter by type">
-              <SelectValue placeholder="Type" />
-            </SelectTrigger>
-            <SelectContent>
-              {TYPE_FILTERS.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={direction} onValueChange={(v) => onDirection(v as CashDirection)}>
-            <SelectTrigger className="h-9 min-h-9" aria-label="Direction">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">In and out</SelectItem>
-              <SelectItem value="in">Incoming only</SelectItem>
-              <SelectItem value="out">Outgoing only</SelectItem>
-            </SelectContent>
-          </Select>
-          <div className="grid grid-cols-2 gap-2">
-            <Input type="date" value={dateFrom} onChange={(e) => onDateFrom(e.target.value)} aria-label="From date" className="h-9 min-h-9" />
-            <Input type="date" value={dateTo} onChange={(e) => onDateTo(e.target.value)} aria-label="To date" className="h-9 min-h-9" />
-          </div>
-          <Select value={sortValue} onValueChange={onSort}>
-            <SelectTrigger className="h-9 min-h-9" aria-label="Sort register">
-              <SelectValue placeholder="Sort" />
-            </SelectTrigger>
-            <SelectContent>
-              {SORT_OPTIONS.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  Sort · {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {active ? (
-            <button type="button" className="text-left text-xs font-medium text-muted-foreground" onClick={onClear}>
-              Back to this year
-            </button>
-          ) : null}
-        </div>
-      </PopoverContent>
-    </Popover>
+    <ListFilters
+      datePreset={datePreset}
+      dateFrom={dateFrom}
+      dateTo={dateTo}
+      onPreset={onPreset}
+      onDateFrom={onDateFrom}
+      onDateTo={onDateTo}
+      defaultPreset="month"
+      selects={[
+        { label: "Type", value: typeFilter, options: TYPE_FILTERS, onChange: (v) => onType(v as CashTypeFilter) },
+        {
+          label: "Direction",
+          value: direction,
+          options: [
+            { value: "all", label: "In and out" },
+            { value: "in", label: "Incoming only" },
+            { value: "out", label: "Outgoing only" },
+          ],
+          onChange: (v) => onDirection(v as CashDirection),
+        },
+      ]}
+      sortValue={sortValue}
+      sortOptions={SORT_OPTIONS}
+      onSort={onSort}
+      onClear={onClear}
+    />
   );
 }
 
@@ -737,13 +851,13 @@ function ViewOptions({
   onFontSize: (n: number) => void;
   onAllowDelete: (on: boolean) => void;
   onDragOn: (on: boolean) => void;
-  onToggleCol: (id: (typeof REGISTER_COLS)[number]["id"]) => void;
+  onToggleCol: (id: RegisterColId) => void;
   onShowAllCols: () => void;
 }) {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline" className="h-9 min-h-9 justify-start" aria-label="View options">
+        <Button variant="outline" className="h-11 min-h-11 justify-start" aria-label="View options">
           <SlidersHorizontal />
           View
           {hiddenCount ? (
@@ -833,24 +947,37 @@ function DateChips({
   );
 }
 
+type BankLite = { id: string; nickname: string; archived?: boolean };
+
 function RegisterTable({
   lines,
   currency,
   banks,
   cols,
+  colWidths,
+  needFit,
   lastBalance,
   selected,
+  selectOn,
+  hasMovable,
   allOn,
   someOn,
   dragOn,
   dragging,
+  draggingSourceId,
   overRow,
   sortKey,
   sortDir,
+  activeId,
+  scrollToRow,
   onSort,
+  onColWidth,
+  onFitted,
   onToggle,
   onToggleAll,
   onOpen,
+  onActivate,
+  onCycleRecon,
   onSwap,
   onDragStart,
   onDragEnd,
@@ -859,21 +986,32 @@ function RegisterTable({
 }: {
   lines: BalancedCashLine[];
   currency: string;
-  banks: { id: string; nickname: string; archived?: boolean }[];
+  banks: BankLite[];
   cols: RegisterCols;
+  colWidths: ColWidths;
+  needFit: boolean;
   lastBalance: number;
   selected: Set<string>;
+  selectOn: boolean;
+  hasMovable: boolean;
   allOn: boolean;
   someOn: boolean;
   dragOn: boolean;
   dragging: string | null;
+  draggingSourceId: string | null;
   overRow: string | null;
   sortKey: string;
-  sortDir: "asc" | "desc";
+  sortDir: SortDir;
+  activeId: string | null;
+  scrollToRow: MutableRefObject<(index: number) => void>;
   onSort: (column: string) => void;
+  onColWidth: (id: keyof ColWidths, next: number) => void;
+  onFitted: (next: ColWidths) => void;
   onToggle: (id: string) => void;
   onToggleAll: (on: boolean) => void;
   onOpen: (line: CashLine) => void;
+  onActivate: (id: string) => void;
+  onCycleRecon: (line: CashLine) => void;
   onSwap: (line: CashLine, bankId: string) => void;
   onDragStart: (id: string) => void;
   onDragEnd: () => void;
@@ -881,32 +1019,16 @@ function RegisterTable({
   onDropRow: (line: CashLine, e: DragEvent) => void;
 }) {
   const wrapRef = useRef<HTMLDivElement>(null);
-  const [margin, setMargin] = useState(0);
-  useLayoutEffect(() => {
-    const el = wrapRef.current;
-    if (!el) return;
-    function measure() {
-      const node = wrapRef.current;
-      if (!node) return;
-      const next = Math.round(node.getBoundingClientRect().top + window.scrollY);
-      setMargin((m) => (m === next ? m : next));
-    }
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    window.addEventListener("resize", measure);
-    return () => {
-      ro.disconnect();
-      window.removeEventListener("resize", measure);
-    };
-  }, []);
-  const virtualizer = useWindowVirtualizer({
+  const virtualizer = useVirtualizer({
     count: lines.length,
+    getScrollElement: () => document.querySelector("[data-workspace-scroll]"),
     estimateSize: () => 44,
     overscan: 12,
-    scrollMargin: margin,
     getItemKey: (index) => lines[index]?.id ?? index,
   });
+  scrollToRow.current = (index) => {
+    virtualizer.scrollToIndex(index, { align: "auto" });
+  };
   const { outTotal, inTotal } = useMemo(() => {
     let out = 0;
     let inn = 0;
@@ -918,9 +1040,42 @@ function RegisterTable({
     return { outTotal: out, inTotal: inn };
   }, [lines]);
 
+  useEffect(() => {
+    if (!needFit) return;
+    let cancelled = false;
+    let attempts = 0;
+    function tryFit() {
+      if (cancelled) return;
+      const tableEl = wrapRef.current?.querySelector("table");
+      if (!tableEl || !tableEl.querySelector("td.col-date, td.col-payee")) {
+        if (attempts++ < 48) requestAnimationFrame(tryFit);
+        return;
+      }
+      const next = { ...colWidths };
+      for (const col of REGISTER_COLS) {
+        if (!cols[col.id]) continue;
+        const cls = REGISTER_COL_CLASS[col.id].split(" ")[0];
+        next[col.id] = fitColumnWidth({
+          table: tableEl,
+          selector: `td.${cls}`,
+          header: COL_LABELS[col.id],
+          min: COL_MIN,
+          max: COL_MAX,
+        });
+      }
+      onFitted(next);
+    }
+    tryFit();
+    return () => {
+      cancelled = true;
+    };
+    // Fit once when the window first paints cells.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [needFit, lines.length]);
+
   if (lines.length === 0) {
     return (
-      <div className="rounded-2xl bg-card px-4 py-6 text-center text-sm text-muted-foreground elevation">
+      <div className="register-card list-card px-4 py-6 text-center text-sm text-muted-foreground">
         No activity matches these filters.
       </div>
     );
@@ -929,137 +1084,263 @@ function RegisterTable({
   const vItems = virtualizer.getVirtualItems();
   const first = vItems[0];
   const last = vItems[vItems.length - 1];
-  const padTop = first ? Math.max(0, first.start - margin) : 0;
+  const padTop = first ? first.start : 0;
   const padBottom = last ? Math.max(0, virtualizer.getTotalSize() - last.end) : 0;
+  const hidden = REGISTER_COLS.filter((col) => !cols[col.id]);
+  const tableWidth =
+    (selectOn ? colWidths.check : 0) + REGISTER_COLS.reduce((sum, col) => sum + (cols[col.id] ? colWidths[col.id] : 0), 0);
   const firstLabel = REGISTER_COLS.find(
     (col) => cols[col.id] && col.id !== "payment" && col.id !== "deposit" && col.id !== "balance",
   )?.id;
-  const hidden = REGISTER_COLS.filter((col) => !cols[col.id]);
+  const lastVisible = [...REGISTER_COLS].reverse().find((col) => cols[col.id])?.id;
+  function widthOf(id: RegisterColId) {
+    return colWidths[id];
+  }
+  function setWidth(id: RegisterColId) {
+    return (next: number) => onColWidth(id, next);
+  }
+  function resizeProps(id: RegisterColId) {
+    if (id === lastVisible) return {};
+    return { width: widthOf(id), onWidth: setWidth(id), onFit: fitWidth(id, COL_LABELS[id]) };
+  }
+  function fitWidth(id: RegisterColId, label: string) {
+    return () => {
+      const tableEl = wrapRef.current?.querySelector("table");
+      if (!tableEl) return;
+      const cls = REGISTER_COL_CLASS[id].split(" ")[0];
+      onColWidth(
+        id,
+        fitColumnWidth({
+          table: tableEl,
+          selector: `td.${cls}`,
+          header: label,
+          min: COL_MIN,
+          max: COL_MAX,
+        }),
+      );
+    };
+  }
 
   return (
-    <div
-      ref={wrapRef}
-      className={cn(
-        "register-matrix min-w-0 overflow-x-auto rounded-2xl bg-card elevation",
-        hidden.map((col) => `hide-${col.id}`),
-      )}
-      {...Object.fromEntries(hidden.map((col) => [`data-hide-${col.id}`, "true"]))}
-    >
-      <table>
-        <thead>
-          <tr>
-            <th className="col-check no-print">
-              <ShopTick checked={allOn} indeterminate={someOn} onChange={onToggleAll} label="Select all" />
-            </th>
-            <SortHeader compact label="Date" column="date" sortKey={sortKey} dir={sortDir} onToggle={onSort} className="col-date" />
-            <SortHeader compact label="Type" column="type" sortKey={sortKey} dir={sortDir} onToggle={onSort} className="col-type" />
-            <SortHeader compact label="No." column="number" sortKey={sortKey} dir={sortDir} onToggle={onSort} className="col-num" />
-            <SortHeader compact label="Payee" column="payee" sortKey={sortKey} dir={sortDir} onToggle={onSort} className="col-payee" />
-            <SortHeader compact label="Memo" column="memo" sortKey={sortKey} dir={sortDir} onToggle={onSort} className="col-memo" />
-            <SortHeader compact label="Bank" column="bank" sortKey={sortKey} dir={sortDir} onToggle={onSort} className="col-bank" />
-            <SortHeader
-              compact
-              label="Payment"
-              column="payment"
-              sortKey={sortKey}
-              dir={sortDir}
-              onToggle={onSort}
-              align="right"
-              className="col-money col-payment"
-            />
-            <SortHeader
-              compact
-              label="Deposit"
-              column="deposit"
-              sortKey={sortKey}
-              dir={sortDir}
-              onToggle={onSort}
-              align="right"
-              className="col-money col-deposit"
-            />
-            <th className="col-money col-balance py-2 text-right text-xs font-medium tracking-wide text-muted-foreground uppercase">
-              Balance
-            </th>
-            <th className="col-status py-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {padTop > 0 ? (
-            <tr aria-hidden>
-              <td colSpan={11} style={{ height: padTop, padding: 0, border: 0 }} />
-            </tr>
-          ) : null}
-          {vItems.map((item) => {
-            const line = lines[item.index];
-            if (!line) return null;
-            return (
-              <RegisterRow
-                key={line.id}
-                index={item.index}
-                line={line}
-                currency={currency}
-                banks={banks}
-                isOn={selected.has(line.id)}
-                dragOn={dragOn}
-                dragging={dragging === line.id}
-                over={overRow === line.id}
-                measureRef={virtualizer.measureElement}
-                onToggle={onToggle}
-                onOpen={onOpen}
-                onSwap={onSwap}
-                onDragStart={onDragStart}
-                onDragEnd={onDragEnd}
-                onOverRow={onOverRow}
-                onDropRow={onDropRow}
+    <div className="register-card list-card">
+      <div
+        ref={wrapRef}
+        className={cn("list-grid register-matrix min-w-0", !selectOn && "hide-check", hidden.map((col) => `hide-${col.id}`))}
+        {...Object.fromEntries(hidden.map((col) => [`data-hide-${col.id}`, "true"]))}
+      >
+        <table style={{ width: "100%", minWidth: tableWidth }}>
+          <colgroup>
+            <col className="col-check no-print" style={{ width: colWidths.check }} />
+            {REGISTER_COLS.map((col) => (
+              <col
+                key={col.id}
+                className={cn(
+                  REGISTER_COL_CLASS[col.id],
+                  (col.id === "payee" || col.id === "memo" || (col.id === lastVisible && !cols.payee && !cols.memo)) &&
+                    "col-flex",
+                )}
+                style={{ width: !cols[col.id] ? 0 : colWidths[col.id] }}
               />
-            );
-          })}
-          {padBottom > 0 ? (
-            <tr aria-hidden>
-              <td colSpan={11} style={{ height: padBottom, padding: 0, border: 0 }} />
+            ))}
+          </colgroup>
+          <thead>
+            <tr>
+              <th
+                className="col-check no-print relative"
+                onClick={stopOpen}
+                onDoubleClick={stopOpen}
+                onPointerDown={stopOpen}
+                onMouseDown={stopOpen}
+              >
+                <span className="register-check-cell">
+                  <ShopTick
+                    checked={allOn}
+                    indeterminate={someOn}
+                    locked={!hasMovable}
+                    onChange={(on) => {
+                      if (!hasMovable) {
+                        toast.error("On a finished statement. Undo that rec to move this line.");
+                        return;
+                      }
+                      onToggleAll(on);
+                    }}
+                    label="Select all"
+                  />
+                </span>
+              </th>
+              <SortHeader
+                label="Date"
+                column="date"
+                sortKey={sortKey}
+                dir={sortDir}
+                onToggle={onSort}
+                className={cn("col-date", lastVisible === "date" && "col-fill")}
+                {...resizeProps("date")}
+              />
+              <SortHeader
+                label="Type"
+                column="type"
+                sortKey={sortKey}
+                dir={sortDir}
+                onToggle={onSort}
+                className={cn("col-type", lastVisible === "type" && "col-fill")}
+                {...resizeProps("type")}
+              />
+              <SortHeader
+                label="No."
+                column="number"
+                sortKey={sortKey}
+                dir={sortDir}
+                onToggle={onSort}
+                className={cn("col-num", lastVisible === "number" && "col-fill")}
+                {...resizeProps("number")}
+              />
+              <SortHeader
+                label="Payee"
+                column="payee"
+                sortKey={sortKey}
+                dir={sortDir}
+                onToggle={onSort}
+                className={cn("col-payee", lastVisible === "payee" && "col-fill")}
+                {...resizeProps("payee")}
+              />
+              <SortHeader
+                label="Memo"
+                column="memo"
+                sortKey={sortKey}
+                dir={sortDir}
+                onToggle={onSort}
+                className={cn("col-memo", lastVisible === "memo" && "col-fill")}
+                {...resizeProps("memo")}
+              />
+              <SortHeader
+                label="Bank"
+                column="bank"
+                sortKey={sortKey}
+                dir={sortDir}
+                onToggle={onSort}
+                className={cn("col-bank", lastVisible === "bank" && "col-fill")}
+                {...resizeProps("bank")}
+              />
+              <SortHeader
+                label="Payment"
+                column="payment"
+                sortKey={sortKey}
+                dir={sortDir}
+                onToggle={onSort}
+                align="right"
+                className={cn("col-money col-payment", lastVisible === "payment" && "col-fill")}
+                {...resizeProps("payment")}
+              />
+              <SortHeader
+                label="Deposit"
+                column="deposit"
+                sortKey={sortKey}
+                dir={sortDir}
+                onToggle={onSort}
+                align="right"
+                className={cn("col-money col-deposit", lastVisible === "deposit" && "col-fill")}
+                {...resizeProps("deposit")}
+              />
+              <th
+                className={cn(
+                  "col-money col-balance relative px-4 py-3 text-center font-medium text-muted-foreground",
+                  lastVisible === "balance" && "col-fill",
+                )}
+                data-col="balance"
+                data-align="right"
+              >
+                Balance
+                {lastVisible === "balance" ? null : (
+                  <ColResize width={colWidths.balance} onWidth={setWidth("balance")} onFit={fitWidth("balance", "Balance")} />
+                )}
+              </th>
+              <th
+                className={cn(
+                  "col-status relative px-4 py-3 text-center font-medium text-muted-foreground",
+                  lastVisible === "status" && "col-fill",
+                )}
+                data-col="status"
+              >
+                Status
+              </th>
             </tr>
-          ) : null}
-        </tbody>
-        <tfoot>
-          <tr>
-            <td className="col-check no-print" />
-            {REGISTER_COLS.map((col) => {
-              if (!cols[col.id]) {
-                return <td key={col.id} className={REGISTER_COL_CLASS[col.id]} />;
-              }
-              if (col.id === firstLabel) {
-                return (
-                  <td key={col.id} className={`${REGISTER_COL_CLASS[col.id]} font-medium`}>
-                    Totals
-                  </td>
-                );
-              }
-              if (col.id === "payment") {
-                return (
-                  <td key={col.id} className="col-money col-payment">
-                    <Money amount={outTotal} currency={currency} className="text-debit" />
-                  </td>
-                );
-              }
-              if (col.id === "deposit") {
-                return (
-                  <td key={col.id} className="col-money col-deposit">
-                    <Money amount={inTotal} currency={currency} className="text-credit" />
-                  </td>
-                );
-              }
-              if (col.id === "balance") {
-                return (
-                  <td key={col.id} className="col-money col-balance">
-                    <Money amount={lastBalance} currency={currency} />
-                  </td>
-                );
-              }
-              return <td key={col.id} className={REGISTER_COL_CLASS[col.id]} />;
+          </thead>
+          <tbody>
+            {padTop > 0 ? (
+              <tr aria-hidden>
+                <td colSpan={11} style={{ height: padTop, padding: 0, border: 0 }} />
+              </tr>
+            ) : null}
+            {vItems.map((item) => {
+              const line = lines[item.index];
+              if (!line) return null;
+              return (
+                <RegisterRow
+                  key={line.id}
+                  index={item.index}
+                  line={line}
+                  currency={currency}
+                  banks={banks}
+                  isOn={selected.has(line.id)}
+                  isActive={activeId === line.id}
+                  dragOn={dragOn}
+                  dragging={dragging === line.id || isTransferMate(line, draggingSourceId)}
+                  over={overRow === line.id}
+                  measureRef={virtualizer.measureElement}
+                  onToggle={onToggle}
+                  onOpen={onOpen}
+                  onActivate={onActivate}
+                  onCycleRecon={onCycleRecon}
+                  onSwap={onSwap}
+                  onDragStart={onDragStart}
+                  onDragEnd={onDragEnd}
+                  onOverRow={onOverRow}
+                  onDropRow={onDropRow}
+                />
+              );
             })}
-          </tr>
-        </tfoot>
-      </table>
+            {padBottom > 0 ? (
+              <tr aria-hidden>
+                <td colSpan={11} style={{ height: padBottom, padding: 0, border: 0 }} />
+              </tr>
+            ) : null}
+          </tbody>
+          <tfoot>
+            <tr>
+              <td className="col-check no-print" />
+              {REGISTER_COLS.map((col) => {
+                if (!cols[col.id]) return <td key={col.id} className={REGISTER_COL_CLASS[col.id]} />;
+                if (col.id === firstLabel)
+                  return (
+                    <td key={col.id} className={`${REGISTER_COL_CLASS[col.id]} font-medium`}>
+                      Totals
+                    </td>
+                  );
+                if (col.id === "payment")
+                  return (
+                    <td key={col.id} className="col-money col-payment">
+                      <Money amount={outTotal} currency={currency} className="text-debit" />
+                    </td>
+                  );
+                if (col.id === "deposit")
+                  return (
+                    <td key={col.id} className="col-money col-deposit">
+                      <Money amount={inTotal} currency={currency} className="text-credit" />
+                    </td>
+                  );
+                if (col.id === "balance")
+                  return (
+                    <td key={col.id} className="col-money col-balance">
+                      <Money amount={lastBalance} currency={currency} />
+                    </td>
+                  );
+                return <td key={col.id} className={REGISTER_COL_CLASS[col.id]} />;
+              })}
+            </tr>
+          </tfoot>
+        </table>
+      </div>
     </div>
   );
 }
@@ -1077,161 +1358,189 @@ function sameLine(a: BalancedCashLine, b: BalancedCashLine) {
     a.deposit === b.deposit &&
     a.balance === b.balance &&
     a.status === b.status &&
+    a.recon === b.recon &&
     a.method === b.method &&
     a.reassignable === b.reassignable &&
     a.reschedulable === b.reschedulable
   );
 }
 
-function sameBanks(
-  a: { id: string; nickname: string; archived?: boolean }[],
-  b: { id: string; nickname: string; archived?: boolean }[],
-) {
+function sameBanks(a: BankLite[], b: BankLite[]) {
   return a.length === b.length && a.every((bank, i) => bank.id === b[i]?.id && bank.nickname === b[i]?.nickname);
 }
 
-const RegisterRow = memo(function RegisterRow({
-  index,
-  line,
-  currency,
-  banks,
-  isOn,
-  dragOn,
-  dragging,
-  over,
-  measureRef,
-  onToggle,
-  onOpen,
-  onSwap,
-  onDragStart,
-  onDragEnd,
-  onOverRow,
-  onDropRow,
-}: {
-  index: number;
-  line: BalancedCashLine;
-  currency: string;
-  banks: { id: string; nickname: string; archived?: boolean }[];
-  isOn: boolean;
-  dragOn: boolean;
-  dragging: boolean;
-  over: boolean;
-  measureRef: (node: Element | null) => void;
-  onToggle: (id: string) => void;
-  onOpen: (line: CashLine) => void;
-  onSwap: (line: CashLine, bankId: string) => void;
-  onDragStart: (id: string) => void;
-  onDragEnd: () => void;
-  onOverRow: (id: string | null) => void;
-  onDropRow: (line: CashLine, e: DragEvent) => void;
-}) {
-  const bank = banks.find((b) => b.id === line.bankId);
-  const isOpening = line.kind === "opening";
-  const canDrag = dragOn && line.reschedulable;
-  return (
-    <tr
-      ref={measureRef}
-      data-index={index}
-      draggable={canDrag}
-      data-open={isOpening ? undefined : "true"}
-      data-selected={isOn ? "true" : undefined}
-      data-dragging={dragging ? "true" : undefined}
-      data-drop={over ? "true" : undefined}
-      tabIndex={isOpening ? undefined : 0}
-      title={isOpening ? undefined : "Double-click to open"}
-      onDoubleClick={() => onOpen(line)}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" && e.currentTarget === e.target) onOpen(line);
-      }}
-      onDragStart={(e) => {
-        if (!canDrag) {
+const RegisterRow = memo(
+  function RegisterRow({
+    index,
+    line,
+    currency,
+    banks,
+    isOn,
+    isActive,
+    dragOn,
+    dragging,
+    over,
+    measureRef,
+    onToggle,
+    onOpen,
+    onActivate,
+    onCycleRecon,
+    onSwap,
+    onDragStart,
+    onDragEnd,
+    onOverRow,
+    onDropRow,
+  }: {
+    index: number;
+    line: BalancedCashLine;
+    currency: string;
+    banks: BankLite[];
+    isOn: boolean;
+    isActive: boolean;
+    dragOn: boolean;
+    dragging: boolean;
+    over: boolean;
+    measureRef: (node: Element | null) => void;
+    onToggle: (id: string) => void;
+    onOpen: (line: CashLine) => void;
+    onActivate: (id: string) => void;
+    onCycleRecon: (line: CashLine) => void;
+    onSwap: (line: CashLine, bankId: string) => void;
+    onDragStart: (id: string) => void;
+    onDragEnd: () => void;
+    onOverRow: (id: string | null) => void;
+    onDropRow: (line: CashLine, e: DragEvent) => void;
+  }) {
+    const bank = banks.find((b) => b.id === line.bankId);
+    const isOpening = line.kind === "opening";
+    const canDrag = dragOn && line.reschedulable;
+    const locked = line.recon === "reconciled";
+    return (
+      <tr
+        ref={measureRef}
+        data-index={index}
+        draggable={canDrag}
+        data-open={isOpening ? undefined : "true"}
+        data-selected={isOn ? "true" : undefined}
+        data-active={isActive ? "true" : undefined}
+        data-dragging={dragging ? "true" : undefined}
+        data-drop={over ? "true" : undefined}
+        tabIndex={isOpening ? undefined : 0}
+        title={isOpening ? undefined : "Double-click to open"}
+        onClick={() => {
+          if (!isOpening) onActivate(line.id);
+        }}
+        onDoubleClick={() => onOpen(line)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && e.currentTarget === e.target) onOpen(line);
+        }}
+        onDragStart={(e) => {
+          if (!canDrag) {
+            e.preventDefault();
+            return;
+          }
+          e.dataTransfer.setData("text/plain", line.id);
+          e.dataTransfer.effectAllowed = "move";
+          setCashDragImage(e, transferDragCaption(line));
+          onDragStart(line.id);
+        }}
+        onDragEnd={onDragEnd}
+        onDragOver={(e) => {
+          if (!dragOn || isOpening) return;
           e.preventDefault();
-          return;
-        }
-        e.dataTransfer.setData("text/plain", line.id);
-        e.dataTransfer.effectAllowed = "move";
-        onDragStart(line.id);
-      }}
-      onDragEnd={onDragEnd}
-      onDragOver={(e) => {
-        if (!dragOn || isOpening) return;
-        e.preventDefault();
-        onOverRow(line.id);
-      }}
-      onDragLeave={() => onOverRow(null)}
-      onDrop={(e) => {
-        if (!dragOn || isOpening) return;
-        e.preventDefault();
-        onDropRow(line, e);
-      }}
-    >
-      <td className="col-check no-print">
-        {isOpening ? null : (
-          <ShopTick checked={isOn} onChange={() => onToggle(line.id)} label={`Select ${line.party}`} />
-        )}
-      </td>
-      <td className="col-date">
-        <span className="inline-flex items-center gap-1">
-          {canDrag ? <DragHandle enabled className="no-print" /> : null}
-          {isOpening && !line.date ? "Opening" : formatDate(line.date)}
-        </span>
-      </td>
-      <td className="col-type">{KIND_LABEL[line.kind]}</td>
-      <td className="col-num">{line.number || "—"}</td>
-      <td className="col-payee">
-        <span className="font-medium">{line.party}</span>
-      </td>
-      <td className="col-memo">{line.memo}</td>
-      <td className="col-bank" onClick={stopOpen} onDoubleClick={stopOpen} onPointerDown={stopOpen}>
-        {isOpening || !line.reassignable ? (
-          <span>{bank?.nickname ?? "—"}</span>
-        ) : (
-          <>
-            <span className="print-only">{bank?.nickname ?? "—"}</span>
-            <Select value={line.bankId} onValueChange={(v) => onSwap(line, v)}>
-              <SelectTrigger
-                className="register-bank-select no-print h-auto min-h-0 w-auto border-0 bg-transparent px-1 text-[length:1em] shadow-none"
-                aria-label={`Bank for ${line.party}`}
-              >
-                <SelectValue placeholder="Bank" />
-              </SelectTrigger>
-              <SelectContent>
-                {banks
-                  .filter((b) => !b.archived)
-                  .map((b) => (
-                    <SelectItem key={b.id} value={b.id}>
-                      {b.nickname}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-          </>
-        )}
-      </td>
-      <td className="col-money col-payment">
-        {line.payment ? <Money amount={line.payment} currency={currency} className="text-debit" /> : null}
-      </td>
-      <td className="col-money col-deposit">
-        {line.deposit ? <Money amount={line.deposit} currency={currency} className="text-credit" /> : null}
-      </td>
-      <td className="col-money col-balance">
-        <Money amount={line.balance} currency={currency} />
-      </td>
-      <td className="col-status">
-        <LineStatus line={line} />
-      </td>
-    </tr>
-  );
-}, (prev, next) => {
-  return (
+          onOverRow(line.id);
+        }}
+        onDragLeave={() => onOverRow(null)}
+        onDrop={(e) => {
+          if (!dragOn || isOpening) return;
+          e.preventDefault();
+          onDropRow(line, e);
+        }}
+      >
+        <td className="col-check no-print" onClick={stopOpen} onDoubleClick={stopOpen} onPointerDown={stopOpen}>
+          {isOpening ? null : (
+            <span className="register-check-cell">
+              <ShopTick
+                checked={isOn}
+                locked={locked || !line.reassignable}
+                onChange={() => onToggle(line.id)}
+                label={`Select ${line.party}`}
+              />
+            </span>
+          )}
+        </td>
+        <td className="col-date">
+          <span className="inline-flex items-center gap-1">
+            {canDrag ? <DragHandle enabled className="no-print" /> : null}
+            {isOpening && !line.date ? "Opening" : formatRegisterDate(line.date)}
+          </span>
+        </td>
+        <td className="col-type">{KIND_LABEL[line.kind]}</td>
+        <td className="col-num">{line.number || "—"}</td>
+        <td className="col-payee">
+          <span className="font-medium">{line.party}</span>
+        </td>
+        <td className="col-memo">{line.memo}</td>
+        <td className="col-bank" onClick={stopOpen} onDoubleClick={stopOpen} onPointerDown={stopOpen}>
+          {isOpening || !line.reassignable ? (
+            <span>{bank?.nickname ?? "—"}</span>
+          ) : (
+            <>
+              <span className="print-only">{bank?.nickname ?? "—"}</span>
+              <Select value={line.bankId} onValueChange={(v) => onSwap(line, v)}>
+                <SelectTrigger
+                  className="register-bank-select no-print h-auto min-h-0 w-auto border-0 bg-transparent px-1 text-[length:1em] shadow-none"
+                  aria-label={`Bank for ${line.party}`}
+                >
+                  <SelectValue placeholder="Bank" />
+                </SelectTrigger>
+                <SelectContent>
+                  {banks
+                    .filter((b) => !b.archived)
+                    .map((b) => (
+                      <SelectItem key={b.id} value={b.id}>
+                        {b.nickname}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </>
+          )}
+        </td>
+        <td className="col-money col-payment">
+          {line.payment ? <Money amount={line.payment} currency={currency} className="text-debit" /> : null}
+        </td>
+        <td className="col-money col-deposit">
+          {line.deposit ? <Money amount={line.deposit} currency={currency} className="text-credit" /> : null}
+        </td>
+        <td className="col-money col-balance">
+          <Money amount={line.balance} currency={currency} />
+        </td>
+        <td
+          className="col-status"
+          onClick={(e) => {
+            e.stopPropagation();
+            onCycleRecon(line);
+          }}
+          onDoubleClick={stopOpen}
+        >
+          <LineStatus line={line} />
+        </td>
+      </tr>
+    );
+  },
+  (prev, next) =>
     prev.index === next.index &&
     prev.isOn === next.isOn &&
+    prev.isActive === next.isActive &&
     prev.dragOn === next.dragOn &&
     prev.dragging === next.dragging &&
     prev.over === next.over &&
     prev.currency === next.currency &&
     prev.onToggle === next.onToggle &&
     prev.onOpen === next.onOpen &&
+    prev.onActivate === next.onActivate &&
+    prev.onCycleRecon === next.onCycleRecon &&
     prev.onSwap === next.onSwap &&
     prev.onDragStart === next.onDragStart &&
     prev.onDragEnd === next.onDragEnd &&
@@ -1239,24 +1548,17 @@ const RegisterRow = memo(function RegisterRow({
     prev.onDropRow === next.onDropRow &&
     prev.measureRef === next.measureRef &&
     sameBanks(prev.banks, next.banks) &&
-    sameLine(prev.line, next.line)
-  );
-});
+    sameLine(prev.line, next.line),
+);
 
-function LineStatus({ line }: { line: CashLine }) {
-  if (line.kind === "check") {
-    return <CheckBadge status={line.status as "pending" | "cleared" | "voided" | "bounced"} />;
+function LineStatus({ line }: { line: BalancedCashLine }) {
+  if (line.kind === "opening") return null;
+  if (line.kind === "check" && (line.status === "voided" || line.status === "bounced")) {
+    return <CheckBadge status={line.status} />;
   }
-  if (line.kind === "receipt" || line.kind === "payment") {
-    return (
-      <ReceiptBadge
-        status={line.status as "posted" | "void"}
-        kind={line.kind === "receipt" ? "cash-sale" : "payment"}
-        method={line.method}
-      />
-    );
+  if ((line.kind === "receipt" || line.kind === "payment") && line.status === "void") {
+    return <ReceiptBadge status="void" />;
   }
-  if (line.kind === "transfer") return <Badge variant="internal">Internal</Badge>;
-  if (!line.status) return null;
-  return <StatusLabel status={line.status} />;
+  if (line.recon) return <ReconBadge recon={line.recon} />;
+  return null;
 }

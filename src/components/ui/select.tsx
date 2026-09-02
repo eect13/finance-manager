@@ -43,7 +43,21 @@ export function SelectContent({ className, children, ...props }: React.Component
   );
 }
 
-export function SelectItem({ className, children, ...props }: React.ComponentProps<typeof SelectPrimitive.Item>) {
+export function SelectLabel({ className, ...props }: React.ComponentProps<typeof SelectPrimitive.Label>) {
+  return (
+    <SelectPrimitive.Label
+      className={cn("px-3 py-1.5 text-xs font-medium tracking-widest text-muted-foreground uppercase", className)}
+      {...props}
+    />
+  );
+}
+
+export function SelectItem({
+  className,
+  children,
+  hint,
+  ...props
+}: React.ComponentProps<typeof SelectPrimitive.Item> & { hint?: React.ReactNode }) {
   return (
     <SelectPrimitive.Item
       className={cn(
@@ -54,6 +68,7 @@ export function SelectItem({ className, children, ...props }: React.ComponentPro
       {...props}
     >
       <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+      {hint ? <span className="print-paper-dim ms-1 text-muted-foreground">{hint}</span> : null}
       <SelectPrimitive.ItemIndicator className="absolute right-2">
         <Check className="size-4" />
       </SelectPrimitive.ItemIndicator>

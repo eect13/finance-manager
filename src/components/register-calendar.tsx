@@ -1,19 +1,23 @@
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { useMemo, useState, type DragEvent } from "react";
 import { toast } from "sonner";
+import { setCashDragImage } from "@/components/drag-handle";
 import { Money } from "@/components/money";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatDate, currentMonth, todayIso } from "@/lib/finance/format";
 import {
+  calendarGridRange,
+  cashBook,
   cashCalendar,
-  cashRegisterLines,
   filterCashLines,
+  isTransferMate,
   KIND_LABEL,
   monthLabel,
   rescheduleKind,
   shiftMonth,
+  transferDragCaption,
   TYPE_FILTERS,
   type CashLine,
   type CashTypeFilter,
@@ -36,9 +40,10 @@ export function CashCalendar() {
   const [dragging, setDragging] = useState<string | null>(null);
   const [overDate, setOverDate] = useState<string | null>(null);
 
+  const gridRange = useMemo(() => calendarGridRange(month), [month]);
   const raw = useMemo(
-    () => cashRegisterLines(data, bankId === "all" ? undefined : bankId),
-    [data, bankId],
+    () => cashBook(data, bankId === "all" ? undefined : bankId, { dateFrom: gridRange.from, dateTo: gridRange.to }).lines,
+    [data, bankId, gridRange],
   );
   const lines = useMemo(
     () => filterCashLines(raw, { type, name: query }).filter((l) => l.kind !== "opening"),
@@ -46,6 +51,8 @@ export function CashCalendar() {
   );
   const days = useMemo(() => cashCalendar(lines, month), [lines, month]);
   const selected = days.find((d) => d.date === picked) ?? null;
+  const draggingLine = dragging ? lines.find((l) => l.id === dragging) ?? null : null;
+  const draggingSourceId = draggingLine?.kind === "transfer" ? draggingLine.sourceId : null;
 
   function moveLine(line: CashLine, date: string) {
     const kind = rescheduleKind(line.kind);
@@ -54,7 +61,8 @@ export function CashCalendar() {
     try {
       rescheduleCashLine({ kind, sourceId: line.sourceId, date });
       setPicked(date);
-      toast.success(`${line.party} moved to ${formatDate(date)}.`);
+      if (line.kind === "transfer") toast.success(`Transfer moved to ${formatDate(date)} — both banks.`);
+      else toast.success(`${line.party} moved to ${formatDate(date)}.`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not move.");
     }
@@ -71,21 +79,21 @@ export function CashCalendar() {
 
   return (
     <div className="flex min-w-0 flex-col gap-4">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex items-center gap-1">
+      <div className="cal-toolbar">
+        <div className="flex min-w-0 items-center gap-1">
           <Button variant="outline" size="sm" onClick={() => setMonth(currentMonth())}>
             Today
           </Button>
           <Button variant="ghost" size="icon" aria-label="Previous month" onClick={() => setMonth((m) => shiftMonth(m, -1))}>
             <ChevronLeft />
           </Button>
-          <h2 className="min-w-44 text-center font-display text-2xl font-medium tracking-tight">{monthLabel(month)}</h2>
+          <h2 className="min-w-0 flex-1 truncate text-center font-display text-xl font-medium tracking-tight sm:min-w-44 sm:flex-none sm:text-2xl">{monthLabel(month)}</h2>
           <Button variant="ghost" size="icon" aria-label="Next month" onClick={() => setMonth((m) => shiftMonth(m, 1))}>
             <ChevronRight />
           </Button>
         </div>
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-          <div className="relative sm:col-span-1">
+        <div className="field-grid-3">
+          <div className="relative">
             <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={query}
@@ -123,7 +131,7 @@ export function CashCalendar() {
         </div>
       </div>
 
-      <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
+      <div className="workspace-split-cal min-w-0 gap-4">
         <div className="notion-cal min-w-0">
           <div className="notion-cal-weekdays">
             {WEEKDAYS.map((day) => (
@@ -171,12 +179,12 @@ export function CashCalendar() {
                     <span className="notion-cal-num">{Number(day.date.slice(8))}</span>
                     {day.count > 0 ? <span className="notion-cal-count sm:hidden">{day.count}</span> : null}
                   </div>
-                  <div className="hidden min-h-0 flex-1 flex-col gap-0.5 sm:flex">
+                  <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-hidden">
                     {shown.map((line) => (
                       <EventPill
                         key={line.id}
                         line={line}
-                        dragging={dragging === line.id}
+                        dragging={dragging === line.id || isTransferMate(line, draggingSourceId)}
                         onOpen={() => openCashLine(line, data)}
                         onDragStart={() => setDragging(line.id)}
                         onDragEnd={() => {
@@ -186,7 +194,7 @@ export function CashCalendar() {
                       />
                     ))}
                     {extra > 0 ? (
-                      <span className="px-1 text-left text-xs font-medium text-muted-foreground">+{extra} more</span>
+                      <span className="notion-cal-more px-1 text-left text-xs font-medium text-muted-foreground">+{extra} more</span>
                     ) : null}
                   </div>
                 </div>
@@ -239,6 +247,7 @@ function EventPill({
         e.stopPropagation();
         e.dataTransfer.setData("text/plain", line.id);
         e.dataTransfer.effectAllowed = "move";
+        setCashDragImage(e, transferDragCaption(line));
         onDragStart();
       }}
       onDragEnd={onDragEnd}

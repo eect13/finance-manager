@@ -7,9 +7,9 @@
       "status": 200,
       "title": "Finance Manager",
       "hasCanvas": false,
-      "bodyTextLen": 2007,
-      "bodyTextHash": "05a099a04ea6a1b138fa1711229a5a5d941b79ae4237e9395b10d5679b713f8a",
-      "bodyTextPrefix": "Finance Manager TREASURY Desk Register Calendar Banks Receipts C",
+      "bodyTextLen": 1359,
+      "bodyTextHash": "1faf7cd3c14c35af6b658545b3dc1fa5ee3d43e512f9560fde6274afb1625c9c",
+      "bodyTextPrefix": "Finance Manager v3.22 TREASURY Desk Register Calendar Banks Reco",
       "horizontalOverflow": false,
       "consoleErrors": [],
       "pageErrors": [],
@@ -21,18 +21,16 @@
       "status": 200,
       "title": "Finance Manager",
       "hasCanvas": false,
-      "bodyTextLen": 1912,
-      "bodyTextHash": "726cc88c57d17467f2db90150b33e49eca799b765301849deeca451e28772b38",
-      "bodyTextPrefix": "Pacific Harbor Trading Aug 30, 2026 Export Desk Register Calenda",
+      "bodyTextLen": 981,
+      "bodyTextHash": "fed9300946920068ffe83a32561229732c4b83822becdd8df29dc0ad4221bbfc",
+      "bodyTextPrefix": "Pacific Harbor Trading Sep 2, 2026 Bank register CSV Print Post ",
       "horizontalOverflow": false,
       "consoleErrors": [],
       "pageErrors": [],
       "screenshot": "/workspace/screenshots/register-page-mobile.png"
     }
   },
-  "brandWarnings": [
-    "BRAND NOTE: no custom public/og.jpg — the platform will serve the og.grok.me placeholder. Custom cards are the default for games of every kind (DOM board/word games included), whimsical apps, creative tools, and brand-forward pages — only plain utilities (converters, CRUD trackers, admin dashboards) keep the placeholder. If this app is not a plain utility, finish the brand-asset pass per /workspace/.grok/skills/og/SKILL.md."
-  ],
+  "brandWarnings": [],
   "authWarnings": [],
   "verdictFile": "/workspace/screenshots/register-page.json"
 }

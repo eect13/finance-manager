@@ -17,6 +17,7 @@ const badgeVariants = cva(
         draft: "bg-muted text-muted-foreground",
         overdue: "bg-destructive/10 text-destructive",
         internal: "bg-muted text-muted-foreground",
+        reconciled: "bg-primary/10 text-primary",
       },
     },
     defaultVariants: { variant: "default" },

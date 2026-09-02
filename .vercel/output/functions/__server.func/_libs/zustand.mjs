@@ -244,4 +244,4 @@ function useShallow(selector) {
 	};
 }
 //#endregion
-export { create as i, createJSONStorage as n, persist as r, useShallow as t };
+export { persist as n, create as r, useShallow as t };

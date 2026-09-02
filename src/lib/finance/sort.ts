@@ -26,7 +26,11 @@ export function sortEntries<T>(
   const copy = [...items];
   copy.sort((a, b) => {
     const cmp = compareValues(get(a), get(b));
-    return dir === "asc" ? cmp : -cmp;
+    if (cmp !== 0) return dir === "asc" ? cmp : -cmp;
+    const aAt = (a as { createdAt?: number }).createdAt;
+    const bAt = (b as { createdAt?: number }).createdAt;
+    if (typeof aAt === "number" && typeof bAt === "number" && aAt !== bAt) return aAt - bAt;
+    return 0;
   });
   return copy;
 }
@@ -36,6 +40,7 @@ export function useEntrySort<T>(
   defaultKey: string,
   getters: Record<string, (item: T) => string | number>,
   defaultDir: SortDir = "asc",
+  presorted = false,
 ): EntrySort<T> {
   const [key, setKey] = useState(defaultKey);
   const [dir, setDir] = useState<SortDir>(defaultDir);
@@ -53,7 +58,10 @@ export function useEntrySort<T>(
     setDir(nextDir ?? (column === "order" || column === "date" || column === "name" ? "asc" : defaultDir));
   }
 
-  const sorted = useMemo(() => sortEntries(items, key, dir, getters), [items, key, dir, getters]);
+  const sorted = useMemo(() => {
+    if (presorted && key === defaultKey && dir === defaultDir) return items;
+    return sortEntries(items, key, dir, getters);
+  }, [items, key, dir, getters, presorted, defaultKey, defaultDir]);
   return { sorted, key, dir, toggle, set };
 }
 

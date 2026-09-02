@@ -31,6 +31,23 @@ export default tseslint.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
+      // v7 recommended turns on the React Compiler suite. Those rules treat
+      // callback refs (`cols.tableRef`) and localStorage hydration as errors
+      // across every list. Keep the classic two; drop the compiler extras.
+      "react-hooks/refs": "off",
+      "react-hooks/set-state-in-effect": "off",
+      "react-hooks/static-components": "off",
+      "react-hooks/use-memo": "off",
+      "react-hooks/preserve-manual-memoization": "off",
+      "react-hooks/immutability": "off",
+      "react-hooks/globals": "off",
+      "react-hooks/error-boundaries": "off",
+      "react-hooks/purity": "off",
+      "react-hooks/set-state-in-render": "off",
+      "react-hooks/config": "off",
+      "react-hooks/gating": "off",
+      "react-hooks/incompatible-library": "off",
+      "react-hooks/unsupported-syntax": "off",
       "react-refresh/only-export-components": [
         "warn",
         { allowConstantExport: true },

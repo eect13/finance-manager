@@ -458,6 +458,21 @@
     overflow: hidden;
   }
 
+  .list-grid td[data-col="amount"],
+  .list-grid td[data-col="debit"],
+  .list-grid td[data-col="credit"],
+  .list-grid td[data-col="book"],
+  .list-grid td[data-col="pending"],
+  .list-grid td[data-col="payment"],
+  .list-grid td[data-col="deposit"],
+  .list-grid td[data-col="balance"],
+  .list-grid td[data-col="total"],
+  .list-grid td[data-col="open"] {
+    overflow: visible;
+    white-space: nowrap;
+  }
+
+
   .list-grid td.col-actions > div {
     flex-wrap: nowrap !important;
     justify-content: flex-end;
@@ -868,6 +883,26 @@
     gap: 1rem;
     grid-template-columns: 1fr;
   }
+
+  .reports-aging {
+    display: grid;
+    gap: 2rem;
+    grid-template-columns: 1fr;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .reports-aging > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .reports-aging .list-grid {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
 
   .register-select-bar {
     position: sticky;
@@ -2054,6 +2089,20 @@
 
 .list-grid td:not(.col-actions) {
   overflow: hidden;
+}
+
+.list-grid td[data-col="amount"],
+.list-grid td[data-col="debit"],
+.list-grid td[data-col="credit"],
+.list-grid td[data-col="book"],
+.list-grid td[data-col="pending"],
+.list-grid td[data-col="payment"],
+.list-grid td[data-col="deposit"],
+.list-grid td[data-col="balance"],
+.list-grid td[data-col="total"],
+.list-grid td[data-col="open"] {
+  overflow: visible;
+  white-space: nowrap;
 }
 
 .list-grid td.col-actions {

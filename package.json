@@ -1,6 +1,6 @@
 {
   "name": "finance-manager",
-  "version": "3.49.0",
+  "version": "3.50.0",
   "description": "Finance Manager — Peachtree-style ledger in a desktop window.",
   "private": true,
   "sideEffects": false,
@@ -101,7 +101,7 @@
     "eslint": "^10.9.1",
     "eslint-config-prettier": "^10.1.1",
     "eslint-plugin-prettier": "^5.2.6",
-    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^15.15.0",
     "lightningcss": "^1.28.0",

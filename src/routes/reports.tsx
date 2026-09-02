@@ -82,7 +82,7 @@ function ReportsPage() {
         </TabsList>
         <TabsContent value="aging">
           <ListToolbar query={query} onQuery={setQuery} placeholder="Search party or number" label="Search aging" />
-          <div className="workspace-split gap-6">
+          <div className="reports-aging">
             <AgingTable title="Receivables" kind="invoice" rows={arVisible} currency={settings.currency} />
             <AgingTable title="Payables" kind="bill" rows={apVisible} currency={settings.currency} />
           </div>
@@ -131,11 +131,11 @@ function AgingTable({
   );
   const sort = useEntrySort(rows, "due", getters, "asc");
   const AGE_COLS = {
-    party: 180,
-    number: 100,
-    due: 110,
-    age: 90,
-    amount: 120,
+    party: 220,
+    number: 128,
+    due: 118,
+    age: 72,
+    amount: 176,
   } as const;
   const cols = useColWidths(`finance-manager-aging-${kind}-cols`, AGE_COLS);
   const gridRef = useRef<HTMLDivElement>(null);
@@ -155,7 +155,7 @@ function AgingTable({
         ))}
       </p>
       <div ref={gridRef} className="list-grid list-scroll overflow-auto rounded-2xl bg-card elevation">
-        <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
+        <table ref={cols.tableRef} className="text-sm" style={{ width: "100%", minWidth: cols.tableWidth }}>
           <colgroup>
             {(Object.keys(AGE_COLS) as Array<keyof typeof AGE_COLS>).map((id) => (
               <col key={id} className={listColClass(id)} style={{ width: cols.widths[id] }} />
@@ -181,9 +181,9 @@ function AgingTable({
               sort.sorted.map((row) => (
                 <tr key={row.id} className="border-b border-border/70 last:border-0" {...openProps(kind, row.id)}>
                   <td className="px-3 py-2" data-col="party">{row.party}</td>
-                  <td className="px-3 py-2" data-col="number">{row.number}</td>
+                  <td className="px-3 py-2 whitespace-nowrap" data-col="number">{row.number}</td>
                   <td className="px-3 py-2 whitespace-nowrap" data-col="due">{formatDate(row.dueDate)}</td>
-                  <td className="px-3 py-2" data-col="age">{AGE_LABEL[row.bucket]}</td>
+                  <td className="px-3 py-2 whitespace-nowrap" data-col="age">{AGE_LABEL[row.bucket]}</td>
                   <td className="px-3 py-2 text-right whitespace-nowrap" data-col="amount">
                     <Money amount={row.amount} currency={currency} />
                   </td>
@@ -194,7 +194,7 @@ function AgingTable({
               <td className="px-3 py-2 font-medium" colSpan={4}>
                 Total
               </td>
-              <td className="px-3 py-2 text-right font-medium">
+              <td className="px-3 py-2 text-right font-medium whitespace-nowrap" data-col="amount">
                 <Money amount={grand} currency={currency} />
               </td>
             </tr>
@@ -210,8 +210,8 @@ type PlRow = { account: Account; amount: number };
 
 const TB_COLS = {
   account: 280,
-  debit: 128,
-  credit: 128,
+  debit: 176,
+  credit: 176,
 } as const;
 
 function TrialTable({ rows, currency }: { rows: TbRow[]; currency: string }) {
@@ -233,7 +233,7 @@ function TrialTable({ rows, currency }: { rows: TbRow[]; currency: string }) {
   }
   return (
     <div ref={gridRef} className="list-grid list-scroll overflow-auto rounded-2xl bg-card elevation">
-      <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
+      <table ref={cols.tableRef} className="text-sm" style={{ width: "100%", minWidth: cols.tableWidth }}>
         <colgroup>
           {(Object.keys(TB_COLS) as Array<keyof typeof TB_COLS>).map((id) => (
             <col key={id} className={listColClass(id)} style={{ width: cols.widths[id] }} />
@@ -252,10 +252,10 @@ function TrialTable({ rows, currency }: { rows: TbRow[]; currency: string }) {
               <td className="px-4 py-2" data-col="account">
                 <span className="text-muted-foreground">{row.account.code}</span> {row.account.name}
               </td>
-              <td className="px-4 py-2 text-right" data-col="debit">
+              <td className="px-4 py-2 text-right whitespace-nowrap" data-col="debit">
                 {row.debit ? <Money amount={row.debit} currency={currency} /> : ""}
               </td>
-              <td className="px-4 py-2 text-right" data-col="credit">
+              <td className="px-4 py-2 text-right whitespace-nowrap" data-col="credit">
                 {row.credit ? <Money amount={row.credit} currency={currency} /> : ""}
               </td>
             </tr>
@@ -268,7 +268,7 @@ function TrialTable({ rows, currency }: { rows: TbRow[]; currency: string }) {
 
 const PL_COLS = {
   account: 280,
-  amount: 140,
+  amount: 176,
 } as const;
 
 function PlTable({ rows, net, currency }: { rows: PlRow[]; net: number; currency: string }) {
@@ -289,7 +289,7 @@ function PlTable({ rows, net, currency }: { rows: PlRow[]; net: number; currency
   }
   return (
     <div ref={gridRef} className="list-grid list-scroll overflow-auto rounded-2xl bg-card elevation">
-      <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
+      <table ref={cols.tableRef} className="text-sm" style={{ width: "100%", minWidth: cols.tableWidth }}>
         <colgroup>
           {(Object.keys(PL_COLS) as Array<keyof typeof PL_COLS>).map((id) => (
             <col key={id} className={listColClass(id)} style={{ width: cols.widths[id] }} />
@@ -307,7 +307,7 @@ function PlTable({ rows, net, currency }: { rows: PlRow[]; net: number; currency
               <td className="px-4 py-2" data-col="account">
                 <span className="text-muted-foreground">{row.account.code}</span> {row.account.name}
               </td>
-              <td className="px-4 py-2 text-right" data-col="amount">
+              <td className="px-4 py-2 text-right whitespace-nowrap" data-col="amount">
                 <Money
                   amount={row.account.type === "expense" ? -row.amount : row.amount}
                   currency={currency}
@@ -318,7 +318,7 @@ function PlTable({ rows, net, currency }: { rows: PlRow[]; net: number; currency
           ))}
           <tr>
             <td className="px-4 py-3 font-medium">Net income</td>
-            <td className="px-4 py-3 text-right font-medium">
+            <td className="px-4 py-3 text-right font-medium whitespace-nowrap" data-col="amount">
               <Money amount={net} currency={currency} signed />
             </td>
           </tr>

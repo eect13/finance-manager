@@ -121,7 +121,7 @@ Linux needs WebKitGTK once. Paste this in a terminal, then re-run setup:
 }
 
 log("Installing npm packages…");
-if (run(WIN ? "npm.cmd" : "npm", ["install"]) !== 0) {
+if (run(WIN ? "npm.cmd" : "npm", ["install", "--legacy-peer-deps"]) !== 0) {
   fail("npm install failed.");
 }
 

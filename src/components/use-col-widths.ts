@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { autoFitTable, widthsMatch } from "@/lib/finance/fit-column";
 
 const FIT_MARK = "finance-manager-colfit";
-const FIT_VERSION = "content-3";
+const FIT_VERSION = "content-4";
 
 export function clampCol(n: number, min = 56, max = 420) {
   return Math.min(max, Math.max(min, Math.round(n)));
@@ -26,12 +26,12 @@ export function useColWidths<K extends string>(
   }, []);
 
   useEffect(() => {
-    let forceContent = false;
+    let forceContent = true;
     try {
       forceContent = localStorage.getItem(FIT_MARK) !== FIT_VERSION;
       if (forceContent) localStorage.setItem(FIT_MARK, FIT_VERSION);
     } catch {
-      forceContent = true;
+      /* stay true — re-fit */
     }
     try {
       const raw = localStorage.getItem(storageKey);

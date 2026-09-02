@@ -1,4 +1,4 @@
-# Finance Manager v3.49
+# Finance Manager v3.50
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, and a **bank register**.
 
@@ -26,7 +26,9 @@ This is a **Tauri 2 desktop app** — the same stack as Font Manager — plus a 
 
 Vite is installed with the rest of the packages — you do not need a global `vite` command.
 
-Lists (banks, register, receipts, checks, reports, reconcile) wrap actions and keep peso amounts on one line on a phone. Long lists scroll inside the card (sticky headers), same as reports. Reconcile proof is two boards — statement vs book — stacked on a phone, side by side on a desk. Book cash lives on the desk, not in the header, so the company name does not collide with Find.
+Lists (banks, register, receipts, checks, reports, reconcile) wrap actions and keep peso amounts on one line on a phone. Long lists scroll inside the card (sticky headers), same as reports. **Reports → Aging** stacks Receivables then Payables (never two skinny columns) so Open amounts like `₱15,253,430.00` stay whole — swipe sideways on a phone if the row is wider than the card. Reconcile proof is two boards — statement vs book — stacked on a phone, side by side on a desk. Book cash lives on the desk, not in the header, so the company name does not collide with Find.
+
+**Windows `desktop-setup.bat` / `npm install`:** Node 24 is strict about peers. This repo pins `eslint-plugin-react-hooks` 7 (eslint 10) and ships a `.npmrc` with `legacy-peer-deps=true`, so one-click setup no longer dies on ERESOLVE. After a pull, run `desktop-setup.bat` again (or `deploy.bat` for an installer) — a v3.46 window will not pick up these fixes until that install finishes.
 
 
 ## Screenshots
@@ -34,6 +36,8 @@ Lists (banks, register, receipts, checks, reports, reconcile) wrap actions and k
 ![Treasury desk](docs/screenshots/desk.png)
 
 ![Banks](docs/screenshots/banks.png)
+
+![Reports aging](docs/screenshots/reports.png)
 
 ![Reconcile](docs/screenshots/reconcile.png)
 

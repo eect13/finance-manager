@@ -186,7 +186,9 @@ export default defineConfig(({ command, isPreview }) => {
       root: projectRoot,
       clearScreen: false,
       base: "./",
-      input: join(projectRoot, "desktop.html"),
+      // Relative — Vite 8 rejects absolute inputs whose folders contain `()`
+      // (a second zip extract is `finance-manager-main (1)`).
+      input: "desktop.html",
       plugins: [tailwindcss(), viteReact(), tauriIndexPlugin()],
       resolve: { tsconfigPaths: true },
       build: {
@@ -194,7 +196,7 @@ export default defineConfig(({ command, isPreview }) => {
         emptyOutDir: true,
         chunkSizeWarningLimit: 900,
         rolldownOptions: {
-          input: join(projectRoot, "desktop.html"),
+          input: "desktop.html",
           checks: quietRolldownChecks(),
           onLog(level, log, defaultHandler) {
             const code = String((log as { code?: string }).code ?? "");

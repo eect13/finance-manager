@@ -1,6 +1,6 @@
 [package]
 name = "finance-manager"
-version = "3.52.0"
+version = "3.53.0"
 description = "Finance Manager — Peachtree-style ledger in a desktop window"
 edition = "2021"
 rust-version = "1.77"
@@ -9,7 +9,7 @@ rust-version = "1.77"
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = [] }
+tauri = { version = "2", features = ["image-png"] }
 
 [profile.release]
 panic = "abort"

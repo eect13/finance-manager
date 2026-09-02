@@ -1,4 +1,4 @@
-# Finance Manager v3.52
+# Finance Manager v3.53
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, and a **bank register**.
 
@@ -8,7 +8,7 @@ Pacific Harbor Trading is the default **sample company** — a 2026 year of trad
 
 No accounts, no server setup. Books stay on this computer (IndexedDB). Settings → Storage asks this browser to **keep the books** (persistent). The GB number there is the browser’s grant — often about 10 GB until persistent, then a large share of free disk. Finance Manager does not cap it. Download a backup. There is no cloud.
 
-The app mark is a **navy tile with cream pillars** — a full opaque square (Windows 11 already rounds the tile; transparent corners were a white plate). Web uses the SVG favicon. Windows uses the official Tauri **RGBA** `.ico` (RGB PNG-in-ICO was a white square in Explorer). After install, **delete any leftover blank shortcut** and use the new one — Explorer caches the last icon.
+The app mark is a **navy tile with cream pillars** — a full opaque square (Windows 11 already rounds the tile; transparent corners were a white plate). Web uses the SVG favicon. Windows uses a **BMP 32-bit** `.ico` (PNG-in-ICO is a white square on the shortcut and the taskbar). After install, **delete any leftover blank shortcut** and pin the new one — Explorer caches the last icon.
 
 
 ## Install and deploy
@@ -28,7 +28,7 @@ Vite is installed with the rest of the packages — you do not need a global `vi
 
 Lists (banks, register, receipts, checks, reports, reconcile) wrap actions and keep peso amounts on one line on a phone. Long lists scroll inside the card (sticky headers), same as reports. **Reports → Aging** stacks Receivables then Payables (never two skinny columns) so Open amounts like `₱15,253,430.00` stay whole — swipe sideways on a phone if the row is wider than the card. Reconcile proof is two boards — statement vs book — stacked on a phone, side by side on a desk. Book cash lives on the desk, not in the header, so the company name does not collide with Find.
 
-**Windows `desktop-setup.bat` / `npm install`:** Node 24 is strict about peers. This repo pins `eslint-plugin-react-hooks` 7 (eslint 10) and ships a `.npmrc` with `legacy-peer-deps=true`. After a pull, run `desktop-setup.bat` or `deploy.bat` again — a window that was already open will not pick up the new icon. Delete any white leftover shortcut.
+**Windows `deploy.bat`:** Vite 8 used to crash if the folder name had parentheses (a second zip extract is `finance-manager-main (1)`). The desktop pack now uses a relative `desktop.html`, so that path builds. Node 24 peers: `.npmrc` has `legacy-peer-deps=true`. After this installer, **delete the leftover white shortcut** and pin the new one — shortcut and taskbar both use the navy pillars tile.
 
 
 ## Screenshots

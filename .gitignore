@@ -1,7 +1,7 @@
 # deps / build
 node_modules/
 src-tauri/target/
-src-tauri/gen/
+src-tauri/gen/schemas
 .vercel/
 .output/
 dist/
@@ -23,8 +23,6 @@ artifacts/
 attachments/
 playwright-report/
 test-results/
-deploy/android/start-url.txt
-deploy/android/twa/
 
 # generated installers
 *.msi

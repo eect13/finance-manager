@@ -1,19 +1,15 @@
 # Android APK
 
-Finance Manager is a **PWA**. The one-tap install that always works is Chrome → **Add to Home Screen**.
+Finance Manager on Android is the **same Tauri 2 app** as the desktop window — a real APK with its own WebView, not a PWA, TWA, or PWABuilder wrapper. Books stay on the phone (IndexedDB).
 
-A sideload **APK** is a Trusted Web Activity wrapper around the **published** URL (Remix from Grok). It cannot wrap `file://` or a local preview.
+## One-click
 
-## One-click APK (Windows)
+Double-click `apk.bat`. First run initializes `src-tauri/gen/android` and compiles Android Rust targets (slow). Later runs only rebuild.
 
-1. Remix from Grok so the app has an https URL.
-2. Double-click `apk.bat`.
-3. Paste that URL when asked (saved as `start-url.txt` for the next run).
-4. If **Android Studio / SDK** is installed, Bubblewrap builds `app-release-signed.apk`.
-5. If the SDK is missing, the script opens [PWABuilder](https://www.pwabuilder.com) — paste the same URL → Android → Download package.
+**Needs (once):** Node 22, Rust (`desktop-setup.bat`), **JDK 17**, and **Android Studio** with SDK + NDK. The script finds the SDK at `%LOCALAPPDATA%\Android\Sdk`.
 
-JDK 17 is enough for the Java side. The Android SDK is what compiles the APK. This sandbox does not ship the SDK, so a binary `.apk` is not produced here.
+The `.apk` is copied to this folder. Sideload it (allow unknown sources). There is no Play Store listing in this cut.
 
 ## After install
 
-Books stay in that Chrome/TWA profile. Download a backup to copy them. There is no Play Store listing in this cut.
+Download a backup on one device and restore it on another. Books do not sync.

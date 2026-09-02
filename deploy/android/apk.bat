@@ -10,54 +10,23 @@ if errorlevel 1 (
   exit /b 1
 )
 
-echo Finance Manager — Android APK (Trusted Web Activity)
-echo One-click: paste the published https URL once. Later runs reuse it.
+echo Finance Manager — Android APK (Tauri)
+echo Same WebView app as the desktop window. Not a PWA.
+echo First run installs Android Rust targets and can take a while.
+echo Leave this window open.
 echo.
-
-if "%START_URL%"=="" if exist "deploy\android\start-url.txt" (
-  set /p START_URL=<deploy\android\start-url.txt
-)
-if "%START_URL%"=="" (
-  set /p START_URL=Published https URL (Remix from Grok):
-)
-if "%START_URL%"=="" (
-  echo No URL — opening PWABuilder. Paste your published URL there to download an APK.
-  start https://www.pwabuilder.com
-  pause
-  exit /b 1
-)
-
-echo %START_URL%> deploy\android\start-url.txt
 
 call node scripts\pack-android.mjs
-if errorlevel 1 goto :fail
-
-where java >nul 2>nul
 if errorlevel 1 (
-  echo JDK 17 is required to compile. Opening PWABuilder instead.
-  start https://www.pwabuilder.com
+  echo.
+  echo Install Android Studio with SDK + NDK, JDK 17, and Rust ^(desktop-setup.bat^).
+  start https://developer.android.com/studio
   pause
   exit /b 1
 )
 
-if not defined ANDROID_HOME if not defined ANDROID_SDK_ROOT (
-  echo Android SDK not found. Opening PWABuilder — paste %START_URL% → Android → Download.
-  start https://www.pwabuilder.com/?url=%START_URL%
-  pause
-  exit /b 0
-)
-
-echo Building TWA with Bubblewrap...
-npx --yes @bubblewrap/cli init --manifest "%START_URL%/__grok/manifest.webmanifest" --directory deploy\android\twa --skipPwaValidation
-if errorlevel 1 goto :fail
-npx --yes @bubblewrap/cli build --directory deploy\android\twa --skipPwaValidation
 echo.
-echo APK is under deploy\android\twa\app\build\outputs\apk\
+echo APK copied to deploy\android\
+start "" explorer deploy\android
 pause
 exit /b 0
-
-:fail
-echo Build failed. Use PWABuilder with the published URL, or Add to Home Screen in Chrome.
-start https://www.pwabuilder.com
-pause
-exit /b 1

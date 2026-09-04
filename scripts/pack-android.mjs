@@ -45,13 +45,25 @@ function fail(msg, extra) {
   process.exit(1);
 }
 
+function winQuote(cmd) {
+  if (!WIN) return cmd;
+  if (!/[ \t]/.test(cmd)) return cmd;
+  if (cmd.startsWith('"') && cmd.endsWith('"')) return cmd;
+  return `"${cmd}"`;
+}
+
 function run(cmd, args, env = process.env, opts = {}) {
-  const r = spawnSync(cmd, args, {
+  // On Windows, shell:true + an unquoted path with spaces (e.g. C:\Program Files\nodejs\node.exe)
+  // becomes `'C:\Program' is not recognized`. Only use shell for .bat/.cmd unless overridden.
+  const bat = WIN && /\.(bat|cmd)$/i.test(String(cmd).replace(/^"|"$/g, ""));
+  const useShell = opts.shell ?? bat;
+  const r = spawnSync(useShell ? winQuote(cmd) : cmd, args, {
     cwd: opts.cwd ?? ROOT,
     stdio: opts.stdio ?? "inherit",
-    shell: opts.shell ?? WIN,
+    shell: useShell,
     env,
     encoding: opts.encoding,
+    windowsHide: true,
   });
   return r.status ?? 1;
 }

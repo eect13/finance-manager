@@ -65,13 +65,25 @@ async function main() {
   }
   await shot(page, "options.png");
 
-  // Try labeled undo toast: delete-ish action then undo
+  // Labeled undo toast: prefer Options switch (reliable), then Register Post
+  let toastShot = false;
+  {
+    const switches = page.locator('button[role="switch"]');
+    if (await switches.count()) {
+      await switches.first().click().catch(() => null);
+      await page.waitForTimeout(700);
+      await page.keyboard.press("Control+z");
+      await page.waitForTimeout(700);
+      if (await page.locator("text=/Undid:/i").count()) {
+        await shot(page, "undo-toast.png");
+        toastShot = true;
+      }
+    }
+  }
+  if (!toastShot) {
   await page.goto(BASE + "/register", { waitUntil: "networkidle", timeout: 120_000 });
   await page.waitForTimeout(1000);
-  // Open Post, fill a tiny expense if possible — or just Ctrl+Z if stack empty won't show.
-  // Use keyboard undo after posting via Post UI if present.
   const postBtn = page.getByRole("button", { name: /^Post$/i }).first();
-  let toastShot = false;
   if (await postBtn.count()) {
     await postBtn.click().catch(() => null);
     await page.waitForTimeout(400);
@@ -116,6 +128,7 @@ async function main() {
       await shot(page, "undo-toast.png");
       toastShot = true;
     }
+  }
   }
   if (!toastShot) {
     console.log("undo toast not captured (skipped)");

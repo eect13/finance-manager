@@ -401,7 +401,7 @@ export function AppShell({
           <div className="page-scroll-x min-w-0 max-w-full">{children}</div>
         </main>
       </div>
-      <Toaster className="no-print" position="bottom-right" theme={resolved} richColors={false} />
+      <Toaster className="no-print" position="top-center" theme={resolved} richColors={false} closeButton />
       <RecordSheet />
       <PrintStage />
       <FindTransaction open={findOpen} onClose={() => setFindOpen(false)} />

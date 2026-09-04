@@ -384,6 +384,37 @@ html {
     -webkit-overflow-scrolling: touch;
   }
 
+  /* Touch WebViews often paint an opaque white scrollbar-corner that
+     ignores background:transparent — hide scrollbars on coarse pointers
+     so the lower-right square cannot appear. Tables still scroll. */
+  @media (hover: none) and (pointer: coarse) {
+    .page-scroll-x {
+      overflow-x: visible;
+      overflow-y: visible;
+    }
+
+    * {
+      scrollbar-width: none !important;
+    }
+
+    *::-webkit-scrollbar {
+      width: 0 !important;
+      height: 0 !important;
+      display: none !important;
+      background: transparent !important;
+    }
+
+    *::-webkit-scrollbar-track,
+    *::-webkit-scrollbar-thumb,
+    *::-webkit-scrollbar-corner {
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
+      background: transparent !important;
+      background-color: transparent !important;
+    }
+  }
+
 
   .app-sidebar {
     padding-top: env(safe-area-inset-top, 0px);
@@ -2987,15 +3018,25 @@ body.printing [data-radix-popper-content-wrapper]:has(.print-paper-menu) {
   filter: brightness(0.97);
 }
 
-/* Sonner: no ghost box when idle (was a light square bottom-right on mobile). */
+/* Sonner: keep toast host out of the lower-right on mobile (ghost square). */
+[data-sonner-toaster] {
+  background: transparent !important;
+}
 [data-sonner-toaster]:not(:has([data-sonner-toast])) {
   width: 0 !important;
   height: 0 !important;
-  overflow: hidden;
-  pointer-events: none;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}
+@media (hover: none) and (pointer: coarse) {
+  [data-sonner-toaster] {
+    /* Prefer top so it never competes with the content scroll corner. */
+    top: max(0.75rem, env(safe-area-inset-top, 0px)) !important;
+    bottom: auto !important;
+  }
 }
 
-[data-sonner-toaster]:empty {
-  pointer-events: none;
-  background: transparent;
-}

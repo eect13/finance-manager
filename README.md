@@ -1,4 +1,4 @@
-# Finance Manager v3.59
+# Finance Manager v3.60
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -12,7 +12,12 @@ The app mark is a **navy tile with cream pillars** — a full opaque square (Win
 
 
 
-## What's new in v3.59
+## What's new in v3.60
+
+- Date fields: calendar chevron stays inside the input on the right (Reconcile, Reports, Close, Options, and every other DateInput) — relative wrapper + absolute icon; no orphaned marker below the field
+- Calendar popover styles for the shared DateInput picker
+
+## What’s new in v3.59
 
 - Undo/redo toasts name the action (e.g. Undid: delete invoice INV-1042); menu items show the same peek labels
 - Options → Currency and tax: country tax packs; **Also update home currency** switch; **No currency** blank option (amounts without a symbol)
@@ -72,6 +77,8 @@ Lists (banks, register, receipts, checks, reports, reconcile) wrap actions and k
 ![Reconcile — statement vs book proof](docs/screenshots/reconcile.png)
 
 ![Options — currency, country tax pack, Also update home currency](docs/screenshots/options-currency-tax.png)
+
+![Options — storage and purge date field](docs/screenshots/options.png)
 
 ![Labeled undo toast — Undid: update options](docs/screenshots/undo-toast.png)
 

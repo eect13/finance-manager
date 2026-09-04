@@ -136,7 +136,7 @@ export function DateInput({
   }, [open]);
 
   return (
-    <div ref={wrapRef} className="date-input">
+    <div ref={wrapRef} className="date-input relative w-full">
       <Input
         ref={inputRef}
         id={id}
@@ -196,7 +196,7 @@ export function DateInput({
       />
       <button
         type="button"
-        className="date-input-cal"
+        className="date-input-cal absolute inset-y-0 right-0 z-10 flex w-10 items-center justify-center text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
         tabIndex={-1}
         disabled={disabled}
         aria-label="Open calendar"
@@ -206,7 +206,7 @@ export function DateInput({
           setOpen((v) => !v);
         }}
       >
-        <ChevronDown className="size-4" />
+        <ChevronDown className="size-4 shrink-0" />
       </button>
       {open && !disabled
         ? createPortal(

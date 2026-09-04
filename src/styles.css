@@ -2771,3 +2771,76 @@ body.printing [data-radix-popper-content-wrapper]:has(.print-paper-menu) {
 [data-radix-popper-content-wrapper] {
   z-index: 200 !important;
 }
+
+
+/* DateInput calendar popover (portaled) */
+.date-cal-pop {
+  position: fixed;
+  z-index: 250;
+  border-radius: 0.75rem;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--popover));
+  color: hsl(var(--popover-foreground));
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+  padding: 0.75rem;
+}
+.date-cal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+.date-cal-head button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+}
+.date-cal-head button:hover {
+  background: hsl(var(--muted));
+}
+.date-cal-week,
+.date-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.15rem;
+  text-align: center;
+}
+.date-cal-week {
+  margin-bottom: 0.25rem;
+  font-size: 0.7rem;
+  color: hsl(var(--muted-foreground));
+}
+.date-cal-grid button {
+  aspect-ratio: 1;
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+}
+.date-cal-grid button:hover {
+  background: hsl(var(--muted));
+}
+.date-cal-grid button[data-outside="true"] {
+  opacity: 0.35;
+}
+.date-cal-grid button[data-today="true"] {
+  box-shadow: inset 0 0 0 1px hsl(var(--border));
+}
+.date-cal-grid button[data-selected="true"] {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+.date-cal-today {
+  margin-top: 0.5rem;
+  width: 100%;
+  border-radius: 0.5rem;
+  padding: 0.4rem;
+  font-size: 0.85rem;
+  background: hsl(var(--muted));
+}
+.date-cal-today:hover {
+  filter: brightness(0.97);
+}

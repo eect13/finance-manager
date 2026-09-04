@@ -96,11 +96,11 @@ const DENSITIES = {
 for (const [folder, sizes] of Object.entries(DENSITIES)) {
   const dir = join(OUT, folder);
   mkdirSync(dir, { recursive: true });
-  const fg = pngRGBA(sizes.foreground, sizes.foreground, drawMark(sizes.foreground, 0.44));
+  const fg = pngRGBA(sizes.foreground, sizes.foreground, drawMark(sizes.foreground, 0.40));
   writeFileSync(join(dir, "ic_launcher_foreground.png"), fg);
-  const full = pngRGBA(sizes.launcher, sizes.launcher, drawMark(sizes.launcher, 0.54));
+  const full = pngRGBA(sizes.launcher, sizes.launcher, drawMark(sizes.launcher, 0.50));
   writeFileSync(join(dir, "ic_launcher.png"), full);
   writeFileSync(join(dir, "ic_launcher_round.png"), full);
 }
 
-console.log("Android launcher icons: adaptive FG mark 44%, legacy 54% (safe zone).");
+console.log("Android launcher icons: adaptive FG mark 40%, legacy 50% (safe zone).");

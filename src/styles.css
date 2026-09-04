@@ -360,6 +360,10 @@
       top: max(2.75rem, env(safe-area-inset-top, 0px));
     }
 
+    .app-sidebar-footer {
+      padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+    }
+
     .app-shell-loading {
       padding-top: max(2.5rem, env(safe-area-inset-top, 0px));
       padding-bottom: max(1.5rem, env(safe-area-inset-bottom, 0px));

@@ -162,7 +162,7 @@ function SidebarBody({
         )}
       </div>
       <NavLinks rail={rail} onNavigate={onNavigate} />
-      <div className={cn("mt-auto flex flex-col gap-1 border-t border-border py-3", rail ? "px-2" : "px-3")}>
+      <div className={cn("app-sidebar-footer mt-auto flex shrink-0 flex-col gap-1 border-t border-border py-3", rail ? "px-2" : "px-3")}>
         {onToggleRail ? (
           <button
             type="button"
@@ -317,7 +317,11 @@ export function AppShell({
                 </Button>
               </SheetTrigger>
               <SheetContent side="left">
-                <SidebarBody onNavigate={() => setOpen(false)} />
+                <SidebarBody
+                  rail={rail}
+                  onToggleRail={toggleRail}
+                  onNavigate={() => setOpen(false)}
+                />
               </SheetContent>
             </Sheet>
             <div className="min-w-0 flex-1 overflow-hidden">

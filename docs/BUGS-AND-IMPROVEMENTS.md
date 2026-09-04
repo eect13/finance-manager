@@ -1,4 +1,13 @@
-# Finance Manager — bugs & improvements (v3.57)
+# Finance Manager — bugs & improvements (v3.58)
+
+## Fixed in v3.58 (code review)
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| 1 | High | Editing a **taxed cash sale** via Register/`updateReceipt` used `patchJournalAmount`, which set every journal line to the full amount (bank debit = total, sales credit = total, VAT credit = total → unbalanced) | Rebuild bank / Sales / Output VAT lines (same pattern as invoice edit) |
+| 2 | Medium | `removeEmployee` ignored paycheck history and left orphan `Employee payee (<id>)` vendors | Block delete when linked vendor has live checks; remove unused linked payee vendor when safe |
+| 3 | Low | Invoices list had no empty-state row (unlike bills/receipts/employees) | Empty / no-match message |
+| 4 | Low | `DropdownMenuContent` stayed at `z-50` while Select/Popover use `z-[200]` (regression risk inside overlays) | Raised Export (and other) menus to `z-[200]` |
 
 ## Fixed in v3.56–3.57
 
@@ -14,18 +23,27 @@
 | 8 | Low | Tauri package version lagged app | Aligned to app version |
 | — | — | Local dates, purge/register, In/Out balance, select z-index, scrollbars, Options, Employees UI | Shipped in 3.55–3.56 |
 
-## Still open (known)
+## Still open (known) — re-verified in code 2026-09-04
+
+| # | Severity | Area | Notes | Status |
+| --- | --- | --- | --- | --- |
+| A | Low–med | Register “All dates” | `datePresetRange("all")` sets `from` = prior Jan 1 and **`to` = ""** (open-ended). Not all-time; README says “through today” but code does not cap at today. Label can still confuse. | Still open (by design for memory) |
+| B | Low | Register column sort vs running balance | Balance is computed chronologically then mapped onto sorted rows; sorting by payee looks “wrong” but is intentional. | Still open |
+| C | Low–med | VAT model | Output VAT only (`createBill` is expense↔AP, no input VAT). | Still open (product) |
+| D | Low | `ensureOutputVat` | Still hardcodes `acct-2200` when inserting code 2200 (`normalize.ts`). Lookups elsewhere use `code === "2200"`. | Still open |
+| E | Low | Debounced persist (~280ms) | `pagehide` / `visibilitychange` flush exist; hard kill/crash can still drop last keystrokes. | Still open |
+| F | Low | `patchJournalAmount` | Still used for check / payment receipt / bill / deposit / expense / transfer (2-line). **Do not** use for multi-line VAT (invoice + taxed cash sale now rebuild). | Still open (safe for 2-line) |
+| G | Med (product) | Thin payroll | No hours×rate run, withholdings, 13th month, or `employeeId` on check records; pay is `issueCheck` via linked vendor. | Still open |
+| H | — | Android APK | Needs NDK installed (SDK alone is not enough). | Still open (env) |
+
+## New findings (confirmed) — not yet fixed or deferred
 
 | # | Severity | Area | Notes |
 | --- | --- | --- | --- |
-| A | Low–med | Register “All dates” | Window is prior Jan 1 → today, not all-time (by design for memory); label can still confuse |
-| B | Low | Register column sort vs running balance | Balance is chronological; sorting by payee can look “wrong” |
-| C | Low–med | VAT model | Output VAT only; no input VAT on bills |
-| D | Low | `ensureOutputVat` | Hardcodes `acct-2200` |
-| E | Low | Debounced persist (~280ms) | Kill/crash can drop last keystrokes |
-| F | Low | `patchJournalAmount` still used for simple 2-line docs | Fine for check/deposit/expense; do not use for multi-line VAT |
-| G | Med (product) | Thin payroll | No hours×rate run, withholdings, 13th month, or `employeeId` on check records |
-| H | — | Android APK | Needs NDK installed (SDK alone is not enough) |
+| I | Low | Cash-sale line drift | Register amount edit on a taxed cash sale rebuilds the journal from gross amount + stored `taxRate`; `receipt.lines` are not rescaled, so line subtotals can diverge from `receipt.amount`. Full line editor would be the proper UX. |
+| J | Low | a11y labels | `Field` supports `htmlFor` but almost no call sites pass it (~150 Fields, ~3 `htmlFor`). Selects/combos often lack a programmatic name beyond visible text. |
+| K | Low | Tax % visibility | Invoice/receipt Tax % fields hide when Settings tax is off, even if the document still carries historical `taxRate > 0` (totals remain correct). Matches “Settings seeds new docs” but can surprise editors. |
+| L | Info | Dead / unused | `src/lib/multiplayer/p2p.ts` exported but unused by app routes (multi-device still aspirational). |
 
 ## Areas of improvement
 
@@ -33,7 +51,19 @@
 2. **List virtualization** — Extend register’s `@tanstack/react-virtual` to invoices/bills/receipts/checks/ledger/employees when lists grow.
 3. **Code-split** — Lazy TanStack routes + Vite `manualChunks` for reports/close/reconcile/seed.
 4. **Tauri / Android** — Validate WebView IDB persistence; share/save company JSON; cold-start via splits; finish NDK install for APK.
-5. **Payroll depth** — Pay periods, withholdings, link checks to `employeeId`, batch pay run, block delete when pay history exists.
+5. **Payroll depth** — Pay periods, withholdings, link checks to `employeeId`, batch pay run, block delete when pay history exists (partially done for employee delete).
 6. **Multi-device** — Explicit company-file exchange / LWW or CRDT; no naive full-state overwrite. P2P stub exists unused.
 7. **Purchase VAT** — Input VAT on bills + VAT payable/receivable reports.
-8. **Invoice edit UX** — Surface tax as document field clearly so Settings toggle never feels like it rewrites history.
+8. **Invoice edit UX** — Surface tax as document field clearly so Settings toggle never feels like it rewrites history (partially: Tax % on create/edit when tax enabled).
+9. **“All dates” copy** — Align README (“through today”) with code (`to: ""`) or cap `dateTo` at `todayIso()`.
+10. **Field `htmlFor` / input ids** — Wire labels for keyboard and screen-reader focus.
+
+## Review notes (UI / quality snapshot)
+
+- **Options vs Settings**: Nav + page title say **Options**; route remains `/settings`. Consistent and intentional.
+- **Employees**: Search, status/pay-type filters, sort options, and empty states are in good shape.
+- **Register**: Virtualized; In/Out filter does not recompute running balance incorrectly (balance from full window, rows filtered). Thin scrollbars on `.list-card.list-grid` present.
+- **Select stacking**: Select/Popover at `z-[200]`; Dialog/Sheet at `z-50` — selects inside dialogs work. Dropdown menus now match.
+- **Local dates**: `todayIso()` uses local `getFullYear/Month/Date` (not UTC `toISOString` slice) — correct for PH/local books.
+- **Backup version**: `COMPANY_FILE_VERSION = 14` and store persist `version: 14`; `employees` in export tables — prior high bug remains fixed.
+- **actions.ts** is `@ts-nocheck` restored from production build — types live via `typeof` in store; prefer small surgical fixes over large rewrites.

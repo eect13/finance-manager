@@ -104,8 +104,8 @@ export const SYSTEM_ACCOUNTS: Account[] = [
 
 export const SAMPLE_COMPANY_ID = "co-pacific-harbor";
 
-/** Sample books are a live 2026 year as of this date. */
-const AS_OF = "2026-08-30";
+/** Sample books are a live 2026 year as of this date (early Sep — books feel current). */
+const AS_OF = "2026-09-03";
 
 function P(pesos: number): number {
   return Math.round(pesos * 100);
@@ -173,7 +173,7 @@ export function createSeed(): FinanceData {
       openingBalance: P(3_400_000),
       accountId: IDS.cashBdo,
       archived: false,
-      lastStatementDate: "2026-03-31",
+      lastStatementDate: "2026-07-31",
     },
     {
       id: IDS.bpi,
@@ -183,7 +183,7 @@ export function createSeed(): FinanceData {
       openingBalance: P(486_250),
       accountId: IDS.cashBpi,
       archived: false,
-      lastStatementDate: "2026-03-31",
+      lastStatementDate: "2026-07-31",
     },
     {
       id: IDS.metro,
@@ -193,7 +193,7 @@ export function createSeed(): FinanceData {
       openingBalance: P(380_000),
       accountId: IDS.cashMetro,
       archived: false,
-      lastStatementDate: "2026-03-31",
+      lastStatementDate: "2026-07-31",
     },
     {
       id: IDS.safe,
@@ -1541,31 +1541,113 @@ export function createSeed(): FinanceData {
     "Cargo handling",
   ];
   const billAccounts = [IDS.opex, IDS.misc, IDS.fees, IDS.utilities];
+  const cashMemos = [
+    "Same-day cash.",
+    "Counter walk-up.",
+    "COD at the dock.",
+    "Held in safekeeping.",
+    "Paid at the counter.",
+    "Spot sale — no terms.",
+  ];
 
-  for (let i = 0; i < 240; i++) {
-    const month = 1 + (i % 8);
-    const day = 2 + (i % 26);
+  /** Seasonal trade rhythm (PH warehouse): soft Jan, build mid-year, harvest/Christmas peak. Weights sum 126. */
+  const SEASON = [7, 8, 9, 10, 11, 12, 12, 11, 10, 11, 13, 12];
+  const SEASON_SUM = SEASON.reduce((a, b) => a + b, 0);
+  function tradeMonth(i: number): number {
+    let t = (i * 17 + 3) % SEASON_SUM;
+    for (let m = 0; m < 12; m++) {
+      t -= SEASON[m];
+      if (t < 0) return m + 1;
+    }
+    return 12;
+  }
+  function tradeDay(i: number, salt: number): number {
+    return 1 + ((i * 5 + salt) % 28);
+  }
+
+  // Early September activity already on the books (as-of is 3 Sep).
+  addCashSale({
+    date: d(9, 1),
+    receivedFrom: "Harbor Point Counter",
+    customerId: IDS.custHarbor,
+    bankId: IDS.bdo,
+    description: "Counter sale — dry goods",
+    amount: P(11_600),
+    memo: "Same-day cash.",
+  });
+  addCashSale({
+    date: d(9, 2),
+    receivedFrom: "Harbor Point Counter",
+    customerId: IDS.custHarbor,
+    bankId: IDS.bdo,
+    description: "Counter sale — tape and film",
+    amount: P(7_850),
+    memo: "Same-day cash.",
+  });
+  addInvoice({
+    customerId: IDS.custLaguna,
+    date: d(9, 2),
+    dueDate: d(10, 2),
+    lines: [{ description: "Dry goods — early September top-up", quantity: 1, unitPrice: P(64_800) }],
+    notes: "Posted before month-end allocation.",
+  });
+  addBill({
+    vendorId: IDS.vendGlobe,
+    date: d(9, 1),
+    dueDate: d(9, 15),
+    amount: P(4_890),
+    accountId: IDS.utilities,
+    memo: "Warehouse SIMs — September",
+    reference: "GLO-091",
+  });
+  addBill({
+    vendorId: IDS.vendPetron,
+    date: d(9, 2),
+    dueDate: d(9, 17),
+    amount: P(31_200),
+    accountId: IDS.opex,
+    memo: "Fleet card — early September",
+    reference: "PET-902",
+  });
+
+  // Extra trade across the full year (~800 source docs with core ops → ~1,000 total).
+  for (let i = 0; i < 250; i++) {
+    const month = tradeMonth(i);
+    const day = tradeDay(i, 2);
     const cust = extraCustomers[i % extraCustomers.length];
     const qty = 1 + (i % 5);
     const unit = P(8_400 + (i % 48) * 720);
-    const total = qty * unit;
+    const date = d(month, day);
+    const dueDate = d(month, Math.min(28, day + 15));
     const paidOn = d(month, Math.min(28, day + 12));
+    // Stronger mid-year / harvest ticket sizes
+    const bump = month >= 10 || month === 6 || month === 7 ? 1.08 : month <= 2 ? 0.92 : 1;
+    const adjUnit = Math.round(unit * bump);
+    const adjTotal = qty * adjUnit;
     addInvoice({
       customerId: cust.id,
-      date: d(month, day),
-      dueDate: d(month, Math.min(28, day + 15)),
-      lines: [{ description: goods[i % goods.length], quantity: qty, unitPrice: unit }],
+      date,
+      dueDate,
+      lines: [{ description: `${goods[i % goods.length]} — ${monthName(date)}`, quantity: qty, unitPrice: adjUnit }],
       notes: "",
       paid:
         paidOn <= AS_OF && i % 5 !== 0
-          ? [{ date: paidOn, amount: total, bankId: i % 4 === 0 ? IDS.bpi : IDS.bdo, method: i % 2 === 0 ? "check" : "cash", checkNumber: i % 2 === 0 ? String(5000 + i) : "" }]
+          ? [
+              {
+                date: paidOn,
+                amount: adjTotal,
+                bankId: i % 4 === 0 ? IDS.bpi : IDS.bdo,
+                method: i % 2 === 0 ? "check" : "cash",
+                checkNumber: i % 2 === 0 ? String(5000 + i) : "",
+              },
+            ]
           : undefined,
     });
   }
 
-  for (let i = 0; i < 250; i++) {
-    const month = 1 + (i % 8);
-    const day = 3 + (i % 24);
+  for (let i = 0; i < 265; i++) {
+    const month = tradeMonth(i + 41);
+    const day = tradeDay(i, 3);
     const vendor = extraVendors[i % extraVendors.length];
     const amount = P(4_200 + (i % 36) * 380);
     const payDate = d(month, Math.min(28, day + 10));
@@ -1575,15 +1657,15 @@ export function createSeed(): FinanceData {
       dueDate: d(month, Math.min(28, day + 14)),
       amount,
       accountId: billAccounts[i % billAccounts.length],
-      memo: billMemos[i % billMemos.length],
+      memo: `${billMemos[i % billMemos.length]} — ${monthName(d(month, day))}`,
       reference: `X-${String(i + 1).padStart(4, "0")}`,
       paid: payDate <= AS_OF && i % 4 !== 0 ? { date: payDate, bankId: i % 3 === 0 ? IDS.bpi : IDS.bdo } : undefined,
     });
   }
 
-  for (let i = 0; i < 120; i++) {
-    const month = 1 + (i % 8);
-    const day = 4 + (i % 22);
+  for (let i = 0; i < 130; i++) {
+    const month = tradeMonth(i + 7);
+    const day = tradeDay(i, 4);
     const cust = extraCustomers[(i * 3) % extraCustomers.length];
     addCashSale({
       date: d(month, day),
@@ -1592,15 +1674,15 @@ export function createSeed(): FinanceData {
       bankId: i % 7 === 0 ? IDS.safe : IDS.bdo,
       description: goods[(i + 2) % goods.length],
       amount: P(3_100 + (i % 20) * 290),
-      memo: goods[(i + 2) % goods.length],
+      memo: cashMemos[i % cashMemos.length],
     });
   }
 
   const fleetVendors = [IDS.vendPetron, IDS.vendPhoenix, IDS.vendLala, IDS.vendGlobe, IDS.vendJrs, IDS.vendWater, IDS.vendOffice];
   const fleetMemos = ["Fleet fuel", "Fleet fuel", "Last-mile delivery", "Mobile data", "Courier", "Water", "Office supplies"];
-  for (let i = 0; i < 70; i++) {
-    const month = 1 + (i % 8);
-    const day = 6 + (i % 20);
+  for (let i = 0; i < 90; i++) {
+    const month = tradeMonth(i + 13);
+    const day = tradeDay(i, 6);
     const vendor = vendors.find((v) => v.id === fleetVendors[i % fleetVendors.length]);
     if (!vendor) continue;
     addCheck({
@@ -1610,7 +1692,7 @@ export function createSeed(): FinanceData {
       issueDate: d(month, day),
       postDate: d(month, Math.min(28, day + 3)),
       amount: P(2_800 + (i % 18) * 410),
-      memo: fleetMemos[i % fleetMemos.length],
+      memo: `${fleetMemos[i % fleetMemos.length]} — ${monthName(d(month, day))}`,
       accountId: i % 3 === 0 ? IDS.utilities : IDS.opex,
     });
   }
@@ -1633,7 +1715,7 @@ export function createSeed(): FinanceData {
       accountId: IDS.rent,
       memo: "Monthly warehouse",
       dayOfMonth: 1,
-      nextDate: "2026-08-01",
+      nextDate: "2026-09-01",
       active: true,
     },
     {

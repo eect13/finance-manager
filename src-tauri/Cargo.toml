@@ -1,9 +1,13 @@
 [package]
 name = "finance-manager"
-version = "3.54.0"
-description = "Finance Manager — Peachtree-style ledger in a desktop window"
+version = "3.58.0"
+description = "Finance Manager"
 edition = "2021"
 rust-version = "1.77"
+
+[lib]
+name = "finance_manager_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }

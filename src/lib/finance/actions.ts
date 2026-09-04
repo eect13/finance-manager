@@ -1144,13 +1144,50 @@ export function updateReceipt(data: FinanceData, id, patch): FinanceData {
     }
   }
   const checkBit = method === "check" ? `Check ${checkNumber} ` : method === "card" ? `Card ${checkNumber} ` : method === "echeck" ? `e-Check ${checkNumber} ` : "";
-  next = patchJournalAmount(next, receipt.journalId, {
-    date,
-    description: `${checkBit}Receipt ${receipt.number} — ${receivedFrom}`.trim(),
-    amount,
-    memo,
-    debitAccountId: bank.accountId
-  });
+  const description = `${checkBit}Receipt ${receipt.number} — ${receivedFrom}`.trim();
+  // Taxed cash sales are 3-line (bank / sales / output VAT). patchJournalAmount would
+  // set every credit line to the full amount and unbalance the journal — same class as
+  // the old invoice-edit bug. Rebuild like createCashSale / updateInvoiceRecord.
+  const journal = next.journals.find((j) => j.id === receipt.journalId);
+  const taxRate = receipt.taxRate ?? 0;
+  const needsVatRebuild =
+    receipt.kind === "cash-sale" && (taxRate > 0 || (journal?.lines.length ?? 0) > 2);
+  if (needsVatRebuild) {
+    const sales = next.accounts.find((a) => a.code === "4000");
+    const vat = next.accounts.find((a) => a.code === "2200");
+    if (!sales) throw new Error("Income account missing");
+    // amount is bank total (gross). Split so sales + VAT credits equal amount exactly.
+    const sub = taxRate > 0 ? Math.round((amount * 100) / (100 + taxRate)) : amount;
+    const tax = amount - sub;
+    const creditLines = tax > 0 && vat
+      ? [
+          { id: newId(), accountId: sales.id, debit: 0, credit: sub, memo: memo || "" },
+          { id: newId(), accountId: vat.id, debit: 0, credit: tax, memo: "" },
+        ]
+      : [{ id: newId(), accountId: sales.id, debit: 0, credit: amount, memo: memo || "" }];
+    const rebuilt = [
+      { id: newId(), accountId: bank.accountId, debit: amount, credit: 0, memo: memo || "" },
+      ...creditLines,
+    ];
+    const deb = rebuilt.reduce((s, l) => s + l.debit, 0);
+    const cred = rebuilt.reduce((s, l) => s + l.credit, 0);
+    if (deb !== cred) throw new Error(`Unbalanced receipt journal: debit ${deb} credit ${cred}`);
+    next = {
+      ...next,
+      journals: next.journals.map((j) => {
+        if (j.id !== receipt.journalId) return j;
+        return { ...j, date, description, lines: rebuilt };
+      }),
+    };
+  } else {
+    next = patchJournalAmount(next, receipt.journalId, {
+      date,
+      description,
+      amount,
+      memo,
+      debitAccountId: bank.accountId
+    });
+  }
   return {
     ...next,
     receipts: next.receipts.map((r) => r.id === id ? {
@@ -1964,6 +2001,18 @@ export function updateEmployee(data: FinanceData, id, patch): FinanceData {
 
 export function removeEmployee(data: FinanceData, id): FinanceData {
   if (!(data.employees ?? []).some((e) => e.id === id)) throw new Error("Employee not found");
+  const marker = `Employee payee (${id})`;
+  const linked = data.vendors.find((v) => (v.notes || "").includes(marker));
+  if (linked) {
+    if (data.checks.some((c) => c.vendorId === linked.id && c.status !== "voided" && c.status !== "bounced")) {
+      throw new Error("This employee has paychecks. Keep the record for the books.");
+    }
+    return {
+      ...data,
+      employees: data.employees.filter((e) => e.id !== id),
+      vendors: data.vendors.filter((v) => v.id !== linked.id),
+    };
+  }
   return { ...data, employees: data.employees.filter((e) => e.id !== id) };
 }
 

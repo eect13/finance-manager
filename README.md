@@ -1,8 +1,8 @@
-# Finance Manager v3.57
+# Finance Manager v3.58
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
-Pacific Harbor Trading is the default **sample company** — a 2026 year of trading (rent, payroll, utilities, invoices, bills) plus extra trade so the file sits near **1,000 documents**. Payee is the customer or vendor name; memo is the reason (Ayala Land / Warehouse rent — never one string). Every payee is on file. Listed A–Z. Activity through late August is posted; later months sit pending. Create more companies from the name in the header or from Settings. **Remove sample** (Settings) deletes that file from this browser; **Restore last local copy** puts back the last automatic snapshot, and Reload sample brings the demo back. If it was the only company, a blank file takes its place.
+Pacific Harbor Trading is the default **sample company** — a full 2026 year of trading (rent, payroll, utilities, invoices, bills) plus extra trade so the file sits near **1,000 documents**. Payee is the customer or vendor name; memo is the reason (Ayala Land / Warehouse rent — never one string). Every payee is on file. Listed A–Z. Activity through early September is posted; later months sit pending. Create more companies from the name in the header or from Settings. **Remove sample** (Settings) deletes that file from this browser; **Restore last local copy** puts back the last automatic snapshot, and Reload sample brings the demo back. If it was the only company, a blank file takes its place.
 
 **License:** MIT. **Style:** ledger, light or dark (the treasury mark in the menu and favicon inverts with the theme). **Tags:** finance, accounting, bank register.
 
@@ -11,6 +11,10 @@ No accounts, no server setup. Books stay on this computer (IndexedDB). Settings 
 The app mark is a **navy tile with cream pillars** — a full opaque square (Windows 11 already rounds the tile; transparent corners were a white plate). Web uses the SVG favicon. Windows uses a **BMP 32-bit** `.ico` (PNG-in-ICO is a white square on the shortcut and the taskbar). After install, **delete any leftover blank shortcut** and pin the new one — Explorer caches the last icon.
 
 
+
+## What’s new in v3.58
+
+- Pacific Harbor sample: full-year trade rhythm with as-of early September (Jan–early Sep mostly posted; later months pending); recurring warehouse rent due 1 Sep
 
 ## What’s new in v3.57
 
@@ -95,7 +99,7 @@ Books do **not** follow you to another phone or laptop. Download a backup on one
 - **Reconcile**: beginning is the **last finished statement ending** (or bank opening). Tick what is on the paper — the tick column is always on this page (Move is only on the register). Outstanding checks and deposits in transit stay off the statement and prove the book. Proof is two boards: **Statement** (beginning, cleared in/out, cleared difference) and **Book** (book, outstanding, in transit, explained difference). Amounts stay on one line. **Cleared difference** and **explained difference** must both be **0**. Post a service charge or interest from this screen if the bank has a line the books do not — those freeze as adjustments on the rec document. **Last statement** prints the frozen rec (named outstanding, DIT, adjustments, 30/60/90). **Undo last** requires UNDO and is blocked inside a closed period. Register click only cycles Pending ↔ C. **R is Finish statement**, not a register click, and it survives a restore. Uncleared 90+ days is called out.
 - **Audit** on Close: who (this browser), what, old/new, timestamp. Export CSV. Merge writes both sides.
 - **Settings → Company file**: one JSON that **is** this company (recon, close, audit included). **Save company file** / Open. Open replaces this company or adds that file. There is no “download this company” and no “download all companies” — the local copy in this browser is first; Settings → **Save company file** is the off-device backup (header Export is spreadsheets only). After every successful save this browser also writes a **local copy** (IndexedDB, one slot per company, timestamped). **Restore last local copy** puts that snapshot back for the company you are in; if you removed the sample, that is how it returns without Reload sample. Settings → Storage shows IndexedDB vs fallback, whether the browser granted **persistent** storage (so it is less likely to evict the books), and usage. There is no cloud. Tables are flat: banks, customers, vendors, employees, invoices, bills, receipts, checks, journals (lines stay on the journal), and the rest. Parties do not nest transactions. New ids are UUIDs.
-- **Settings → Recurring**: warehouse rent is due in the sample (1 Aug) so August cannot close until you post it.
+- **Settings → Recurring**: warehouse rent is due in the sample (1 Sep) so September cannot close until you post it.
 
 The register is still the book. These are how you close it.
 

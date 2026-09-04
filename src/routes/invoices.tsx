@@ -211,7 +211,16 @@ function InvoicesPage() {
             </tr>
           </thead>
           <tbody>
-            {sort.sorted.map((inv) => {
+            {sort.sorted.length === 0 ? (
+              <tr>
+                <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
+                  {data.invoices.length === 0
+                    ? "No invoices yet."
+                    : "No invoices match this search or filter."}
+                </td>
+              </tr>
+            ) : (
+            sort.sorted.map((inv) => {
               const customer = data.customers.find((c) => c.id === inv.customerId);
               const due = invoiceBalance(data, inv.id);
               const overdue = due > 0 && inv.dueDate < today && inv.status !== "void" && inv.status !== "paid";
@@ -282,7 +291,8 @@ function InvoicesPage() {
                   </td>
                 </tr>
               );
-            })}
+            })
+            )}
           </tbody>
         </table>
       </ListCard>

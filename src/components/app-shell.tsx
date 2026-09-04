@@ -288,7 +288,7 @@ export function AppShell({
 
   if (!hydrated) {
     return (
-      <div className="flex h-dvh items-center justify-center bg-background text-foreground">
+      <div className="app-shell-loading flex h-dvh items-center justify-center bg-background text-foreground">
         <ThemeSync />
         <p className="text-sm text-muted-foreground">Opening the books…</p>
       </div>

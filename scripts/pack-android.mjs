@@ -9,6 +9,12 @@
  * On Windows without Developer Mode, Tauri’s jniLibs symlink fails — this
  * script falls back to copying the .so + Vite assets and Gradle assemble
  * with -x rustBuild*.
+ *
+ * Rust lib is built with `cargo build --release --features custom-protocol`
+ * (NDK clang linker env). Without custom-protocol, Tauri bakes in
+ * build.devUrl (127.0.0.1:8080) and the release APK shows a black screen.
+ * android-studio-script is only a fallback (it often panics on the
+ * missing Temp\\…-server-addr file on Windows).
  */
 import { spawnSync } from "node:child_process";
 import {
@@ -304,20 +310,105 @@ function buildFrontend(env) {
   }
 }
 
+function findAndroidClang(ndk) {
+  const prebuilt = join(ndk, "toolchains", "llvm", "prebuilt");
+  if (!existsSync(prebuilt)) return null;
+  const hosts = readdirSync(prebuilt).filter((n) => {
+    try {
+      return statSync(join(prebuilt, n)).isDirectory();
+    } catch {
+      return false;
+    }
+  });
+  // Prefer the host we are on
+  const prefer = WIN
+    ? hosts.filter((h) => /windows/i.test(h))
+    : hosts.filter((h) => /linux/i.test(h));
+  const host = prefer[0] || hosts[0];
+  if (!host) return null;
+  const bin = join(prebuilt, host, "bin");
+  // API 24 matches bundle.android.minSdkVersion
+  const candidates = WIN
+    ? ["aarch64-linux-android24-clang.cmd", "aarch64-linux-android24-clang.exe", "clang.exe"]
+    : ["aarch64-linux-android24-clang", "clang"];
+  for (const name of candidates) {
+    const p = join(bin, name);
+    if (existsSync(p)) return p;
+  }
+  return null;
+}
+
+function cargoEnvForAndroid(env, ndk) {
+  const clang = findAndroidClang(ndk);
+  const next = {
+    ...env,
+    TAURI_ENV_PLATFORM: "android",
+    TAURI_ENV_DEBUG: "false",
+    // Ensure release context even if a prior `tauri android dev` left debug flags around
+    CARGO_PROFILE_RELEASE_STRIP: env.CARGO_PROFILE_RELEASE_STRIP || "true",
+  };
+  if (clang) {
+    next.CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER = clang;
+    next.CC_aarch64_linux_android = clang;
+    const binDir = dirname(clang);
+    const arNames = WIN ? ["llvm-ar.exe", "llvm-ar.cmd", "llvm-ar"] : ["llvm-ar"];
+    for (const name of arNames) {
+      const ar = join(binDir, name);
+      if (existsSync(ar)) {
+        next.AR_aarch64_linux_android = ar;
+        break;
+      }
+    }
+    console.log(`  NDK clang  ${clang}`);
+  } else {
+    console.log("  NDK clang not found — cargo may still work if ~/.cargo/config.toml has a linker.");
+  }
+  return next;
+}
+
 function buildRustArm64(env) {
-  console.log("\nCompiling Rust lib for aarch64-linux-android (release)…");
-  const npx = WIN ? "npx.cmd" : "npx";
-  // Builds the .so then tries to symlink into jniLibs — symlink may fail without Developer Mode.
-  const status = run(npx, ["tauri", "android", "android-studio-script", "--release", "--target", "aarch64"], env);
+  console.log("\nCompiling Rust lib for aarch64-linux-android (release, custom-protocol)…");
+  const ndk = env.NDK_HOME || env.ANDROID_NDK_HOME;
+  const cargoEnv = cargoEnvForAndroid(env, ndk);
+
+  // Prefer direct cargo — android-studio-script often panics on Windows
+  // (missing Temp\\…-server-addr) even after a successful rustc link.
+  const cargoArgs = [
+    "build",
+    "--manifest-path",
+    join(ROOT, "src-tauri", "Cargo.toml"),
+    "--release",
+    "--target",
+    "aarch64-linux-android",
+    "--features",
+    "custom-protocol",
+  ];
+  let status = run("cargo", cargoArgs, cargoEnv);
   if (existsSync(SO_RELEASE)) {
     if (status !== 0) {
-      console.log("  Rust .so is present (symlink step likely failed — continuing with copy fallback).");
+      console.log("  Rust .so is present (cargo reported a non-zero status — continuing).");
+    } else {
+      console.log("  Built via cargo --release --features custom-protocol");
+    }
+    return true;
+  }
+
+  console.log("  Direct cargo did not produce the .so — trying tauri android-studio-script…");
+  const npx = WIN ? "npx.cmd" : "npx";
+  status = run(
+    npx,
+    ["tauri", "android", "android-studio-script", "--release", "--target", "aarch64"],
+    cargoEnv,
+  );
+  if (existsSync(SO_RELEASE)) {
+    if (status !== 0) {
+      console.log("  Rust .so is present (symlink/script step likely failed — continuing with copy fallback).");
     }
     return true;
   }
   fail(
     "Rust Android library was not produced.",
-    `Expected: ${SO_RELEASE}\nFix NDK / Rust Android targets, then retry.\nandroid-studio-script exit: ${status}`,
+    `Expected: ${SO_RELEASE}\nFix NDK / Rust Android targets, then retry.\ncargo/android-studio-script exit: ${status}`,
   );
 }
 
@@ -581,12 +672,19 @@ if (process.argv.includes("--env-check")) {
 }
 
 const symOk = windowsSymlinksOk();
-if (WIN && !symOk) {
-  console.log(
-    "\n⚠  Windows cannot create symlinks (Developer Mode off, or policy blocks them).",
-  );
-  console.log("   Using copy fallback automatically. To enable symlinks later:");
-  console.log("   Settings → System → For developers → Developer Mode = On");
+// Solo-reliable path: cargo --release --features custom-protocol → copy .so →
+// sync assets → Gradle -x rustBuild*. Avoids android-studio-script server-addr
+// panics and ensures the lib never bakes in 127.0.0.1:8080.
+const preferCargo = WIN || process.argv.includes("--cargo") || !symOk;
+if (preferCargo) {
+  if (WIN && !symOk) {
+    console.log(
+      "\n⚠  Windows cannot create symlinks (Developer Mode off, or policy blocks them).",
+    );
+    console.log("   Using cargo + copy + Gradle -x rustBuild (solo-reliable path).");
+  } else {
+    console.log("\nUsing cargo + copy + Gradle path (release lib with custom-protocol)…");
+  }
   fallbackAssemble(env, sdk);
   console.log("\nSideload deploy\\android\\finance-manager-arm64-release.apk (IndexedDB stays on device).");
   process.exit(0);
@@ -611,11 +709,6 @@ if (tauriStatus === 0) {
   process.exit(0);
 }
 
-console.log("\n⚠  tauri android build failed — trying copy/Gradle fallback…");
-if (WIN) {
-  console.log(
-    "   (Often: symlink into jniLibs blocked without Developer Mode.)",
-  );
-}
+console.log("\n⚠  tauri android build failed — trying cargo/copy/Gradle fallback…");
 fallbackAssemble(env, sdk);
 console.log("\nSideload deploy\\android\\finance-manager-arm64-release.apk (IndexedDB stays on device).");

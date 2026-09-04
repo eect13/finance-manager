@@ -179,4 +179,15 @@ copyFileSync(join(ICONS, "icon.png"), join(publicDir, "icon-512.png"));
 writeFileSync(join(publicDir, "favicon.ico"), ico);
 writeFileSync(join(publicDir, "icon-192.png"), png192);
 writeFileSync(join(grok, "icon-180.png"), png180);
+
+const androidIcons = spawnSync(process.execPath, [join(ROOT, "scripts", "android-launcher-icons.mjs")], {
+  cwd: ROOT,
+  stdio: "inherit",
+  env: process.env,
+});
+if ((androidIcons.status ?? 1) !== 0) {
+  console.error("android-launcher-icons failed");
+  process.exit(1);
+}
+
 console.log(`Icons ready (BMP ico ${ico.length}B + Tauri png/android).`);

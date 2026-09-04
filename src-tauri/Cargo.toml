@@ -1,6 +1,6 @@
 [package]
 name = "finance-manager"
-version = "3.62.0"
+version = "3.62.1"
 description = "Finance Manager"
 edition = "2021"
 rust-version = "1.77"
@@ -14,6 +14,13 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 tauri = { version = "2", features = ["image-png"] }
+
+# Production builds must enable custom-protocol. Without it, tauri-macros sets
+# `dev: true` and the WebView loads build.devUrl (http://127.0.0.1:8080) instead
+# of bundled frontendDist / Android assets — black screen on release APKs.
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]
 
 [profile.release]
 panic = "abort"

@@ -55,7 +55,7 @@ npm run deploy:android
 
 or double-click deploy/android/apk.bat
 
-apk.bat / npm run deploy:android run pack-android.mjs then tauri android build --apk --ci, then copy APK(s) here.
+apk.bat / npm run deploy:android run pack-android.mjs (cargo release lib, copy assets, Gradle). APK(s) land here.
 
 First run inits src-tauri/gen/android and compiles Android Rust (slow).
 Ensure package.json has "tauri": "tauri" for Gradle rustBuild tasks.
@@ -66,6 +66,18 @@ Home screen must show the navy cream-pillars brand tile, not the default blue an
 
 Rebuild: refresh icons, run the Android packer, uninstall the old app, then sideload the new release APK.
 The packer copies brand mipmaps into the generated Android res folder before assemble.
+
+
+## How the solo packer builds (v3.62.1+)
+
+1. Vite UI into .vercel/output/static
+2. cargo build --release --target aarch64-linux-android --features custom-protocol (NDK clang)
+3. Copy libfinance_manager_lib.so into jniLibs/arm64-v8a (file copy)
+4. Sync assets + brand launcher icons into gen/android
+5. gradlew assembleArm64Release -x rustBuildArm64Release -x rustBuildUniversalRelease
+6. zipalign + apksigner (debug.keystore)
+
+custom-protocol is required: without it Tauri treats the build as dev and the APK tries the local Vite URL.
 
 ## Where the APK lands
 

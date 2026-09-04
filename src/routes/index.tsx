@@ -70,7 +70,7 @@ function Desk() {
   return (
     <AppShell
       title="Treasury desk"
-      description="Cash across banks, money still to collect, and bills still to pay. Double-click a line to open it."
+      description="Cash across banks, money still to collect, and bills still to pay. Double-tap or double-click a line to open it."
     >
       {!close.ok ? (
         <div className="close-banner mb-4 rounded-2xl bg-card px-4 py-3 text-sm elevation">

@@ -25,6 +25,7 @@ export function InvoiceDocument({
       banks: [],
       accounts: [],
       customers: [],
+      employees: [],
       checks: [],
       journals: [],
       budgetItems: [],

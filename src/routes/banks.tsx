@@ -132,7 +132,7 @@ function BanksPage() {
   return (
     <AppShell
       title="Banks"
-      description="Balances across every account. List matches the register. Double-click a row to edit, or tap a card. Delete is in ⋯ on the list — not on every card."
+      description="Balances across every account. List matches the register. Double-tap or double-click a row to edit, or tap a card. Delete is in ⋯ on the list — not on every card."
       wide
       actions={
         <>

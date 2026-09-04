@@ -24,7 +24,7 @@ import { formatDate, todayIso } from "@/lib/finance/format";
 import { useEntrySort } from "@/lib/finance/sort";
 import { useFinanceData, useFinanceStore } from "@/lib/finance/store";
 import { browserStorage, countEntries, formatBytes, jsonSize, requestPersistentStorage } from "@/lib/finance/storage-usage";
-import { CURRENCIES, type RecurringItem } from "@/lib/finance/types";
+import { COUNTRY_TAX_PACKS, CURRENCIES, countryTaxPackForCurrency, type RecurringItem } from "@/lib/finance/types";
 import { useShallow } from "zustand/react/shallow";
 import { AppearancePicker } from "@/components/theme-toggle";
 
@@ -39,6 +39,9 @@ function SettingsPage() {
   const importBackup = useFinanceStore((s) => s.importBackup);
   const restoreLocalCopy = useFinanceStore((s) => s.restoreLocalCopy);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [countryPackId, setCountryPackId] = useState("");
+  /** When applying a country tax pack, also set home currency to the pack’s currency. */
+  const [updateCurrencyWithPack, setUpdateCurrencyWithPack] = useState(true);
   const { order, companies, activeId, switchCompany, addCompany, removeCompany } = useFinanceStore(
     useShallow((s) => ({
       order: s.companyOrder,
@@ -151,15 +154,27 @@ function SettingsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Currency and tax</CardTitle>
-            <CardDescription>One home currency for now. Multi-currency can slot in later without rewriting the ledger.</CardDescription>
+            <CardDescription>
+              One home currency for now. Country packs fill a common default tax rate — they are starting points, not
+              legal advice. Confirm current rates with your accountant or tax authority.
+            </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
             <Field label="Currency">
-              <Select value={settings.currency} onValueChange={(v) => updateSettings({ currency: v })}>
+              <Select
+                value={settings.currency || "__none__"}
+                onValueChange={(v) => {
+                  const code = v === "__none__" ? "" : v;
+                  updateSettings({ currency: code });
+                  const pack = countryTaxPackForCurrency(code);
+                  if (pack) setCountryPackId(pack.id);
+                }}
+              >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="No currency" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="__none__">No currency</SelectItem>
                   {CURRENCIES.map((c) => (
                     <SelectItem key={c.code} value={c.code}>
                       {c.code} — {c.label}
@@ -168,10 +183,79 @@ function SettingsPage() {
                 </SelectContent>
               </Select>
             </Field>
+            <Field label="Country / tax defaults">
+              <Select value={countryPackId || "__none__"} onValueChange={(v) => setCountryPackId(v === "__none__" ? "" : v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a country pack…" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Choose a country pack…</SelectItem>
+                  {COUNTRY_TAX_PACKS.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.country} — {p.taxLabel}
+                      {p.currency ? ` · ${p.currency}` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            {countryPackId ? (
+              <div className="grid gap-3 rounded-xl border border-border/70 bg-muted/40 px-4 py-3">
+                {(() => {
+                  const pack = COUNTRY_TAX_PACKS.find((p) => p.id === countryPackId);
+                  if (!pack) return null;
+                  const canChangeCurrency = Boolean(pack.currency);
+                  return (
+                    <>
+                      <p className="text-xs text-muted-foreground">{pack.note}</p>
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <p className="text-sm font-medium">Also update home currency</p>
+                          <p className="text-xs text-muted-foreground">
+                            {canChangeCurrency
+                              ? `When on, sets currency to ${pack.currency}. Turn off to keep ${settings.currency} and only apply tax defaults.`
+                              : "This pack never changes currency."}
+                          </p>
+                        </div>
+                        <Switch
+                          checked={canChangeCurrency && updateCurrencyWithPack}
+                          disabled={!canChangeCurrency}
+                          onCheckedChange={setUpdateCurrencyWithPack}
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className="w-fit"
+                        onClick={() => {
+                          const patch: Parameters<typeof updateSettings>[0] = {
+                            taxEnabled: pack.taxEnabled,
+                            defaultTaxRate: pack.defaultTaxRate,
+                          };
+                          const willUpdateCurrency = canChangeCurrency && updateCurrencyWithPack;
+                          if (willUpdateCurrency) patch.currency = pack.currency;
+                          updateSettings(patch);
+                          toast.success(
+                            willUpdateCurrency
+                              ? `Applied ${pack.country}: ${pack.taxLabel}, currency ${pack.currency}.`
+                              : `Applied ${pack.country}: ${pack.taxLabel} (currency unchanged).`,
+                          );
+                        }}
+                      >
+                        Apply tax defaults
+                        {canChangeCurrency && updateCurrencyWithPack ? ` + ${pack.currency}` : " (no currency update)"}
+                      </Button>
+                    </>
+                  );
+                })()}
+              </div>
+            ) : null}
             <div className="flex items-center justify-between gap-4 rounded-xl bg-muted/70 px-4 py-3">
               <div>
                 <p className="text-sm font-medium">Sales tax on invoices</p>
-                <p className="text-xs text-muted-foreground">Adds a tax line. Default rate is Philippine VAT.</p>
+                <p className="text-xs text-muted-foreground">
+                  Adds a tax line using the default rate below. Pick a country pack for a common starting rate.
+                </p>
               </div>
               <Switch checked={settings.taxEnabled} onCheckedChange={(v) => updateSettings({ taxEnabled: v })} />
             </div>

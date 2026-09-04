@@ -1,6 +1,6 @@
 {
   "name": "finance-manager",
-  "version": "3.58.0",
+  "version": "3.59.0",
   "description": "Finance Manager \u2014 Peachtree-style ledger in a desktop window.",
   "private": true,
   "sideEffects": false,
@@ -32,7 +32,8 @@
     "desktop:build": "tauri build",
     "desktop:setup": "node scripts/desktop-setup.mjs",
     "desktop:setup:run": "node scripts/desktop-setup.mjs --run",
-    "icons": "node scripts/raster-icons.mjs"
+    "icons": "node scripts/raster-icons.mjs",
+    "tauri": "tauri"
   },
   "engines": {
     "node": ">=22"

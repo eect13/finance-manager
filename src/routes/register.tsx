@@ -224,7 +224,7 @@ function RegisterPage() {
         ...d.settings,
         registerColumns: mutate(d.settings.registerColumns ?? DEFAULT_REGISTER_COLS),
       },
-    }));
+    }), "change register columns");
   }
 
   const bankId = bankFilter === "all" ? undefined : bankFilter;
@@ -1428,7 +1428,7 @@ const RegisterRow = memo(
         data-dragging={dragging ? "true" : undefined}
         data-drop={over ? "true" : undefined}
         tabIndex={isOpening ? undefined : 0}
-        title={isOpening ? undefined : "Double-click to open"}
+        title={isOpening ? undefined : "Double-tap or double-click to open"}
         onClick={() => {
           if (!isOpening) onActivate(line.id);
         }}

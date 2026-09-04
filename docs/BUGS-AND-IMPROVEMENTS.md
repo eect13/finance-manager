@@ -1,4 +1,12 @@
-# Finance Manager — bugs & improvements (v3.58)
+# Finance Manager — bugs & improvements (v3.59)
+
+## Fixed in v3.59
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| 1 | Low | Undo/redo toasts were generic | Labels on history entries; toast and menu peek show the action |
+| 2 | Low–med | Tax setup was currency-only | Country tax packs + optional “Also update home currency” |
+| 3 | Med (env) | Android solo APK path fragile (JDK/NDK) | `pack-android.mjs` / `apk.bat`: JDK 17 preference, NDK resolve, symlink fallback, auto-sign |
 
 ## Fixed in v3.58 (code review)
 
@@ -34,7 +42,7 @@
 | E | Low | Debounced persist (~280ms) | `pagehide` / `visibilitychange` flush exist; hard kill/crash can still drop last keystrokes. | Still open |
 | F | Low | `patchJournalAmount` | Still used for check / payment receipt / bill / deposit / expense / transfer (2-line). **Do not** use for multi-line VAT (invoice + taxed cash sale now rebuild). | Still open (safe for 2-line) |
 | G | Med (product) | Thin payroll | No hours×rate run, withholdings, 13th month, or `employeeId` on check records; pay is `issueCheck` via linked vendor. | Still open |
-| H | — | Android APK | Needs NDK installed (SDK alone is not enough). | Still open (env) |
+| H | — | Android APK | Solo path improved in v3.59 (JDK 17, NDK resolve, symlink fallback, auto-sign). Still needs SDK+NDK on the machine. | Improved (env) |
 
 ## New findings (confirmed) — not yet fixed or deferred
 
@@ -50,7 +58,7 @@
 1. **IndexedDB / size** — Cap audit further; optional purge of closed detail; avoid dual full backup copies; chunked multi-company blobs.
 2. **List virtualization** — Extend register’s `@tanstack/react-virtual` to invoices/bills/receipts/checks/ledger/employees when lists grow.
 3. **Code-split** — Lazy TanStack routes + Vite `manualChunks` for reports/close/reconcile/seed.
-4. **Tauri / Android** — Validate WebView IDB persistence; share/save company JSON; cold-start via splits; finish NDK install for APK.
+4. **Tauri / Android** — Validate WebView IDB persistence; share/save company JSON; cold-start via splits. Solo APK path improved in v3.59 (JDK17/NDK/symlink/auto-sign); still needs SDK+NDK installed.
 5. **Payroll depth** — Pay periods, withholdings, link checks to `employeeId`, batch pay run, block delete when pay history exists (partially done for employee delete).
 6. **Multi-device** — Explicit company-file exchange / LWW or CRDT; no naive full-state overwrite. P2P stub exists unused.
 7. **Purchase VAT** — Input VAT on bills + VAT payable/receivable reports.

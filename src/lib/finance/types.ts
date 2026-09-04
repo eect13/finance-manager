@@ -441,6 +441,138 @@ export const CURRENCIES: Array<{ code: string; label: string }> = [
   { code: "CNY", label: "Chinese yuan" },
 ];
 
+/**
+ * Sensible default tax rates by country for Options → Currency and tax.
+ * Rates are common published standards / placeholders — not legal advice.
+ * Confirm current rates and local rules with a tax professional.
+ */
+export interface CountryTaxPack {
+  id: string;
+  country: string;
+  /** Suggested home currency; empty means leave currency alone. */
+  currency: string;
+  taxEnabled: boolean;
+  defaultTaxRate: number;
+  /** Short rate label shown in the picker, e.g. "VAT 12%". */
+  taxLabel: string;
+  note: string;
+}
+
+export const COUNTRY_TAX_PACKS: CountryTaxPack[] = [
+  {
+    id: "PH",
+    country: "Philippines",
+    currency: "PHP",
+    taxEnabled: true,
+    defaultTaxRate: 12,
+    taxLabel: "VAT 12%",
+    note: "Common Philippine VAT rate on taxable sales. Confirm exemptions and current BIR rules with your accountant.",
+  },
+  {
+    id: "US",
+    country: "United States",
+    currency: "USD",
+    taxEnabled: true,
+    defaultTaxRate: 0,
+    taxLabel: "Sales tax (set local %)",
+    note: "US sales tax is state/local. Starts at 0% — enter your combined rate. Not a filing recommendation.",
+  },
+  {
+    id: "US7",
+    country: "United States (placeholder ~7%)",
+    currency: "USD",
+    taxEnabled: true,
+    defaultTaxRate: 7,
+    taxLabel: "~7% placeholder",
+    note: "Rough placeholder only — real combined rates vary widely by ZIP. Replace with your locality’s rate.",
+  },
+  {
+    id: "SG",
+    country: "Singapore",
+    currency: "SGD",
+    taxEnabled: true,
+    defaultTaxRate: 9,
+    taxLabel: "GST 9%",
+    note: "Singapore GST standard rate in recent years. Verify the current IRAS rate before filing.",
+  },
+  {
+    id: "AU",
+    country: "Australia",
+    currency: "AUD",
+    taxEnabled: true,
+    defaultTaxRate: 10,
+    taxLabel: "GST 10%",
+    note: "Australian GST is commonly 10%. Confirm ATO treatment for your supplies.",
+  },
+  {
+    id: "GB",
+    country: "United Kingdom",
+    currency: "GBP",
+    taxEnabled: true,
+    defaultTaxRate: 20,
+    taxLabel: "VAT 20%",
+    note: "UK standard VAT is commonly 20%; reduced rates exist. Confirm with HMRC guidance.",
+  },
+  {
+    id: "EU20",
+    country: "Eurozone (typical VAT)",
+    currency: "EUR",
+    taxEnabled: true,
+    defaultTaxRate: 20,
+    taxLabel: "VAT ~20%",
+    note: "Many EU members use a ~20% standard VAT; rates differ by country. Pick your member state’s rate.",
+  },
+  {
+    id: "JP",
+    country: "Japan",
+    currency: "JPY",
+    taxEnabled: true,
+    defaultTaxRate: 10,
+    taxLabel: "Consumption tax 10%",
+    note: "Japan’s standard consumption tax is commonly 10% (reduced rate on some food). Confirm locally.",
+  },
+  {
+    id: "CA",
+    country: "Canada",
+    currency: "CAD",
+    taxEnabled: true,
+    defaultTaxRate: 5,
+    taxLabel: "GST 5%",
+    note: "Federal GST is 5%; provinces may add PST or use HST. Enter the rate you charge.",
+  },
+  {
+    id: "HK",
+    country: "Hong Kong",
+    currency: "HKD",
+    taxEnabled: false,
+    defaultTaxRate: 0,
+    taxLabel: "No GST/VAT",
+    note: "Hong Kong generally has no VAT/GST on goods and services. Turns sales tax off.",
+  },
+  {
+    id: "CN",
+    country: "China",
+    currency: "CNY",
+    taxEnabled: true,
+    defaultTaxRate: 13,
+    taxLabel: "VAT ~13%",
+    note: "Mainland China standard VAT is often 13%; reduced rates apply to some goods. Confirm current rules.",
+  },
+  {
+    id: "NONE",
+    country: "No default tax",
+    currency: "",
+    taxEnabled: false,
+    defaultTaxRate: 0,
+    taxLabel: "Tax off",
+    note: "Disables sales tax on invoices. Currency is never changed by this pack.",
+  },
+];
+
+export function countryTaxPackForCurrency(code: string): CountryTaxPack | undefined {
+  return COUNTRY_TAX_PACKS.find((p) => p.currency === code && p.id !== "US7" && p.id !== "NONE");
+}
+
 export const EMPTY_CUSTOMER: Omit<Customer, "id"> = {
   name: "",
   contact: "",

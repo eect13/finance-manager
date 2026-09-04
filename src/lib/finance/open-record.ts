@@ -14,7 +14,7 @@ export function openProps(kind: OpenKind, id: string, opts?: { click?: boolean }
   return {
     "data-open": "true" as const,
     tabIndex: 0,
-    title: click ? "Tap to open and edit" : "Double-click or press Enter to open",
+    title: click ? "Tap to open and edit" : "Double-tap, double-click, or press Enter to open",
     ...(click
       ? {
           onClick: (e: MouseEvent<HTMLElement>) => {

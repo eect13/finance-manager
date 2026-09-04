@@ -320,6 +320,15 @@
     background: var(--color-background);
     border-bottom: 1px solid color-mix(in oklab, var(--color-foreground) 8%, transparent);
     z-index: 20;
+    /* Clear Android/iOS status bar when WebView draws edge-to-edge. */
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  /* Android WebView often reports 0 for safe-area even with viewport-fit=cover. */
+  @media (hover: none) and (pointer: coarse) {
+    .app-header-bar {
+      padding-top: max(1.75rem, env(safe-area-inset-top, 0px));
+    }
   }
 
   .filter-pills {

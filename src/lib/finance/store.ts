@@ -111,12 +111,33 @@ function sliceData(next: FinanceData): FinanceData {
 
 const UNDO_MAX = 40;
 
+/** Snapshot + short human label for undo/redo toasts (e.g. "delete invoice INV-1042"). */
+export type UndoEntry = { data: FinanceData; label: string };
+
+type UndoLabel = string | ((before: FinanceData, after: FinanceData) => string);
+
 function snapshot(data: FinanceData): FinanceData {
   return structuredClone(sliceData(data));
 }
 
+function resolveUndoLabel(label: UndoLabel, before: FinanceData, after: FinanceData): string {
+  const raw = typeof label === "function" ? label(before, after) : label;
+  return (raw || "edit").trim() || "edit";
+}
+
 function clearHistory(): Pick<FinanceState, "undoStack" | "redoStack"> {
   return { undoStack: [], redoStack: [] };
+}
+
+function pushUndo(
+  s: Pick<FinanceState, "undoStack">,
+  current: FinanceData,
+  label: string,
+): Pick<FinanceState, "undoStack" | "redoStack"> {
+  return {
+    undoStack: [...(s.undoStack ?? []), { data: snapshot(current), label }].slice(-UNDO_MAX),
+    redoStack: [],
+  };
 }
 
 function packSeed(): Pick<FinanceState, "companies" | "companyOrder" | "activeCompanyId"> {
@@ -167,7 +188,7 @@ export interface FinanceState {
   hydrated: boolean;
   hydrate: () => void;
   ensureBooks: () => void;
-  patch: (fn: DataFn) => void;
+  patch: (fn: DataFn, label?: string) => void;
   resetDemo: () => void;
   startFresh: () => void;
   importBackup: (raw: string) => "company" | "workspace";
@@ -245,10 +266,10 @@ export interface FinanceState {
   openRecord: OpenTarget | null;
   openTxn: (kind: OpenKind, id: string) => void;
   closeTxn: () => void;
-  undoStack: FinanceData[];
-  redoStack: FinanceData[];
-  undo: () => boolean;
-  redo: () => boolean;
+  undoStack: UndoEntry[];
+  redoStack: UndoEntry[];
+  undo: () => string | null;
+  redo: () => string | null;
 }
 
 const packed: Pick<FinanceState, "companies" | "companyOrder" | "activeCompanyId"> = {
@@ -263,15 +284,14 @@ const EMPTY_BOOKS: FinanceData = emptyBooks();
 export const useFinanceStore = create<FinanceState>()(
   persist(
     (set, get) => {
-      const apply = (fn: DataFn) => {
+      const apply = (fn: DataFn, label: UndoLabel = "edit") => {
         const s = get();
         const id = s.activeCompanyId;
         const current = s.companies[id] ?? emptyBooks();
         const next = sliceData(fn(current));
         set({
           companies: { ...s.companies, [id]: next },
-          undoStack: [...(s.undoStack ?? []), snapshot(current)].slice(-UNDO_MAX),
-          redoStack: [],
+          ...pushUndo(s, current, resolveUndoLabel(label, current, next)),
         });
       };
       return {
@@ -291,7 +311,7 @@ export const useFinanceStore = create<FinanceState>()(
             if (id) set({ activeCompanyId: id });
           }
         },
-        patch: apply,
+        patch: (fn, label) => apply(fn, label ?? "edit"),
         resetDemo: () => {
           const s = get();
           const companies = { ...s.companies };
@@ -414,54 +434,177 @@ export const useFinanceStore = create<FinanceState>()(
           }
           set({ companies, companyOrder: order, activeCompanyId: active, openRecord: null, ...clearHistory() });
         },
-        addBank: (input) => apply((d) => addBank(d, input)),
-        updateBank: (id, patch) => apply((d) => updateBank(d, id, patch)),
-        removeBank: (id) => apply((d) => removeBank(d, id)),
-        addCustomer: (input) => apply((d) => addCustomer(d, input)),
-        addEmployee: (input) => apply((d) => addEmployee(d, input)),
-        updateEmployee: (id, patch) => apply((d) => updateEmployee(d, id, patch)),
-        removeEmployee: (id) => apply((d) => removeEmployee(d, id)),
-        payEmployee: (input) => apply((d) => payEmployee(d, input)),
-        updateCustomer: (id, patch) => apply((d) => updateCustomer(d, id, patch)),
-        removeCustomer: (id) => apply((d) => removeCustomer(d, id)),
-        reorderCustomers: (ids) => apply((d) => reorderCustomers(d, ids)),
-        addVendor: (input) => apply((d) => addVendor(d, input)),
-        updateVendor: (id, patch) => apply((d) => updateVendor(d, id, patch)),
-        removeVendor: (id) => apply((d) => removeVendor(d, id)),
-        reorderVendors: (ids) => apply((d) => reorderVendors(d, ids)),
-        issueCheck: (input) => apply((d) => issueCheck(d, input)),
-        setCheckStatus: (id, status) => apply((d) => setCheckStatus(d, id, status)),
-        removeCheck: (id) => apply((d) => removeCheck(d, id)),
-        rescheduleCashLine: (input) => apply((d) => rescheduleCashLine(d, input)),
-        createInvoice: (input) => apply((d) => createInvoice(d, input)),
-        recordInvoicePayment: (input) => apply((d) => recordInvoicePayment(d, input)),
-        applyCustomerPayments: (input) => apply((d) => applyCustomerPayments(d, input)),
-        voidInvoice: (id) => apply((d) => voidInvoice(d, id)),
-        removeInvoice: (id) => apply((d) => removeInvoice(d, id)),
-        createCashSale: (input) => apply((d) => createCashSale(d, input)),
-        voidReceipt: (id) => apply((d) => voidReceipt(d, id)),
-        removeReceipt: (id) => apply((d) => removeReceipt(d, id)),
-        reorderReceipts: (ids) => apply((d) => reorderReceipts(d, ids)),
-        createBill: (input) => apply((d) => createBill(d, input)),
-        payBill: (input) => apply((d) => payBill(d, input)),
-        voidBill: (id) => apply((d) => voidBill(d, id)),
-        removeBill: (id) => apply((d) => removeBill(d, id)),
-        reorderBills: (ids) => apply((d) => reorderBills(d, ids)),
-        removeCashLines: (lines) => apply((d) => removeCashLines(d, lines)),
-        addDeposit: (input) => apply((d) => addDeposit(d, input)),
-        addExpense: (input) => apply((d) => addExpense(d, input)),
-        transferBanks: (input) => apply((d) => transferBanks(d, input)),
-        upsertBudget: (item) => apply((d) => upsertBudget(d, item)),
-        removeBudget: (id) => apply((d) => removeBudget(d, id)),
-        updateSettings: (patch) => apply((d) => updateSettings(d, patch)),
-        updateCheck: (id, patch) => apply((d) => updateCheck(d, id, patch)),
-        updateReceipt: (id, patch) => apply((d) => updateReceipt(d, id, patch)),
-        updateBillRecord: (id, patch) => apply((d) => updateBillRecord(d, id, patch)),
-        updateJournalEntry: (id, patch) => apply((d) => updateJournalEntry(d, id, patch)),
-        updateInvoiceRecord: (id, patch) => apply((d) => updateInvoiceRecord(d, id, patch)),
-        reassignCashBank: (input) => apply((d) => reassignCashBank(d, input)),
-        reassignCashBanks: (lines, bankId) => apply((d) => reassignCashBanks(d, lines, bankId)),
-        setCashRecon: (input) => apply((d) => setCashRecon(d, input)),
+        addBank: (input) =>
+          apply((d) => addBank(d, input), `add bank ${input.nickname || input.name || ""}`.trim()),
+        updateBank: (id, patch) =>
+          apply((d) => updateBank(d, id, patch), (before) => {
+            const b = before.banks.find((x) => x.id === id);
+            return `edit bank ${b?.nickname || b?.name || ""}`.trim();
+          }),
+        removeBank: (id) =>
+          apply((d) => removeBank(d, id), (before) => {
+            const b = before.banks.find((x) => x.id === id);
+            return `delete bank ${b?.nickname || b?.name || ""}`.trim();
+          }),
+        addCustomer: (input) => apply((d) => addCustomer(d, input), `add customer ${input.name || ""}`.trim()),
+        addEmployee: (input) => apply((d) => addEmployee(d, input), `add employee ${input.name || ""}`.trim()),
+        updateEmployee: (id, patch) =>
+          apply((d) => updateEmployee(d, id, patch), (before) => {
+            const e = (before.employees ?? []).find((x) => x.id === id);
+            return `edit employee ${e?.name || ""}`.trim();
+          }),
+        removeEmployee: (id) =>
+          apply((d) => removeEmployee(d, id), (before) => {
+            const e = (before.employees ?? []).find((x) => x.id === id);
+            return `delete employee ${e?.name || ""}`.trim();
+          }),
+        payEmployee: (input) =>
+          apply((d) => payEmployee(d, input), (before) => {
+            const e = (before.employees ?? []).find((x) => x.id === input.employeeId);
+            return `post paycheck ${e?.name || ""}`.trim();
+          }),
+        updateCustomer: (id, patch) =>
+          apply((d) => updateCustomer(d, id, patch), (before) => {
+            const c = before.customers.find((x) => x.id === id);
+            return `edit customer ${c?.name || ""}`.trim();
+          }),
+        removeCustomer: (id) =>
+          apply((d) => removeCustomer(d, id), (before) => {
+            const c = before.customers.find((x) => x.id === id);
+            return `delete customer ${c?.name || ""}`.trim();
+          }),
+        reorderCustomers: (ids) => apply((d) => reorderCustomers(d, ids), "reorder customers"),
+        addVendor: (input) => apply((d) => addVendor(d, input), `add vendor ${input.name || ""}`.trim()),
+        updateVendor: (id, patch) =>
+          apply((d) => updateVendor(d, id, patch), (before) => {
+            const v = before.vendors.find((x) => x.id === id);
+            return `edit vendor ${v?.name || ""}`.trim();
+          }),
+        removeVendor: (id) =>
+          apply((d) => removeVendor(d, id), (before) => {
+            const v = before.vendors.find((x) => x.id === id);
+            return `delete vendor ${v?.name || ""}`.trim();
+          }),
+        reorderVendors: (ids) => apply((d) => reorderVendors(d, ids), "reorder vendors"),
+        issueCheck: (input) =>
+          apply((d) => issueCheck(d, input), (_b, after) => {
+            const created = after.checks.find((c) => !_b.checks.some((x) => x.id === c.id));
+            const num = created?.checkNumber || input.checkNumber;
+            return num ? `post check #${num}` : "post check";
+          }),
+        setCheckStatus: (id, status) =>
+          apply((d) => setCheckStatus(d, id, status), (before) => {
+            const c = before.checks.find((x) => x.id === id);
+            return c?.checkNumber ? `${status} check #${c.checkNumber}` : `${status} check`;
+          }),
+        removeCheck: (id) =>
+          apply((d) => removeCheck(d, id), (before) => {
+            const c = before.checks.find((x) => x.id === id);
+            return c?.checkNumber ? `delete check #${c.checkNumber}` : "delete check";
+          }),
+        rescheduleCashLine: (input) => apply((d) => rescheduleCashLine(d, input), "reschedule register line"),
+        createInvoice: (input) =>
+          apply((d) => createInvoice(d, input), (_b, after) => {
+            const created = after.invoices.find((i) => !_b.invoices.some((x) => x.id === i.id));
+            return created ? `post invoice ${created.number}` : "post invoice";
+          }),
+        recordInvoicePayment: (input) =>
+          apply((d) => recordInvoicePayment(d, input), (before) => {
+            const inv = before.invoices.find((x) => x.id === input.invoiceId);
+            return inv ? `receive payment ${inv.number}` : "receive invoice payment";
+          }),
+        applyCustomerPayments: (input) => apply((d) => applyCustomerPayments(d, input), "apply customer payments"),
+        voidInvoice: (id) =>
+          apply((d) => voidInvoice(d, id), (before) => {
+            const inv = before.invoices.find((x) => x.id === id);
+            return inv ? `void invoice ${inv.number}` : "void invoice";
+          }),
+        removeInvoice: (id) =>
+          apply((d) => removeInvoice(d, id), (before) => {
+            const inv = before.invoices.find((x) => x.id === id);
+            return inv ? `delete invoice ${inv.number}` : "delete invoice";
+          }),
+        createCashSale: (input) =>
+          apply((d) => createCashSale(d, input), (_b, after) => {
+            const created = after.receipts.find((r) => !_b.receipts.some((x) => x.id === r.id));
+            return created ? `post cash sale ${created.number}` : "post cash sale";
+          }),
+        voidReceipt: (id) =>
+          apply((d) => voidReceipt(d, id), (before) => {
+            const r = before.receipts.find((x) => x.id === id);
+            return r ? `void receipt ${r.number}` : "void receipt";
+          }),
+        removeReceipt: (id) =>
+          apply((d) => removeReceipt(d, id), (before) => {
+            const r = before.receipts.find((x) => x.id === id);
+            return r ? `delete receipt ${r.number}` : "delete receipt";
+          }),
+        reorderReceipts: (ids) => apply((d) => reorderReceipts(d, ids), "reorder receipts"),
+        createBill: (input) =>
+          apply((d) => createBill(d, input), (_b, after) => {
+            const created = after.bills.find((b) => !_b.bills.some((x) => x.id === b.id));
+            return created ? `post bill ${created.number}` : "post bill";
+          }),
+        payBill: (input) =>
+          apply((d) => payBill(d, input), (before) => {
+            const bill = before.bills.find((x) => x.id === input.billId);
+            return bill ? `pay bill ${bill.number}` : "pay bill";
+          }),
+        voidBill: (id) =>
+          apply((d) => voidBill(d, id), (before) => {
+            const bill = before.bills.find((x) => x.id === id);
+            return bill ? `void bill ${bill.number}` : "void bill";
+          }),
+        removeBill: (id) =>
+          apply((d) => removeBill(d, id), (before) => {
+            const bill = before.bills.find((x) => x.id === id);
+            return bill ? `delete bill ${bill.number}` : "delete bill";
+          }),
+        reorderBills: (ids) => apply((d) => reorderBills(d, ids), "reorder bills"),
+        removeCashLines: (lines) =>
+          apply(
+            (d) => removeCashLines(d, lines),
+            lines.length === 1 ? "delete register line" : `delete ${lines.length} register lines`,
+          ),
+        addDeposit: (input) => apply((d) => addDeposit(d, input), "post deposit"),
+        addExpense: (input) => apply((d) => addExpense(d, input), "post expense"),
+        transferBanks: (input) => apply((d) => transferBanks(d, input), "transfer between banks"),
+        upsertBudget: (item) =>
+          apply((d) => upsertBudget(d, item), item.id ? `edit budget ${item.name || ""}`.trim() : `add budget ${item.name || ""}`.trim()),
+        removeBudget: (id) =>
+          apply((d) => removeBudget(d, id), (before) => {
+            const b = before.budgetItems.find((x) => x.id === id);
+            return `delete budget ${b?.name || ""}`.trim();
+          }),
+        updateSettings: (patch) => apply((d) => updateSettings(d, patch), "update options"),
+        updateCheck: (id, patch) =>
+          apply((d) => updateCheck(d, id, patch), (before) => {
+            const c = before.checks.find((x) => x.id === id);
+            return c?.checkNumber ? `edit check #${c.checkNumber}` : "edit check";
+          }),
+        updateReceipt: (id, patch) =>
+          apply((d) => updateReceipt(d, id, patch), (before) => {
+            const r = before.receipts.find((x) => x.id === id);
+            return r ? `edit receipt ${r.number}` : "edit receipt";
+          }),
+        updateBillRecord: (id, patch) =>
+          apply((d) => updateBillRecord(d, id, patch), (before) => {
+            const bill = before.bills.find((x) => x.id === id);
+            return bill ? `edit bill ${bill.number}` : "edit bill";
+          }),
+        updateJournalEntry: (id, patch) => apply((d) => updateJournalEntry(d, id, patch), "edit journal entry"),
+        updateInvoiceRecord: (id, patch) =>
+          apply((d) => updateInvoiceRecord(d, id, patch), (before) => {
+            const inv = before.invoices.find((x) => x.id === id);
+            return inv ? `edit invoice ${inv.number}` : "edit invoice";
+          }),
+        reassignCashBank: (input) => apply((d) => reassignCashBank(d, input), "move register line to bank"),
+        reassignCashBanks: (lines, bankId) =>
+          apply(
+            (d) => reassignCashBanks(d, lines, bankId),
+            lines.length === 1 ? "move register line to bank" : `move ${lines.length} lines to bank`,
+          ),
+        setCashRecon: (input) => apply((d) => setCashRecon(d, input), "toggle cleared"),
         purgeClosedThrough: (throughDate) => {
           const s = get();
           const id = s.activeCompanyId;
@@ -469,38 +612,69 @@ export const useFinanceStore = create<FinanceState>()(
           const result = purgeClosedThrough(current, throughDate);
           set({
             companies: { ...s.companies, [id]: sliceData(result.data) },
-            undoStack: [...(s.undoStack ?? []), snapshot(current)].slice(-UNDO_MAX),
-            redoStack: [],
+            ...pushUndo(s, current, `purge closed through ${throughDate}`),
           });
           return result.removed;
         },
-        closeBooks: (throughDate, packetPrinted) => apply((d) => closeBooks(d, throughDate, packetPrinted)),
-        reopenBooks: (reason) => apply((d) => reopenBooks(d, reason)),
-        finishRecon: (input) => apply((d) => finishRecon(d, input)),
-        undoLastRecon: (bankId) => apply((d) => undoLastRecon(d, bankId)),
+        closeBooks: (throughDate, packetPrinted) =>
+          apply((d) => closeBooks(d, throughDate, packetPrinted), `close books through ${throughDate}`),
+        reopenBooks: (reason) => apply((d) => reopenBooks(d, reason), "reopen books"),
+        finishRecon: (input) =>
+          apply((d) => finishRecon(d, input), `finish recon ${input.statementDate}`),
+        undoLastRecon: (bankId) =>
+          apply((d) => undoLastRecon(d, bankId), (before) => {
+            const b = before.banks.find((x) => x.id === bankId);
+            return `undo recon ${b?.nickname || b?.name || ""}`.trim();
+          }),
         postReconAdjustment: (input) => {
           let journalId = "";
           apply((d) => {
             const result = postReconAdjustment(d, input);
             journalId = result.journalId;
             return result.data;
-          });
+          }, "post recon adjustment");
           return journalId;
         },
-        mergeCustomers: (keepId, dropId) => apply((d) => mergeCustomers(d, keepId, dropId)),
-        mergeVendors: (keepId, dropId) => apply((d) => mergeVendors(d, keepId, dropId)),
-        upsertRecurring: (item) => apply((d) => upsertRecurring(d, item)),
-        removeRecurring: (id) => apply((d) => removeRecurring(d, id)),
-        postRecurring: (id) => apply((d) => postRecurring(d, id)),
+        mergeCustomers: (keepId, dropId) =>
+          apply((d) => mergeCustomers(d, keepId, dropId), (before) => {
+            const keep = before.customers.find((x) => x.id === keepId)?.name;
+            const drop = before.customers.find((x) => x.id === dropId)?.name;
+            return `merge customers ${drop || "?"} → ${keep || "?"}`.trim();
+          }),
+        mergeVendors: (keepId, dropId) =>
+          apply((d) => mergeVendors(d, keepId, dropId), (before) => {
+            const keep = before.vendors.find((x) => x.id === keepId)?.name;
+            const drop = before.vendors.find((x) => x.id === dropId)?.name;
+            return `merge vendors ${drop || "?"} → ${keep || "?"}`.trim();
+          }),
+        upsertRecurring: (item) =>
+          apply(
+            (d) => upsertRecurring(d, item),
+            item.id ? `edit recurring ${item.name || ""}`.trim() : `add recurring ${item.name || ""}`.trim(),
+          ),
+        removeRecurring: (id) =>
+          apply((d) => removeRecurring(d, id), (before) => {
+            const r = before.recurrences.find((x) => x.id === id);
+            return `delete recurring ${r?.name || ""}`.trim();
+          }),
+        postRecurring: (id) =>
+          apply((d) => postRecurring(d, id), (before) => {
+            const r = before.recurrences.find((x) => x.id === id);
+            return `post recurring ${r?.name || ""}`.trim();
+          }),
         postDueRecurring: (through) => {
           const s = get();
           const id = s.activeCompanyId;
           const current = s.companies[id] ?? emptyBooks();
           const result = postDueRecurring(current, through);
+          const n = result.posted.length;
           set({
             companies: { ...s.companies, [id]: sliceData(result.data) },
-            undoStack: [...(s.undoStack ?? []), snapshot(current)].slice(-UNDO_MAX),
-            redoStack: [],
+            ...pushUndo(
+              s,
+              current,
+              n === 0 ? "post due recurring" : `post ${n} recurring ${n === 1 ? "item" : "items"}`,
+            ),
           });
           return result.posted;
         },
@@ -510,32 +684,39 @@ export const useFinanceStore = create<FinanceState>()(
         undo: () => {
           const s = get();
           const stack = s.undoStack ?? [];
-          const prev = stack.at(-1);
-          if (!prev) return false;
+          const entry = stack.at(-1);
+          if (!entry) return null;
           const id = s.activeCompanyId;
           const current = s.companies[id] ?? emptyBooks();
+          // Tolerate pre-label in-memory snapshots (HMR) shaped as bare FinanceData.
+          const raw = entry as UndoEntry | FinanceData;
+          const prev = "data" in raw && raw.data && "settings" in raw.data ? raw.data : (raw as FinanceData);
+          const label = "label" in raw && typeof raw.label === "string" && raw.label ? raw.label : "edit";
           set({
             companies: { ...s.companies, [id]: sliceData(prev) },
             undoStack: stack.slice(0, -1),
-            redoStack: [...(s.redoStack ?? []), snapshot(current)].slice(-UNDO_MAX),
+            redoStack: [...(s.redoStack ?? []), { data: snapshot(current), label }].slice(-UNDO_MAX),
             openRecord: null,
           });
-          return true;
+          return label;
         },
         redo: () => {
           const s = get();
           const stack = s.redoStack ?? [];
-          const next = stack.at(-1);
-          if (!next) return false;
+          const entry = stack.at(-1);
+          if (!entry) return null;
           const id = s.activeCompanyId;
           const current = s.companies[id] ?? emptyBooks();
+          const raw = entry as UndoEntry | FinanceData;
+          const next = "data" in raw && raw.data && "settings" in raw.data ? raw.data : (raw as FinanceData);
+          const label = "label" in raw && typeof raw.label === "string" && raw.label ? raw.label : "edit";
           set({
             companies: { ...s.companies, [id]: sliceData(next) },
             redoStack: stack.slice(0, -1),
-            undoStack: [...(s.undoStack ?? []), snapshot(current)].slice(-UNDO_MAX),
+            undoStack: [...(s.undoStack ?? []), { data: snapshot(current), label }].slice(-UNDO_MAX),
             openRecord: null,
           });
-          return true;
+          return label;
         },
       };
     },

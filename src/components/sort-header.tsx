@@ -16,7 +16,7 @@ export function ColResize({
       role="separator"
       aria-orientation="vertical"
       aria-label="Resize column"
-      title="Drag to resize · double-click to auto-fit"
+      title="Drag to resize · double-tap or double-click to auto-fit"
       className="col-resize-handle no-print"
       onDoubleClick={(e) => {
         e.preventDefault();

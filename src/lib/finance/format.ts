@@ -1,23 +1,36 @@
 import { format, parseISO, isValid } from "date-fns";
 
 export function formatMoney(amount: number, currency = "PHP"): string {
+  const code = (currency ?? "").trim();
+  if (!code) return (amount / 100).toFixed(2);
   try {
     return new Intl.NumberFormat("en-PH", {
       style: "currency",
-      currency,
-      maximumFractionDigits: currency === "JPY" ? 0 : 2,
+      currency: code,
+      maximumFractionDigits: code === "JPY" ? 0 : 2,
     }).format(amount / 100);
   } catch {
-    return `${(amount / 100).toFixed(2)} ${currency}`;
+    return `${(amount / 100).toFixed(2)} ${code}`;
   }
 }
 
 export function formatCompact(amount: number, currency = "PHP"): string {
   const value = amount / 100;
+  const code = (currency ?? "").trim();
+  if (!code) {
+    try {
+      return new Intl.NumberFormat("en-PH", {
+        notation: "compact",
+        maximumFractionDigits: 1,
+      }).format(value);
+    } catch {
+      return value.toFixed(0);
+    }
+  }
   try {
     return new Intl.NumberFormat("en-PH", {
       style: "currency",
-      currency,
+      currency: code,
       notation: "compact",
       maximumFractionDigits: 1,
     }).format(value);

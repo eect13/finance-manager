@@ -22,7 +22,7 @@ function CustomersPage() {
   return (
     <AppShell
       title="Customers"
-      description="Tap a name to open its history. On a wide screen, click selects; double-click or Enter for Details. Filter All / Open / Zero."
+      description="Tap a name to open its history. On a wide screen, click selects; double-tap or double-click or Enter for Details. Filter All / Open / Zero."
       wide
       actions={
         <>

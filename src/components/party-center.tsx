@@ -881,7 +881,7 @@ function PartyDetail({
         <TabsContent value="transactions">
           <p className="mb-3 text-xs text-muted-foreground no-print">
             <span className="sm:hidden">Tap a line to open it.</span>
-            <span className="hidden sm:inline">Click to select. Double-click or Enter to open.</span>
+            <span className="hidden sm:inline">Click to select. Double-tap or double-click or Enter to open.</span>
           </p>
           <PartyTxnTable rows={history} currency={currency} empty={emptyHistory} typeSelect={typeSelect} />
         </TabsContent>

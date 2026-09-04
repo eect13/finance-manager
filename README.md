@@ -1,4 +1,4 @@
-# Finance Manager v3.58
+# Finance Manager v3.59
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -10,6 +10,14 @@ No accounts, no server setup. Books stay on this computer (IndexedDB). Settings 
 
 The app mark is a **navy tile with cream pillars** — a full opaque square (Windows 11 already rounds the tile; transparent corners were a white plate). Web uses the SVG favicon. Windows uses a **BMP 32-bit** `.ico` (PNG-in-ICO is a white square on the shortcut and the taskbar). After install, **delete any leftover blank shortcut** and pin the new one — Explorer caches the last icon.
 
+
+
+## What's new in v3.59
+
+- Undo/redo toasts name the action (e.g. Undid: delete invoice INV-1042); menu items show the same peek labels
+- Options → Currency and tax: country tax packs; **Also update home currency** switch; **No currency** blank option (amounts without a symbol)
+- Android mobile: status-bar safe-area padding, double-tap copy, brand navy launcher icons synced into the APK
+- Android `apk.bat` / `pack-android.mjs`: JDK 17, NDK, symlink copy fallback, auto-sign for solo builds
 
 
 ## What’s new in v3.58
@@ -51,17 +59,21 @@ Lists (banks, register, receipts, checks, reports, reconcile) wrap actions and k
 
 ## Screenshots
 
-![Treasury desk](docs/screenshots/desk.png)
+![Treasury desk — cash across banks](docs/screenshots/desk.png)
 
-![Banks](docs/screenshots/banks.png)
+![Banks — accounts and balances](docs/screenshots/banks.png)
 
-![Bank register](docs/screenshots/register.png)
+![Bank register — running balance and Post](docs/screenshots/register.png)
 
-![Employees](docs/screenshots/employees.png)
+![Employees — roster, filters, and Pay](docs/screenshots/employees.png)
 
-![Reports aging](docs/screenshots/reports.png)
+![Reports — AR then AP aging](docs/screenshots/reports.png)
 
-![Reconcile](docs/screenshots/reconcile.png)
+![Reconcile — statement vs book proof](docs/screenshots/reconcile.png)
+
+![Options — currency, country tax pack, Also update home currency](docs/screenshots/options-currency-tax.png)
+
+![Labeled undo toast — Undid: update options](docs/screenshots/undo-toast.png)
 
 Phone:
 

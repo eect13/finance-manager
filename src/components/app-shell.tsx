@@ -230,6 +230,8 @@ export function AppShell({
   const { resolved } = useTheme();
   const canUndo = useFinanceStore((s) => (s.undoStack?.length ?? 0) > 0);
   const canRedo = useFinanceStore((s) => (s.redoStack?.length ?? 0) > 0);
+  const undoPeek = useFinanceStore((s) => s.undoStack?.at(-1)?.label ?? "");
+  const redoPeek = useFinanceStore((s) => s.redoStack?.at(-1)?.label ?? "");
   const [undoChord, setUndoChord] = useState("Ctrl+Z");
   const [redoChord, setRedoChord] = useState("Ctrl+Y");
 
@@ -258,12 +260,14 @@ export function AppShell({
       const key = e.key.toLowerCase();
       if (key === "z" && !e.shiftKey) {
         e.preventDefault();
-        if (useFinanceStore.getState().undo()) toast.success("Undone.");
+        const undone = useFinanceStore.getState().undo();
+        if (undone) toast.success(`Undid: ${undone}`);
         return;
       }
       if (key === "y" || (key === "z" && e.shiftKey)) {
         e.preventDefault();
-        if (useFinanceStore.getState().redo()) toast.success("Redone.");
+        const redone = useFinanceStore.getState().redo();
+        if (redone) toast.success(`Redid: ${redone}`);
       }
     }
     window.addEventListener("keydown", onKey);
@@ -326,10 +330,11 @@ export function AppShell({
                   size="icon"
                   className="rounded-r-none"
                   disabled={!canUndo}
-                  aria-label={`Undo ${undoChord}`}
-                  title={`Undo ${undoChord}`}
+                  aria-label={undoPeek ? `Undo: ${undoPeek} (${undoChord})` : `Undo ${undoChord}`}
+                  title={undoPeek ? `Undo: ${undoPeek} (${undoChord})` : `Undo ${undoChord}`}
                   onClick={() => {
-                    if (useFinanceStore.getState().undo()) toast.success("Undone.");
+                    const undone = useFinanceStore.getState().undo();
+                    if (undone) toast.success(`Undid: ${undone}`);
                   }}
                 >
                   <Undo2 />
@@ -339,10 +344,11 @@ export function AppShell({
                   size="icon"
                   className="-ml-px rounded-l-none"
                   disabled={!canRedo}
-                  aria-label={`Redo ${redoChord}`}
-                  title={`Redo ${redoChord}`}
+                  aria-label={redoPeek ? `Redo: ${redoPeek} (${redoChord})` : `Redo ${redoChord}`}
+                  title={redoPeek ? `Redo: ${redoPeek} (${redoChord})` : `Redo ${redoChord}`}
                   onClick={() => {
-                    if (useFinanceStore.getState().redo()) toast.success("Redone.");
+                    const redone = useFinanceStore.getState().redo();
+                    if (redone) toast.success(`Redid: ${redone}`);
                   }}
                 >
                   <Redo2 />

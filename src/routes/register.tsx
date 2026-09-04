@@ -231,10 +231,9 @@ function RegisterPage() {
   const book = useMemo(() => cashBook(data, bankId, { dateFrom, dateTo }), [data, bankId, dateFrom, dateTo]);
   const opening = book.opening;
   const raw = book.lines;
-  const directed = useMemo(() => filterDirection(raw, direction), [raw, direction]);
   const filtered = useMemo(
-    () => filterCashLines(directed, { name: nameFilter, type: typeFilter }),
-    [directed, nameFilter, typeFilter],
+    () => filterCashLines(raw, { name: nameFilter, type: typeFilter }),
+    [raw, nameFilter, typeFilter],
   );
   const searching = Boolean(nameFilter.trim() || typeFilter !== "all");
   const bankOpen = useMemo(() => openingForBanks(data, bankId), [data, bankId]);
@@ -245,13 +244,16 @@ function RegisterPage() {
         : undefined,
     [dateFrom, opening, bankOpen, book.freezeThrough],
   );
-  const tableSource = useMemo(
-    () => (searching ? filtered : withOpening(filtered, opening, asOf)),
-    [searching, filtered, opening, asOf],
-  );
+  // Balance from full window; In/Out only filters which rows show.
   const windowed = useMemo(() => withOpening(raw, opening, asOf), [raw, opening, asOf]);
   const windowBalanced = useMemo(() => withRunningBalance(windowed), [windowed]);
-  const balanced = useMemo(() => withRunningBalance(tableSource), [tableSource]);
+  const tableSource = useMemo((): BalancedCashLine[] => {
+    const base = searching ? filtered : withOpening(filtered, opening, asOf);
+    const balMap = new Map(windowBalanced.map((l) => [l.id, l.balance]));
+    const withBal: BalancedCashLine[] = base.map((l) => ({ ...l, balance: balMap.get(l.id) ?? 0 }));
+    return filterDirection(withBal, direction) as BalancedCashLine[];
+  }, [searching, filtered, opening, asOf, windowBalanced, direction]);
+  const balanced = tableSource;
   const stats = useMemo(() => totals(raw), [raw]);
   const ending = windowBalanced.at(-1)?.balance ?? opening;
   const dates = useMemo(() => boardDates(filtered, extraDates), [filtered, extraDates]);

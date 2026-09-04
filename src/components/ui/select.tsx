@@ -30,7 +30,7 @@ export function SelectContent({ className, children, ...props }: React.Component
     <SelectPrimitive.Portal>
       <SelectPrimitive.Content
         className={cn(
-          "z-50 max-h-72 min-w-40 overflow-hidden rounded-xl bg-popover text-popover-foreground elevation",
+          "z-[200] max-h-72 min-w-40 overflow-hidden rounded-xl bg-popover text-popover-foreground elevation",
           className,
         )}
         position="popper"

@@ -10,6 +10,7 @@ import {
   CalendarRange,
   FileSpreadsheet,
   Handshake,
+  IdCard,
   LayoutDashboard,
   Lock,
   Menu,
@@ -66,6 +67,10 @@ const NAV = [
       { to: "/vendors", label: "Vendors", icon: Handshake },
       { to: "/bills", label: "Bills", icon: ScrollText },
     ],
+  },
+  {
+    label: "Employees",
+    items: [{ to: "/employees", label: "Employees", icon: IdCard }],
   },
   {
     label: "Planning",
@@ -174,7 +179,7 @@ function SidebarBody({
         ) : null}
         <Link
           to="/settings"
-          aria-label="Settings"
+          aria-label="Options"
           onClick={onNavigate}
           className={cn(
             "flex min-h-11 items-center rounded-xl text-sm",

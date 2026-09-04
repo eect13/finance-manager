@@ -67,7 +67,11 @@ export function formatGeneratedAt(at = new Date()): string {
 }
 
 export function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
 }
 
 export function currentMonth(): string {
@@ -75,17 +79,27 @@ export function currentMonth(): string {
 }
 
 export function addDaysIso(iso: string, days: number): string {
-  const date = parseISO(iso);
-  date.setDate(date.getDate() + days);
-  return format(date, "yyyy-MM-dd");
+  const [y, m, d] = iso.split("-").map(Number);
+  if (!y || !m || !d) return iso;
+  const date = new Date(y, m - 1, d + days);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
 export function parseAmountToCents(raw: string | null | undefined): number {
   const cleaned = String(raw ?? "").replace(/,/g, "").trim();
   if (!cleaned) return 0;
-  const n = Number(cleaned);
-  if (!Number.isFinite(n)) return 0;
-  return Math.round(n * 100);
+  const neg = cleaned.startsWith("-");
+  const body = neg ? cleaned.slice(1) : cleaned;
+  const match = /^(\d+)(?:\.(\d{0,2})\d*)?$/.exec(body);
+  if (!match) {
+    const n = Number(cleaned);
+    if (!Number.isFinite(n)) return 0;
+    return Math.round(n * 100);
+  }
+  const whole = Number(match[1]);
+  const frac = (match[2] ?? "").padEnd(2, "0").slice(0, 2);
+  const cents = whole * 100 + Number(frac || "0");
+  return neg ? -cents : cents;
 }
 
 export function titleCase(value: string): string {

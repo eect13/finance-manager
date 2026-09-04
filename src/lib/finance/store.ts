@@ -3,6 +3,7 @@ import { persist } from "zustand/middleware";
 import {
   addBank,
   addCustomer,
+  addEmployee,
   addDeposit,
   addExpense,
   addVendor,
@@ -12,6 +13,7 @@ import {
   createInvoice,
   issueCheck,
   payBill,
+  payEmployee,
   recordInvoicePayment,
   removeBank,
   removeBill,
@@ -19,6 +21,7 @@ import {
   removeCashLines,
   removeCheck,
   removeCustomer,
+  removeEmployee,
   removeInvoice,
   removeReceipt,
   removeVendor,
@@ -33,6 +36,7 @@ import {
   updateBillRecord,
   updateCheck,
   updateCustomer,
+  updateEmployee,
   updateInvoiceRecord,
   updateJournalEntry,
   updateReceipt,
@@ -90,6 +94,7 @@ function sliceData(next: FinanceData): FinanceData {
     accounts: next.accounts,
     customers: next.customers,
     vendors: next.vendors,
+    employees: next.employees ?? [],
     invoices: next.invoices,
     bills: next.bills,
     receipts: next.receipts,
@@ -134,9 +139,8 @@ function wrapLegacy(raw: unknown): Pick<FinanceState, "companies" | "companyOrde
 
 function migrateBooks(persisted: unknown, version: number): Pick<FinanceState, "companies" | "companyOrder" | "activeCompanyId"> {
   if (version < 5 || isLegacyBooks(persisted)) {
-    const wrapped = wrapLegacy(persisted);
-    if (wrapped.companies[SAMPLE_COMPANY_ID]) wrapped.companies[SAMPLE_COMPANY_ID] = createSeed();
-    return wrapped;
+    // Migrate in place — do not wipe real edits to the sample company.
+    return wrapLegacy(persisted);
   }
   const p = (persisted ?? {}) as {
     companies?: Record<string, unknown>;
@@ -151,9 +155,6 @@ function migrateBooks(persisted: unknown, version: number): Pick<FinanceState, "
   const order = (p.companyOrder ?? Object.keys(companies)).filter((id) => companies[id]);
   for (const id of Object.keys(companies)) {
     if (!order.includes(id)) order.push(id);
-  }
-  if (version < 14 && companies[SAMPLE_COMPANY_ID]) {
-    companies[SAMPLE_COMPANY_ID] = createSeed();
   }
   const active = p.activeCompanyId && companies[p.activeCompanyId] ? p.activeCompanyId : order[0];
   return { companies, companyOrder: order, activeCompanyId: active };
@@ -225,6 +226,10 @@ export interface FinanceState {
   reassignCashBank: (input: Parameters<typeof reassignCashBank>[1]) => void;
   reassignCashBanks: (lines: Parameters<typeof reassignCashBanks>[1], bankId: string) => void;
   setCashRecon: (input: Parameters<typeof setCashRecon>[1]) => void;
+  addEmployee: (input: Parameters<typeof addEmployee>[1]) => void;
+  updateEmployee: (id: string, patch: Parameters<typeof updateEmployee>[2]) => void;
+  removeEmployee: (id: string) => void;
+  payEmployee: (input: Parameters<typeof payEmployee>[1]) => void;
   purgeClosedThrough: (throughDate: string) => number;
   closeBooks: (throughDate: string, packetPrinted?: boolean) => void;
   reopenBooks: (reason?: string) => void;
@@ -413,6 +418,10 @@ export const useFinanceStore = create<FinanceState>()(
         updateBank: (id, patch) => apply((d) => updateBank(d, id, patch)),
         removeBank: (id) => apply((d) => removeBank(d, id)),
         addCustomer: (input) => apply((d) => addCustomer(d, input)),
+        addEmployee: (input) => apply((d) => addEmployee(d, input)),
+        updateEmployee: (id, patch) => apply((d) => updateEmployee(d, id, patch)),
+        removeEmployee: (id) => apply((d) => removeEmployee(d, id)),
+        payEmployee: (input) => apply((d) => payEmployee(d, input)),
         updateCustomer: (id, patch) => apply((d) => updateCustomer(d, id, patch)),
         removeCustomer: (id) => apply((d) => removeCustomer(d, id)),
         reorderCustomers: (ids) => apply((d) => reorderCustomers(d, ids)),

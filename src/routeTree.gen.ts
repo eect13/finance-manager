@@ -16,6 +16,7 @@ import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as ChecksRouteImport } from './routes/checks'
 import { Route as CloseRouteImport } from './routes/close'
 import { Route as CustomersRouteImport } from './routes/customers'
+import { Route as EmployeesRouteImport } from './routes/employees'
 import { Route as ForecastRouteImport } from './routes/forecast'
 import { Route as InvoicesRouteImport } from './routes/invoices'
 import { Route as LedgerRouteImport } from './routes/ledger'
@@ -60,6 +61,11 @@ const CloseRoute = CloseRouteImport.update({
 const CustomersRoute = CustomersRouteImport.update({
   id: '/customers',
   path: '/customers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EmployeesRoute = EmployeesRouteImport.update({
+  id: '/employees',
+  path: '/employees',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForecastRoute = ForecastRouteImport.update({
@@ -121,6 +127,7 @@ export interface FileRoutesByFullPath {
   '/checks': typeof ChecksRoute
   '/close': typeof CloseRoute
   '/customers': typeof CustomersRoute
+  '/employees': typeof EmployeesRoute
   '/forecast': typeof ForecastRoute
   '/invoices': typeof InvoicesRoute
   '/ledger': typeof LedgerRoute
@@ -140,6 +147,7 @@ export interface FileRoutesByTo {
   '/checks': typeof ChecksRoute
   '/close': typeof CloseRoute
   '/customers': typeof CustomersRoute
+  '/employees': typeof EmployeesRoute
   '/forecast': typeof ForecastRoute
   '/invoices': typeof InvoicesRoute
   '/ledger': typeof LedgerRoute
@@ -160,6 +168,7 @@ export interface FileRoutesById {
   '/checks': typeof ChecksRoute
   '/close': typeof CloseRoute
   '/customers': typeof CustomersRoute
+  '/employees': typeof EmployeesRoute
   '/forecast': typeof ForecastRoute
   '/invoices': typeof InvoicesRoute
   '/ledger': typeof LedgerRoute
@@ -181,6 +190,7 @@ export interface FileRouteTypes {
     | '/checks'
     | '/close'
     | '/customers'
+    | '/employees'
     | '/forecast'
     | '/invoices'
     | '/ledger'
@@ -200,6 +210,7 @@ export interface FileRouteTypes {
     | '/checks'
     | '/close'
     | '/customers'
+    | '/employees'
     | '/forecast'
     | '/invoices'
     | '/ledger'
@@ -219,6 +230,7 @@ export interface FileRouteTypes {
     | '/checks'
     | '/close'
     | '/customers'
+    | '/employees'
     | '/forecast'
     | '/invoices'
     | '/ledger'
@@ -239,6 +251,7 @@ export interface RootRouteChildren {
   ChecksRoute: typeof ChecksRoute
   CloseRoute: typeof CloseRoute
   CustomersRoute: typeof CustomersRoute
+  EmployeesRoute: typeof EmployeesRoute
   ForecastRoute: typeof ForecastRoute
   InvoicesRoute: typeof InvoicesRoute
   LedgerRoute: typeof LedgerRoute
@@ -300,6 +313,13 @@ declare module '@tanstack/react-router' {
       path: '/customers'
       fullPath: '/customers'
       preLoaderRoute: typeof CustomersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/employees': {
+      id: '/employees'
+      path: '/employees'
+      fullPath: '/employees'
+      preLoaderRoute: typeof EmployeesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/forecast': {
@@ -383,6 +403,7 @@ const rootRouteChildren: RootRouteChildren = {
   ChecksRoute: ChecksRoute,
   CloseRoute: CloseRoute,
   CustomersRoute: CustomersRoute,
+  EmployeesRoute: EmployeesRoute,
   ForecastRoute: ForecastRoute,
   InvoicesRoute: InvoicesRoute,
   LedgerRoute: LedgerRoute,

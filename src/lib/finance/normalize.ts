@@ -1,6 +1,6 @@
 import { DEFAULT_SETTINGS, normalizeRegisterCols, parseRecon } from "./types";
 import { parseMethod } from "./methods";
-import type { Account, AuditEvent, Bank, Bill, CheckRecord, CloseSnapshot, Customer, FinanceData, Invoice, JournalEntry, Receipt, ReconStatement, Vendor } from "./types";
+import type { Employee, PayType,  Account, AuditEvent, Bank, Bill, CheckRecord, CloseSnapshot, Customer, FinanceData, Invoice, JournalEntry, Receipt, ReconStatement, Vendor } from "./types";
 
 function asArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : [];
@@ -61,13 +61,28 @@ export function normalizeBooks(raw: unknown): FinanceData {
     createdAt: typeof j.createdAt === "number" ? j.createdAt : i,
   }));
   const nextNumbers = p.nextNumbers ?? { invoice: 1, check: {}, receipt: 1, bill: 1 };
+  const employees = asArray<Employee>((p as any).employees).map((e, i) => ({
+    ...e,
+    title: e.title ?? "",
+    email: e.email ?? "",
+    phone: e.phone ?? "",
+    payType: (e.payType === "hourly" ? "hourly" : "salary") as PayType,
+    rate: typeof e.rate === "number" ? e.rate : 0,
+    bankId: e.bankId ?? "",
+    hireDate: e.hireDate ?? "",
+    active: e.active !== false,
+    notes: e.notes ?? "",
+    sortOrder: typeof e.sortOrder === "number" ? e.sortOrder : i,
+  }));
   const banks = ensureSafekeeping(asArray<Bank>(p.banks), asArray<Account>(p.accounts));
+  const accounts = ensureOutputVat(banks.accounts);
   return {
     settings,
     banks: banks.banks,
-    accounts: banks.accounts,
+    accounts,
     customers,
     vendors,
+    employees,
     invoices,
     bills,
     receipts,
@@ -134,4 +149,13 @@ function ensureSafekeeping(banks: Bank[], accounts: Account[]): { banks: Bank[];
     banks: [...banks, SAFE_BANK],
     accounts: accounts.some((a) => a.id === SAFE_ACCOUNT.id) ? accounts : [...accounts, SAFE_ACCOUNT],
   };
+}
+
+
+function ensureOutputVat(accounts: Account[]): Account[] {
+  if (accounts.some((a) => a.code === "2200")) return accounts;
+  return [
+    ...accounts,
+    { id: "acct-2200", code: "2200", name: "Output VAT Payable", type: "liability", system: true },
+  ];
 }

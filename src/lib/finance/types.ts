@@ -371,12 +371,45 @@ export interface BudgetItem {
   accountId?: string;
 }
 
+export type PayType = "salary" | "hourly";
+
+export interface Employee {
+  id: string;
+  name: string;
+  title: string;
+  email: string;
+  phone: string;
+  payType: PayType;
+  /** Cents: monthly salary or hourly rate */
+  rate: number;
+  bankId: string;
+  hireDate: string;
+  active: boolean;
+  notes: string;
+  sortOrder: number;
+}
+
+export const EMPTY_EMPLOYEE: Omit<Employee, "id"> = {
+  name: "",
+  title: "",
+  email: "",
+  phone: "",
+  payType: "salary",
+  rate: 0,
+  bankId: "",
+  hireDate: "",
+  active: true,
+  notes: "",
+  sortOrder: 0,
+};
+
 export interface FinanceData {
   settings: Settings;
   banks: Bank[];
   accounts: Account[];
   customers: Customer[];
   vendors: Vendor[];
+  employees: Employee[];
   invoices: Invoice[];
   bills: Bill[];
   receipts: Receipt[];

@@ -77,11 +77,11 @@ function SettingsPage() {
   }, [activeId, data]);
 
   return (
-    <AppShell title="Settings" description="Company identity, appearance, currency, list order, backup, and storage for the books.">
+    <AppShell title="Options" description="Company profile, display, currency and tax, multi-company files, backups, and local storage. Changes apply to the open company unless noted.">
       <div className="workspace-split">
         <Card>
           <CardHeader>
-            <CardTitle>Company</CardTitle>
+            <CardTitle>Company profile</CardTitle>
             <CardDescription>Printed on invoices and the register for the company you are in.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
@@ -104,7 +104,7 @@ function SettingsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Appearance</CardTitle>
+            <CardTitle>Display</CardTitle>
             <CardDescription>Light or dark. Saved in this browser, not in the company file.</CardDescription>
           </CardHeader>
           <CardContent>
@@ -114,7 +114,7 @@ function SettingsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Companies</CardTitle>
+            <CardTitle>Company files</CardTitle>
             <CardDescription>
               Each company has its own banks and books. The Pacific Harbor sample can be removed — Reload sample brings it back.
             </CardDescription>
@@ -150,7 +150,7 @@ function SettingsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Money</CardTitle>
+            <CardTitle>Currency and tax</CardTitle>
             <CardDescription>One home currency for now. Multi-currency can slot in later without rewriting the ledger.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
@@ -213,7 +213,7 @@ function SettingsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Company file</CardTitle>
+            <CardTitle>Backup and restore</CardTitle>
             <CardDescription>
               This JSON is this company — banks, invoices, receipts, recon, close, and audit. There is no cloud; the
               file in this browser is the books. Save writes a copy on this device where the browser allows it;

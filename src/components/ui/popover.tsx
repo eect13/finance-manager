@@ -19,7 +19,7 @@ export function PopoverContent({
         align={align}
         sideOffset={sideOffset}
         className={cn(
-          "z-50 w-72 overflow-y-auto rounded-xl bg-popover p-3 text-popover-foreground elevation outline-none",
+          "z-[200] w-72 overflow-y-auto rounded-xl bg-popover p-3 text-popover-foreground elevation outline-none",
           className,
         )}
         {...props}

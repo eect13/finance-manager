@@ -332,21 +332,21 @@ export function createInvoice(data: FinanceData, input): FinanceData {
   if (status === "sent" && total > 0) {
     const ar = data.accounts.find((a) => a.code === "1200");
     const sales = data.accounts.find((a) => a.code === "4000");
+    const vat = data.accounts.find((a) => a.code === "2200");
     if (!ar || !sales) throw new Error("AR or income account missing");
+    const tax = total - sub;
+    const creditLines = tax > 0 && vat
+      ? [
+          { accountId: sales.id, debit: 0, credit: sub },
+          { accountId: vat.id, debit: 0, credit: tax },
+        ]
+      : [{ accountId: sales.id, debit: 0, credit: total }];
     const journal = makeJournal({
       date: input.date,
       description: `Invoice ${number} — ${customer.name}`,
       sourceType: "invoice",
       sourceId: id,
-      lines: [{
-        accountId: ar.id,
-        debit: total,
-        credit: 0
-      }, {
-        accountId: sales.id,
-        debit: 0,
-        credit: total
-      }]
+      lines: [{ accountId: ar.id, debit: total, credit: 0 }, ...creditLines],
     });
     journals.push(journal);
     journalId = journal.id;
@@ -540,6 +540,9 @@ export function createCashSale(data: FinanceData, input): FinanceData {
   if (amount <= 0) throw new Error("Amount must be greater than zero");
   const sales = data.accounts.find((a) => a.code === "4000");
   if (!sales) throw new Error("Income account missing");
+  const vat = data.accounts.find((a) => a.code === "2200");
+  const subSale = invoiceSubtotal(lines);
+  const taxSale = amount - subSale;
   const id = newId();
   const number = nextReceiptNumber(data, input.date);
   const receivedFrom = customer.name;
@@ -549,15 +552,15 @@ export function createCashSale(data: FinanceData, input): FinanceData {
     description: `${checkBit}Receipt ${number} — ${receivedFrom}`.trim(),
     sourceType: "receipt",
     sourceId: id,
-    lines: [{
-      accountId: bank.accountId,
-      debit: amount,
-      credit: 0
-    }, {
-      accountId: sales.id,
-      debit: 0,
-      credit: amount
-    }]
+    lines: [
+      { accountId: bank.accountId, debit: amount, credit: 0 },
+      ...(taxSale > 0 && vat
+        ? [
+            { accountId: sales.id, debit: 0, credit: subSale },
+            { accountId: vat.id, debit: 0, credit: taxSale },
+          ]
+        : [{ accountId: sales.id, debit: 0, credit: amount }]),
+    ]
   });
   const receipt = {
     id,
@@ -1868,3 +1871,95 @@ export function postDueRecurring(
   return { data: next, posted };
 }
 
+
+
+export function addEmployee(data: FinanceData, input): FinanceData {
+  const name = String(input.name ?? "").trim();
+  if (!name) throw new Error("Enter an employee name.");
+  const employee = {
+    id: newId(),
+    name,
+    title: String(input.title ?? "").trim(),
+    email: String(input.email ?? "").trim(),
+    phone: String(input.phone ?? "").trim(),
+    payType: input.payType === "hourly" ? "hourly" : "salary",
+    rate: Math.round(Number(input.rate) || 0),
+    bankId: String(input.bankId ?? ""),
+    hireDate: String(input.hireDate ?? ""),
+    active: input.active !== false,
+    notes: String(input.notes ?? ""),
+    sortOrder: (data.employees ?? []).length,
+  };
+  return { ...data, employees: [...(data.employees ?? []), employee] };
+}
+
+export function updateEmployee(data: FinanceData, id, patch): FinanceData {
+  if (!(data.employees ?? []).some((e) => e.id === id)) throw new Error("Employee not found");
+  return {
+    ...data,
+    employees: data.employees.map((e) => {
+      if (e.id !== id) return e;
+      return {
+        ...e,
+        ...patch,
+        name: patch.name !== undefined ? String(patch.name).trim() : e.name,
+        title: patch.title !== undefined ? String(patch.title).trim() : e.title,
+        email: patch.email !== undefined ? String(patch.email).trim() : e.email,
+        phone: patch.phone !== undefined ? String(patch.phone).trim() : e.phone,
+        payType: patch.payType === "hourly" || patch.payType === "salary" ? patch.payType : e.payType,
+        rate: patch.rate !== undefined ? Math.round(Number(patch.rate) || 0) : e.rate,
+        bankId: patch.bankId !== undefined ? String(patch.bankId) : e.bankId,
+        hireDate: patch.hireDate !== undefined ? String(patch.hireDate) : e.hireDate,
+        active: patch.active !== undefined ? Boolean(patch.active) : e.active,
+        notes: patch.notes !== undefined ? String(patch.notes) : e.notes,
+      };
+    }),
+  };
+}
+
+export function removeEmployee(data: FinanceData, id): FinanceData {
+  if (!(data.employees ?? []).some((e) => e.id === id)) throw new Error("Employee not found");
+  return { ...data, employees: data.employees.filter((e) => e.id !== id) };
+}
+
+export function payEmployee(data: FinanceData, input): FinanceData {
+  const employee = (data.employees ?? []).find((e) => e.id === input.employeeId);
+  if (!employee) throw new Error("Employee not found");
+  if (!employee.active) throw new Error("Employee is inactive.");
+  const bankId = input.bankId || employee.bankId;
+  const bank = data.banks.find((b) => b.id === bankId);
+  if (!bank) throw new Error("Pick a bank to pay from.");
+  const amount = Math.round(Number(input.amount) || 0);
+  if (amount <= 0) throw new Error("Enter a paycheck amount.");
+  const date = input.date || todayIso();
+  const payroll = data.accounts.find((a) => a.code === "5300") ?? data.accounts.find((a) => a.type === "expense");
+  if (!payroll) throw new Error("Payroll expense account missing.");
+  const nameKey = employee.name.trim().toLowerCase();
+  let working = data;
+  let vendor = working.vendors.find((v) => v.name.trim().toLowerCase() === nameKey);
+  if (!vendor) {
+    const vendorId = newId();
+    working = addVendor(working, {
+      id: vendorId,
+      name: employee.name.trim(),
+      contact: employee.name.trim(),
+      email: employee.email || "",
+      phone: employee.phone || "",
+      address: "",
+      terms: "Due on receipt",
+      notes: `Employee payee (${employee.id})`,
+      accountNumber: "",
+    });
+    vendor = working.vendors.find((v) => v.id === vendorId)!;
+  }
+  return issueCheck(working, {
+    bankId: bank.id,
+    vendorId: vendor.id,
+    payee: employee.name,
+    issueDate: date,
+    postDate: date,
+    amount,
+    memo: input.memo?.trim() || `Payroll — ${employee.title || "employee"}`,
+    accountId: payroll.id,
+  });
+}

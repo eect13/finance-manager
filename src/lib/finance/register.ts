@@ -225,7 +225,12 @@ export function cashBook(
   }
 
   for (const journal of data.journals) {
-    if (journal.sourceType !== "deposit" && journal.sourceType !== "expense" && journal.sourceType !== "transfer") {
+    if (
+      journal.sourceType !== "deposit" &&
+      journal.sourceType !== "expense" &&
+      journal.sourceType !== "transfer" &&
+      journal.sourceType !== "manual"
+    ) {
       continue;
     }
     for (const line of journal.lines) {
@@ -235,9 +240,11 @@ export function cashBook(
       const inbound = line.debit > 0;
       const amount = inbound ? line.debit : line.credit;
       const locked = journal.recon === "reconciled";
+      const kind: CashLineKind =
+        journal.sourceType === "manual" ? (inbound ? "deposit" : "expense") : (journal.sourceType as CashLineKind);
       accept(journal.date, true, inbound ? amount : -amount, () => ({
         id: `journal:${journal.id}:${lineBankId}`,
-        kind: journal.sourceType as CashLineKind,
+        kind,
         sourceId: journal.id,
         date: journal.date,
         number: "",

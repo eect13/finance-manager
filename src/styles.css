@@ -2729,3 +2729,36 @@ body.printing [data-radix-popper-content-wrapper]:has(.print-paper-menu) {
     transition-duration: 0.01ms !important;
   }
 }
+
+
+/* soft hover scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+*:hover,
+*:focus-within {
+  scrollbar-color: color-mix(in oklab, var(--color-foreground) 28%, transparent) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*:hover::-webkit-scrollbar-thumb,
+*:focus-within::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, var(--color-foreground) 28%, transparent);
+  background-clip: padding-box;
+}
+[data-radix-select-content],
+[data-radix-popper-content-wrapper] {
+  z-index: 200 !important;
+}

@@ -1,12 +1,22 @@
-# Finance Manager — bugs & improvements (v3.59)
+# Finance Manager — bugs & improvements (v3.60)
+
+## Fixed in v3.60
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| 1 | Med | DateInput chevron orphaned below bottom-left of every date field | Wrapper `relative w-full`; calendar button `absolute inset-y-0 right-0`; `.date-cal-pop` styles |
 
 ## Fixed in v3.59
+
 
 | # | Severity | Issue | Fix |
 | --- | --- | --- | --- |
 | 1 | Low | Undo/redo toasts were generic | Labels on history entries; toast and menu peek show the action |
-| 2 | Low–med | Tax setup was currency-only | Country tax packs + optional “Also update home currency” |
+| 2 | Low–med | Tax setup was currency-only | Country tax packs + optional “Also update home currency”; **No currency** (`__none__` → `""`) |
 | 3 | Med (env) | Android solo APK path fragile (JDK/NDK) | `pack-android.mjs` / `apk.bat`: JDK 17 preference, NDK resolve, symlink fallback, auto-sign |
+| 4 | Med | Android status bar overlapped header | `viewport-fit=cover` + `env(safe-area-inset-top)` on `.app-header-bar` (coarse-pointer fallback) |
+| 5 | Low | “Double-click” copy ignored touch | Treasury desk / lists: “Double-tap or double-click” |
+| 6 | Med | APK launcher showed wrong blue/yellow circles | Brand navy icons from `src-tauri/icons/android` synced into `gen/.../res` on each APK pack; Eric must rebuild APK |
 
 ## Fixed in v3.58 (code review)
 

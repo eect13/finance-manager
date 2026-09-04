@@ -60,6 +60,13 @@ apk.bat / npm run deploy:android run pack-android.mjs then tauri android build -
 First run inits src-tauri/gen/android and compiles Android Rust (slow).
 Ensure package.json has "tauri": "tauri" for Gradle rustBuild tasks.
 
+## Launcher icon (navy pillars)
+
+Home screen must show the navy cream-pillars brand tile, not the default blue and yellow circles.
+
+Rebuild: refresh icons, run the Android packer, uninstall the old app, then sideload the new release APK.
+The packer copies brand mipmaps into the generated Android res folder before assemble.
+
 ## Where the APK lands
 
 | Path | Role |

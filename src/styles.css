@@ -380,6 +380,7 @@ html {
     min-width: 0;
     max-width: 100%;
     overflow-x: auto;
+    overflow-y: clip;
     -webkit-overflow-scrolling: touch;
   }
 
@@ -2889,6 +2890,10 @@ body.printing [data-radix-popper-content-wrapper]:has(.print-paper-menu) {
 *::-webkit-scrollbar-track {
   background: transparent;
 }
+*::-webkit-scrollbar-corner {
+  background: transparent !important;
+  background-color: transparent !important;
+}
 *::-webkit-scrollbar-thumb {
   background: transparent;
   border-radius: 999px;
@@ -2980,4 +2985,17 @@ body.printing [data-radix-popper-content-wrapper]:has(.print-paper-menu) {
 }
 .date-cal-today:hover {
   filter: brightness(0.97);
+}
+
+/* Sonner: no ghost box when idle (was a light square bottom-right on mobile). */
+[data-sonner-toaster]:not(:has([data-sonner-toast])) {
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+[data-sonner-toaster]:empty {
+  pointer-events: none;
+  background: transparent;
 }

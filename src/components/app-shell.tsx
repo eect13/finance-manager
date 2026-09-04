@@ -370,7 +370,7 @@ export function AppShell({
         <main
           data-workspace-scroll
           className={cn(
-            "mx-auto w-full min-h-0 min-w-0 flex-1 overflow-x-auto overflow-y-auto px-3 py-4 sm:px-4 sm:py-6 md:px-8 md:py-8",
+            "mx-auto w-full min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-3 py-4 sm:px-4 sm:py-6 md:px-8 md:py-8",
             wide ? "max-w-none" : "max-w-6xl",
           )}
         >

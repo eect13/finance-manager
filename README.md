@@ -16,6 +16,7 @@ The app mark is a **navy tile with cream pillars** — a full opaque square (Win
 
 - **Display zoom** (Options → Display / Formatting): 75%–150% in 5% steps, device-local (`finance-manager-ui-zoom`). Scales whole chrome via CSS `zoom` / `--app-ui-zoom`; early boot before paint
 - Header **− / % / +** on phone / coarse pointer (next to theme). Pinch zoom allowed (viewport `maximum-scale=5, user-scalable=yes`)
+- Transparent `::-webkit-scrollbar-corner` (fixes Chromium white square at scrollpane bottom-right)
 - Mobile cut-offs: page actions / Customers & Vendors / party panes / Register post row scroll or stack instead of clipping; dialogs use safe-area max-height
 - Android WebView: packer patches MainActivity pinch zoom when gen exists (see deploy/android README)
 

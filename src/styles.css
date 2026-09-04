@@ -334,6 +334,14 @@
     padding-top: env(safe-area-inset-top, 0px);
   }
 
+  .app-sidebar {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  .sheet-close {
+    top: max(1rem, env(safe-area-inset-top, 0px));
+  }
+
   /*
    * Android WebView (Tauri + enableEdgeToEdge) often reports 0 for
    * safe-area-inset-* even with viewport-fit=cover. Use a status-bar-sized
@@ -342,6 +350,14 @@
   @media (hover: none) and (pointer: coarse) {
     .app-header-bar {
       padding-top: max(2.5rem, env(safe-area-inset-top, 0px));
+    }
+
+    .app-sidebar {
+      padding-top: max(2.5rem, env(safe-area-inset-top, 0px));
+    }
+
+    .sheet-close {
+      top: max(2.75rem, env(safe-area-inset-top, 0px));
     }
 
     .app-shell-loading {

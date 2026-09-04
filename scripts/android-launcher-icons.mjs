@@ -2,7 +2,7 @@
 /**
  * Regenerate Android adaptive / legacy launcher mipmaps with safe-zone padding.
  * Tauri `icon` fills the canvas edge-to-edge; OEM masks then crop the mark.
- * Mark is ~54% of adaptive FG (legacy ~62%) so home-screen tiles stay presentable.
+ * Mark is ~44% of adaptive FG (legacy ~54%) so OEM masks leave a calm navy frame.
  */
 import { mkdirSync, writeFileSync } from "node:fs";
 import { deflateSync } from "node:zlib";
@@ -96,11 +96,11 @@ const DENSITIES = {
 for (const [folder, sizes] of Object.entries(DENSITIES)) {
   const dir = join(OUT, folder);
   mkdirSync(dir, { recursive: true });
-  const fg = pngRGBA(sizes.foreground, sizes.foreground, drawMark(sizes.foreground, 0.54));
+  const fg = pngRGBA(sizes.foreground, sizes.foreground, drawMark(sizes.foreground, 0.44));
   writeFileSync(join(dir, "ic_launcher_foreground.png"), fg);
-  const full = pngRGBA(sizes.launcher, sizes.launcher, drawMark(sizes.launcher, 0.62));
+  const full = pngRGBA(sizes.launcher, sizes.launcher, drawMark(sizes.launcher, 0.54));
   writeFileSync(join(dir, "ic_launcher.png"), full);
   writeFileSync(join(dir, "ic_launcher_round.png"), full);
 }
 
-console.log("Android launcher icons: adaptive FG mark 54%, legacy 62% (safe zone).");
+console.log("Android launcher icons: adaptive FG mark 44%, legacy 54% (safe zone).");

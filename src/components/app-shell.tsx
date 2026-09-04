@@ -152,7 +152,7 @@ function SidebarBody({
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className={cn("flex items-center gap-2 px-3 py-4", rail && "justify-center px-2")}>
+      <div className={cn("app-sidebar-brand flex items-center gap-2 px-3 py-4", rail && "justify-center px-2")}>
         <AppMark className="size-9" title="Finance Manager" />
         {rail ? null : (
           <div className="min-w-0">
@@ -300,7 +300,7 @@ export function AppShell({
       <ThemeSync />
       <aside
         className={cn(
-          "no-print hidden h-full shrink-0 flex-col overflow-hidden border-r border-border bg-sidebar md:flex",
+          "app-sidebar no-print hidden h-full shrink-0 flex-col overflow-hidden border-r border-border bg-sidebar md:flex",
           rail ? "w-16" : "w-60",
         )}
       >

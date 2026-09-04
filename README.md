@@ -1,4 +1,4 @@
-# Finance Manager v3.62.1
+# Finance Manager v3.62.2
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -11,6 +11,12 @@ No accounts, no server setup. Books stay on this computer (IndexedDB). Settings 
 The app mark is a **navy tile with cream pillars** — a full opaque square (Windows 11 already rounds the tile; transparent corners were a white plate). Web uses the SVG favicon. Windows uses a **BMP 32-bit** `.ico` (PNG-in-ICO is a white square on the shortcut and the taskbar). After install, **delete any leftover blank shortcut** and pin the new one — Explorer caches the last icon.
 
 
+
+## What's new in v3.62.2
+
+- Permanent md+ sidebar and mobile sheet Close clear the Android status bar (safe-area inset + coarse fallback)
+- Sheet content top padding aligned with the Close control inset
+- Launcher icon zoomed out further (adaptive FG ~44%, legacy ~54%) for a calmer navy frame around the cream pillars
 
 ## What's new in v3.62.1
 

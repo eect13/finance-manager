@@ -190,7 +190,7 @@ function SidebarBody({
           )}
         >
           <Settings className="size-4 shrink-0" />
-          {rail ? null : "Settings"}
+          {rail ? null : "Options"}
         </Link>
       </div>
     </div>

@@ -1,6 +1,6 @@
-# Finance Manager v3.54
+# Finance Manager v3.56
 
-Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, and a **bank register**.
+Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
 Pacific Harbor Trading is the default **sample company** — a 2026 year of trading (rent, payroll, utilities, invoices, bills) plus extra trade so the file sits near **1,000 documents**. Payee is the customer or vendor name; memo is the reason (Ayala Land / Warehouse rent — never one string). Every payee is on file. Listed A–Z. Activity through late August is posted; later months sit pending. Create more companies from the name in the header or from Settings. **Remove sample** (Settings) deletes that file from this browser; **Restore last local copy** puts back the last automatic snapshot, and Reload sample brings the demo back. If it was the only company, a blank file takes its place.
 
@@ -10,6 +10,14 @@ No accounts, no server setup. Books stay on this computer (IndexedDB). Settings 
 
 The app mark is a **navy tile with cream pillars** — a full opaque square (Windows 11 already rounds the tile; transparent corners were a white plate). Web uses the SVG favicon. Windows uses a **BMP 32-bit** `.ico` (PNG-in-ICO is a white square on the shortcut and the taskbar). After install, **delete any leftover blank shortcut** and pin the new one — Explorer caches the last icon.
 
+
+
+## What’s new in v3.56
+
+- **Employees** roster with search, status/pay-type filters, column sort, and paycheck posting
+- Local calendar dates (Manila-safe), purge/register balance fix, In/Out window balance, Output VAT split
+- Register Post dropdowns stack above dialogs; softer hover scrollbars; Settings labeled **Options**
+- Company backup includes employees; Tauri package version aligned to 3.56
 
 ## Install and deploy
 
@@ -37,6 +45,10 @@ Lists (banks, register, receipts, checks, reports, reconcile) wrap actions and k
 
 ![Banks](docs/screenshots/banks.png)
 
+![Bank register](docs/screenshots/register.png)
+
+![Employees](docs/screenshots/employees.png)
+
 ![Reports aging](docs/screenshots/reports.png)
 
 ![Reconcile](docs/screenshots/reconcile.png)
@@ -55,7 +67,7 @@ Books do **not** follow you to another phone or laptop. Download a backup on one
 - Last balance in the strip is the end of **this window**, in document flow — it does not stick over search or filters. Desk is still the full cash position.
 - The bank tab you were on comes back after a refresh. Hidden columns and type size live in the company file; light/dark is a browser preference. Search, delete-unlock, and drag do not stick — those are easy to leave on by accident.
 - Switch banks with the tabs above the table — that is the book you are in
-- One search bar plus **Filters** (period, type, in/out, sort) and **View** (columns, type size, delete, drag). On a phone search is its own row, then In / Out / Last balance, then Move / Filters / View (swipe if they do not fit). Bank tabs stay one row and scroll sideways — Safekeeping does not wrap under Payroll. On a narrow screen the table keeps Date, No., Payee, Payment, Deposit, and Balance — Type, Memo, Bank, and Status hide so payee names are not clipped. Swipe the book for the rest, or turn columns back on from View on a wide screen. Dates drop the year when it is this year (`Sep 1`). The register is a list only — cards would break the running balance. **Every other table uses the same family:** click a header to sort, drag the column line to resize, double-click the line to auto-fit, search, and a **Filters** popover (Month / Year / All dates, type or status, sort). That includes invoices, bills, receipts, checks, banks, ledger, customer/vendor history, and reconcile. Tight lists keep **Status on the row** and put extra work in **⋯** (Collect + Print/Void/Delete on invoices; Pay on bills) so buttons never paint over Status. If the card is tighter than the columns, a thin scrollbar appears — no dark fade. **Move** (tick column) stays on the register only.
+- One search bar plus **Filters** (period, type, in/out, sort) and **View** (columns, type size, delete, drag). On a phone search is its own row, then In / Out / Last balance, then Move / Filters / View (swipe if they do not fit). Bank tabs stay one row and scroll sideways — Safekeeping does not wrap under Payroll. On a narrow screen the table keeps Date, No., Payee, Payment, Deposit, and Balance — Type, Memo, Bank, and Status hide so payee names are not clipped. Swipe the book for the rest, or turn columns back on from View on a wide screen. Dates drop the year when it is this year (`Sep 1`). The register is a list only — cards would break the running balance. **Every other table uses the same family:** click a header to sort, drag the column line to resize, double-click the line to auto-fit, search, and a **Filters** popover (Month / Year / All dates, type or status, sort). That includes invoices, bills, receipts, checks, employees, banks, ledger, customer/vendor history, and reconcile. Tight lists keep **Status on the row** and put extra work in **⋯** (Collect + Print/Void/Delete on invoices; Pay on bills) so buttons never paint over Status. If the card is tighter than the columns, a thin scrollbar appears — no dark fade. **Move** (tick column) stays on the register only.
 - **Post** sits next to Print. Type is a dropdown: Check, Cash sale, Receive payment, Transfer, Vendor pay, Deposit, Expense. **Last type sticks** (Check the first time). **Tab order is Date → Payee → Amount → Memo → Bank.** Date autofocuses. Date is a typeable combo (`08312026`, `08/31/26`, or `08/31/2026`). Click the chevron for a calendar. **T** = today, **+** / **−** bump a day. Last date sticks like Type. Enter posts. The button reads **Saved** for a beat, then the line clears and Date is ready again. Esc or Close leaves. Double-click a register line (check, cash sale, transfer, deposit, expense) opens **the same window** in Save mode. Receive payment and on-account receipts still use the allocation window. Bills stay bills.
 - **Issue check** and **Receive** in the header still open the full forms when you need line items or a printed check. On a phone those two plus Reconcile live in the menu — the register keeps Post, Print, and CSV.
 - The header sits on the page ground — no white bar. In / Out / Last balance is the same: ink on the page, not a card. Search and filters sit above the book without a second white well. The register table is the figure.
@@ -76,7 +88,7 @@ Books do **not** follow you to another phone or laptop. Download a backup on one
 - **Close** (Books): rec every live bank through the date, post recurring, trial balance in balance. Desk banner **Post rent** (or Post N due) writes every recurrence through month-end and rolls next dates — same as Settings → Recurring → Post. **Print the period pack** (TB, P&L by account for the month and YTD, AR/AP aging as of the date, each finished rec report, open customer statements) — that is the review. There is no aging checkbox. Close posts a **close journal**; those bank balances as of the close date are the **opening fact** for the next month’s register (the first row reads Closed through that date). Reopen is a dated audit event (type REOPEN), not a toggle.
 - **Reconcile**: beginning is the **last finished statement ending** (or bank opening). Tick what is on the paper — the tick column is always on this page (Move is only on the register). Outstanding checks and deposits in transit stay off the statement and prove the book. Proof is two boards: **Statement** (beginning, cleared in/out, cleared difference) and **Book** (book, outstanding, in transit, explained difference). Amounts stay on one line. **Cleared difference** and **explained difference** must both be **0**. Post a service charge or interest from this screen if the bank has a line the books do not — those freeze as adjustments on the rec document. **Last statement** prints the frozen rec (named outstanding, DIT, adjustments, 30/60/90). **Undo last** requires UNDO and is blocked inside a closed period. Register click only cycles Pending ↔ C. **R is Finish statement**, not a register click, and it survives a restore. Uncleared 90+ days is called out.
 - **Audit** on Close: who (this browser), what, old/new, timestamp. Export CSV. Merge writes both sides.
-- **Settings → Company file**: one JSON that **is** this company (recon, close, audit included). **Save company file** / Open. Open replaces this company or adds that file. There is no “download this company” and no “download all companies” — the local copy in this browser is first; Settings → **Save company file** is the off-device backup (header Export is spreadsheets only). After every successful save this browser also writes a **local copy** (IndexedDB, one slot per company, timestamped). **Restore last local copy** puts that snapshot back for the company you are in; if you removed the sample, that is how it returns without Reload sample. Settings → Storage shows IndexedDB vs fallback, whether the browser granted **persistent** storage (so it is less likely to evict the books), and usage. There is no cloud. Tables are flat: banks, customers, vendors, invoices, bills, receipts, checks, journals (lines stay on the journal), and the rest. Parties do not nest transactions. New ids are UUIDs.
+- **Settings → Company file**: one JSON that **is** this company (recon, close, audit included). **Save company file** / Open. Open replaces this company or adds that file. There is no “download this company” and no “download all companies” — the local copy in this browser is first; Settings → **Save company file** is the off-device backup (header Export is spreadsheets only). After every successful save this browser also writes a **local copy** (IndexedDB, one slot per company, timestamped). **Restore last local copy** puts that snapshot back for the company you are in; if you removed the sample, that is how it returns without Reload sample. Settings → Storage shows IndexedDB vs fallback, whether the browser granted **persistent** storage (so it is less likely to evict the books), and usage. There is no cloud. Tables are flat: banks, customers, vendors, employees, invoices, bills, receipts, checks, journals (lines stay on the journal), and the rest. Parties do not nest transactions. New ids are UUIDs.
 - **Settings → Recurring**: warehouse rent is due in the sample (1 Aug) so August cannot close until you post it.
 
 The register is still the book. These are how you close it.
@@ -145,7 +157,7 @@ A month is tens of rows. A year is the sample. **All dates** on screen is last c
 
 Reload the sample from Settings anytime, or **Remove sample** to drop it from this browser.
 
-The menu is a framed rail: it does not scroll with the books. **Settings** and **Collapse** stay pinned at the bottom. Only the workspace on the right scrolls. The register virtualizes against that pane so tens of thousands of lines still paint only what is on screen. Dialogs snap open with no fade.
+The menu is a framed rail: it does not scroll with the books. **Options** (Settings) and **Collapse** stay pinned at the bottom. Only the workspace on the right scrolls. The register virtualizes against that pane so tens of thousands of lines still paint only what is on screen. Dialogs snap open with no fade.
 
 ## Lists (invoices, bills, receipts, checks)
 
@@ -159,6 +171,16 @@ The same muscle memory as the register, without turning those pages into a secon
 
 Customers and Vendors are tens of rows — they are **not** virtualized. The lag killer for thousands of entries is still the register’s month window plus one rolled opening, not a 50,000-row invoice grid.
 
+
+## Employees
+
+**Employees** is a QuickBooks-style roster: name, title, pay type (salary / hourly), rate, default pay bank, hire date, and active/inactive.
+
+- Search the roster; filter **All / Active / Inactive** and **Any pay / Salary / Hourly**.
+- Click a column header to sort (name, title, rate, bank, status). Filters popover has the same sort shortcuts.
+- **Pay** posts a paycheck as a check from the chosen bank to Payroll expense — it lands in Register and Checks. (Thin payroll: no withholdings or YTD yet.)
+- Company backup / Save company file includes the employees table (file version 14).
+
 ## Customers and vendors
 
 **List** is a sortable, resizable directory (Name, Contact, Email, Phone, Open) — text titles centered, money titles over the figures, hairline resize, and double-click auto-fit as the register. On a phone the list keeps Name and Open. **Cards** is a contact grid. Filter **All / Open / Zero** lives in the **Filters** popover (Month / Year / All dates on history). The toggle sticks after a refresh. On a wide screen, click a row to select it; double-click or Enter opens Details. On a phone, **tap a name (or a card) to open its history**. Date / No. / Amount / Balance stay on screen in history.
@@ -167,6 +189,6 @@ In cards view, click the sort label to cycle **Name A–Z → Name Z–A → hig
 
 ## Elsewhere
 
-**Desk** is cash across banks, a 90-day sparkline, overdue invoices, and open bills. Forecast is the same path plus budget items. **Customers** and **Vendors** are QuickBooks-style centers (list + transactions). Click selects; double-click or Enter opens. **Ledger** and **Reports** are the books.
+**Desk** is cash across banks, a 90-day sparkline, overdue invoices, and open bills. Forecast is the same path plus budget items. **Employees**, **Customers**, and **Vendors** are QuickBooks-style centers (list + transactions). Click selects; double-click or Enter opens. **Ledger** and **Reports** are the books.
 
 Checks already **void** (the row and number stay, the amount goes to zero) as well as delete (unlocked in View, confirm DELETE). **Close** freezes the period once recs, recurring, and trial balance are clean.

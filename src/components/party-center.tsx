@@ -683,7 +683,7 @@ function PartyDirectoryCards({
               key={item.id}
               type="button"
               className={cn(
-                "min-h-11 rounded-2xl border border-border bg-card p-4 text-left",
+                "party-card-row min-h-11 rounded-2xl border border-border bg-card p-4 text-left",
                 on && "border-primary/40 bg-primary/10",
               )}
               onClick={() => onSelect(item.id)}

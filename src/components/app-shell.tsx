@@ -310,7 +310,7 @@ export function AppShell({
 
       <div className="app-workspace flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <header className="app-header-bar no-print min-w-0 shrink-0 overflow-x-auto">
-          <div className="flex items-center gap-1 px-3 py-2 sm:gap-3 md:px-8 md:py-3">
+          <div className="app-header-inner flex items-center gap-1 px-3 py-2 sm:gap-3 md:px-8 md:py-3">
             <Sheet open={open} onOpenChange={setOpen}>
               <SheetTrigger asChild>
                 <Button variant="outline" size="icon" className="shrink-0 md:hidden" aria-label="Open menu">
@@ -325,10 +325,10 @@ export function AppShell({
                 />
               </SheetContent>
             </Sheet>
-            <div className="min-w-0 flex-1 overflow-hidden">
+            <div className="app-header-company min-w-0 flex-1 overflow-hidden">
               <CompanySwitcher />
             </div>
-            <div className="flex min-w-0 shrink-0 items-center gap-1 sm:gap-2">
+            <div className="app-header-actions flex min-w-0 shrink-0 items-center gap-1 sm:gap-2">
               <div className="flex">
                 <Button
                   variant="outline"
@@ -376,7 +376,7 @@ export function AppShell({
         >
           <div
             className={cn(
-              "no-print flex flex-col gap-3",
+              "app-page-head no-print flex flex-col gap-3",
               compact ? "mb-3" : "mb-4 sm:mb-6",
               align === "center" ? "items-stretch text-left sm:items-center sm:text-center" : "sm:flex-row sm:items-end sm:justify-between",
             )}
@@ -384,8 +384,8 @@ export function AppShell({
             <div className="min-w-0">
               <h1
                 className={cn(
-                  "font-display font-medium tracking-tight",
-                  compact ? "text-xl sm:text-2xl md:text-3xl" : "text-2xl sm:text-3xl md:text-4xl",
+                  "app-page-title font-display font-medium tracking-tight",
+                  compact ? "app-page-title-compact text-xl sm:text-2xl md:text-3xl" : "text-2xl sm:text-3xl md:text-4xl",
                 )}
               >
                 {title}

@@ -45,7 +45,7 @@ export function CompanySwitcher() {
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className="flex min-h-11 min-w-0 max-w-full items-center gap-2 rounded-md px-1 text-left hover:bg-accent"
+            className="company-switcher-trigger flex min-h-11 min-w-0 max-w-full items-center gap-2 rounded-md px-1 text-left hover:bg-accent"
             aria-label="Switch company"
           >
             <span className="min-w-0 truncate text-sm font-medium">{name}</span>

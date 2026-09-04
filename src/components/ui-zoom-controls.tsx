@@ -28,7 +28,7 @@ export function DisplayZoomHeaderControl({ className }: { className?: string }) 
       </Button>
       <button
         type="button"
-        className="min-w-[2.75rem] px-0.5 text-center text-[11px] font-medium tabular-nums text-muted-foreground hover:text-foreground"
+        className="ui-zoom-pct min-w-[2.75rem] px-0.5 text-center text-[11px] font-medium tabular-nums text-muted-foreground hover:text-foreground"
         aria-label={`Display zoom ${percent} percent. Tap to reset`}
         title="Reset zoom"
         onClick={reset}

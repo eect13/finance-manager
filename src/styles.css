@@ -3040,3 +3040,150 @@ body.printing [data-radix-popper-content-wrapper]:has(.print-paper-menu) {
   }
 }
 
+/* v3.62.6 balanced mobile UI proportion polish
+   Direction: slightly denser lists, calmer header, professional ledger — not minimalist.
+   Coarse/phone only; desktop density unchanged. Keep ≥40px touch on critical controls.
+   Do not touch white-square scrollbar hide, zoom boot, or safe-area fallbacks above. */
+@media (max-width: 767px), ((hover: none) and (pointer: coarse)) {
+  /* —— Calmer header —— */
+  .app-header-inner {
+    gap: 0.35rem;
+    padding-inline: 0.65rem;
+    padding-block: 0.4rem;
+    flex-wrap: nowrap;
+    align-items: center;
+  }
+
+  .app-header-actions {
+    gap: 0.2rem;
+    min-width: 0;
+    /* Prefer scroll over clipping when chrome is tight */
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+  }
+
+  .app-header-actions::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Icon chrome ~40px (was 44) — still touch-friendly, less crowded */
+  .app-header-bar button.size-11,
+  .app-header-actions > button.size-11,
+  .app-header-actions [class*="size-11"] {
+    width: 2.5rem;
+    height: 2.5rem;
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+  }
+
+  /* Zoom −/%/+ should not dominate the action strip */
+  .ui-zoom-header {
+    transform: scale(0.92);
+    transform-origin: center right;
+  }
+
+  .ui-zoom-header button.size-9 {
+    width: 1.85rem;
+    height: 1.85rem;
+    min-width: 1.85rem;
+    min-height: 1.85rem;
+  }
+
+  .ui-zoom-header .ui-zoom-pct {
+    min-width: 2.15rem;
+    font-size: 10px;
+    letter-spacing: -0.02em;
+  }
+
+  /* Company name truncates sooner so actions stay visible */
+  .app-header-company {
+    max-width: min(46vw, 12.5rem);
+  }
+
+  .app-header-company .company-switcher-trigger {
+    max-width: 100%;
+    min-height: 2.5rem;
+    gap: 0.35rem;
+  }
+
+  /* —— Page titles: content starts sooner —— */
+  .app-page-title {
+    font-size: 1.35rem !important;
+    line-height: 1.25;
+  }
+
+  .app-page-title.app-page-title-compact {
+    font-size: 1.2rem !important;
+  }
+
+  .app-page-hint {
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    margin-top: 0.2rem;
+  }
+
+  main[data-workspace-scroll] {
+    padding-top: 0.85rem;
+    padding-bottom: 1rem;
+  }
+
+  .app-page-head {
+    margin-bottom: 0.75rem !important;
+    gap: 0.55rem !important;
+  }
+
+  /* —— Slightly denser lists / register (keep readable amounts) —— */
+  .list-grid thead th,
+  .list-grid tbody td,
+  .list-grid tfoot td {
+    padding-block: 0.5rem;
+    padding-inline: 0.7rem;
+  }
+
+  .register-matrix th,
+  .register-matrix td {
+    padding: 0.4rem 0.6rem;
+  }
+
+  .desk-row {
+    min-height: 2.5rem;
+    padding-block: 0.35rem;
+  }
+
+  /* Party / card lists */
+  .party-card-row,
+  a.party-card-row,
+  button.party-card-row {
+    min-height: 2.5rem;
+    padding: 0.7rem 0.85rem;
+  }
+
+  /* —— Sidebar sheet: tighter nav, keep Collapse/Options —— */
+  .app-sidebar nav.flex.flex-col,
+  .app-sidebar .sidebar-scroll {
+    gap: 1.1rem;
+    padding-top: 0.65rem;
+    padding-bottom: 0.65rem;
+  }
+
+  .app-sidebar nav .flex.flex-col.gap-1 {
+    gap: 0.1rem;
+  }
+
+  .app-sidebar nav a,
+  .app-sidebar-footer a,
+  .app-sidebar-footer button {
+    min-height: 2.5rem;
+  }
+
+  .app-sidebar-brand {
+    padding-block: 0.7rem;
+  }
+
+  .app-sidebar-footer {
+    padding-block: 0.55rem;
+  }
+}

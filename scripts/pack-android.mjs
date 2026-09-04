@@ -291,7 +291,12 @@ function walkApk(dir, acc = []) {
 
 function buildFrontend(env) {
   console.log("\nPacking Vite UI for Android assets…");
-  if (run(process.execPath, [join(ROOT, "scripts", "tauri-before-build.mjs")], env) !== 0) {
+  const feEnv = {
+    ...env,
+    // Force vite.config.ts isTauriBuild → static SPA (not Nitro website).
+    TAURI_ENV_PLATFORM: env.TAURI_ENV_PLATFORM || "android",
+  };
+  if (run(process.execPath, [join(ROOT, "scripts", "tauri-before-build.mjs")], feEnv) !== 0) {
     fail("Frontend (Vite) build failed.");
   }
   if (!existsSync(join(STATIC, "index.html"))) {

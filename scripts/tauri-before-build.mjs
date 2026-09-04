@@ -45,10 +45,19 @@ banner(
   "  Vite desktop bundle (not the website SSR build).\n",
 );
 
+// vite.config.ts switches to the SPA/static outDir only when a TAURI_* env is set.
+// pack-android.mjs and plain `node scripts/tauri-before-build.mjs` must set one,
+// or Vite runs the Nitro website build and never writes static/index.html.
+const tauriEnv = {
+  ...process.env,
+  TAURI_ENV_PLATFORM:
+    process.env.TAURI_ENV_PLATFORM || process.env.TAURI_PLATFORM || process.env.TAURI_ENV_FAMILY || "desktop",
+};
+
 const vite = spawnSync(
   process.execPath,
   [join(ROOT, "scripts", "with-app-env.mjs"), "vite", "build"],
-  { cwd: ROOT, stdio: "inherit", env: process.env },
+  { cwd: ROOT, stdio: "inherit", env: tauriEnv, windowsHide: true },
 );
 if ((vite.status ?? 1) !== 0) {
   fail("Vite desktop build failed.");
@@ -57,7 +66,8 @@ if ((vite.status ?? 1) !== 0) {
 const indexScript = spawnSync(process.execPath, [join(ROOT, "scripts", "ensure-tauri-index.mjs")], {
   cwd: ROOT,
   stdio: "inherit",
-  env: process.env,
+  env: tauriEnv,
+  windowsHide: true,
 });
 if ((indexScript.status ?? 1) !== 0) {
   fail("Could not write index.html for Tauri.");

@@ -3187,3 +3187,20 @@ body.printing [data-radix-popper-content-wrapper]:has(.print-paper-menu) {
     padding-block: 0.55rem;
   }
 }
+
+/* Phone nav sheet: always labeled, denser groups, no rail look. */
+.sheet-nav .flex.flex-col.gap-6 {
+  gap: 0.85rem;
+}
+@media (hover: none) and (pointer: coarse), (max-width: 767px) {
+  .sheet-nav {
+    width: min(17.5rem, 88vw) !important;
+  }
+  .sheet-nav nav a,
+  .sheet-nav nav button,
+  .sheet-nav .app-sidebar-footer a,
+  .sheet-nav .app-sidebar-footer button {
+    min-height: 2.5rem;
+  }
+}
+

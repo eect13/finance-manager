@@ -311,18 +311,21 @@ export function AppShell({
       <div className="app-workspace flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <header className="app-header-bar no-print min-w-0 shrink-0 overflow-x-auto">
           <div className="app-header-inner flex items-center gap-1 px-3 py-2 sm:gap-3 md:px-8 md:py-3">
-            <Sheet open={open} onOpenChange={setOpen}>
+            <Sheet
+              open={open}
+              onOpenChange={(next) => {
+                setOpen(next);
+                if (next) setRail(false);
+              }}
+            >
               <SheetTrigger asChild>
                 <Button variant="outline" size="icon" className="shrink-0 md:hidden" aria-label="Open menu">
                   <Menu />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left">
-                <SidebarBody
-                  rail={rail}
-                  onToggleRail={toggleRail}
-                  onNavigate={() => setOpen(false)}
-                />
+              <SheetContent side="left" className="sheet-nav">
+                {/* Phone sheet must stay labeled — never pass rail (Collapse is md-sidebar only). */}
+                <SidebarBody onNavigate={() => setOpen(false)} />
               </SheetContent>
             </Sheet>
             <div className="app-header-company min-w-0 flex-1 overflow-hidden">

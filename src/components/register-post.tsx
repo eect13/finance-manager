@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { ConfirmDelete } from "@/components/confirm-delete";
 import { CustomerPayment } from "@/components/customer-payment";
 import { DateInput } from "@/components/date-input";
 import { Field } from "@/components/field";
@@ -154,6 +155,7 @@ function PostDialog({
   const updateCheck = useFinanceStore((s) => s.updateCheck);
   const updateReceipt = useFinanceStore((s) => s.updateReceipt);
   const updateJournalEntry = useFinanceStore((s) => s.updateJournalEntry);
+  const removeCashLines = useFinanceStore((s) => s.removeCashLines);
   const banks = data.banks.filter((b) => !b.archived);
   const expenseAccounts = data.accounts.filter((a) => a.type === "expense");
   const expenseDefault = data.accounts.find((a) => a.code === "5900") ?? expenseAccounts[0];
@@ -164,6 +166,7 @@ function PostDialog({
   const flashRef = useRef(0);
   const focusDateAfterSave = useRef(false);
   const [posted, setPosted] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const [kind, setKind] = useState<PostKind>(readLastKind);
   const [payee, setPayee] = useState("");
@@ -182,6 +185,11 @@ function PostDialog({
 
   const editing = Boolean(edit);
   const locked = edit?.recon === "reconciled";
+  const canDelete = Boolean(edit && edit.kind !== "opening" && edit.sourceId && edit.recon !== "reconciled");
+
+  useEffect(() => {
+    if (!open) setConfirmDelete(false);
+  }, [open]);
 
   useEffect(() => {
     if (fallbackBank && !edit) setBankId(fallbackBank);
@@ -500,6 +508,7 @@ function PostDialog({
   const receive = kind === "receive";
 
   return (
+    <>
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent className={receive ? "max-w-3xl max-h-[90vh] overflow-y-auto" : "max-w-lg"}>
         {receive ? (
@@ -538,7 +547,9 @@ function PostDialog({
               <DialogTitle>{editing ? "Edit" : "Post"}</DialogTitle>
               <DialogDescription>
                 {editing
-                  ? "Same window as Post. Save writes this line."
+                  ? locked
+                    ? "On a finished statement. Save and delete stay blocked until you undo that rec."
+                    : "Same window as Post. Save writes this line. Delete removes it from the books."
                   : "Date, payee, amount, memo, bank. Type remembers the last one. Enter posts — the window stays open."}
               </DialogDescription>
             </DialogHeader>
@@ -741,7 +752,18 @@ function PostDialog({
               ) : null}
             </div>
             </fieldset>
-            <DialogFooter>
+            <DialogFooter className={canDelete ? "sm:justify-between" : undefined}>
+              {canDelete ? (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  className="sm:mr-auto"
+                  disabled={posted}
+                  onClick={() => setConfirmDelete(true)}
+                >
+                  Delete
+                </Button>
+              ) : null}
               <Button type="button" variant="outline" onClick={onClose} disabled={posted}>
                 Close
               </Button>
@@ -755,5 +777,28 @@ function PostDialog({
         )}
       </DialogContent>
     </Dialog>
+    <ConfirmDelete
+      open={confirmDelete}
+      title="Delete this entry?"
+      body="Permanently removes this line from the books."
+      confirmLabel="Delete"
+      onClose={() => setConfirmDelete(false)}
+      onConfirm={() => {
+        if (!edit?.sourceId) {
+          setConfirmDelete(false);
+          return;
+        }
+        try {
+          removeCashLines([{ kind: edit.kind, sourceId: edit.sourceId }]);
+          toast.success("Entry deleted.");
+          setConfirmDelete(false);
+          onClose();
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : "Could not delete.");
+          setConfirmDelete(false);
+        }
+      }}
+    />
+    </>
   );
 }

@@ -228,7 +228,7 @@ export function DateInput({
               data-date-cal=""
               role="dialog"
               aria-label="Choose date"
-              style={{ top: box.top, left: box.left, width: box.width }}
+              style={{ top: box.top, left: box.left, width: box.width, zIndex: 5000 }}
             >
               <DateCal value={value} onPick={pick} />
             </div>,

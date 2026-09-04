@@ -72,28 +72,30 @@ function ClosePage() {
     >
       <PeriodPackPrint data={data} through={through} snapshot={snapshot} />
 
-      <div className="close-meta mb-4">
-        <div>
-          <p className="mb-1 text-xs text-muted-foreground">Close through</p>
-          <DateInput value={through} onChange={setThrough} />
-        </div>
-        <div>
-          <p className="eyebrow">Open AR</p>
-          <p className="stat-value">
-            <Money amount={totals.ar} currency={data.settings.currency} />
-          </p>
-        </div>
-        <div>
-          <p className="eyebrow">Open AP</p>
-          <p className="stat-value">
-            <Money amount={totals.ap} currency={data.settings.currency} />
-          </p>
-        </div>
-        <div>
-          <p className="eyebrow">Trial balance</p>
-          <p className={cn("stat-value", totals.tbDebit === totals.tbCredit ? "text-credit" : "text-debit")}>
-            {totals.tbDebit === totals.tbCredit ? "In balance" : "Out of balance"}
-          </p>
+      <div className="close-sticky mb-4">
+        <div className="close-meta">
+          <div>
+            <p className="mb-1 text-xs text-muted-foreground">Close through</p>
+            <DateInput value={through} onChange={setThrough} />
+          </div>
+          <div>
+            <p className="eyebrow">Open AR</p>
+            <p className="stat-value">
+              <Money amount={totals.ar} currency={data.settings.currency} />
+            </p>
+          </div>
+          <div>
+            <p className="eyebrow">Open AP</p>
+            <p className="stat-value">
+              <Money amount={totals.ap} currency={data.settings.currency} />
+            </p>
+          </div>
+          <div>
+            <p className="eyebrow">Trial balance</p>
+            <p className={cn("stat-value", totals.tbDebit === totals.tbCredit ? "text-credit" : "text-debit")}>
+              {totals.tbDebit === totals.tbCredit ? "In balance" : "Out of balance"}
+            </p>
+          </div>
         </div>
       </div>
 

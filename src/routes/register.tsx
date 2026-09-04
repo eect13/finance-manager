@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { ArrowLeftRight, Printer, SlidersHorizontal } from "lucide-react";
+import { Printer, SlidersHorizontal } from "lucide-react";
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type DragEvent, type MutableRefObject } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
@@ -147,11 +147,9 @@ function RegisterPage() {
   const [overDate, setOverDate] = useState<string | null>(null);
   const [overRow, setOverRow] = useState<string | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
-  const [selectOn, setSelectOn] = useState(false);
   const [confirm, setConfirm] = useState<"all" | "selected" | null>(null);
   const [editLine, setEditLine] = useState<CashLine | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [allowDelete, setAllowDelete] = useState(false);
   const [colWidths, setColWidths] = useState<ColWidths>(DEFAULT_COL_WIDTHS);
   const [needFit, setNeedFit] = useState(false);
   const fontSize = data.settings.registerFontSize ?? 12;
@@ -269,7 +267,7 @@ function RegisterPage() {
   keepIdsRef.current = keepIds;
   const selectedIds = useMemo(() => selected.filter((id) => keepIds.has(id)), [selected, keepIds]);
   const selectedOn = useMemo(() => new Set(selectedIds), [selectedIds]);
-  const allOn = movable.length > 0 && movable.every((l) => selectedOn.has(l.id));
+  const allOn = keepIds.size > 0 && [...keepIds].every((id) => selectedOn.has(id));
   const someOn = selectedIds.length > 0 && !allOn;
   const openingRow = useMemo(() => balanced.find((l) => l.kind === "opening"), [balanced]);
   const dataRows = useMemo(() => balanced.filter((l) => l.kind !== "opening"), [balanced]);
@@ -312,19 +310,6 @@ function RegisterPage() {
     if (bankFilter === "all") return;
     if (!data.banks.some((b) => !b.archived && b.id === bankFilter)) setBankFilter("all");
   }, [bankFilter, data.banks]);
-
-  useEffect(() => {
-    if (!selectOn) return;
-    const idx = displayRef.current.findIndex((l) => l.reassignable);
-    if (idx < 0) {
-      toast.error("Nothing in this view can move. Undo a rec, or pick a later month.");
-      return;
-    }
-    if (idx > 8) {
-      scrollToRow.current(idx);
-      toast.message("Finished-statement (R) lines stay locked. Showing the first line you can move.");
-    }
-  }, [selectOn]);
 
   const moveLine = useCallback(
     (line: CashLine, date: string) => {
@@ -370,14 +355,14 @@ function RegisterPage() {
 
   const toggleOne = useCallback((id: string) => {
     if (!keepIdsRef.current.has(id)) {
-      toast.error("On a finished statement. Undo that rec to move this line.");
+      toast.error("On a finished statement. Undo that rec to change this line.");
       return;
     }
     setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   }, []);
 
   function toggleAll(on: boolean) {
-    setSelected(on ? movable.map((l) => l.id) : []);
+    setSelected(on ? [...keepIds] : []);
   }
 
   const handleOpen = useCallback((line: CashLine) => {
@@ -450,18 +435,14 @@ function RegisterPage() {
         handleOpen(row);
         return;
       }
-      if (e.key === " " && selectOn) {
+      if (e.key === " ") {
         e.preventDefault();
-        if (row.reassignable) {
-          toggleOne(row.id);
-          return;
-        }
-        if (row.recon === "reconciled") toast.error("On a finished statement. Undo that rec to move this line.");
+        toggleOne(row.id);
       }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [editLine, display, activeId, handleOpen, toggleOne, selectOn]);
+  }, [editLine, display, activeId, handleOpen, toggleOne]);
 
   const handleDragStart = useCallback((id: string) => setDragging(id), []);
   const handleDragEnd = useCallback(() => {
@@ -490,7 +471,6 @@ function RegisterPage() {
       removeCashLines(targets(ids));
       toast.success(ids.length === 1 ? "Entry deleted." : `${ids.length} entries deleted.`);
       setSelected([]);
-      setAllowDelete(false);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not delete.");
     } finally {
@@ -561,22 +541,6 @@ function RegisterPage() {
           className="register-toolbar-search h-11 min-h-11"
         />
         <div className="register-toolbar-actions">
-          <Button
-            type="button"
-            variant={selectOn ? "default" : "outline"}
-            className="h-11 min-h-11"
-            aria-pressed={selectOn}
-            aria-label={selectOn ? "Hide move checkboxes" : "Show move checkboxes"}
-            onClick={() => {
-              setSelectOn((on) => {
-                if (on) setSelected([]);
-                return !on;
-              });
-            }}
-          >
-            <ArrowLeftRight />
-            Move
-          </Button>
           <RegisterFilters
             typeFilter={typeFilter}
             direction={direction}
@@ -607,12 +571,10 @@ function RegisterPage() {
           />
           <ViewOptions
             fontSize={fontSize}
-            allowDelete={allowDelete}
             dragOn={dragOn}
             cols={cols}
             hiddenCount={REGISTER_COLS.filter((col) => !cols[col.id]).length}
             onFontSize={(n) => updateSettings({ registerFontSize: n })}
-            onAllowDelete={setAllowDelete}
             onDragOn={setDragOn}
             onToggleCol={(id) => setRegisterCols((current) => toggleRegisterCol(current, id))}
             onShowAllCols={() => setRegisterCols(() => ({ ...DEFAULT_REGISTER_COLS }))}
@@ -622,16 +584,11 @@ function RegisterPage() {
       </div>
 
       <p className="mb-3 text-center text-xs text-muted-foreground no-print">
-        {movable.length} {movable.length === 1 ? "entry" : "entries"}
+        {dataRows.length} {dataRows.length === 1 ? "entry" : "entries"}
         {searching ? " match these filters" : ""}
-        {selectOn
-          ? selectedIds.length
-            ? ` · ${selectedIds.length} selected`
-            : movable.length
-              ? " · tick a check, sale, receipt, or transfer — R stays locked"
-              : " · nothing unlocked to move — undo Rec or pick a later month"
-          : ""}
-        {allowDelete ? " · delete unlocked" : ""}
+        {selectedIds.length
+          ? ` · ${selectedIds.length} selected`
+          : " · tick to delete or reassign bank — finished statements stay locked"}
       </p>
 
       <div className="register-bank-tabs no-print mb-3 min-w-0" role="tablist" aria-label="Bank">
@@ -683,8 +640,7 @@ function RegisterPage() {
           needFit={needFit}
           lastBalance={display.at(-1)?.balance ?? ending}
           selected={selectedOn}
-          selectOn={selectOn}
-          hasMovable={movable.length > 0}
+          hasSelectable={keepIds.size > 0}
           allOn={allOn}
           someOn={someOn}
           dragOn={dragOn}
@@ -732,11 +688,9 @@ function RegisterPage() {
               <Button size="sm" variant="ghost" onClick={() => setSelected([])}>
                 Clear
               </Button>
-              {allowDelete ? (
-                <Button size="sm" variant="destructive" onClick={() => setConfirm("selected")}>
-                  Delete
-                </Button>
-              ) : null}
+              <Button size="sm" variant="destructive" onClick={() => setConfirm("selected")}>
+                Delete
+              </Button>
             </div>
           </div>
         </div>
@@ -835,23 +789,19 @@ function RegisterFilters({
 
 function ViewOptions({
   fontSize,
-  allowDelete,
   dragOn,
   cols,
   hiddenCount,
   onFontSize,
-  onAllowDelete,
   onDragOn,
   onToggleCol,
   onShowAllCols,
 }: {
   fontSize: number;
-  allowDelete: boolean;
   dragOn: boolean;
   cols: RegisterCols;
   hiddenCount: number;
   onFontSize: (n: number) => void;
-  onAllowDelete: (on: boolean) => void;
   onDragOn: (on: boolean) => void;
   onToggleCol: (id: RegisterColId) => void;
   onShowAllCols: () => void;
@@ -884,12 +834,6 @@ function ViewOptions({
             onChange={(e) => onFontSize(Number(e.target.value))}
           />
         </label>
-        <div className="flex min-h-10 items-center justify-between gap-3">
-          <Label htmlFor="allow-delete" className="text-sm">
-            Allow delete
-          </Label>
-          <Switch id="allow-delete" checked={allowDelete} onCheckedChange={onAllowDelete} />
-        </div>
         <div className="flex min-h-10 items-center justify-between gap-3">
           <Label htmlFor="drag-dates" className="text-sm">
             Drag rows
@@ -960,8 +904,7 @@ function RegisterTable({
   needFit,
   lastBalance,
   selected,
-  selectOn,
-  hasMovable,
+  hasSelectable,
   allOn,
   someOn,
   dragOn,
@@ -994,8 +937,7 @@ function RegisterTable({
   needFit: boolean;
   lastBalance: number;
   selected: Set<string>;
-  selectOn: boolean;
-  hasMovable: boolean;
+  hasSelectable: boolean;
   allOn: boolean;
   someOn: boolean;
   dragOn: boolean;
@@ -1090,7 +1032,7 @@ function RegisterTable({
   const padBottom = last ? Math.max(0, virtualizer.getTotalSize() - last.end) : 0;
   const hidden = REGISTER_COLS.filter((col) => !cols[col.id]);
   const tableWidth =
-    (selectOn ? colWidths.check : 0) + REGISTER_COLS.reduce((sum, col) => sum + (cols[col.id] ? colWidths[col.id] : 0), 0);
+    colWidths.check + REGISTER_COLS.reduce((sum, col) => sum + (cols[col.id] ? colWidths[col.id] : 0), 0);
   const firstLabel = REGISTER_COLS.find(
     (col) => cols[col.id] && col.id !== "payment" && col.id !== "deposit" && col.id !== "balance",
   )?.id;
@@ -1127,7 +1069,7 @@ function RegisterTable({
     <div className="register-card list-card">
       <div
         ref={wrapRef}
-        className={cn("list-grid register-matrix min-w-0", !selectOn && "hide-check", hidden.map((col) => `hide-${col.id}`))}
+        className={cn("list-grid register-matrix min-w-0", hidden.map((col) => `hide-${col.id}`))}
         {...Object.fromEntries(hidden.map((col) => [`data-hide-${col.id}`, "true"]))}
       >
         <table style={{ width: "100%", minWidth: tableWidth }}>
@@ -1158,10 +1100,10 @@ function RegisterTable({
                   <ShopTick
                     checked={allOn}
                     indeterminate={someOn}
-                    locked={!hasMovable}
+                    locked={!hasSelectable}
                     onChange={(on) => {
-                      if (!hasMovable) {
-                        toast.error("On a finished statement. Undo that rec to move this line.");
+                      if (!hasSelectable) {
+                        toast.error("On a finished statement. Undo that rec to change this line.");
                         return;
                       }
                       onToggleAll(on);
@@ -1464,7 +1406,7 @@ const RegisterRow = memo(
             <span className="register-check-cell">
               <ShopTick
                 checked={isOn}
-                locked={locked || !line.reassignable}
+                locked={locked}
                 onChange={() => onToggle(line.id)}
                 label={`Select ${line.party}`}
               />

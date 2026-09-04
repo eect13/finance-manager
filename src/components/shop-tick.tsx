@@ -25,7 +25,7 @@ export function ShopTick({
       aria-checked={indeterminate ? "mixed" : checked}
       aria-disabled={locked || undefined}
       aria-label={label}
-      title={locked ? "On a finished statement. Undo that rec to move this line." : undefined}
+      title={locked ? "On a finished statement. Undo that rec to change this line." : undefined}
       onPointerDown={stop}
       onMouseDown={stop}
       onClick={(e) => {

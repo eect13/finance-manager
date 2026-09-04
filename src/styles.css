@@ -211,6 +211,16 @@
     grid-template-columns: 1fr;
   }
 
+  .close-sticky {
+    position: sticky;
+    top: 0;
+    z-index: 4;
+    margin-inline: -0.75rem;
+    padding: 0.65rem 0.75rem 0.85rem;
+    background: var(--color-background);
+    box-shadow: 0 1px 0 color-mix(in oklab, var(--color-foreground) 8%, transparent);
+  }
+
   .proof-board {
     display: grid;
     gap: 0.75rem;
@@ -1064,6 +1074,11 @@
 
     .workspace-split {
       grid-template-columns: 1fr 1fr;
+    }
+
+    .close-meta {
+      grid-template-columns: minmax(11rem, 1.2fr) repeat(3, minmax(0, 1fr));
+      align-items: end;
     }
   }
 
@@ -2773,15 +2788,19 @@ body.printing [data-radix-popper-content-wrapper]:has(.print-paper-menu) {
 }
 
 
-/* DateInput calendar popover (portaled) */
+/* DateInput calendar popover (portaled to body). Stay above sticky page chrome
+   (close-sticky z-4, app header z-20) and dialogs (z-50/60). */
 .date-cal-pop {
   position: fixed;
-  z-index: 1000;
+  z-index: 5000;
+  isolation: isolate;
   border-radius: 0.75rem;
-  border: 1px solid hsl(var(--border));
-  background: hsl(var(--popover));
-  color: hsl(var(--popover-foreground));
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+  border: 1px solid var(--color-border);
+  background: var(--color-popover);
+  color: var(--color-popover-foreground);
+  box-shadow:
+    0px 0px 0px 1px rgb(26 25 22 / 0.08),
+    0px 12px 40px rgb(26 25 22 / 0.18);
   padding: 0.75rem;
 }
 .date-cal-head {
@@ -2801,7 +2820,7 @@ body.printing [data-radix-popper-content-wrapper]:has(.print-paper-menu) {
   border-radius: 0.5rem;
 }
 .date-cal-head button:hover {
-  background: hsl(var(--muted));
+  background: var(--color-muted);
 }
 .date-cal-week,
 .date-cal-grid {
@@ -2813,7 +2832,7 @@ body.printing [data-radix-popper-content-wrapper]:has(.print-paper-menu) {
 .date-cal-week {
   margin-bottom: 0.25rem;
   font-size: 0.7rem;
-  color: hsl(var(--muted-foreground));
+  color: var(--color-muted-foreground);
 }
 .date-cal-grid button {
   aspect-ratio: 1;
@@ -2821,17 +2840,17 @@ body.printing [data-radix-popper-content-wrapper]:has(.print-paper-menu) {
   font-size: 0.85rem;
 }
 .date-cal-grid button:hover {
-  background: hsl(var(--muted));
+  background: var(--color-muted);
 }
 .date-cal-grid button[data-outside="true"] {
   opacity: 0.35;
 }
 .date-cal-grid button[data-today="true"] {
-  box-shadow: inset 0 0 0 1px hsl(var(--border));
+  box-shadow: inset 0 0 0 1px var(--color-border);
 }
 .date-cal-grid button[data-selected="true"] {
-  background: hsl(var(--primary));
-  color: hsl(var(--primary-foreground));
+  background: var(--color-primary);
+  color: var(--color-primary-foreground);
 }
 .date-cal-today {
   margin-top: 0.5rem;
@@ -2839,7 +2858,7 @@ body.printing [data-radix-popper-content-wrapper]:has(.print-paper-menu) {
   border-radius: 0.5rem;
   padding: 0.4rem;
   font-size: 0.85rem;
-  background: hsl(var(--muted));
+  background: var(--color-muted);
 }
 .date-cal-today:hover {
   filter: brightness(0.97);

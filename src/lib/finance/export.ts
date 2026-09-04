@@ -217,7 +217,7 @@ export function cashRegisterRows(data: FinanceData, bankId?: string): Array<Reco
 
 export const WORKSPACE_BACKUP_KIND = "finance-manager-backup";
 export const COMPANY_FILE_KIND = "finance-manager-company";
-export const COMPANY_FILE_VERSION = 13;
+export const COMPANY_FILE_VERSION = 14;
 
 /** Flat tables in a company file. Parties do not nest transactions. Journal `lines` stay on the journal (two legs, one document). New ids are UUIDs. */
 export const BOOKS_TABLES = [
@@ -226,6 +226,7 @@ export const BOOKS_TABLES = [
   "accounts",
   "customers",
   "vendors",
+  "employees",
   "invoices",
   "bills",
   "receipts",
@@ -246,6 +247,7 @@ function companyBooksObject(data: FinanceData) {
     accounts: data.accounts,
     customers: data.customers,
     vendors: data.vendors,
+    employees: data.employees ?? [],
     invoices: data.invoices,
     bills: data.bills,
     receipts: data.receipts,

@@ -103,7 +103,8 @@ export function invoiceTotal(data: FinanceData, invoiceId: string): number {
   const invoice = data.invoices.find((i) => i.id === invoiceId);
   if (!invoice) return 0;
   const sub = invoiceSubtotal(invoice.lines);
-  return sub + invoiceTax(sub, invoice.taxRate, data.settings.taxEnabled);
+  // Tax follows the rate stored on the invoice (set at post/edit), not the live Settings toggle.
+  return sub + invoiceTax(sub, invoice.taxRate, invoice.taxRate > 0);
 }
 
 export function invoicePaid(invoice: { payments: { amount: number }[] }): number {

@@ -190,6 +190,9 @@ export function updateVendor(data: FinanceData, id, patch): FinanceData {
 }
 export function removeVendor(data: FinanceData, id): FinanceData {
   if (data.bills.some((b) => b.vendorId === id && b.status !== "void")) throw new Error("This vendor has bills. Keep the record for the books.");
+  if (data.checks.some((c) => c.vendorId === id && c.status !== "voided" && c.status !== "bounced")) {
+    throw new Error("This vendor has checks. Keep the record for the books.");
+  }
   return {
     ...data,
     vendors: data.vendors.filter((v) => v.id !== id)
@@ -325,7 +328,7 @@ export function createInvoice(data: FinanceData, input): FinanceData {
   const number = `INV-${input.date.slice(0, 4)}-${String(data.nextNumbers.invoice).padStart(3, "0")}`;
   const taxRate = input.taxRate ?? (data.settings.taxEnabled ? data.settings.defaultTaxRate : 0);
   const sub = invoiceSubtotal(lines);
-  const total = sub + invoiceTax(sub, taxRate, data.settings.taxEnabled);
+  const total = sub + invoiceTax(sub, taxRate, taxRate > 0);
   const status = input.status ?? "sent";
   let journalId;
   const journals = [...data.journals];
@@ -536,7 +539,7 @@ export function createCashSale(data: FinanceData, input): FinanceData {
   }));
   if (lines.length === 0) throw new Error("Add at least one line");
   const taxRate = input.taxRate ?? (data.settings.taxEnabled ? data.settings.defaultTaxRate : 0);
-  const amount = receiptTotal(lines, taxRate, data.settings.taxEnabled);
+  const amount = receiptTotal(lines, taxRate, taxRate > 0);
   if (amount <= 0) throw new Error("Amount must be greater than zero");
   const sales = data.accounts.find((a) => a.code === "4000");
   if (!sales) throw new Error("Income account missing");
@@ -1224,17 +1227,46 @@ export function updateInvoiceRecord(data: FinanceData, id, patch): FinanceData {
   }
   const taxRate = patch.taxRate ?? invoice.taxRate;
   const sub = invoiceSubtotal(lines);
-  const total = sub + invoiceTax(sub, taxRate, data.settings.taxEnabled);
+  // Keep tax when the invoice carries a rate (historical); Settings only seeds new invoices.
+  const total = sub + invoiceTax(sub, taxRate, taxRate > 0);
   const paid = invoice.payments.reduce((s, p) => s + p.amount, 0);
   if (total < paid) throw new Error("Total cannot be less than already paid.");
   const status = invoice.status === "draft" ? "draft" : paid <= 0 ? "sent" : paid >= total ? "paid" : "partial";
   const customer = data.customers.find((c) => c.id === invoice.customerId);
   let next = data;
-  if (invoice.journalId) next = patchJournalAmount(next, invoice.journalId, {
-    date,
-    description: `Invoice ${invoice.number} — ${customer?.name ?? ""}`.trim(),
-    amount: total
-  });
+  if (invoice.journalId) {
+    const ar = next.accounts.find((a) => a.code === "1200");
+    const sales = next.accounts.find((a) => a.code === "4000");
+    const vat = next.accounts.find((a) => a.code === "2200");
+    if (!ar || !sales) throw new Error("AR or income account missing");
+    const tax = total - sub;
+    const creditLines = tax > 0 && vat
+      ? [
+          { id: newId(), accountId: sales.id, debit: 0, credit: sub, memo: "" },
+          { id: newId(), accountId: vat.id, debit: 0, credit: tax, memo: "" },
+        ]
+      : [{ id: newId(), accountId: sales.id, debit: 0, credit: total, memo: "" }];
+    const description = `Invoice ${invoice.number} — ${customer?.name ?? ""}`.trim();
+    const rebuilt = [
+      { id: newId(), accountId: ar.id, debit: total, credit: 0, memo: "" },
+      ...creditLines,
+    ];
+    const deb = rebuilt.reduce((s, l) => s + l.debit, 0);
+    const cred = rebuilt.reduce((s, l) => s + l.credit, 0);
+    if (deb !== cred) throw new Error(`Unbalanced invoice journal: debit ${deb} credit ${cred}`);
+    next = {
+      ...next,
+      journals: next.journals.map((journal) => {
+        if (journal.id !== invoice.journalId) return journal;
+        return {
+          ...journal,
+          date,
+          description,
+          lines: rebuilt,
+        };
+      }),
+    };
+  }
   return {
     ...next,
     invoices: next.invoices.map((i) => i.id === id ? {
@@ -1895,7 +1927,8 @@ export function addEmployee(data: FinanceData, input): FinanceData {
 
 export function updateEmployee(data: FinanceData, id, patch): FinanceData {
   if (!(data.employees ?? []).some((e) => e.id === id)) throw new Error("Employee not found");
-  return {
+  if (patch.name !== undefined && !String(patch.name).trim()) throw new Error("Enter a name.");
+  const next = {
     ...data,
     employees: data.employees.map((e) => {
       if (e.id !== id) return e;
@@ -1915,6 +1948,18 @@ export function updateEmployee(data: FinanceData, id, patch): FinanceData {
       };
     }),
   };
+  const nextEmp = next.employees.find((e) => e.id === id)!;
+  const marker = `Employee payee (${id})`;
+  const linked = next.vendors.find((v) => (v.notes || "").includes(marker));
+  if (linked && (linked.name !== nextEmp.name || linked.email !== nextEmp.email || linked.phone !== nextEmp.phone)) {
+    return updateVendor(next, linked.id, {
+      name: nextEmp.name,
+      contact: nextEmp.name,
+      email: nextEmp.email || linked.email,
+      phone: nextEmp.phone || linked.phone,
+    });
+  }
+  return next;
 }
 
 export function removeEmployee(data: FinanceData, id): FinanceData {
@@ -1934,9 +1979,9 @@ export function payEmployee(data: FinanceData, input): FinanceData {
   const date = input.date || todayIso();
   const payroll = data.accounts.find((a) => a.code === "5300") ?? data.accounts.find((a) => a.type === "expense");
   if (!payroll) throw new Error("Payroll expense account missing.");
-  const nameKey = employee.name.trim().toLowerCase();
+  const marker = `Employee payee (${employee.id})`;
   let working = data;
-  let vendor = working.vendors.find((v) => v.name.trim().toLowerCase() === nameKey);
+  let vendor = working.vendors.find((v) => (v.notes || "").includes(marker));
   if (!vendor) {
     const vendorId = newId();
     working = addVendor(working, {
@@ -1947,10 +1992,18 @@ export function payEmployee(data: FinanceData, input): FinanceData {
       phone: employee.phone || "",
       address: "",
       terms: "Due on receipt",
-      notes: `Employee payee (${employee.id})`,
+      notes: marker,
       accountNumber: "",
     });
     vendor = working.vendors.find((v) => v.id === vendorId)!;
+  } else if (vendor.name !== employee.name.trim()) {
+    working = updateVendor(working, vendor.id, {
+      name: employee.name.trim(),
+      contact: employee.name.trim(),
+      email: employee.email || vendor.email,
+      phone: employee.phone || vendor.phone,
+    });
+    vendor = working.vendors.find((v) => v.id === vendor.id)!;
   }
   return issueCheck(working, {
     bankId: bank.id,

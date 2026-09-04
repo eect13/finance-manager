@@ -48,7 +48,9 @@ function VendorsPage() {
           </CardContent>
         </Card>
       </section>
-      <VendorCenter />
+      <div className="page-scroll-x min-w-0">
+        <VendorCenter />
+      </div>
       <ListPrint
         title="Vendors"
         columns={[

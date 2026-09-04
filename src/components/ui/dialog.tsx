@@ -27,7 +27,7 @@ export function DialogContent({ className, children, onPointerDownOutside, onInt
       <DialogOverlay />
       <DialogPrimitive.Content
         className={cn(
-          "dialog-sheet z-50 grid w-[calc(100%-2rem)] max-w-lg overflow-y-auto rounded-3xl bg-card p-6 text-card-foreground elevation overscroll-contain",
+          "dialog-sheet z-50 grid w-[calc(100%-2rem)] max-w-lg min-w-0 max-h-[min(90dvh,44rem)] overflow-x-hidden overflow-y-auto rounded-3xl bg-card p-6 text-card-foreground elevation overscroll-contain",
           className,
         )}
         onPointerDownOutside={(event) => {

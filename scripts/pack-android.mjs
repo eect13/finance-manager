@@ -557,6 +557,82 @@ function copyApksToDeploy(sdk, env, preferSigned) {
 }
 
 
+
+function enableAndroidWebViewZoom() {
+  const appSrc = join(GEN, "app", "src", "main");
+  if (!existsSync(appSrc)) {
+    console.log("  Skipping WebView zoom patch (gen/android missing).");
+    return;
+  }
+  const marker = "finance-manager-webview-zoom";
+  const roots = [join(appSrc, "java"), join(appSrc, "kotlin")].filter((d) => existsSync(d));
+  /** @type {string[]} */
+  const files = [];
+  function walk(dir) {
+    for (const name of readdirSync(dir)) {
+      const path = join(dir, name);
+      let st;
+      try {
+        st = statSync(path);
+      } catch {
+        continue;
+      }
+      if (st.isDirectory()) walk(path);
+      else if (/MainActivity\.(kt|java)$/.test(name)) files.push(path);
+    }
+  }
+  for (const r of roots) walk(r);
+  if (files.length === 0) {
+    console.log(
+      "  Skipping WebView zoom patch (MainActivity not found). See src-tauri/mobile/android/enable-webview-zoom.kt.snippet",
+    );
+    return;
+  }
+  const helperKt = `
+  // ${marker}
+  private fun enableFinanceManagerWebViewZoom() {
+    try {
+      val webViews = ArrayList<android.webkit.WebView>()
+      fun collect(v: android.view.View) {
+        if (v is android.webkit.WebView) webViews.add(v)
+        if (v is android.view.ViewGroup) {
+          for (i in 0 until v.childCount) collect(v.getChildAt(i))
+        }
+      }
+      window?.decorView?.let { collect(it) }
+      for (wv in webViews) {
+        wv.settings.setSupportZoom(true)
+        wv.settings.builtInZoomControls = true
+        wv.settings.displayZoomControls = false
+      }
+    } catch (_: Throwable) {
+    }
+  }
+`;
+  for (const file of files) {
+    let src = readFileSync(file, "utf8");
+    if (src.includes(marker)) {
+      console.log(`  WebView zoom already patched: ${basename(file)}`);
+      continue;
+    }
+    if (!/fun onCreate\s*\(/.test(src)) {
+      console.log(`  Could not locate onCreate in ${basename(file)}; see enable-webview-zoom.kt.snippet`);
+      continue;
+    }
+    src = src.replace(/fun onCreate\s*\(([^)]*)\)\s*\{/, (m) => `${m}\n        enableFinanceManagerWebViewZoom()`);
+    if (!src.includes("enableFinanceManagerWebViewZoom()")) {
+      console.log(`  Failed to insert zoom call in ${basename(file)}`);
+      continue;
+    }
+    const idx = src.lastIndexOf("}");
+    if (idx === -1) continue;
+    src = src.slice(0, idx) + helperKt + "\n" + src.slice(idx);
+    writeFileSync(file, src);
+    console.log(`  Patched WebView pinch zoom → ${basename(file)}`);
+  }
+}
+
+
 function syncAndroidLauncherIcons() {
   const srcRoot = join(ROOT, "src-tauri", "icons", "android");
   const destRoot = join(GEN, "app", "src", "main", "res");
@@ -591,6 +667,7 @@ function fallbackAssemble(env, sdk) {
   copySoToJniLibs();
   syncAssets();
   syncAndroidLauncherIcons();
+  enableAndroidWebViewZoom();
   gradleAssembleArm64(env);
   const signed = signApkIfNeeded(sdk, env);
   copyApksToDeploy(sdk, env, signed);
@@ -664,6 +741,7 @@ if (!existsSync(GEN)) {
 
 pinGradleJavaHome(jdk);
 syncAndroidLauncherIcons();
+enableAndroidWebViewZoom();
 
 if (process.argv.includes("--env-check")) {
   console.log("\nEnv check OK (no build).");

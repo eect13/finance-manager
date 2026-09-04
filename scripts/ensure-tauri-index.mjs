@@ -58,7 +58,7 @@ const html = `<!doctype html>
 <html lang="en" class="antialiased" data-theme="dark">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes, viewport-fit=cover" />
     <title>Finance Manager</title>
     <meta name="theme-color" content="#0c0c0d" />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
@@ -76,6 +76,19 @@ const html = `<!doctype html>
         } catch (e) {
           document.documentElement.setAttribute("data-theme", "dark");
         }
+      })();
+    </script>
+    <script>
+      (function () {
+        try {
+          var k = "finance-manager-ui-zoom";
+          var v = localStorage.getItem(k);
+          var n = v == null || v === "" ? 1 : Number(v);
+          if (!isFinite(n)) n = 1;
+          n = Math.min(1.5, Math.max(0.75, Math.round(n / 0.05) * 0.05));
+          n = Number(n.toFixed(2));
+          document.documentElement.style.setProperty("--app-ui-zoom", String(n));
+        } catch (e) {}
       })();
     </script>
   </head>

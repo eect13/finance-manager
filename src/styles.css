@@ -48,6 +48,24 @@
 
 :root {
   color-scheme: light;
+  --app-ui-zoom: 1;
+}
+
+/* Chromium / Android WebView: scale whole chrome+content. 100% is a no-op. */
+html {
+  zoom: var(--app-ui-zoom, 1);
+}
+
+@supports not (zoom: 1) {
+  html {
+    zoom: unset;
+  }
+  .app-zoom-root {
+    transform: scale(var(--app-ui-zoom, 1));
+    transform-origin: top left;
+    width: calc(100% / var(--app-ui-zoom, 1));
+    min-height: calc(100% / var(--app-ui-zoom, 1));
+  }
 }
 
 .dark {
@@ -320,6 +338,20 @@
     flex: 0 0 auto;
   }
 
+  @media (max-width: 639px) {
+    .page-actions {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      padding-bottom: 0.15rem;
+    }
+
+    .page-actions::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
   .sidebar-scroll {
     overflow-y: auto;
     overscroll-behavior: contain;
@@ -333,6 +365,24 @@
     /* Clear Android/iOS status bar when WebView draws edge-to-edge. */
     padding-top: env(safe-area-inset-top, 0px);
   }
+  /* Compact display-zoom control: phones / coarse pointers only. */
+  .ui-zoom-header {
+    display: none;
+  }
+
+  @media (max-width: 767px), ((hover: none) and (pointer: coarse)) {
+    .ui-zoom-header {
+      display: inline-flex;
+    }
+  }
+
+  .page-scroll-x {
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
 
   .app-sidebar {
     padding-top: env(safe-area-inset-top, 0px);
@@ -874,6 +924,16 @@
   .party-center {
     display: grid;
     gap: 0.75rem;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .party-pane-list,
+  .party-pane-detail {
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .party-pane-back {
@@ -1040,6 +1100,29 @@
   .register-post-vars {
     flex: 2 1 20rem;
     grid-template-columns: minmax(8rem, 1fr) 7.25rem 7.25rem;
+    min-width: 0;
+  }
+
+  .register-post-well,
+  .register-post-grid {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  @media (max-width: 639px) {
+    .register-post-context {
+      flex: 1 1 100%;
+      grid-template-columns: 1fr;
+    }
+
+    .register-post-vars {
+      flex: 1 1 100%;
+      grid-template-columns: 1fr;
+    }
+
+    .register-post-amount {
+      text-align: left;
+    }
   }
 
   .register-post-submit {
@@ -2300,7 +2383,13 @@ body.printing .print-root .no-print {
     width: auto;
     max-width: none;
     transform: none;
-    max-height: min(92dvh, 44rem);
+    max-height: min(
+      92dvh,
+      calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 0.75rem)
+    );
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
   }
 }

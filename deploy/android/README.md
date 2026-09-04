@@ -100,3 +100,9 @@ Download a backup on one device and restore on another. Books do not sync.
 2. JAVA_HOME is Microsoft JDK 17, not Studio JBR
 3. libfinance_manager_lib.so under jniLibs/arm64-v8a (or Tauri symlink with Developer Mode)
 4. SDK + NDK under %LOCALAPPDATA%/Android/Sdk
+
+## WebView pinch zoom (v3.62.4+)
+
+The UI meta viewport allows pinch. In-app Display zoom scales chrome via CSS zoom / --app-ui-zoom (localStorage finance-manager-ui-zoom).
+
+Android WebView needs built-in zoom in gen. pack-android.mjs patches MainActivity when found. Manual: src-tauri/mobile/android/enable-webview-zoom.kt.snippet (setSupportZoom true, builtInZoomControls true, displayZoomControls false).

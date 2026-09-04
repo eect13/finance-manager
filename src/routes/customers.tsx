@@ -48,7 +48,9 @@ function CustomersPage() {
           </CardContent>
         </Card>
       </section>
-      <CustomerCenter />
+      <div className="page-scroll-x min-w-0">
+        <CustomerCenter />
+      </div>
       <ListPrint
         title="Customers"
         columns={[

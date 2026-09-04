@@ -27,6 +27,7 @@ import { browserStorage, countEntries, formatBytes, jsonSize, requestPersistentS
 import { COUNTRY_TAX_PACKS, CURRENCIES, countryTaxPackForCurrency, type RecurringItem } from "@/lib/finance/types";
 import { useShallow } from "zustand/react/shallow";
 import { AppearancePicker } from "@/components/theme-toggle";
+import { DisplayZoomSettings } from "@/components/ui-zoom-controls";
 
 export const Route = createFileRoute("/settings")({ component: SettingsPage });
 
@@ -109,12 +110,13 @@ function SettingsPage() {
           <CardHeader>
             <CardTitle>Display / Formatting</CardTitle>
             <CardDescription>
-              Appearance is saved in this browser. Thousand separators and decimal places are stored with the company
+              Appearance and display zoom are saved on this device. Thousand separators and decimal places are stored with the company
               file.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
             <AppearancePicker />
+            <DisplayZoomSettings />
             <div className="flex items-center justify-between gap-4 rounded-xl bg-muted/70 px-4 py-3">
               <div>
                 <p className="text-sm font-medium">Use thousand separators</p>

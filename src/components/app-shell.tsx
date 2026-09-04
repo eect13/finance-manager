@@ -37,6 +37,7 @@ import { RecordSheet } from "./record-sheet";
 import { PrintStage } from "./print-preview";
 import { AppMark } from "./app-mark";
 import { ThemeToggle } from "./theme-toggle";
+import { DisplayZoomHeaderControl } from "./ui-zoom-controls";
 import { applyTheme, useTheme } from "@/lib/theme";
 import { APP_VERSION_LABEL } from "@/lib/version";
 import { isTypingTarget, redoShortcutLabel, undoShortcutLabel } from "@/lib/hotkey";
@@ -288,7 +289,7 @@ export function AppShell({
 
   if (!hydrated) {
     return (
-      <div className="app-shell-loading flex h-dvh items-center justify-center bg-background text-foreground">
+      <div className="app-zoom-root app-shell-loading flex h-dvh items-center justify-center bg-background text-foreground">
         <ThemeSync />
         <p className="text-sm text-muted-foreground">Opening the books…</p>
       </div>
@@ -296,7 +297,7 @@ export function AppShell({
   }
 
   return (
-    <div className="flex h-dvh min-h-0 min-w-0 overflow-hidden bg-background text-foreground">
+    <div className="app-zoom-root flex h-dvh min-h-0 min-w-0 overflow-hidden bg-background text-foreground">
       <ThemeSync />
       <aside
         className={cn(
@@ -308,7 +309,7 @@ export function AppShell({
       </aside>
 
       <div className="app-workspace flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="app-header-bar no-print min-w-0 shrink-0 overflow-x-hidden">
+        <header className="app-header-bar no-print min-w-0 shrink-0 overflow-x-auto">
           <div className="flex items-center gap-1 px-3 py-2 sm:gap-3 md:px-8 md:py-3">
             <Sheet open={open} onOpenChange={setOpen}>
               <SheetTrigger asChild>
@@ -327,7 +328,7 @@ export function AppShell({
             <div className="min-w-0 flex-1 overflow-hidden">
               <CompanySwitcher />
             </div>
-            <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+            <div className="flex min-w-0 shrink-0 items-center gap-1 sm:gap-2">
               <div className="flex">
                 <Button
                   variant="outline"
@@ -359,6 +360,7 @@ export function AppShell({
                 </Button>
               </div>
               <FindButton onClick={() => setFindOpen(true)} />
+              <DisplayZoomHeaderControl />
               <ThemeToggle compact />
               <ExportMenu data={data} />
             </div>
@@ -368,7 +370,7 @@ export function AppShell({
         <main
           data-workspace-scroll
           className={cn(
-            "mx-auto w-full min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-3 py-4 sm:px-4 sm:py-6 md:px-8 md:py-8",
+            "mx-auto w-full min-h-0 min-w-0 flex-1 overflow-x-auto overflow-y-auto px-3 py-4 sm:px-4 sm:py-6 md:px-8 md:py-8",
             wide ? "max-w-none" : "max-w-6xl",
           )}
         >
@@ -396,7 +398,7 @@ export function AppShell({
             </div>
             {actions ? <div className={cn("page-actions", align === "center" && "sm:justify-center")}>{actions}</div> : null}
           </div>
-          <div className="min-w-0 max-w-full">{children}</div>
+          <div className="page-scroll-x min-w-0 max-w-full">{children}</div>
         </main>
       </div>
       <Toaster className="no-print" position="bottom-right" theme={resolved} richColors={false} />

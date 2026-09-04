@@ -594,7 +594,7 @@ function PartyDirectoryTable({
       ref={gridRef}
       data-party-dir
       tabIndex={-1}
-      className="party-dir-table list-grid overflow-x-auto outline-none"
+      className="party-dir-table list-grid min-w-0 max-w-full overflow-x-auto outline-none"
       onPointerDown={() => gridRef.current?.focus()}
     >
       <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
@@ -791,7 +791,7 @@ function PartySplit({
           {addLabel}
         </Button>
       </ListToolbar>
-      <div className="party-center" data-view={view} data-pane={mobileOpen ? "detail" : "list"}>
+      <div className="party-center min-w-0" data-view={view} data-pane={mobileOpen ? "detail" : "list"}>
         <aside className={cn("party-pane-list min-w-0 rounded-3xl bg-card elevation", mobileOpen && "is-detail")}>
           {view === "grid" ? (
             <>

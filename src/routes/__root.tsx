@@ -2,6 +2,7 @@ import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-r
 import { AuthProvider } from "@/lib/auth/provider";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import { THEME_BOOT } from "@/lib/theme";
+import { UI_ZOOM_BOOT } from "@/lib/ui-zoom";
 import appCss from "../styles.css?url";
 
 const APP_NAME = "Finance Manager";
@@ -25,7 +26,7 @@ export const Route = createRootRoute({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes, viewport-fit=cover" },
       { title: APP_NAME },
       { name: "description", content: "Peachtree-style books: customers, vendors, receipts, bills, checks, and cash forecasts." },
       { name: "keywords", content: "finance, accounting, bank register, invoices, bills, receipts" },
@@ -54,6 +55,7 @@ export const Route = createRootRoute({
       <html lang="en" className="antialiased" suppressHydrationWarning>
         <head>
           <script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} />
+          <script dangerouslySetInnerHTML={{ __html: UI_ZOOM_BOOT }} />
           <HeadContent />
         </head>
         <body>

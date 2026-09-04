@@ -66,6 +66,7 @@ import { parseBackupFile } from "./export";
 import { newId } from "./ids";
 import { listLocalBackups, readLocalBackup, writeLocalBackups } from "./local-backup";
 import { normalizeBooks } from "./normalize";
+import { setMoneyFormatPrefs } from "./format";
 import { createSeed, emptyBooks, SAMPLE_COMPANY_ID } from "./seed";
 import { booksStorage, createDebouncedPersistStorage } from "./storage";
 import { watchPersistentStorage } from "./storage-usage";
@@ -735,8 +736,26 @@ export const useFinanceStore = create<FinanceState>()(
   ),
 );
 
+function syncMoneyFormatFromData(data: FinanceData) {
+  setMoneyFormatPrefs({
+    useThousandSeparators: data.settings.useThousandSeparators !== false,
+    decimalPlaces: data.settings.decimalPlaces ?? 2,
+  });
+}
+
 export function useFinanceData(): FinanceData {
-  return useFinanceStore((s) => s.companies[s.activeCompanyId] ?? EMPTY_BOOKS);
+  return useFinanceStore((s) => {
+    const data = s.companies[s.activeCompanyId] ?? EMPTY_BOOKS;
+    syncMoneyFormatFromData(data);
+    return data;
+  });
+}
+
+if (typeof window !== "undefined") {
+  useFinanceStore.subscribe((s) => {
+    const data = s.companies[s.activeCompanyId];
+    if (data) syncMoneyFormatFromData(data);
+  });
 }
 
 let boot: Promise<void> | null = null;

@@ -68,7 +68,7 @@ export function StatusLabel({ status }: { status: string }) {
 }
 
 export function ReconBadge({ recon }: { recon: ReconStatus }) {
-  if (recon === "cleared") return <Badge variant="cleared">C</Badge>;
-  if (recon === "reconciled") return <Badge variant="reconciled">R</Badge>;
+  if (recon === "cleared") return <Badge variant="cleared">Cleared</Badge>;
+  if (recon === "reconciled") return <Badge variant="reconciled">Reconciled</Badge>;
   return <Badge variant="pending">Pending</Badge>;
 }

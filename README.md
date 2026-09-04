@@ -1,4 +1,4 @@
-# Finance Manager v3.60
+# Finance Manager v3.61.0
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -11,6 +11,13 @@ No accounts, no server setup. Books stay on this computer (IndexedDB). Settings 
 The app mark is a **navy tile with cream pillars** — a full opaque square (Windows 11 already rounds the tile; transparent corners were a white plate). Web uses the SVG favicon. Windows uses a **BMP 32-bit** `.ico` (PNG-in-ICO is a white square on the shortcut and the taskbar). After install, **delete any leftover blank shortcut** and pin the new one — Explorer caches the last icon.
 
 
+
+## What's new in v3.61.0
+
+- Register recon badges show full words: **Cleared**, **Reconciled**, and **Pending** (no more single-letter C / R) — same on print
+- Amounts use thousand separators by default (e.g. `9,825,076.00`), including when currency is blank; Options → **Display / Formatting** can turn separators off and set decimal places (0–4). Stored with the company file
+- Register Post/Edit: Check # on create and edit (loads/saves `checkNumber`); cash-sale edit shows receipt No. (read-only) and optional Ref
+- DateInput calendar: higher z-index above dialogs; smarter above/below placement so the picker is not buried under the sheet
 
 ## What's new in v3.60
 
@@ -68,7 +75,7 @@ Lists (banks, register, receipts, checks, reports, reconcile) wrap actions and k
 
 ![Banks — accounts and balances](docs/screenshots/banks.png)
 
-![Bank register — running balance and Post](docs/screenshots/register.png)
+![Bank register — Cleared badges, comma amounts, Post](docs/screenshots/register.png)
 
 ![Employees — roster, filters, and Pay](docs/screenshots/employees.png)
 
@@ -78,7 +85,7 @@ Lists (banks, register, receipts, checks, reports, reconcile) wrap actions and k
 
 ![Options — currency, country tax pack, Also update home currency](docs/screenshots/options-currency-tax.png)
 
-![Options — storage and purge date field](docs/screenshots/options.png)
+![Options — Display / Formatting and storage](docs/screenshots/options.png)
 
 ![Labeled undo toast — Undid: update options](docs/screenshots/undo-toast.png)
 

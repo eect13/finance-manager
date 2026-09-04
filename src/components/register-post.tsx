@@ -177,6 +177,8 @@ function PostDialog({
   const [partyError, setPartyError] = useState(false);
   const [accountId, setAccountId] = useState(expenseDefault?.id ?? "");
   const [memo, setMemo] = useState("");
+  const [checkNumber, setCheckNumber] = useState("");
+  const [docNumber, setDocNumber] = useState("");
 
   const editing = Boolean(edit);
   const locked = edit?.recon === "reconciled";
@@ -195,6 +197,8 @@ function PostDialog({
       setDate(edit.date);
       setBankId(edit.bankId);
       setMemo(edit.memo);
+      setCheckNumber("");
+      setDocNumber("");
       if (edit.kind === "check") {
         const check = data.checks.find((c) => c.id === edit.sourceId);
         if (check) {
@@ -203,6 +207,8 @@ function PostDialog({
           setMemo(check.memo);
           setAccountId(check.accountId);
           setVendorId(check.vendorId ?? "");
+          setCheckNumber(check.checkNumber);
+          setDocNumber("");
         }
       }
       if (edit.kind === "receipt") {
@@ -212,6 +218,8 @@ function PostDialog({
           setAmount(String(receipt.amount / 100));
           setMemo(receipt.memo);
           setCustomerId(receipt.customerId ?? "");
+          setDocNumber(receipt.number);
+          setCheckNumber(receipt.checkNumber ?? "");
         }
       }
       if (edit.kind === "transfer" || edit.kind === "deposit" || edit.kind === "expense") {
@@ -234,6 +242,8 @@ function PostDialog({
     } else {
       setDate(readLastDate());
       if (fallbackBank) setBankId(fallbackBank);
+      setCheckNumber("");
+      setDocNumber("");
     }
     requestAnimationFrame(() => {
       const next = edit ? kindFromLine(edit) : kind;
@@ -303,6 +313,8 @@ function PostDialog({
     setCustomerId("");
     setBillId("");
     setPartyError(false);
+    setCheckNumber("");
+    setDocNumber("");
   }
 
   function finishPost() {
@@ -349,6 +361,7 @@ function PostDialog({
             memo: memo.trim(),
             bankId: dest,
             accountId: accountId || expenseDefault?.id,
+            checkNumber: checkNumber.trim(),
           });
           toast.success("Check saved.");
         } else if (edit.kind === "receipt") {
@@ -358,6 +371,7 @@ function PostDialog({
             date,
             memo: memo.trim(),
             bankId: dest,
+            checkNumber: checkNumber.trim(),
           });
           toast.success("Cash sale saved.");
         } else if (edit.kind === "transfer" || edit.kind === "deposit" || edit.kind === "expense") {
@@ -455,6 +469,7 @@ function PostDialog({
           memo: memo.trim() || "Posted from register",
           accountId: expenseDefault.id,
           vendorId: vendor.id,
+          checkNumber: checkNumber.trim() || undefined,
         });
         notePosted(`Check posted to ${banks.find((b) => b.id === dest)?.nickname ?? "bank"}.`, dup);
       } else {
@@ -533,6 +548,36 @@ function PostDialog({
               <Field label="Date">
                 <DateInput inputRef={dateRef} value={date} disabled={locked} onChange={setDate} aria-label="Date" />
               </Field>
+              {kind === "check" ? (
+                <Field label="Check #">
+                  <Input
+                    value={checkNumber}
+                    onChange={(e) => setCheckNumber(e.target.value)}
+                    placeholder="Auto if blank"
+                    inputMode="numeric"
+                    aria-label="Check number"
+                    disabled={locked}
+                    className="tabular-nums"
+                  />
+                </Field>
+              ) : null}
+              {kind === "cash-sale" && editing && docNumber ? (
+                <Field label="No.">
+                  <Input value={docNumber} readOnly disabled aria-label="Receipt number" className="tabular-nums" />
+                </Field>
+              ) : null}
+              {kind === "cash-sale" && editing ? (
+                <Field label="Ref">
+                  <Input
+                    value={checkNumber}
+                    onChange={(e) => setCheckNumber(e.target.value)}
+                    placeholder="Optional check / card ref"
+                    aria-label="Reference"
+                    disabled={locked}
+                    className="tabular-nums"
+                  />
+                </Field>
+              ) : null}
               {kind === "vendor-pay" ? (
                 <>
                   <Field label="Vendor">

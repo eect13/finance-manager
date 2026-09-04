@@ -123,6 +123,10 @@ export interface Settings {
   registerColumns: RegisterCols;
   /** ISO date. Dates on or before this cannot be posted or edited. Empty = open. */
   closedThrough: string;
+  /** Group thousands in amounts (9,825,076.00). Default on. */
+  useThousandSeparators: boolean;
+  /** Fraction digits for money display (0–4). Default 2. */
+  decimalPlaces: number;
 }
 
 export interface AuditEvent {
@@ -609,4 +613,6 @@ export const DEFAULT_SETTINGS: Settings = {
   registerFontSize: 12,
   registerColumns: DEFAULT_REGISTER_COLS,
   closedThrough: "",
+  useThousandSeparators: true,
+  decimalPlaces: 2,
 };

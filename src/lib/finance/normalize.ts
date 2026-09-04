@@ -10,11 +10,14 @@ export function normalizeBooks(raw: unknown): FinanceData {
   const p = (raw && typeof raw === "object" ? raw : {}) as Partial<FinanceData> & Record<string, unknown>;
   const merged = { ...DEFAULT_SETTINGS, ...(p.settings ?? {}) };
   const font = Number(merged.registerFontSize);
+  const decimals = Number(merged.decimalPlaces);
   const settings = {
     ...merged,
     registerFontSize: Number.isFinite(font) ? Math.min(18, Math.max(10, Math.round(font))) : 12,
     registerColumns: normalizeRegisterCols(merged.registerColumns),
     closedThrough: typeof merged.closedThrough === "string" ? merged.closedThrough : "",
+    useThousandSeparators: merged.useThousandSeparators !== false,
+    decimalPlaces: Number.isFinite(decimals) ? Math.min(4, Math.max(0, Math.round(decimals))) : 2,
   };
   const customers = asArray<Customer>(p.customers).map((c, i) => ({
     ...c,

@@ -2776,7 +2776,7 @@ body.printing [data-radix-popper-content-wrapper]:has(.print-paper-menu) {
 /* DateInput calendar popover (portaled) */
 .date-cal-pop {
   position: fixed;
-  z-index: 250;
+  z-index: 1000;
   border-radius: 0.75rem;
   border: 1px solid hsl(var(--border));
   background: hsl(var(--popover));

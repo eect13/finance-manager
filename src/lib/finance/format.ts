@@ -1,30 +1,100 @@
 import { format, parseISO, isValid } from "date-fns";
 
-export function formatMoney(amount: number, currency = "PHP"): string {
+/** Live prefs synced from FinanceData.settings (default: grouping on, 2 decimals). */
+export type MoneyFormatPrefs = {
+  useThousandSeparators: boolean;
+  decimalPlaces: number;
+};
+
+let moneyFormatPrefs: MoneyFormatPrefs = {
+  useThousandSeparators: true,
+  decimalPlaces: 2,
+};
+
+export function clampDecimalPlaces(n: unknown): number {
+  const v = Number(n);
+  if (!Number.isFinite(v)) return 2;
+  return Math.min(4, Math.max(0, Math.round(v)));
+}
+
+export function setMoneyFormatPrefs(prefs: Partial<MoneyFormatPrefs>): void {
+  if (typeof prefs.useThousandSeparators === "boolean") {
+    moneyFormatPrefs.useThousandSeparators = prefs.useThousandSeparators;
+  }
+  if (prefs.decimalPlaces !== undefined) {
+    moneyFormatPrefs.decimalPlaces = clampDecimalPlaces(prefs.decimalPlaces);
+  }
+}
+
+export function getMoneyFormatPrefs(): MoneyFormatPrefs {
+  return { ...moneyFormatPrefs };
+}
+
+export type MoneyFormatOpts = Partial<MoneyFormatPrefs>;
+
+function resolvePrefs(opts?: MoneyFormatOpts): MoneyFormatPrefs {
+  return {
+    useThousandSeparators:
+      typeof opts?.useThousandSeparators === "boolean"
+        ? opts.useThousandSeparators
+        : moneyFormatPrefs.useThousandSeparators,
+    decimalPlaces:
+      opts?.decimalPlaces !== undefined
+        ? clampDecimalPlaces(opts.decimalPlaces)
+        : moneyFormatPrefs.decimalPlaces,
+  };
+}
+
+function formatPlain(value: number, prefs: MoneyFormatPrefs): string {
+  try {
+    return new Intl.NumberFormat("en-PH", {
+      useGrouping: prefs.useThousandSeparators,
+      minimumFractionDigits: prefs.decimalPlaces,
+      maximumFractionDigits: prefs.decimalPlaces,
+    }).format(value);
+  } catch {
+    const fixed = value.toFixed(prefs.decimalPlaces);
+    if (!prefs.useThousandSeparators) return fixed;
+    const [whole, frac] = fixed.split(".");
+    const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return frac !== undefined ? `${grouped}.${frac}` : grouped;
+  }
+}
+
+export function formatMoney(amount: number, currency = "PHP", opts?: MoneyFormatOpts): string {
+  const prefs = resolvePrefs(opts);
+  const value = amount / 100;
   const code = (currency ?? "").trim();
-  if (!code) return (amount / 100).toFixed(2);
+  if (!code) return formatPlain(value, prefs);
+  const digits = code === "JPY" && opts?.decimalPlaces === undefined && moneyFormatPrefs.decimalPlaces === 2
+    ? 0
+    : prefs.decimalPlaces;
   try {
     return new Intl.NumberFormat("en-PH", {
       style: "currency",
       currency: code,
-      maximumFractionDigits: code === "JPY" ? 0 : 2,
-    }).format(amount / 100);
+      useGrouping: prefs.useThousandSeparators,
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits,
+    }).format(value);
   } catch {
-    return `${(amount / 100).toFixed(2)} ${code}`;
+    return `${formatPlain(value, { ...prefs, decimalPlaces: digits })} ${code}`;
   }
 }
 
-export function formatCompact(amount: number, currency = "PHP"): string {
+export function formatCompact(amount: number, currency = "PHP", opts?: MoneyFormatOpts): string {
+  const prefs = resolvePrefs(opts);
   const value = amount / 100;
   const code = (currency ?? "").trim();
   if (!code) {
     try {
       return new Intl.NumberFormat("en-PH", {
         notation: "compact",
+        useGrouping: prefs.useThousandSeparators,
         maximumFractionDigits: 1,
       }).format(value);
     } catch {
-      return value.toFixed(0);
+      return formatPlain(value, { ...prefs, decimalPlaces: 0 });
     }
   }
   try {
@@ -32,10 +102,11 @@ export function formatCompact(amount: number, currency = "PHP"): string {
       style: "currency",
       currency: code,
       notation: "compact",
+      useGrouping: prefs.useThousandSeparators,
       maximumFractionDigits: 1,
     }).format(value);
   } catch {
-    return value.toFixed(0);
+    return formatPlain(value, { ...prefs, decimalPlaces: 0 });
   }
 }
 

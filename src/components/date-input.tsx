@@ -95,8 +95,20 @@ export function DateInput({
     if (left + width > window.innerWidth - 8) left = Math.max(8, window.innerWidth - width - 8);
     if (left < 8) left = 8;
     const height = 320;
-    let top = r.bottom + 4;
-    if (top + height > window.innerHeight - 8) top = Math.max(8, r.top - height - 4);
+    const spaceBelow = window.innerHeight - r.bottom - 8;
+    const spaceAbove = r.top - 8;
+    // Prefer below when it fits; otherwise above. When neither fits fully, pick the roomier side
+    // so a date field near the top of a centered dialog does not cover Payee/Amount when above has room.
+    let top: number;
+    if (spaceBelow >= height) {
+      top = r.bottom + 4;
+    } else if (spaceAbove >= height) {
+      top = r.top - height - 4;
+    } else if (spaceAbove > spaceBelow) {
+      top = Math.max(8, r.top - height - 4);
+    } else {
+      top = r.bottom + 4;
+    }
     setBox({ top, left, width });
   }
 

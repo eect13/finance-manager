@@ -107,11 +107,43 @@ function SettingsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Display</CardTitle>
-            <CardDescription>Light or dark. Saved in this browser, not in the company file.</CardDescription>
+            <CardTitle>Display / Formatting</CardTitle>
+            <CardDescription>
+              Appearance is saved in this browser. Thousand separators and decimal places are stored with the company
+              file.
+            </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="grid gap-4">
             <AppearancePicker />
+            <div className="flex items-center justify-between gap-4 rounded-xl bg-muted/70 px-4 py-3">
+              <div>
+                <p className="text-sm font-medium">Use thousand separators</p>
+                <p className="text-xs text-muted-foreground">
+                  Show amounts like 9,825,076.00 instead of 9825076.00 — including when currency is blank.
+                </p>
+              </div>
+              <Switch
+                checked={settings.useThousandSeparators !== false}
+                onCheckedChange={(v) => updateSettings({ useThousandSeparators: v })}
+              />
+            </div>
+            <Field label="Decimal places">
+              <Select
+                value={String(settings.decimalPlaces ?? 2)}
+                onValueChange={(v) => updateSettings({ decimalPlaces: Number(v) })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[0, 1, 2, 3, 4].map((n) => (
+                    <SelectItem key={n} value={String(n)}>
+                      {n}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
           </CardContent>
         </Card>
 

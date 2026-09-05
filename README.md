@@ -1,4 +1,4 @@
-# Finance Manager v3.62.21
+# Finance Manager v3.62.30
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -11,6 +11,33 @@ No accounts, no server setup. Books stay on this computer (IndexedDB). Settings 
 The app mark is a **navy tile with cream pillars** — a full opaque square (Windows 11 already rounds the tile; transparent corners were a white plate). Web uses the SVG favicon. Windows uses a **BMP 32-bit** `.ico` (PNG-in-ICO is a white square on the shortcut and the taskbar). After install, **delete any leftover blank shortcut** and pin the new one — Explorer caches the last icon.
 
 
+
+## What's new in v3.62.30
+
+- Phone doc lists (Invoices, Checks, Bills, Receipts): **swipe** a row for Void/Delete — Pay/Collect and ⋯ stay on the face
+- Reconcile **View** sheet: Layout (Grid/List) + Resize type (same font size as Register)
+- README + phone screenshots refreshed for Grid/List, Filters sheet, and doc swipe
+
+## What's new in v3.62.29
+
+- **Filters** open as a real phone bottom sheet on every list (embedded panel, not a nested Filters button)
+- Register: Layout control only in **View**; Reconcile Grid cards show Memo
+
+## What's new in v3.62.28
+
+- Phone Register/Reconcile **List** = Invoices-style flat table; **Grid** keeps full cards with Memo
+
+## What's new in v3.62.27
+
+- Phone Filters panel + View sheet; Move dates under Layout; swipe CSS hardened for Register/Reconcile
+
+## What's new in v3.62.26
+
+- Sticky Register/Reconcile chrome, Filters sheets, company Sheet, swipe Clear/status/delete, safe-reach bars
+
+## What's new in v3.62.25
+
+- Phone Grid|List on Register and Reconcile (Move dates on Register)
 
 ## What's new in v3.62.21
 
@@ -215,6 +242,14 @@ Phone:
 
 ![Desk on a phone](docs/screenshots/desk-phone.png)
 
+![Register on a phone — Grid cards with Memo](docs/screenshots/register-phone-grid.png)
+
+![Register on a phone — List table](docs/screenshots/register-phone-list.png)
+
+![Invoices on a phone](docs/screenshots/invoices-phone.png)
+
+![Reconcile on a phone — View sheet Layout + type size](docs/screenshots/reconcile-phone.png)
+
 ![Customers on a phone — horizontal scroll / display zoom](docs/screenshots/customers-phone.png)
 
 ![Options display zoom on a phone](docs/screenshots/options-display-zoom-phone.png)
@@ -229,7 +264,7 @@ Books do **not** follow you to another phone or laptop. Download a backup on one
 - Last balance in the strip is the end of **this window**, in document flow — it does not stick over search or filters. Desk is still the full cash position.
 - The bank tab you were on comes back after a refresh. Hidden columns and type size live in the company file; light/dark is a browser preference. Search and drag do not stick — those are easy to leave on by accident.
 - Switch banks with the tabs above the table — that is the book you are in
-- One search bar plus **Filters** (period, type, in/out, sort) and **View** (columns, type size, drag). On a phone search is its own row, then In / Out / Last balance, then Filters / View (swipe if they do not fit). Bank tabs stay one row and scroll sideways — Safekeeping does not wrap under Payroll. On a narrow screen the table keeps Date, No., Payee, Payment, Deposit, and Balance — Type, Memo, Bank, and Status hide so payee names are not clipped. Swipe the book for the rest, or turn columns back on from View on a wide screen. Dates drop the year when it is this year (`Sep 1`). On a phone, **Grid** shows full cards (with Memo) and **List** matches the Invoices-style table On phone doc lists (Invoices, Checks, Bills, Receipts), swipe a row for Void/Delete (Pay/Collect and ⋯ stay on the face). Reconcile **View** holds Layout (Grid/List) and Resize type (same font size as Register).; the running balance stays on every row. On a desk it stays a matrix table. **Every other table uses the same family:** click a header to sort, drag the column line to resize, double-click the line to auto-fit, search, and a **Filters** popover (Month / Year / All dates, type or status, sort). That includes invoices, bills, receipts, checks, employees, banks, ledger, customer/vendor history, and reconcile. Tight lists keep **Status on the row** and put extra work in **⋯** (Collect + Print/Void/Delete on invoices; Pay on bills) so buttons never paint over Status. If the card is tighter than the columns, a thin scrollbar appears — no dark fade. The tick column (delete / reassign bank) stays on the register only.
+- One search bar plus **Filters** (period, type, in/out, sort) and **View** (columns, type size, drag). On a phone search is its own row, then In / Out / Last balance, then Filters / View (swipe if they do not fit). Bank tabs stay one row and scroll sideways — Safekeeping does not wrap under Payroll. On a narrow screen the table keeps Date, No., Payee, Payment, Deposit, and Balance — Type, Memo, Bank, and Status hide so payee names are not clipped. Swipe the book for the rest, or turn columns back on from View on a wide screen. Dates drop the year when it is this year (`Sep 1`). On a phone, **Grid** shows full cards (with Memo) and **List** matches the Invoices-style table; the running balance stays on every row. On phone doc lists (Invoices, Checks, Bills, Receipts), swipe a row for Void/Delete (Pay/Collect and ⋯ stay on the face). Reconcile **View** holds Layout (Grid/List) and Resize type (same font size as Register). On a desk it stays a matrix table. **Every other table uses the same family:** click a header to sort, drag the column line to resize, double-click the line to auto-fit, search, and a **Filters** popover (Month / Year / All dates, type or status, sort). That includes invoices, bills, receipts, checks, employees, banks, ledger, customer/vendor history, and reconcile. Tight lists keep **Status on the row** and put extra work in **⋯** (Collect + Print/Void/Delete on invoices; Pay on bills) so buttons never paint over Status. If the card is tighter than the columns, a thin scrollbar appears — no dark fade. The tick column (delete / reassign bank) stays on the register only.
 - **Post** sits next to Print. Type is a dropdown: Check, Cash sale, Receive payment, Transfer, Vendor pay, Deposit, Expense. **Last type sticks** (Check the first time). **Tab order is Date → Payee → Amount → Memo → Bank.** Date autofocuses. Date is a typeable combo (`08312026`, `08/31/26`, or `08/31/2026`). Click the chevron for a calendar. **T** = today, **+** / **−** bump a day. Last date sticks like Type. Enter posts. The button reads **Saved** for a beat, then the line clears and Date is ready again. Esc or Close leaves. Double-click a register line (check, cash sale, transfer, deposit, expense) opens **the same window** in Save mode, with **Delete** for that line. Receive payment and on-account receipts still use the allocation window. Bills stay bills.
 - **Issue check** and **Receive** in the header still open the full forms when you need line items or a printed check. On a phone those two plus Reconcile live in the menu — the register keeps Post, Print, and CSV.
 - The header sits on the page ground — no white bar. In / Out / Last balance is the same: ink on the page, not a card. Search and filters sit above the book without a second white well. The register table is the figure.
@@ -293,7 +328,7 @@ Press **Ctrl+K** (Windows/Linux) or **⌘K** (Mac) to search payee, number, amou
 
 ## Phone
 
-A phone is a check-in, not a second desktop. The hamburger is the menu — the treasury mark lives there, not in the header (it cannot fit next to Find and undo). Book cash is on the desk, not in the header, so the company name and date do not collide. There is no chip strip and no tab bar (it would sit on the Grok pill). Dialogs come up from the bottom. Desk figures sit two-up from the first paint so peso amounts do not wait for a wide window. Customer and vendor list/detail swap until the workspace is wide enough for both. Bank tabs and filter pills scroll sideways instead of wrapping. The register stays a list with a running balance; it does not turn into cards. History tables keep Date, No., Amount, and Balance so `RCPT-2026-001` is not clipped to `RCPT-202`. The customer/vendor directory list keeps Name and Open (Contact, Email, Phone wait for a wide screen). Tap a history line to open it. Bank **cards** show name, nickname, book amount, then pending — Delete is on the list and inside the bank record, not on every card. The column rule is a larger hit target on a touch screen; the hairline stays thin.
+A phone is a check-in, not a second desktop. The hamburger is the menu — the treasury mark lives there, not in the header (it cannot fit next to Find and undo). Book cash is on the desk, not in the header, so the company name and date do not collide. There is no chip strip and no tab bar (it would sit on the Grok pill). Dialogs come up from the bottom. Desk figures sit two-up from the first paint so peso amounts do not wait for a wide window. Customer and vendor list/detail swap until the workspace is wide enough for both. Bank tabs and filter pills scroll sideways instead of wrapping. On a phone the register is **Grid** (cards with Memo) or **List** (Invoices-style table); both keep a running balance. On a desk it stays the matrix table. History tables keep Date, No., Amount, and Balance so `RCPT-2026-001` is not clipped to `RCPT-202`. The customer/vendor directory list keeps Name and Open (Contact, Email, Phone wait for a wide screen). Tap a history line to open it. Bank **cards** show name, nickname, book amount, then pending — Delete is on the list and inside the bank record, not on every card. The column rule is a larger hit target on a touch screen; the hairline stays thin.
 
 ## Speed
 

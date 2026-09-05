@@ -81,21 +81,22 @@
   --color-secondary: #2a2824;
   --color-secondary-foreground: #ece8df;
   --color-muted: #24221e;
-  --color-muted-foreground: #a39e92;
+  --color-muted-foreground: #b0aa9c;
   --color-accent: #2e2c27;
   --color-accent-foreground: #ece8df;
-  --color-destructive: #c56b60;
+  --color-destructive: #e09288;
   --color-destructive-foreground: #1a1916;
-  --color-border: #3a372f;
-  --color-input: #3a372f;
+  --color-border: #4a463c;
+  --color-input: #4a463c;
   --color-ring: #d6cfc0;
   --color-sidebar: #191816;
   --color-sidebar-foreground: #ece8df;
-  --color-credit: #7dba98;
-  --color-debit: #e08a7e;
-  --color-warning: #d4a05a;
+  /* Brighter money / aging / pending chips on dark cards */
+  --color-credit: #8fd4ae;
+  --color-debit: #f0a79c;
+  --color-warning: #e8b86a;
   --shadow-elevation:
-    0px 0px 0px 1px rgb(236 232 223 / 0.08),
+    0px 0px 0px 1px rgb(236 232 223 / 0.12),
     0px 1px 2px -1px rgb(0 0 0 / 0.45),
     0px 2px 4px 0px rgb(0 0 0 / 0.28);
 }
@@ -4176,4 +4177,41 @@ body.is-phone-move-dragging {
   background: color-mix(in oklab, var(--primary) 92%, #000);
   box-shadow: 0 6px 18px color-mix(in oklab, #000 25%, transparent);
   white-space: nowrap;
+}
+
+/* v3.62.51: Reconcile desk — virtualizer scrolls the card (not workspace); clean ticks */
+.recon-table-card.list-card.list-grid,
+.recon-table-card.list-scroll {
+  max-height: min(40rem, calc(100dvh - 14rem));
+}
+.recon-table-card .col-check {
+  width: 2.75rem;
+  min-width: 2.75rem;
+  max-width: 2.75rem;
+  overflow: visible;
+  text-align: center;
+  vertical-align: middle;
+  padding-left: 0.25rem !important;
+  padding-right: 0.25rem !important;
+}
+.recon-table-card .register-check-cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  overflow: visible;
+}
+.recon-table-card .register-tick {
+  min-width: 2.25rem;
+  min-height: 2.25rem;
+  width: 2.25rem;
+  height: 2.25rem;
+}
+.recon-table-card .register-tick > span {
+  box-shadow: none;
+  outline: none;
+}
+/* Pending badge: stronger fill on dark so label stays readable */
+.dark .bg-warning\/10 {
+  background-color: color-mix(in oklab, var(--color-warning) 22%, var(--color-card));
 }

@@ -112,7 +112,8 @@ function sliceData(next: FinanceData): FinanceData {
   };
 }
 
-const UNDO_MAX = 40;
+/** In-memory undo/redo depth — generous; each entry is a full company snapshot. */
+export const UNDO_MAX = 100;
 
 /** Snapshot + short human label for undo/redo toasts (e.g. "delete invoice INV-1042"). */
 export type UndoEntry = { data: FinanceData; label: string };

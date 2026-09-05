@@ -19,8 +19,14 @@ export function RowActions({ primary, items }: { primary?: ReactNode; items?: Ro
       {extra.length > 0 ? (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button size="sm" variant="ghost" aria-label="More" className="px-2">
-              <MoreHorizontal />
+            <Button
+              size="sm"
+              variant="outline"
+              aria-label="More actions"
+              title="More actions"
+              className="size-8 shrink-0 px-0 text-muted-foreground hover:text-foreground"
+            >
+              <MoreHorizontal className="size-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">

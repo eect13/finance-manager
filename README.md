@@ -1,4 +1,4 @@
-# Finance Manager v3.62.50
+# Finance Manager v3.62.51
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -11,6 +11,15 @@ No accounts, no server setup. Books stay on this computer (IndexedDB). Settings 
 The app mark is a **navy tile with cream pillars** — a full opaque square (Windows 11 already rounds the tile; transparent corners were a white plate). Web uses the SVG favicon. Windows uses a **BMP 32-bit** `.ico` (PNG-in-ICO is a white square on the shortcut and the taskbar). After install, **delete any leftover blank shortcut** and pin the new one — Explorer caches the last icon.
 
 
+
+## What's new in v3.62.51
+
+- **Register open on double-click** (desk Grid + phone Grid/List): single click selects/focuses; double-click opens the record (matrix already did)
+- **BAL → Balance** on Grid card money headers and select toolbar
+- **Dark mode contrast**: brighter `--color-debit` / `--color-warning` / borders so OUT amounts, Pending badges, and Reconcile Days stay readable
+- **Reconcile desk**: virtualizer scrolls the table card (fixes ghost tick overlap + huge empty body); cleaner ShopTick box
+- **Checks**: Status chip is toggleable (Pending/Cleared/Bounce/Void); clearer ⋯ menu next to Status
+- **Storage / undo**: undo/redo depth raised to 100; Options Storage notes the cap
 
 ## What's new in v3.62.50
 

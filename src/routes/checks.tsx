@@ -15,8 +15,7 @@ import { Field } from "@/components/field";
 import { ListPrint } from "@/components/list-print";
 import { Money } from "@/components/money";
 import { requestPrint } from "@/components/print-preview";
-import { checkStatusMenuItems } from "@/components/check-status-menu";
-import { CheckBadge } from "@/components/status-badge";
+import { CheckStatusControl, checkStatusMenuItems } from "@/components/check-status-menu";
 import { SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
 import { useListPointer } from "@/components/use-list-pointer";
@@ -49,8 +48,8 @@ const CHK_COLS = {
   issued: 118,
   post: 118,
   amount: 128,
-  status: 118,
-  actions: 52,
+  status: 140,
+  actions: 44,
 } as const;
 
 const CHK_SORT = [
@@ -207,7 +206,7 @@ function ChecksPage() {
               <SortHeader label="Post" column="post" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.post} onWidth={(n) => cols.setWidth("post", n)} onFit={() => fit("post", "Post")} />
               <SortHeader label="Amount" column="amount" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} align="right" width={cols.widths.amount} onWidth={(n) => cols.setWidth("amount", n)} onFit={() => fit("amount", "Amount")} />
               <SortHeader label="Status" column="status" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.status} onWidth={(n) => cols.setWidth("status", n)} onFit={() => fit("status", "Status")} />
-              <th className="col-actions relative px-4 py-3">
+              <th className="col-actions relative px-2 py-3">
                 <span className="sr-only">Actions</span>
               </th>
             </tr>
@@ -259,10 +258,22 @@ function ChecksPage() {
                       <td className="px-4 py-3 text-right" data-col="amount">
                         <Money amount={check.amount} currency={data.settings.currency} />
                       </td>
-                      <td className="px-4 py-3" data-col="status">
-                        <CheckBadge status={check.status} />
+                      <td
+                        className="px-3 py-3"
+                        data-col="status"
+                        onClick={stopOpen}
+                        onPointerDown={stopOpen}
+                        onDoubleClick={stopOpen}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <CheckStatusControl
+                            status={check.status}
+                            recon={check.recon ?? "pending"}
+                            onSetStatus={applyStatus}
+                          />
+                        </div>
                       </td>
-                      <td className="col-actions px-4 py-3" onDoubleClick={stopOpen}>
+                      <td className="col-actions px-2 py-3" onClick={stopOpen} onDoubleClick={stopOpen}>
                         {rowActions}
                       </td>
                     </tr>

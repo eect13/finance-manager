@@ -1301,7 +1301,7 @@ function RegisterTable({
           <span className="text-xs text-muted-foreground">Select</span>
         </span>
         <span className="text-xs text-muted-foreground tabular-nums">
-          Bal <Money amount={lastBalance} currency={currency} className="inline font-medium text-foreground" />
+          Balance <Money amount={lastBalance} currency={currency} className="inline font-medium text-foreground" />
         </span>
       </div>
     );
@@ -1434,12 +1434,25 @@ function RegisterTable({
                         if (isOpening) return;
                         if (dragOn && dragging) return;
                         onActivate(line.id);
+                        if (phone) onOpen(line);
+                      }}
+                      onDoubleClick={() => {
+                        if (isOpening || phone) return;
+                        if (dragOn && dragging) return;
                         onOpen(line);
                       }}
+                      title={
+                        isOpening
+                          ? undefined
+                          : phone
+                            ? "Tap to open and edit"
+                            : "Double-tap or double-click to open"
+                      }
                     >
                       <td
                         className="px-2 py-3 no-print"
                         onClick={(e) => e.stopPropagation()}
+                        onDoubleClick={(e) => e.stopPropagation()}
                         onPointerDown={(e) => e.stopPropagation()}
                       >
                         {isOpening ? (
@@ -1578,8 +1591,20 @@ function RegisterTable({
                       if (isOpening) return;
                       if (dragOn && dragging) return;
                       onActivate(line.id);
+                      if (phone) onOpen(line);
+                    }}
+                    onDoubleClick={() => {
+                      if (isOpening || phone) return;
+                      if (dragOn && dragging) return;
                       onOpen(line);
                     }}
+                    title={
+                      isOpening
+                        ? undefined
+                        : phone
+                          ? "Tap to open and edit"
+                          : "Double-click to open"
+                    }
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !isOpening) {
                         onActivate(line.id);
@@ -1713,7 +1738,7 @@ function RegisterTable({
                             ) : null}
                             {cols.balance ? (
                               <div className="text-right">
-                                <p className="phone-card-label text-muted-foreground">Bal</p>
+                                <p className="phone-card-label text-muted-foreground">Balance</p>
                                 <Money amount={line.balance} currency={currency} className="font-medium" />
                               </div>
                             ) : null}

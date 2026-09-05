@@ -39,7 +39,7 @@ import { getWorkspaceScrollElement } from "@/lib/workspace-scroll";
 
 export const Route = createFileRoute("/reconcile")({ component: ReconcilePage });
 
-const CHECK_COL = 40;
+const CHECK_COL = 44;
 const RECON_COLS = {
   date: 118,
   type: 120,
@@ -140,12 +140,12 @@ function ReconcilePage() {
     getItemKey: (index) => sort.sorted[index]?.id ?? index,
     gap: phoneGrid ? 8 : 0,
   });
-  // Desk table rows (phone uses phoneVirt above — do not regress phone).
+  // Desk table rows scroll inside ListCard (max-height). Phone keeps workspace scroll.
   const deskVirt = useVirtualizer({
     count: sort.sorted.length,
-    getScrollElement: () => getWorkspaceScrollElement(),
-    estimateSize: () => 44,
-    overscan: 12,
+    getScrollElement: () => gridRef.current,
+    estimateSize: () => 48,
+    overscan: 16,
     getItemKey: (index) => sort.sorted[index]?.id ?? index,
   });
   useEffect(() => {

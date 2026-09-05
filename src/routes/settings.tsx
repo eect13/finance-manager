@@ -23,7 +23,7 @@ import { SAMPLE_COMPANY_ID } from "@/lib/finance/seed";
 import { fitColumnWidth } from "@/lib/finance/fit-column";
 import { formatDate, todayIso } from "@/lib/finance/format";
 import { useEntrySort } from "@/lib/finance/sort";
-import { useFinanceData, useFinanceStore } from "@/lib/finance/store";
+import { UNDO_MAX, useFinanceData, useFinanceStore } from "@/lib/finance/store";
 import { browserStorage, countEntries, formatBytes, jsonSize, requestPersistentStorage } from "@/lib/finance/storage-usage";
 import { COUNTRY_TAX_PACKS, CURRENCIES, countryTaxPackForCurrency, type RecurringItem } from "@/lib/finance/types";
 import { useShallow } from "zustand/react/shallow";
@@ -801,7 +801,8 @@ function StoragePanel() {
               : ""}
           . Finance Manager does not cap storage. The grant is this browser’s — often about 10 GB
           until you tap Keep books, then a large share of free disk. There is no API to type a GB
-          number.
+          number. Undo/redo keeps up to {UNDO_MAX} steps in memory for this session (maximum
+          sensible depth for full company snapshots).
         </p>
         {browser.persisted !== true ? (
           <Button

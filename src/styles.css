@@ -3636,6 +3636,17 @@ html.tauri-android .app-header-inner {
     flex: 1 1 auto;
     min-width: 0;
   }
+  .register-phone-grip {
+    -webkit-tap-highlight-color: transparent;
+  }
+  .register-phone-grip[aria-pressed="true"] {
+    box-shadow: 0 0 0 2px color-mix(in oklab, var(--primary) 45%, transparent);
+  }
+  .register-date-chips[data-armed="true"] button,
+  .register-date-chips button[data-drop="true"] {
+    cursor: pointer;
+  }
+
   .register-phone-card,
   .recon-phone-card {
     box-shadow: var(--shadow-elevation);

@@ -404,7 +404,7 @@ function ReconcilePage() {
           <div className="mb-2 flex items-center justify-between gap-2 no-print">
             <span className="inline-flex items-center gap-1">
               <ShopTick checked={allOn} indeterminate={someOn} onChange={toggleAll} label="Select all" />
-              <span className="text-xs text-muted-foreground">Clear all visible</span>
+              <span className="text-xs text-muted-foreground">Tick cleared</span>
             </span>
             <span className="text-xs text-muted-foreground">{sort.sorted.length} uncleared</span>
           </div>
@@ -441,23 +441,33 @@ function ReconcilePage() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-baseline justify-between gap-2">
-                          <p className="truncate text-sm font-medium">{line.party}</p>
+                          <p className="min-w-0 truncate text-sm font-medium">{line.party}</p>
                           <p className="shrink-0 text-xs text-muted-foreground tabular-nums">{formatDate(line.date)}</p>
                         </div>
-                        <p className="mt-0.5 text-[0.7rem] text-muted-foreground">
+                        <p className="mt-0.5 text-[0.7rem] leading-snug text-muted-foreground">
                           {KIND_LABEL[line.kind]}
+                          {line.number ? ` · ${line.number}` : ""}
                           {days ? (
-                            <span className={cn(days > 90 && "text-debit")}> · {days}d</span>
+                            <span className={cn(" · ", days > 90 && "text-debit")}>{days}d outstanding</span>
                           ) : null}
                         </p>
-                        <div className="mt-1.5 text-xs tabular-nums">
-                          {line.payment ? (
-                            <Money amount={line.payment} currency={data.settings.currency} className="text-debit" />
-                          ) : line.deposit ? (
-                            <Money amount={line.deposit} currency={data.settings.currency} className="text-credit" />
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
+                        <div className="mt-1.5 grid grid-cols-2 gap-2 text-xs tabular-nums">
+                          <div>
+                            <p className="text-[0.6rem] uppercase tracking-wide text-muted-foreground">Payment</p>
+                            {line.payment ? (
+                              <Money amount={line.payment} currency={data.settings.currency} className="text-debit" />
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </div>
+                          <div className="text-right">
+                            <p className="text-[0.6rem] uppercase tracking-wide text-muted-foreground">Deposit</p>
+                            {line.deposit ? (
+                              <Money amount={line.deposit} currency={data.settings.currency} className="text-credit" />
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>

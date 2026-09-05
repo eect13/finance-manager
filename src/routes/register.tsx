@@ -99,18 +99,6 @@ const MOBILE_COL_WIDTHS: typeof DEFAULT_COL_WIDTHS = {
 };
 
 /** Phone: Date + Payee + money. Hide type/number/memo/bank/status until View. */
-const MOBILE_REGISTER_COLS: RegisterCols = {
-  date: true,
-  type: false,
-  number: false,
-  payee: true,
-  memo: false,
-  bank: false,
-  payment: true,
-  deposit: true,
-  balance: true,
-  status: false,
-};
 type ColWidths = typeof DEFAULT_COL_WIDTHS;
 
 function isPhoneUi() {
@@ -188,30 +176,6 @@ function RegisterPage() {
   const [editLine, setEditLine] = useState<CashLine | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [colWidths, setColWidths] = useState<ColWidths>(defaultColWidths);
-  // Phone: prefer a compact column set so payee + amounts show without hunting sideways.
-  useEffect(() => {
-    if (!isPhoneUi()) return;
-    const cur = useFinanceStore.getState().data?.settings.registerColumns;
-    if (!cur) return;
-    // Re-apply when still showing desktop-ish extras (type/number/memo/bank/status).
-    const needsPhoneSet =
-      cur.payee &&
-      cur.payment &&
-      cur.deposit &&
-      cur.balance &&
-      (cur.type || cur.number || cur.memo || cur.bank || cur.status);
-    if (!needsPhoneSet) return;
-    patch(
-      (d) => ({
-        ...d,
-        settings: {
-          ...d.settings,
-          registerColumns: { ...MOBILE_REGISTER_COLS },
-        },
-      }),
-      "phone register columns",
-    );
-  }, [patch]);
 
   const [needFit, setNeedFit] = useState(false);
   const fontSize = data.settings.registerFontSize ?? 12;
@@ -686,8 +650,18 @@ function RegisterPage() {
           dates={dates}
           overDate={overDate}
           onOverDate={setOverDate}
+          draggingId={dragging}
+          onPickDate={(date) => {
+            const line =
+              (dragging ? display.find((l) => l.id === dragging) : null) ??
+              (dragging ? filtered.find((l) => l.id === dragging) : null) ??
+              null;
+            setOverDate(null);
+            setDragging(null);
+            if (line) moveLine(line, date);
+          }}
           onDropDate={(date, e) => {
-            const line = parseDrag(e);
+            const line = parseDrag(e) ?? (dragging ? filtered.find((l) => l.id === dragging) : null) ?? null;
             setOverDate(null);
             setDragging(null);
             if (line) moveLine(line, date);
@@ -916,20 +890,30 @@ function DateChips({
   overDate,
   onOverDate,
   onDropDate,
+  onPickDate,
+  draggingId,
   onAddDate,
 }: {
   dates: string[];
   overDate: string | null;
   onOverDate: (date: string | null) => void;
   onDropDate: (date: string, e: DragEvent) => void;
+  onPickDate?: (date: string) => void;
+  draggingId?: string | null;
   onAddDate: (date: string) => void;
 }) {
   return (
-    <div className="no-print mb-2 flex min-w-0 items-center gap-1 overflow-x-auto pb-1">
+    <div
+      className="register-date-chips no-print mb-2 flex min-w-0 items-center gap-1 overflow-x-auto pb-1"
+      data-armed={draggingId ? "true" : undefined}
+    >
       {dates.map((date) => (
         <button
           key={date}
           type="button"
+          onClick={() => {
+            if (draggingId && onPickDate) onPickDate(date);
+          }}
           onDragOver={(e) => {
             e.preventDefault();
             onOverDate(date);
@@ -939,8 +923,11 @@ function DateChips({
             e.preventDefault();
             onDropDate(date, e);
           }}
-          data-drop={overDate === date ? "true" : undefined}
-          className="inline-flex h-8 shrink-0 items-center rounded-full bg-card px-3 text-xs elevation"
+          data-drop={overDate === date || (draggingId && overDate === date) ? "true" : undefined}
+          className={cn(
+            "inline-flex h-8 shrink-0 items-center rounded-full bg-card px-3 text-xs elevation",
+            draggingId && "ring-1 ring-primary/50",
+          )}
         >
           {formatShortDate(date)}
         </button>
@@ -1131,18 +1118,21 @@ function RegisterTable({
     };
   }
 
-  // Phone: card list so date, payee, and money are all visible without sideways scroll.
+  // Phone: full-data cards (same fields as the matrix). Move dates via grip → date chip (HTML5 DnD is unreliable on Android).
   if (isPhoneUi()) {
     return (
       <div className="register-phone-list">
-        <div className="register-phone-toolbar no-print mb-2 flex items-center justify-between gap-2">
+        <div className="register-phone-toolbar no-print mb-2 flex flex-wrap items-center justify-between gap-2">
           <span className="inline-flex items-center gap-1">
             <ShopTick
               checked={allOn}
               indeterminate={someOn}
               locked={!hasSelectable}
               onChange={(on) => {
-                if (!hasSelectable) return;
+                if (!hasSelectable) {
+                  toast.error("On a finished statement. Undo that rec to change this line.");
+                  return;
+                }
                 onToggleAll(on);
               }}
               label="Select all"
@@ -1153,28 +1143,42 @@ function RegisterTable({
             Bal <Money amount={lastBalance} currency={currency} className="inline font-medium text-foreground" />
           </span>
         </div>
+        {dragOn ? (
+          <p className="mb-2 text-[0.7rem] text-muted-foreground no-print">
+            Move on: tap the grip on a row, then tap a date chip above.
+          </p>
+        ) : null}
         <ul className="flex flex-col gap-2">
           {lines.map((line) => {
             const isOpening = line.kind === "opening";
-            const locked = Boolean(line.locked);
+            const locked = line.recon === "reconciled";
             const isOn = selected.has(line.id);
             const bank = banks.find((b) => b.id === line.bankId);
+            const canDrag = dragOn && line.reschedulable;
+            const armed = dragging === line.id;
             return (
               <li key={line.id}>
                 <div
                   role="button"
-                  tabIndex={0}
+                  tabIndex={isOpening ? undefined : 0}
                   className={cn(
                     "register-phone-card rounded-2xl border border-border bg-card px-3 py-2.5 touch-manipulation",
                     isOn && "ring-1 ring-primary/40",
-                    activeId === line.id && "bg-accent/40",
+                    activeId === line.id && "bg-accent/30",
+                    armed && "ring-2 ring-primary",
+                    overRow === line.id && dragOn && "bg-accent/50",
                   )}
                   onClick={() => {
+                    if (isOpening) return;
+                    if (dragOn && armed) {
+                      /* keep armed until date chip */
+                      return;
+                    }
                     onActivate(line.id);
                     onOpen(line);
                   }}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") {
+                    if (e.key === "Enter" && !isOpening) {
                       onActivate(line.id);
                       onOpen(line);
                     }
@@ -1182,7 +1186,7 @@ function RegisterTable({
                 >
                   <div className="flex items-start gap-2">
                     <div
-                      className="shrink-0 pt-0.5"
+                      className="flex shrink-0 flex-col items-center gap-1 pt-0.5"
                       onClick={(e) => e.stopPropagation()}
                       onPointerDown={(e) => e.stopPropagation()}
                     >
@@ -1196,34 +1200,105 @@ function RegisterTable({
                           label={`Select ${line.party}`}
                         />
                       )}
+                      {canDrag ? (
+                        <button
+                          type="button"
+                          className={cn(
+                            "register-phone-grip inline-flex size-9 items-center justify-center rounded-lg border border-border text-muted-foreground",
+                            armed && "border-primary bg-primary/10 text-foreground",
+                          )}
+                          aria-label={armed ? "Selected to move — tap a date chip" : "Move to another date"}
+                          aria-pressed={armed}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (armed) onDragEnd();
+                            else onDragStart(line.id);
+                          }}
+                        >
+                          <DragHandle enabled className="pointer-events-none" />
+                        </button>
+                      ) : null}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-baseline justify-between gap-2">
-                        <p className="truncate text-sm font-medium">{line.party || (isOpening ? "Opening" : "—")}</p>
+                        <p className="min-w-0 truncate text-sm font-medium">
+                          {line.party || (isOpening ? "Opening balance" : "—")}
+                        </p>
                         <p className="shrink-0 text-xs text-muted-foreground tabular-nums">
                           {isOpening && !line.date ? "Opening" : formatRegisterDate(line.date)}
                         </p>
                       </div>
-                      <p className="mt-0.5 truncate text-[0.7rem] text-muted-foreground">
-                        {KIND_LABEL[line.kind]}
-                        {line.number ? ` · ${line.number}` : ""}
-                        {bank ? ` · ${bank.nickname}` : ""}
+                      <p className="mt-0.5 text-[0.7rem] leading-snug text-muted-foreground">
+                        <span>{KIND_LABEL[line.kind]}</span>
+                        {line.number ? <span> · {line.number}</span> : null}
+                        {bank ? <span> · {bank.nickname}</span> : null}
                       </p>
-                      <div className="mt-1.5 flex items-center justify-between gap-2 text-xs tabular-nums">
-                        <span className="min-w-0">
+                      {line.memo ? (
+                        <p className="mt-0.5 text-[0.7rem] leading-snug text-muted-foreground/90 break-words">{line.memo}</p>
+                      ) : null}
+                      <div className="mt-1.5 grid grid-cols-3 gap-2 text-xs tabular-nums">
+                        <div>
+                          <p className="text-[0.6rem] uppercase tracking-wide text-muted-foreground">Out</p>
                           {line.payment ? (
                             <Money amount={line.payment} currency={currency} className="text-debit" />
-                          ) : line.deposit ? (
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-[0.6rem] uppercase tracking-wide text-muted-foreground">In</p>
+                          {line.deposit ? (
                             <Money amount={line.deposit} currency={currency} className="text-credit" />
                           ) : (
                             <span className="text-muted-foreground">—</span>
                           )}
-                        </span>
-                        <span className="shrink-0 text-muted-foreground">
-                          Bal{" "}
-                          <Money amount={line.balance} currency={currency} className="inline font-medium text-foreground" />
-                        </span>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[0.6rem] uppercase tracking-wide text-muted-foreground">Bal</p>
+                          <Money amount={line.balance} currency={currency} className="font-medium" />
+                        </div>
                       </div>
+                      {!isOpening ? (
+                        <div
+                          className="mt-1.5 flex flex-wrap items-center gap-2"
+                          onClick={(e) => e.stopPropagation()}
+                          onPointerDown={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            type="button"
+                            className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-[0.7rem]"
+                            onClick={() => onCycleRecon(line)}
+                          >
+                            <LineStatus line={line} />
+                            <span className="text-muted-foreground">
+                              {line.recon === "reconciled"
+                                ? "Reconciled"
+                                : line.recon === "cleared"
+                                  ? "Cleared"
+                                  : "Pending"}
+                            </span>
+                          </button>
+                          {line.reassignable ? (
+                            <Select value={line.bankId} onValueChange={(v) => onSwap(line, v)}>
+                              <SelectTrigger
+                                className="h-8 min-h-8 w-auto max-w-[9rem] border-border bg-transparent px-2 text-[0.7rem] shadow-none"
+                                aria-label={`Bank for ${line.party}`}
+                              >
+                                <SelectValue placeholder="Bank" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {banks
+                                  .filter((b) => !b.archived)
+                                  .map((b) => (
+                                    <SelectItem key={b.id} value={b.id}>
+                                      {b.nickname}
+                                    </SelectItem>
+                                  ))}
+                              </SelectContent>
+                            </Select>
+                          ) : null}
+                        </div>
+                      ) : null}
                     </div>
                   </div>
                 </div>

@@ -44,10 +44,11 @@ export function ShopTick({
       ) : (
         <span
           className={cn(
-            "pointer-events-none inline-flex size-[1.125rem] shrink-0 items-center justify-center rounded-[3px] border border-solid shadow-none",
-            on ? "border-primary bg-primary text-primary-foreground" : "border-foreground/45 bg-card",
+            "pointer-events-none inline-flex size-[1.125rem] shrink-0 items-center justify-center rounded-[3px] border-2 border-solid",
+            on
+              ? "border-primary bg-primary text-primary-foreground shadow-sm"
+              : "border-foreground/55 bg-background shadow-none dark:border-foreground/70 dark:bg-muted",
           )}
-          style={{ boxShadow: "none" }}
         >
           {indeterminate ? <Minus className="size-3 stroke-[3]" /> : checked ? <Check className="size-3 stroke-[3]" /> : null}
         </span>

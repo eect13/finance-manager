@@ -576,7 +576,7 @@ function ReconcilePage() {
                         data-index={item.index}
                         className={cn(
                           "border-b border-border/70 last:border-0 touch-manipulation",
-                          on && "bg-primary/5",
+                          on && "bg-primary/15",
                         )}
                         {...openProps(openKindFor(line), openId, { click: true })}
                       >
@@ -656,7 +656,7 @@ function ReconcilePage() {
                       <div
                         className={cn(
                           "recon-phone-card flex items-start gap-2 rounded-2xl border border-border/40 bg-card px-3 py-3 touch-manipulation shadow-none",
-                          on && "ring-1 ring-primary/40",
+                          on && "border-primary bg-primary/15 ring-1 ring-primary",
                         )}
                         {...openProps(openKindFor(line), openId, { click: true })}
                       >
@@ -843,8 +843,12 @@ function ReconcilePage() {
                       key={line.id}
                       ref={deskVirt.measureElement}
                       data-index={item.index}
-                      className="border-b border-border/70 last:border-0"
+                      className={cn(
+                        "border-b border-border/70 last:border-0",
+                        on && "bg-primary/15",
+                      )}
                       data-active={on ? "true" : undefined}
+                      data-selected={on ? "true" : undefined}
                       {...openProps(
                         openKindFor(line),
                         line.kind === "bill-payment"

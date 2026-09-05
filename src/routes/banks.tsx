@@ -46,7 +46,7 @@ const BANK_COLS = {
   status: 100,
   book: 128,
   pending: 128,
-  actions: 52,
+  actions: 96,
 } as const;
 
 const BANK_SORT = [
@@ -132,7 +132,7 @@ function BanksPage() {
   return (
     <AppShell
       title="Banks"
-      description="Balances across every account. List matches the register. Double-tap or double-click a row to edit, or tap a card. Delete is in ⋯ on the list — not on every card."
+      description="Balances across every account. List matches the register. Double-tap or double-click a row to edit, or tap a card. Delete is on the list row — not on every card."
       wide
       actions={
         <>

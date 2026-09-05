@@ -819,11 +819,21 @@
   }
 
   .register-matrix tr[data-selected="true"] td {
-    background: color-mix(in oklab, var(--color-primary) 8%, var(--color-card));
+    background: color-mix(in oklab, var(--color-primary) 15%, var(--color-card));
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-primary) 45%, transparent);
   }
 
   .register-matrix tr[data-selected="true"]:hover td {
-    background: color-mix(in oklab, var(--color-primary) 12%, var(--color-card));
+    background: color-mix(in oklab, var(--color-primary) 20%, var(--color-card));
+  }
+
+  .dark .register-matrix tr[data-selected="true"] td {
+    background: color-mix(in oklab, var(--color-primary) 22%, var(--color-card));
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-primary) 65%, transparent);
+  }
+
+  .dark .register-matrix tr[data-selected="true"]:hover td {
+    background: color-mix(in oklab, var(--color-primary) 28%, var(--color-card));
   }
 
   .register-matrix tr[data-drop="true"] td {
@@ -4214,4 +4224,20 @@ body.is-phone-move-dragging {
 /* Pending badge: stronger fill on dark so label stays readable */
 .dark .bg-warning\/10 {
   background-color: color-mix(in oklab, var(--color-warning) 22%, var(--color-card));
+}
+
+/* v3.62.52: selected row/card + tick contrast on dark */
+.dark .register-phone-card.border-primary,
+.dark .recon-phone-card.border-primary {
+  background-color: color-mix(in oklab, var(--color-primary) 18%, var(--color-card));
+}
+.dark .recon-table-card tr[data-selected="true"] td {
+  background: color-mix(in oklab, var(--color-primary) 18%, var(--color-card));
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-primary) 55%, transparent);
+}
+.dark .register-matrix tr[data-selected="true"] .col-check {
+  background: color-mix(in oklab, var(--color-primary) 22%, var(--color-card));
+}
+.dark .register-tick > span.border-primary {
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-primary) 80%, transparent);
 }

@@ -10,38 +10,54 @@ export type RowMenuItem = {
   danger?: boolean;
 };
 
-/** Primary action stays on the row; every extra item sits in ⋯ so Delete never paints a column. */
+/** Primary action stays on the row. Extra items go in ⋯ — except delete-only menus, which render Delete on the row. */
 export function RowActions({ primary, items }: { primary?: ReactNode; items?: RowMenuItem[] }) {
   const extra = (items ?? []).filter(Boolean);
+  const deleteOnly = extra.length > 0 && extra.every((i) => i.danger);
+
   return (
     <div className="flex flex-nowrap items-center justify-end gap-1" onClick={stopOpen} onPointerDown={stopOpen}>
       {primary}
-      {extra.length > 0 ? (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+      {deleteOnly
+        ? extra.map((item) => (
             <Button
+              key={item.label}
               size="sm"
               variant="outline"
-              aria-label="More actions"
-              title="More actions"
-              className="size-8 shrink-0 px-0 text-muted-foreground hover:text-foreground"
+              className="shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              onClick={item.onSelect}
             >
-              <MoreHorizontal className="size-4" />
+              {item.label}
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {extra.map((item) => (
-              <DropdownMenuItem
-                key={item.label}
-                onClick={item.onSelect}
-                className={item.danger ? "text-destructive" : undefined}
-              >
-                {item.label}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ) : null}
+          ))
+        : extra.length > 0
+          ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    aria-label="More actions"
+                    title="More actions"
+                    className="size-8 shrink-0 px-0 text-muted-foreground hover:text-foreground"
+                  >
+                    <MoreHorizontal className="size-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {extra.map((item) => (
+                    <DropdownMenuItem
+                      key={item.label}
+                      onClick={item.onSelect}
+                      className={item.danger ? "text-destructive" : undefined}
+                    >
+                      {item.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )
+          : null}
     </div>
   );
 }

@@ -1425,7 +1425,7 @@ function RegisterTable({
                       data-drop-place={overRow === line.id && dragOn ? overPlace ?? undefined : undefined}
                       className={cn(
                         "border-b border-border/70 last:border-0 touch-manipulation",
-                        isOn && "bg-primary/5",
+                        isOn && "bg-primary/15",
                         activeId === line.id && "bg-accent/30",
                         isDragging && "ring-1 ring-inset ring-primary opacity-60",
                         overRow === line.id && dragOn && "bg-accent/50",
@@ -1581,8 +1581,7 @@ function RegisterTable({
                     data-drop-place={overRow === line.id && dragOn ? overPlace ?? undefined : undefined}
                     className={cn(
                       "register-phone-card rounded-2xl border border-border/40 bg-card px-3 py-3 touch-manipulation shadow-none",
-                      isOn && "bg-primary/5",
-                      isOn && "ring-1 ring-primary/40",
+                      isOn && "border-primary bg-primary/15 ring-1 ring-primary",
                       activeId === line.id && "bg-accent/30",
                       isDragging && "ring-2 ring-primary opacity-60",
                       overRow === line.id && dragOn && "bg-accent/50",

@@ -1,4 +1,4 @@
-# Finance Manager v3.62.51
+# Finance Manager v3.62.52
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -11,6 +11,11 @@ No accounts, no server setup. Books stay on this computer (IndexedDB). Settings 
 The app mark is a **navy tile with cream pillars** — a full opaque square (Windows 11 already rounds the tile; transparent corners were a white plate). Web uses the SVG favicon. Windows uses a **BMP 32-bit** `.ico` (PNG-in-ICO is a white square on the shortcut and the taskbar). After install, **delete any leftover blank shortcut** and pin the new one — Explorer caches the last icon.
 
 
+
+## What's new in v3.62.52
+
+- **Dark select contrast**: Register Grid/List + Reconcile ticked rows use clearer selected tint (`bg-primary/15` + primary border/ring); ShopTick filled primary when checked; sidebar active item lightly bumped
+- **Banks list Delete**: desk row shows a Delete button when that is the only action (no delete-only ⋯)
 
 ## What's new in v3.62.51
 

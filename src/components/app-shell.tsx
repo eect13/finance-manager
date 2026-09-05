@@ -133,7 +133,7 @@ function NavLinks({
                 className={cn(
                   "flex min-h-11 items-center rounded-xl text-sm",
                   rail ? "size-11 justify-center" : "gap-3 px-3",
-                  active ? "bg-card text-foreground elevation" : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                  active ? "bg-primary/15 text-foreground ring-1 ring-inset ring-primary/50" : "text-muted-foreground hover:bg-accent hover:text-foreground",
                 )}
                 aria-current={active ? "page" : undefined}
                 title={rail ? item.label : undefined}

@@ -1,4 +1,4 @@
-# Finance Manager v3.62.37
+# Finance Manager v3.62.38
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -11,6 +11,10 @@ No accounts, no server setup. Books stay on this computer (IndexedDB). Settings 
 The app mark is a **navy tile with cream pillars** — a full opaque square (Windows 11 already rounds the tile; transparent corners were a white plate). Web uses the SVG favicon. Windows uses a **BMP 32-bit** `.ico` (PNG-in-ICO is a white square on the shortcut and the taskbar). After install, **delete any leftover blank shortcut** and pin the new one — Explorer caches the last icon.
 
 
+
+## What's new in v3.62.38
+
+- Fix `deploy/android/apk.bat` false "java is not JDK 17" on Microsoft OpenJDK (`openjdk version "17.0.20.1"`): drop brittle for/f + findstr /r quote regex; after forcing JAVA_HOME to Microsoft jdk-17*, verify `bin\java.exe` and `java -version | findstr /C:"17."`
 
 ## What's new in v3.62.37
 

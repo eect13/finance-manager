@@ -47,22 +47,23 @@ if not defined JAVA_HOME (
   exit /b 1
 )
 
+if not exist "%JAVA_HOME%\bin\java.exe" (
+  echo ERROR: java.exe missing under JAVA_HOME=%JAVA_HOME%
+  pause
+  exit /b 1
+)
+
 set "PATH=%JAVA_HOME%\bin;%PATH%"
 echo JAVA_HOME=%JAVA_HOME%
 java -version 2>&1
 echo.
 
-REM Confirm major version is 17
-for /f "tokens=3" %%V in ('java -version 2^>^&1 ^| findstr /i "version"') do (
-  set "JV=%%~V"
-  goto :got_jv
-)
-:got_jv
-echo Detected java version string: !JV!
-echo !JV! | findstr /r "\"17[\.\"]" >nul
+REM Simple sanity: PATH java should report a 17.x line (Microsoft prints openjdk version "17.0.20.1")
+REM Avoid brittle for/f + findstr /r quote parsing — %%~V strips quotes and older regex falsely failed.
+java -version 2>&1 | findstr /C:"17." >nul
 if errorlevel 1 (
-  echo ERROR: java is not JDK 17. Got: !JV!
-  echo This bat refuses Studio JBR / JDK 25. Fix JAVA_HOME and retry.
+  echo ERROR: java is not JDK 17 after forcing JAVA_HOME.
+  echo Got output above. This bat refuses Studio JBR / JDK 25.
   echo.
   echo Common fixes:
   echo   - Install Microsoft OpenJDK 17 ^(not Android Studio JBR^)
@@ -72,6 +73,8 @@ if errorlevel 1 (
   pause
   exit /b 1
 )
+echo JDK 17 check OK.
+echo.
 
 REM --- Android SDK / NDK ---
 if exist "%LOCALAPPDATA%\Android\Sdk" (

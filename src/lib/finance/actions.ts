@@ -1,6 +1,6 @@
 // @ts-nocheck — restored from the last production build (types live in store.ts via typeof)
 import { newId } from "./ids";
-import { todayIso } from "./format";
+import { formatMoney, todayIso } from "./format";
 import {
   billBalance,
   invoiceBalance,
@@ -1863,8 +1863,8 @@ export function finishRecon(
     reconHistory: [...(next.reconHistory ?? []), report],
   };
   return appendAudit(next, "recon", `Finished ${bank.nickname} statement ${input.statementDate}.`, {
-    old: last ? String(last.statementEnding) : String(beginning),
-    new: String(input.statementEnding),
+    old: formatMoney(last ? last.statementEnding : beginning, data.settings.currency),
+    new: formatMoney(input.statementEnding, data.settings.currency),
   });
 }
 
@@ -1902,8 +1902,8 @@ export function undoLastRecon(data: FinanceData, bankId: string): FinanceData {
     ),
   };
   return appendAudit(next, "recon-undo", `Undid ${bank?.nickname ?? "bank"} statement ${last.statementDate}.`, {
-    old: String(last.statementEnding),
-    new: prev ? String(prev.statementEnding) : "",
+    old: formatMoney(last.statementEnding, data.settings.currency),
+    new: prev ? formatMoney(prev.statementEnding, data.settings.currency) : "",
   });
 }
 
@@ -1933,7 +1933,8 @@ export function postReconAdjustment(
           memo: input.memo || "Interest earned",
         });
   const journal = next.journals[next.journals.length - 1];
-  return { data: appendAudit(next, "recon-adj", `${input.kind === "fee" ? "Service charge" : "Interest"} ${amount}`, { new: String(amount) }), journalId: journal?.id ?? "" };
+  const money = formatMoney(amount, data.settings.currency);
+  return { data: appendAudit(next, "recon-adj", `${input.kind === "fee" ? "Service charge" : "Interest"} ${money}`, { new: money }), journalId: journal?.id ?? "" };
 }
 
 export function mergeCustomers(data: FinanceData, keepId: string, dropId: string): FinanceData {

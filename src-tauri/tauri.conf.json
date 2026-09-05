@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Finance Manager",
-  "version": "3.62.48",
+  "version": "3.62.49",
   "identifier": "app.financemanager.desktop",
   "build": {
     "beforeDevCommand": "npm run dev",

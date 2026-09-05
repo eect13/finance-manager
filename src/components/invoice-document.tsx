@@ -33,6 +33,7 @@ export function InvoiceDocument({
       reconHistory: [],
       closeHistory: [],
       audit: [],
+      registerOrder: {},
       nextNumbers: { invoice: 0, check: {}, receipt: 1, bill: 1 },
       vendors: [],
       bills: [],

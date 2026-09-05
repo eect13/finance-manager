@@ -1,6 +1,6 @@
 [package]
 name = "finance-manager"
-version = "3.62.42"
+version = "3.62.43"
 description = "Finance Manager"
 edition = "2021"
 rust-version = "1.77"

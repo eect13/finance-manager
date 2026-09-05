@@ -9,7 +9,6 @@ import { ConfirmDelete } from "@/components/confirm-delete";
 import { DragHandle, setCashDragImage } from "@/components/drag-handle";
 import { usePhoneMoveDrag } from "@/components/use-phone-move-drag";
 import { PhoneLayoutToggle } from "@/components/phone-layout-toggle";
-import { PhoneSwipe } from "@/components/phone-swipe";
 import {
   REGISTER_PHONE_LAYOUT_KEY,
   readPhoneLayout,
@@ -38,7 +37,8 @@ import { fitColumnWidth, widthsMatch } from "@/lib/finance/fit-column";
 import { formatDate, formatRegisterDate, formatShortDate } from "@/lib/finance/format";
 import { openCashLine, stopOpen } from "@/lib/finance/open-record";
 import {
-  boardDates,
+  dropPlaceFromPoint,
+  type ArrangePlace,
   cashBook,
   datePresetRange,
   deletableLines,
@@ -163,7 +163,7 @@ const COL_LABELS: Record<RegisterColId, string> = {
 
 function RegisterPage() {
   const data = useFinanceData();
-  const rescheduleCashLine = useFinanceStore((s) => s.rescheduleCashLine);
+  const arrangeCashLine = useFinanceStore((s) => s.arrangeCashLine);
   const removeCashLines = useFinanceStore((s) => s.removeCashLines);
   const reassignCashBank = useFinanceStore((s) => s.reassignCashBank);
   const setCashRecon = useFinanceStore((s) => s.setCashRecon);
@@ -182,9 +182,8 @@ function RegisterPage() {
     readPhoneLayout(REGISTER_PHONE_LAYOUT_KEY, "grid"),
   );
   const phone = usePhoneUi();
-  const [extraDates, setExtraDates] = useState<string[]>([]);
   const [dragging, setDragging] = useState<string | null>(null);
-  const [overDate, setOverDate] = useState<string | null>(null);
+  const [overPlace, setOverPlace] = useState<ArrangePlace | null>(null);
   const [overRow, setOverRow] = useState<string | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const [confirm, setConfirm] = useState<"all" | "selected" | null>(null);
@@ -298,7 +297,6 @@ function RegisterPage() {
   const balanced = tableSource;
   const stats = useMemo(() => totals(raw), [raw]);
   const ending = windowBalanced.at(-1)?.balance ?? opening;
-  const dates = useMemo(() => boardDates(filtered, extraDates), [filtered, extraDates]);
   const deletable = useMemo(() => deletableLines(balanced), [balanced]);
   const movable = useMemo(() => movableLines(balanced), [balanced]);
   const keepIds = useMemo(() => {
@@ -357,26 +355,41 @@ function RegisterPage() {
     if (!data.banks.some((b) => !b.archived && b.id === bankFilter)) setBankFilter("all");
   }, [bankFilter, data.banks]);
 
-  const moveLine = useCallback(
-    (line: CashLine, date: string) => {
+  const arrangeLine = useCallback(
+    (line: CashLine, target: CashLine, place: ArrangePlace) => {
       const kind = rescheduleKind(line.kind);
       if (!kind || !line.reschedulable) {
-        toast.error("This line can't change date (reconciled or locked).");
+        toast.error("This line can't move (reconciled or locked).");
         return;
       }
-      if (line.date === date) {
-        toast.message(`Already on ${formatDate(date)}.`);
-        return;
-      }
+      if (target.kind === "opening" || target.id === line.id) return;
       try {
-        rescheduleCashLine({ kind, sourceId: line.sourceId, date });
-        if (line.kind === "transfer") toast.success(`Transfer moved to ${formatDate(date)} — both banks.`);
-        else toast.success(`${line.number || KIND_LABEL[line.kind]} moved to ${formatDate(date)}.`);
+        const meta = arrangeCashLine({
+          kind,
+          sourceId: line.sourceId,
+          lineId: line.id,
+          targetLineId: target.id,
+          place,
+          date: target.date,
+        });
+        if (!meta.dateChanged && !meta.orderChanged) {
+          toast.message("Already in place.");
+          return;
+        }
+        if (meta.dateChanged && meta.orderChanged) {
+          if (line.kind === "transfer") toast.success(`Transfer moved to ${formatDate(target.date)} — both banks.`);
+          else toast.success(`${line.number || KIND_LABEL[line.kind]} moved to ${formatDate(target.date)}.`);
+        } else if (meta.dateChanged) {
+          if (line.kind === "transfer") toast.success(`Transfer moved to ${formatDate(target.date)} — both banks.`);
+          else toast.success(`${line.number || KIND_LABEL[line.kind]} moved to ${formatDate(target.date)}.`);
+        } else {
+          toast.success("Passbook order updated.");
+        }
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Could not move.");
+        toast.error(err instanceof Error ? err.message : "Could not arrange.");
       }
     },
-    [rescheduleCashLine],
+    [arrangeCashLine],
   );
 
   const swapBank = useCallback(
@@ -503,36 +516,47 @@ function RegisterPage() {
   const phoneMove = usePhoneMoveDrag({
     enabled: Boolean(phone && dragOn),
     onDragId: setDragging,
-    onOverDate: setOverDate,
     onOverRow: setOverRow,
-    onDrop: (lineId, date) => {
+    onOverPlace: setOverPlace,
+    onDrop: ({ lineId, targetId, place }) => {
       const line = resolveLine(lineId);
-      if (line) moveLine(line, date);
+      const target = resolveLine(targetId);
+      if (line && target) arrangeLine(line, target, place);
     },
     captionFor: (id) => {
       const line = resolveLine(id);
       return line ? transferDragCaption(line) : "Move";
     },
-    onTapWithoutDrag: () => toast.message("Drag onto a date chip or another row."),
+    onTapWithoutDrag: () => toast.message("Drag above or below another row."),
   });
 
   const clearPhoneMove = phoneMove.clear;
   const handleDragStart = useCallback((id: string) => setDragging(id), []);
   const handleDragEnd = useCallback(() => {
     setDragging(null);
-    setOverDate(null);
+    setOverPlace(null);
     setOverRow(null);
     clearPhoneMove();
   }, [clearPhoneMove]);
   const handleDropRow = useCallback(
     (target: CashLine, e: DragEvent) => {
       const line = parseDrag(e);
+      const place = dropPlaceFromPoint(
+        e.clientY,
+        (e.currentTarget as HTMLElement).getBoundingClientRect().top,
+        (e.currentTarget as HTMLElement).getBoundingClientRect().height,
+      );
       setOverRow(null);
+      setOverPlace(null);
       setDragging(null);
-      if (line && target.kind !== "opening") moveLine(line, target.date);
+      if (line && target.kind !== "opening") arrangeLine(line, target, place);
     },
-    [parseDrag, moveLine],
+    [parseDrag, arrangeLine],
   );
+  const handleOverRow = useCallback((id: string | null, place: ArrangePlace | null = null) => {
+    setOverRow(id);
+    setOverPlace(id ? place : null);
+  }, []);
 
   function targets(ids: string[]) {
     return deletable.filter((l) => ids.includes(l.id)).map((l) => ({ kind: l.kind, sourceId: l.sourceId }));
@@ -657,7 +681,7 @@ function RegisterPage() {
               setDragOn(on);
               if (!on) {
                 setDragging(null);
-                setOverDate(null);
+                setOverPlace(null);
                 setOverRow(null);
                 phoneMove.clear();
               }
@@ -704,25 +728,6 @@ function RegisterPage() {
           </button>
         ))}
       </div>
-      {dragOn ? (
-        <DateChips
-          dates={dates}
-          overDate={overDate}
-          onOverDate={setOverDate}
-          draggingId={dragging}
-          onChipClick={() => {
-            if (phoneMove.consumeChipClickGuard()) return;
-            toast.message("Drag a grip onto a date chip or another row.");
-          }}
-          onDropDate={(date, e) => {
-            const line = parseDrag(e) ?? (dragging ? filtered.find((l) => l.id === dragging) : null) ?? null;
-            setOverDate(null);
-            setDragging(null);
-            if (line) moveLine(line, date);
-          }}
-          onAddDate={(date) => setExtraDates((prev) => (prev.includes(date) ? prev : [...prev, date]))}
-        />
-      ) : null}
       </div>
       </div>
 
@@ -762,6 +767,7 @@ function RegisterPage() {
           dragging={dragging}
           draggingSourceId={draggingSourceId}
           overRow={overRow}
+          overPlace={overPlace}
           sortKey={sort.key}
           sortDir={sort.dir}
           activeId={activeId}
@@ -786,7 +792,7 @@ function RegisterPage() {
           onSwap={swapBank}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
-          onOverRow={setOverRow}
+          onOverRow={handleOverRow}
           onDropRow={handleDropRow}
           onPhoneMoveGrip={phoneMove.onGripPointerDown}
         />
@@ -939,7 +945,7 @@ function ViewOptions({
             <Label htmlFor="drag-dates" className="text-sm">
               Move dates
             </Label>
-            <p className="text-[0.7rem] text-muted-foreground">Drag a grip onto a date or row</p>
+            <p className="text-[0.7rem] text-muted-foreground">Drag above/below a row (same-day order or new date)</p>
           </div>
           <Switch id="drag-dates" checked={dragOn} onCheckedChange={onDragOn} />
         </div>
@@ -949,7 +955,7 @@ function ViewOptions({
             <Label htmlFor="drag-dates-desk" className="text-sm">
               Move dates
             </Label>
-            <p className="text-[0.7rem] text-muted-foreground">Drag a grip onto a date chip</p>
+            <p className="text-[0.7rem] text-muted-foreground">Drag above/below a row — passbook order + date</p>
           </div>
           <Switch id="drag-dates-desk" checked={dragOn} onCheckedChange={onDragOn} />
         </div>
@@ -1045,67 +1051,6 @@ function ViewOptions({
   );
 }
 
-function DateChips({
-  dates,
-  overDate,
-  onOverDate,
-  onDropDate,
-  onChipClick,
-  draggingId,
-  onAddDate,
-}: {
-  dates: string[];
-  overDate: string | null;
-  onOverDate: (date: string | null) => void;
-  onDropDate: (date: string, e: DragEvent) => void;
-  onChipClick?: () => void;
-  draggingId?: string | null;
-  onAddDate: (date: string) => void;
-}) {
-  return (
-    <div
-      className="register-date-chips no-print mb-2 flex min-w-0 items-center gap-1 overflow-x-auto pb-1"
-      data-armed={draggingId ? "true" : undefined}
-    >
-      {dates.map((date) => (
-        <button
-          key={date}
-          type="button"
-          data-move-date={date}
-          onClick={() => {
-            onChipClick?.();
-          }}
-          onDragOver={(e) => {
-            e.preventDefault();
-            onOverDate(date);
-          }}
-          onDragLeave={() => onOverDate(null)}
-          onDrop={(e) => {
-            e.preventDefault();
-            onDropDate(date, e);
-          }}
-          data-drop={overDate === date ? "true" : undefined}
-          className={cn(
-            "inline-flex h-8 shrink-0 items-center rounded-full bg-card px-3 text-xs elevation",
-            draggingId && "ring-1 ring-primary/50",
-          )}
-        >
-          {formatShortDate(date)}
-        </button>
-      ))}
-      <label className="inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-muted px-3 text-xs">
-        <span className="text-muted-foreground">Add date</span>
-        <Input
-          type="date"
-          className="h-7 w-32 border-0 bg-transparent px-1 shadow-none"
-          onChange={(e) => {
-            if (e.target.value) onAddDate(e.target.value);
-          }}
-        />
-      </label>
-    </div>
-  );
-}
 
 type BankLite = { id: string; nickname: string; archived?: boolean };
 
@@ -1127,6 +1072,7 @@ function RegisterTable({
   dragging,
   draggingSourceId,
   overRow,
+  overPlace,
   sortKey,
   sortDir,
   activeId,
@@ -1164,6 +1110,7 @@ function RegisterTable({
   dragging: string | null;
   draggingSourceId: string | null;
   overRow: string | null;
+  overPlace: ArrangePlace | null;
   sortKey: string;
   sortDir: SortDir;
   activeId: string | null;
@@ -1180,7 +1127,7 @@ function RegisterTable({
   onSwap: (line: CashLine, bankId: string) => void;
   onDragStart: (id: string) => void;
   onDragEnd: () => void;
-  onOverRow: (id: string | null) => void;
+  onOverRow: (id: string | null, place?: ArrangePlace | null) => void;
   onDropRow: (line: CashLine, e: DragEvent) => void;
   onPhoneMoveGrip: (lineId: string, e: ReactPointerEvent) => void;
 }) {
@@ -1328,7 +1275,7 @@ function RegisterTable({
     );
     const moveHint = dragOn ? (
       <p className="phone-card-meta mb-2 text-muted-foreground no-print">
-        Move on: drag a grip onto a date chip above or onto another row.
+        Move on: drag a grip above or below another row (same day reorders; other day adopts that date).
       </p>
     ) : null;
 
@@ -1417,6 +1364,7 @@ function RegisterTable({
                       data-move-row={dragOn && !isOpening ? line.id : undefined}
                       data-move-row-date={dragOn && !isOpening ? line.date : undefined}
                       data-dragging={isDragging ? "true" : undefined}
+                      data-drop-place={overRow === line.id && dragOn ? overPlace ?? undefined : undefined}
                       className={cn(
                         "border-b border-border/70 last:border-0 touch-manipulation",
                         isOn && "bg-primary/5",
@@ -1460,7 +1408,7 @@ function RegisterTable({
                                 "register-phone-grip inline-flex size-8 items-center justify-center rounded-md border border-border text-muted-foreground",
                                 isDragging && "border-primary bg-primary/10 text-foreground",
                               )}
-                              aria-label="Drag to another date"
+                              aria-label="Drag to rearrange"
                               aria-pressed={isDragging}
                               onPointerDown={(e) => {
                                 e.stopPropagation();
@@ -1477,11 +1425,11 @@ function RegisterTable({
                               aria-label="Date locked — can't move"
                               onPointerDown={(e) => {
                                 e.stopPropagation();
-                                toast.error("Reconciled or locked lines can't change date.");
+                                toast.error("Reconciled or locked lines can't move.");
                               }}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                toast.error("Reconciled or locked lines can't change date.");
+                                toast.error("Reconciled or locked lines can't move.");
                               }}
                             >
                               <DragHandle enabled className="pointer-events-none opacity-50" />
@@ -1550,37 +1498,16 @@ function RegisterTable({
             const isDragging = dragging === line.id || isTransferMate(line, draggingSourceId);
             return (
               <li key={line.id} ref={virtualizer.measureElement} data-index={item.index}>
-                <PhoneSwipe
-                  enabled={!isOpening && !dragOn}
-                  actions={[
-                    ...(!isOpening && !dragOn
-                      ? [
-                          {
-                            label: line.recon === "cleared" ? "Pending" : "Clear",
-                            tone: "success" as const,
-                            onAction: () => onCycleRecon(line),
-                          },
-                          ...(locked
-                            ? []
-                            : [
-                                {
-                                  label: "Delete",
-                                  tone: "danger" as const,
-                                  onAction: () => onAskDelete(line.id),
-                                },
-                              ]),
-                        ]
-                      : []),
-                  ]}
-                >
                   <div
                     role="button"
                     tabIndex={isOpening ? undefined : 0}
                     data-move-row={dragOn && !isOpening ? line.id : undefined}
                     data-move-row-date={dragOn && !isOpening ? line.date : undefined}
                     data-dragging={isDragging ? "true" : undefined}
+                    data-drop-place={overRow === line.id && dragOn ? overPlace ?? undefined : undefined}
                     className={cn(
                       "register-phone-card rounded-2xl border border-border/40 bg-card px-3 py-3 touch-manipulation shadow-none",
+                      isOn && "bg-primary/5",
                       isOn && "ring-1 ring-primary/40",
                       activeId === line.id && "bg-accent/30",
                       isDragging && "ring-2 ring-primary opacity-60",
@@ -1623,7 +1550,7 @@ function RegisterTable({
                                 "register-phone-grip inline-flex size-9 items-center justify-center rounded-lg border border-border text-muted-foreground",
                                 isDragging && "border-primary bg-primary/10 text-foreground",
                               )}
-                              aria-label="Drag to another date"
+                              aria-label="Drag to rearrange"
                               aria-pressed={isDragging}
                               onPointerDown={(e) => {
                                 e.stopPropagation();
@@ -1640,11 +1567,11 @@ function RegisterTable({
                               aria-label="Date locked — can't move"
                               onPointerDown={(e) => {
                                 e.stopPropagation();
-                                toast.error("Reconciled or locked lines can't change date.");
+                                toast.error("Reconciled or locked lines can't move.");
                               }}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                toast.error("Reconciled or locked lines can't change date.");
+                                toast.error("Reconciled or locked lines can't move.");
                               }}
                             >
                               <DragHandle enabled className="pointer-events-none opacity-50" />
@@ -1777,7 +1704,6 @@ function RegisterTable({
                       </div>
                     </div>
                   </div>
-                </PhoneSwipe>
               </li>
             );
           })}
@@ -1960,6 +1886,7 @@ function RegisterTable({
                   dragOn={dragOn}
                   dragging={dragging === line.id || isTransferMate(line, draggingSourceId)}
                   over={overRow === line.id}
+                  overPlace={overRow === line.id ? overPlace : null}
                   measureRef={virtualizer.measureElement}
                   onToggle={onToggle}
                   onOpen={onOpen}
@@ -2053,6 +1980,7 @@ const RegisterRow = memo(
     dragOn,
     dragging,
     over,
+    overPlace,
     measureRef,
     onToggle,
     onOpen,
@@ -2073,6 +2001,7 @@ const RegisterRow = memo(
     dragOn: boolean;
     dragging: boolean;
     over: boolean;
+    overPlace: ArrangePlace | null;
     measureRef: (node: Element | null) => void;
     onToggle: (id: string) => void;
     onOpen: (line: CashLine) => void;
@@ -2081,7 +2010,7 @@ const RegisterRow = memo(
     onSwap: (line: CashLine, bankId: string) => void;
     onDragStart: (id: string) => void;
     onDragEnd: () => void;
-    onOverRow: (id: string | null) => void;
+    onOverRow: (id: string | null, place?: ArrangePlace | null) => void;
     onDropRow: (line: CashLine, e: DragEvent) => void;
   }) {
     const bank = banks.find((b) => b.id === line.bankId);
@@ -2098,6 +2027,9 @@ const RegisterRow = memo(
         data-active={isActive ? "true" : undefined}
         data-dragging={dragging ? "true" : undefined}
         data-drop={over ? "true" : undefined}
+        data-drop-place={over && overPlace ? overPlace : undefined}
+        data-move-row={dragOn && !isOpening ? line.id : undefined}
+        data-move-row-date={dragOn && !isOpening ? line.date : undefined}
         tabIndex={isOpening ? undefined : 0}
         title={isOpening ? undefined : "Double-tap or double-click to open"}
         onClick={() => {
@@ -2121,9 +2053,10 @@ const RegisterRow = memo(
         onDragOver={(e) => {
           if (!dragOn || isOpening) return;
           e.preventDefault();
-          onOverRow(line.id);
+          const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+          onOverRow(line.id, dropPlaceFromPoint(e.clientY, rect.top, rect.height));
         }}
-        onDragLeave={() => onOverRow(null)}
+        onDragLeave={() => onOverRow(null, null)}
         onDrop={(e) => {
           if (!dragOn || isOpening) return;
           e.preventDefault();
@@ -2209,6 +2142,7 @@ const RegisterRow = memo(
     prev.dragOn === next.dragOn &&
     prev.dragging === next.dragging &&
     prev.over === next.over &&
+    prev.overPlace === next.overPlace &&
     prev.currency === next.currency &&
     prev.onToggle === next.onToggle &&
     prev.onOpen === next.onOpen &&

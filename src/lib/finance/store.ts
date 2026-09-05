@@ -29,6 +29,7 @@ import {
   reorderCustomers,
   reorderReceipts,
   reorderVendors,
+  arrangeCashLine,
   rescheduleCashLine,
   setCheckStatus,
   transferBanks,
@@ -106,6 +107,7 @@ function sliceData(next: FinanceData): FinanceData {
     reconHistory: next.reconHistory ?? [],
     closeHistory: next.closeHistory ?? [],
     audit: next.audit ?? [],
+    registerOrder: next.registerOrder ?? {},
     nextNumbers: next.nextNumbers,
   };
 }
@@ -212,6 +214,7 @@ export interface FinanceState {
   setCheckStatus: (id: string, status: CheckStatus) => void;
   removeCheck: (id: string) => void;
   rescheduleCashLine: (input: Parameters<typeof rescheduleCashLine>[1]) => void;
+  arrangeCashLine: (input: Parameters<typeof arrangeCashLine>[1]) => { dateChanged: boolean; orderChanged: boolean };
   createInvoice: (input: {
     customerId: string;
     date: string;
@@ -507,6 +510,15 @@ export const useFinanceStore = create<FinanceState>()(
             return c?.checkNumber ? `delete check #${c.checkNumber}` : "delete check";
           }),
         rescheduleCashLine: (input) => apply((d) => rescheduleCashLine(d, input), "reschedule register line"),
+        arrangeCashLine: (input) => {
+          let meta = { dateChanged: false, orderChanged: false };
+          apply((d) => {
+            const result = arrangeCashLine(d, input);
+            meta = { dateChanged: result.dateChanged, orderChanged: result.orderChanged };
+            return result.data;
+          }, "arrange register line");
+          return meta;
+        },
         createInvoice: (input) =>
           apply((d) => createInvoice(d, input), (_b, after) => {
             const created = after.invoices.find((i) => !_b.invoices.some((x) => x.id === i.id));

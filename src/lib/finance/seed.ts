@@ -159,6 +159,7 @@ export function emptyBooks(): FinanceData {
     reconHistory: [],
     closeHistory: [],
     audit: [],
+    registerOrder: {},
     nextNumbers: { invoice: 1, check: {}, receipt: 1, bill: 1 },
   };
 }
@@ -1825,6 +1826,7 @@ export function createSeed(): FinanceData {
     reconHistory: [],
     closeHistory: [],
     audit: [],
+    registerOrder: {},
     nextNumbers: {
       invoice: invoiceN,
       check: checkNext,

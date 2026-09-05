@@ -1,5 +1,6 @@
 import { DEFAULT_SETTINGS, normalizeRegisterCols, parseRecon } from "./types";
 import { parseMethod } from "./methods";
+import { ensureRegisterOrder } from "./register";
 import type { Employee, PayType,  Account, AuditEvent, Bank, Bill, CheckRecord, CloseSnapshot, Customer, FinanceData, Invoice, JournalEntry, Receipt, ReconStatement, Vendor } from "./types";
 
 function asArray<T>(value: unknown): T[] {
@@ -79,7 +80,16 @@ export function normalizeBooks(raw: unknown): FinanceData {
   }));
   const banks = ensureSafekeeping(asArray<Bank>(p.banks), asArray<Account>(p.accounts));
   const accounts = ensureOutputVat(banks.accounts);
-  return {
+  const registerOrderRaw =
+    p.registerOrder && typeof p.registerOrder === "object" && !Array.isArray(p.registerOrder)
+      ? (p.registerOrder as Record<string, unknown>)
+      : {};
+  const registerOrderSeed: Record<string, number> = {};
+  for (const [k, v] of Object.entries(registerOrderRaw)) {
+    if (typeof v === "number" && Number.isFinite(v)) registerOrderSeed[k] = v;
+  }
+
+  const base: FinanceData = {
     settings,
     banks: banks.banks,
     accounts,
@@ -113,6 +123,7 @@ export function normalizeBooks(raw: unknown): FinanceData {
       old: typeof ev.old === "string" ? ev.old : "",
       new: typeof ev.new === "string" ? ev.new : "",
     })),
+    registerOrder: registerOrderSeed,
     nextNumbers: {
       invoice: nextNumbers.invoice ?? 1,
       check: {
@@ -123,6 +134,7 @@ export function normalizeBooks(raw: unknown): FinanceData {
       bill: nextNumbers.bill ?? 1,
     },
   };
+  return { ...base, registerOrder: ensureRegisterOrder(base) };
 }
 
 const SAFE_BANK: Bank = {

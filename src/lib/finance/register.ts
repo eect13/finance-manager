@@ -263,8 +263,77 @@ export function cashBook(
     }
   }
 
-  lines.sort((a, b) => a.date.localeCompare(b.date) || (a.createdAt ?? 0) - (b.createdAt ?? 0) || a.id.localeCompare(b.id));
+  const order = data.registerOrder ?? {};
+  lines.sort((a, b) => compareCashLines(a, b, order));
   return { opening, lines, freezeThrough, closeJournalId };
+}
+
+/** Stable passbook order: date, then registerOrder (fallback createdAt), then id. */
+export function compareCashLines(
+  a: CashLine,
+  b: CashLine,
+  order: Record<string, number> = {},
+): number {
+  const byDate = a.date.localeCompare(b.date);
+  if (byDate !== 0) return byDate;
+  const oa = order[a.id];
+  const ob = order[b.id];
+  if (oa != null && ob != null && oa !== ob) return oa - ob;
+  if (oa != null && ob == null) return -1;
+  if (oa == null && ob != null) return 1;
+  const byCreated = (a.createdAt ?? 0) - (b.createdAt ?? 0);
+  if (byCreated !== 0) return byCreated;
+  return a.id.localeCompare(b.id);
+}
+
+/** Fill missing CashLine ids with stable defaults (date → createdAt → id). Does not reshuffle existing keys. */
+export function ensureRegisterOrder(data: FinanceData): Record<string, number> {
+  const prev = { ...(data.registerOrder ?? {}) };
+  const probe: FinanceData = { ...data, registerOrder: {} };
+  const { lines } = cashBook(probe);
+  let max = -1;
+  for (const v of Object.values(prev)) {
+    if (typeof v === "number" && Number.isFinite(v) && v > max) max = v;
+  }
+  const next = { ...prev };
+  for (const line of lines) {
+    if (line.kind === "opening") continue;
+    if (next[line.id] == null) next[line.id] = ++max;
+  }
+  return next;
+}
+
+export type ArrangePlace = "before" | "after";
+
+/**
+ * Place `lineId` before/after `targetId` in passbook order.
+ * If dates differ, caller should reschedule first (or use arrangeCashLine in actions).
+ * Renumbers every non-opening line so relative order stays dense and durable.
+ */
+export function applyRegisterOrderPlacement(
+  data: FinanceData,
+  lineId: string,
+  targetId: string,
+  place: ArrangePlace,
+): Record<string, number> {
+  const order = ensureRegisterOrder(data);
+  const { lines } = cashBook({ ...data, registerOrder: order });
+  const ids = lines.filter((l) => l.kind !== "opening").map((l) => l.id);
+  if (!ids.includes(lineId) || !ids.includes(targetId) || lineId === targetId) return order;
+  const without = ids.filter((id) => id !== lineId);
+  const at = without.indexOf(targetId);
+  if (at < 0) return order;
+  const insertAt = place === "before" ? at : at + 1;
+  without.splice(insertAt, 0, lineId);
+  const next: Record<string, number> = { ...order };
+  without.forEach((id, i) => {
+    next[id] = i;
+  });
+  return next;
+}
+
+export function dropPlaceFromPoint(clientY: number, top: number, height: number): ArrangePlace {
+  return clientY < top + height / 2 ? "before" : "after";
 }
 
 export function cashRegisterLines(data: FinanceData, bankId?: string): CashLine[] {

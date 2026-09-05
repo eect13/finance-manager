@@ -424,6 +424,8 @@ export interface FinanceData {
   reconHistory: ReconStatement[];
   closeHistory: CloseSnapshot[];
   audit: AuditEvent[];
+  /** Passbook / register line order keyed by CashLine.id (check:…, receipt:…, …). */
+  registerOrder: Record<string, number>;
   nextNumbers: {
     invoice: number;
     check: Record<string, number>;

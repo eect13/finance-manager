@@ -26,7 +26,7 @@ import type {
   Vendor,
   RecurringItem,
 } from "./types";
-import type { CashLineKind } from "./register";
+import { applyRegisterOrderPlacement, cashBook, type ArrangePlace, type CashLineKind } from "./register";
 import { methodNeedsReference, methodLabel } from "./methods";
 import {
   bookBalanceOn,
@@ -986,6 +986,55 @@ export function rescheduleCashLine(data: FinanceData, input): FinanceData {
     return setJournalDate(data, input.sourceId, input.date);
   }
   return rescheduleBillPayment(data, input.sourceId, input.date);
+}
+
+/**
+ * Passbook arrange: optional date change (via reschedule) + before/after insert among register lines.
+ * Running balances follow the resulting cashBook order.
+ */
+export function arrangeCashLine(
+  data: FinanceData,
+  input: {
+    kind: string;
+    sourceId: string;
+    lineId: string;
+    targetLineId: string;
+    place: ArrangePlace;
+    date?: string;
+  },
+): { data: FinanceData; dateChanged: boolean; orderChanged: boolean } {
+  const { lines } = cashBook(data);
+  const line = lines.find((l) => l.id === input.lineId) ?? lines.find((l) => l.sourceId === input.sourceId && l.kind !== "opening");
+  const target = lines.find((l) => l.id === input.targetLineId);
+  if (!line) throw new Error("Line not found.");
+  if (!target || target.kind === "opening") throw new Error("Drop on another register line.");
+  if (line.id === target.id) return { data, dateChanged: false, orderChanged: false };
+
+  let next = data;
+  let dateChanged = false;
+  const destDate = input.date && /^\d{4}-\d{2}-\d{2}$/.test(input.date) ? input.date : target.date;
+  if (destDate && line.date !== destDate) {
+    next = rescheduleCashLine(next, { kind: input.kind, sourceId: input.sourceId, date: destDate });
+    dateChanged = true;
+  }
+
+  // After reschedule, resolve ids again (same cash line ids).
+  const placed = applyRegisterOrderPlacement(next, line.id, target.id, input.place);
+  const prevOrder = next.registerOrder ?? {};
+  let orderChanged = false;
+  const keys = new Set([...Object.keys(prevOrder), ...Object.keys(placed)]);
+  for (const k of keys) {
+    if (prevOrder[k] !== placed[k]) {
+      orderChanged = true;
+      break;
+    }
+  }
+  if (!orderChanged && !dateChanged) return { data: next, dateChanged: false, orderChanged: false };
+  return {
+    data: { ...next, registerOrder: placed },
+    dateChanged,
+    orderChanged,
+  };
 }
 function setJournalDate(data: FinanceData, journalId, date) {
   return {

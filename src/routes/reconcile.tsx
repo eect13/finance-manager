@@ -15,7 +15,6 @@ import { ReconPrint } from "@/components/period-print";
 import { requestPrint } from "@/components/print-preview";
 import { ShopTick } from "@/components/shop-tick";
 import { PhoneLayoutToggle } from "@/components/phone-layout-toggle";
-import { PhoneSwipe } from "@/components/phone-swipe";
 import {
   RECONCILE_PHONE_LAYOUT_KEY,
   readPhoneLayout,
@@ -640,16 +639,6 @@ function ReconcilePage() {
                     : line.sourceId;
                 return (
                   <li key={line.id} ref={phoneVirt.measureElement} data-index={item.index}>
-                    <PhoneSwipe
-                      enabled={phone}
-                      actions={[
-                        {
-                          label: on ? "Untick" : "Clear",
-                          tone: on ? "default" : "success",
-                          onAction: () => toggle(line, !on),
-                        },
-                      ]}
-                    >
                       <div
                         className={cn(
                           "recon-phone-card flex items-start gap-2 rounded-2xl border border-border/40 bg-card px-3 py-3 touch-manipulation shadow-none",
@@ -712,7 +701,6 @@ function ReconcilePage() {
                           </div>
                         </div>
                       </div>
-                    </PhoneSwipe>
                   </li>
                 );
               })}

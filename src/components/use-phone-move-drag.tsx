@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
+import { dropPlaceFromPoint, type ArrangePlace } from "@/lib/finance/register";
 
 const THRESHOLD_PX = 10;
 
 type OverTarget =
-  | { kind: "date"; date: string }
-  | { kind: "row"; id: string; date: string }
+  | { kind: "row"; id: string; date: string; place: ArrangePlace }
   | null;
 
 type Session = {
@@ -20,33 +20,38 @@ type Session = {
   dispose: () => void;
 };
 
+export type PhoneMoveDrop = {
+  lineId: string;
+  targetId: string;
+  date: string;
+  place: ArrangePlace;
+};
+
 export type PhoneMoveDragApi = {
   /** Attach to a reschedulable grip (caller toasts locked separately). */
   onGripPointerDown: (lineId: string, e: ReactPointerEvent) => void;
-  /** True for a beat after a successful drop — ignore chip click toasts. */
-  consumeChipClickGuard: () => boolean;
   clear: () => void;
   ghost: ReactNode;
 };
 
 /**
- * Pointer-based Move dates for phone (Android WebView-safe).
- * Does not use HTML5 draggable. Grip → ghost → hit-test date chips / row drop zones.
+ * Pointer-based Move / passbook arrange for phone (Android WebView-safe).
+ * Grip → ghost → hit-test row drop zones (before/after insert).
  */
 export function usePhoneMoveDrag({
   enabled,
   onDragId,
-  onOverDate,
   onOverRow,
+  onOverPlace,
   onDrop,
   captionFor,
   onTapWithoutDrag,
 }: {
   enabled: boolean;
   onDragId: (id: string | null) => void;
-  onOverDate: (date: string | null) => void;
   onOverRow: (id: string | null) => void;
-  onDrop: (lineId: string, date: string) => void;
+  onOverPlace: (place: ArrangePlace | null) => void;
+  onDrop: (drop: PhoneMoveDrop) => void;
   captionFor: (id: string) => string;
   onTapWithoutDrag?: () => void;
 }): PhoneMoveDragApi {
@@ -55,9 +60,8 @@ export function usePhoneMoveDrag({
   const lastOverRef = useRef<OverTarget>(null);
   const rafRef = useRef(0);
   const pendingPointRef = useRef<{ x: number; y: number } | null>(null);
-  const suppressChipRef = useRef(false);
-  const cbs = useRef({ onDragId, onOverDate, onOverRow, onDrop, captionFor, onTapWithoutDrag });
-  cbs.current = { onDragId, onOverDate, onOverRow, onDrop, captionFor, onTapWithoutDrag };
+  const cbs = useRef({ onDragId, onOverRow, onOverPlace, onDrop, captionFor, onTapWithoutDrag });
+  cbs.current = { onDragId, onOverRow, onOverPlace, onDrop, captionFor, onTapWithoutDrag };
 
   const applyOver = useCallback((over: OverTarget) => {
     const prev = lastOverRef.current;
@@ -66,13 +70,12 @@ export function usePhoneMoveDrag({
       (prev !== null &&
         over !== null &&
         prev.kind === over.kind &&
-        (over.kind === "date"
-          ? prev.kind === "date" && prev.date === over.date
-          : prev.kind === "row" && over.kind === "row" && prev.id === over.id));
+        prev.id === over.id &&
+        prev.place === over.place);
     if (same) return;
     lastOverRef.current = over;
-    cbs.current.onOverDate(over?.kind === "date" ? over.date : null);
     cbs.current.onOverRow(over?.kind === "row" ? over.id : null);
+    cbs.current.onOverPlace(over?.kind === "row" ? over.place : null);
   }, []);
 
   const clearVisual = useCallback(() => {
@@ -84,8 +87,8 @@ export function usePhoneMoveDrag({
     lastOverRef.current = null;
     setGhost(null);
     cbs.current.onDragId(null);
-    cbs.current.onOverDate(null);
     cbs.current.onOverRow(null);
+    cbs.current.onOverPlace(null);
     document.body.classList.remove("is-phone-move-dragging");
   }, []);
 
@@ -113,11 +116,9 @@ export function usePhoneMoveDrag({
     (lineId: string, e: ReactPointerEvent) => {
       if (!enabled) return;
       if (e.button !== 0) return;
-      // Replace any in-flight gesture (rare).
       if (sessionRef.current) clear();
 
       e.stopPropagation();
-      // Keep the gesture on the grip; preventDefault + touch-action:none stop scroll steal.
       e.preventDefault();
 
       const target = e.currentTarget as HTMLElement;
@@ -126,13 +127,14 @@ export function usePhoneMoveDrag({
       const hitTest = (x: number, y: number): OverTarget => {
         const el = document.elementFromPoint(x, y) as HTMLElement | null;
         if (!el) return null;
-        const dateEl = el.closest("[data-move-date]") as HTMLElement | null;
-        const date = dateEl?.dataset.moveDate;
-        if (date) return { kind: "date", date };
         const rowEl = el.closest("[data-move-row]") as HTMLElement | null;
         const rowId = rowEl?.dataset.moveRow;
         const rowDate = rowEl?.dataset.moveRowDate;
-        if (rowId && rowDate && rowId !== lineId) return { kind: "row", id: rowId, date: rowDate };
+        if (rowId && rowDate && rowId !== lineId) {
+          const rect = rowEl!.getBoundingClientRect();
+          const place = dropPlaceFromPoint(y, rect.top, rect.height);
+          return { kind: "row", id: rowId, date: rowDate, place };
+        }
         return null;
       };
 
@@ -179,17 +181,16 @@ export function usePhoneMoveDrag({
         }
 
         const over = hitTest(ev.clientX, ev.clientY);
-        const date = over?.kind === "date" ? over.date : over?.kind === "row" ? over.date : null;
         clearVisual();
-        if (date) {
-          suppressChipRef.current = true;
-          window.setTimeout(() => {
-            suppressChipRef.current = false;
-          }, 450);
-          cbs.current.onDrop(s.id, date);
+        if (over?.kind === "row") {
+          cbs.current.onDrop({
+            lineId: s.id,
+            targetId: over.id,
+            date: over.date,
+            place: over.place,
+          });
         } else {
-          // Past threshold (active drag) but released off chip/row — brief hint, not on tiny taps.
-          toast.message("Drop on a date or row.");
+          toast.message("Drop above or below another row.");
         }
       };
 
@@ -223,12 +224,6 @@ export function usePhoneMoveDrag({
     [enabled, applyOver, clearVisual, clear],
   );
 
-  const consumeChipClickGuard = useCallback(() => {
-    if (!suppressChipRef.current) return false;
-    suppressChipRef.current = false;
-    return true;
-  }, []);
-
   const ghostNode =
     ghost && typeof document !== "undefined"
       ? createPortal(
@@ -239,5 +234,5 @@ export function usePhoneMoveDrag({
         )
       : null;
 
-  return { onGripPointerDown, consumeChipClickGuard, clear, ghost: ghostNode };
+  return { onGripPointerDown, clear, ghost: ghostNode };
 }

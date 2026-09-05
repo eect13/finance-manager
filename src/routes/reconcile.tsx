@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
-import { Printer } from "lucide-react";
+import { Printer, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { ConfirmDelete } from "@/components/confirm-delete";
@@ -25,6 +25,7 @@ import {
 import { SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { fitColumnWidth } from "@/lib/finance/fit-column";
 import { formatDate, parseAmountToCents, todayIso } from "@/lib/finance/format";
@@ -76,6 +77,7 @@ function ReconcilePage() {
   const finishRecon = useFinanceStore((s) => s.finishRecon);
   const undoLastRecon = useFinanceStore((s) => s.undoLastRecon);
   const postReconAdjustment = useFinanceStore((s) => s.postReconAdjustment);
+  const updateSettings = useFinanceStore((s) => s.updateSettings);
   const live = data.banks.filter((b) => !b.archived);
   const [bankId, setBankId] = useState(live[0]?.id ?? "");
   const [statementDate, setStatementDate] = useState(todayIso());
@@ -87,6 +89,8 @@ function ReconcilePage() {
     readPhoneLayout(RECONCILE_PHONE_LAYOUT_KEY, "grid"),
   );
   const phone = usePhoneUi();
+  const [viewOpen, setViewOpen] = useState(false);
+  const fontSize = data.settings.registerFontSize ?? 12;
   const [fee, setFee] = useState("");
   const [interest, setInterest] = useState("");
   const [undoing, setUndoing] = useState(false);
@@ -410,9 +414,21 @@ function ReconcilePage() {
           onSort={(v) => applySortValue(sort.set, v)}
           onClear={() => setTypeFilter("all")}
         />
+        {phone ? (
+          <Button
+            type="button"
+            variant="outline"
+            className="h-11 min-h-11 justify-start phone-press"
+            aria-label="View options"
+            onClick={() => setViewOpen(true)}
+          >
+            <SlidersHorizontal />
+            View
+          </Button>
+        ) : null}
       </ListToolbar>
 
-            {isPhoneUi() ? (
+      {isPhoneUi() ? (
         <div
           className={cn("recon-phone-list", phoneLayout === "list" && "is-list")}
           data-layout={phoneLayout}
@@ -423,17 +439,42 @@ function ReconcilePage() {
               <ShopTick checked={allOn} indeterminate={someOn} onChange={toggleAll} label="Select all" />
               <span className="text-xs text-muted-foreground">Tick cleared</span>
             </span>
-            <span className="inline-flex items-center gap-2">
-              <PhoneLayoutToggle
-                value={phoneLayout}
-                onChange={(next) => {
-                  setPhoneLayout(next);
-                  writePhoneLayout(RECONCILE_PHONE_LAYOUT_KEY, next);
-                }}
-              />
-              <span className="text-xs text-muted-foreground">{sort.sorted.length} uncleared</span>
-            </span>
+            <span className="text-xs text-muted-foreground">{sort.sorted.length} uncleared</span>
           </div>
+          <Sheet open={viewOpen} onOpenChange={setViewOpen}>
+            <SheetContent side="bottom" className="gap-0 px-4">
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <p className="text-base font-semibold">View</p>
+                <Button type="button" size="sm" variant="ghost" onClick={() => setViewOpen(false)}>
+                  Done
+                </Button>
+              </div>
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <span className="text-sm font-medium">Layout</span>
+                <PhoneLayoutToggle
+                  value={phoneLayout}
+                  onChange={(next) => {
+                    setPhoneLayout(next);
+                    writePhoneLayout(RECONCILE_PHONE_LAYOUT_KEY, next);
+                  }}
+                />
+              </div>
+              <label className="mb-2 flex flex-col gap-1.5">
+                <span className="text-xs font-medium text-muted-foreground">Resize type {fontSize}px</span>
+                <input
+                  type="range"
+                  min={10}
+                  max={18}
+                  step={1}
+                  value={fontSize}
+                  aria-label="Reconcile font size"
+                  className="w-full accent-primary"
+                  onChange={(e) => updateSettings({ registerFontSize: Number(e.target.value) })}
+                />
+              </label>
+              <p className="text-xs text-muted-foreground">Same type size as Register cards.</p>
+            </SheetContent>
+          </Sheet>
           {sort.sorted.length === 0 ? (
             <p className="phone-empty text-sm text-muted-foreground">
               Nothing uncleared on or before this date.

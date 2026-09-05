@@ -13,6 +13,7 @@ import { CsvButton } from "@/components/export-menu";
 import { ListToolbar } from "@/components/filter-pills";
 import { ListFilters, applySortValue, useListPeriod } from "@/components/list-filters";
 import { ListCard, listColClass } from "@/components/list-table";
+import { PhoneDocSwipeRow } from "@/components/phone-doc-swipe-row";
 import { RowActions } from "@/components/row-actions";
 import { Field } from "@/components/field";
 import { ListPrint } from "@/components/list-print";
@@ -270,55 +271,109 @@ function ReceiptsPage() {
             ) : (
               sort.sorted.map((receipt) => {
                 const bank = data.banks.find((b) => b.id === receipt.bankId);
+                const actions = [
+                  ...(receipt.status === "posted"
+                    ? [
+                        {
+                          label: "Void",
+                          tone: "default" as const,
+                          onAction: () => {
+                            voidReceipt(receipt.id);
+                            toast.success("Receipt voided.");
+                          },
+                        },
+                      ]
+                    : []),
+                  {
+                    label: "Delete",
+                    tone: "danger" as const,
+                    onAction: () => setDeleting(receipt),
+                  },
+                ];
+                const rowActions = (
+                  <RowActions
+                    items={[
+                      ...(receipt.status === "posted"
+                        ? [
+                            {
+                              label: "Void",
+                              onSelect: () => {
+                                voidReceipt(receipt.id);
+                                toast.success("Receipt voided.");
+                              },
+                            },
+                          ]
+                        : []),
+                      { label: "Delete", danger: true, onSelect: () => setDeleting(receipt) },
+                    ]}
+                  />
+                );
                 return (
-                  <tr
+                  <PhoneDocSwipeRow
                     key={receipt.id}
-                    className="border-b border-border/70 last:border-0"
-                    data-active={pointer.activeId === receipt.id ? "true" : undefined}
-                    {...drag.bind(receipt.id)}
-                    {...openProps("receipt", receipt.id)}
-                    onClick={() => pointer.setActiveId(receipt.id)}
+                    colSpan={dragEnabled ? 8 : 7}
+                    actions={actions}
+                    desktopRow={
+                      <tr
+                        className="border-b border-border/70 last:border-0"
+                        data-active={pointer.activeId === receipt.id ? "true" : undefined}
+                        {...drag.bind(receipt.id)}
+                        {...openProps("receipt", receipt.id)}
+                        onClick={() => pointer.setActiveId(receipt.id)}
+                      >
+                        {dragEnabled ? (
+                          <td className="px-4 py-3">
+                            <DragHandle enabled={dragOn} />
+                          </td>
+                        ) : null}
+                        <td className="px-4 py-3 font-medium" data-col="number">{receipt.number}</td>
+                        <td className="px-4 py-3 whitespace-nowrap" data-col="date">{formatDate(receipt.date)}</td>
+                        <td className="px-4 py-3" data-col="from">
+                          <p>{receipt.receivedFrom}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {bank?.nickname}
+                            {receipt.checkNumber ? ` · Chk ${receipt.checkNumber}` : ""}
+                          </p>
+                        </td>
+                        <td className="px-4 py-3" data-col="kind">
+                          <ReceiptBadge status={receipt.status} kind={receipt.kind} method={receipt.method} />
+                        </td>
+                        <td className="px-4 py-3 text-right" data-col="amount">
+                          <Money amount={receipt.amount} currency={data.settings.currency} />
+                        </td>
+                        <td className="px-4 py-3 capitalize text-muted-foreground" data-col="status">{receipt.status}</td>
+                        <td className="col-actions px-4 py-3" onDoubleClick={stopOpen}>
+                          {rowActions}
+                        </td>
+                      </tr>
+                    }
                   >
-                    {dragEnabled ? (
-                      <td className="px-4 py-3">
-                        <DragHandle enabled={dragOn} />
-                      </td>
-                    ) : null}
-                    <td className="px-4 py-3 font-medium" data-col="number">{receipt.number}</td>
-                    <td className="px-4 py-3 whitespace-nowrap" data-col="date">{formatDate(receipt.date)}</td>
-                    <td className="px-4 py-3" data-col="from">
-                      <p>{receipt.receivedFrom}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {bank?.nickname}
-                        {receipt.checkNumber ? ` · Chk ${receipt.checkNumber}` : ""}
-                      </p>
-                    </td>
-                    <td className="px-4 py-3" data-col="kind">
-                      <ReceiptBadge status={receipt.status} kind={receipt.kind} method={receipt.method} />
-                    </td>
-                    <td className="px-4 py-3 text-right" data-col="amount">
-                      <Money amount={receipt.amount} currency={data.settings.currency} />
-                    </td>
-                    <td className="px-4 py-3 capitalize text-muted-foreground" data-col="status">{receipt.status}</td>
-                    <td className="col-actions px-4 py-3" onDoubleClick={stopOpen}>
-                      <RowActions
-                        items={[
-                          ...(receipt.status === "posted"
-                            ? [
-                                {
-                                  label: "Void",
-                                  onSelect: () => {
-                                    voidReceipt(receipt.id);
-                                    toast.success("Receipt voided.");
-                                  },
-                                },
-                              ]
-                            : []),
-                          { label: "Delete", danger: true, onSelect: () => setDeleting(receipt) },
-                        ]}
-                      />
-                    </td>
-                  </tr>
+                    <div
+                      className="flex items-start gap-2"
+                      data-active={pointer.activeId === receipt.id ? "true" : undefined}
+                      {...openProps("receipt", receipt.id, { click: true })}
+                      onClick={() => pointer.setActiveId(receipt.id)}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-baseline justify-between gap-2">
+                          <p className="truncate font-medium">{receipt.number}</p>
+                          <ReceiptBadge status={receipt.status} kind={receipt.kind} method={receipt.method} />
+                        </div>
+                        <p className="truncate text-sm">{receipt.receivedFrom}</p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          {formatDate(receipt.date)}
+                          {bank?.nickname ? ` · ${bank.nickname}` : ""}
+                          {receipt.checkNumber ? ` · Chk ${receipt.checkNumber}` : ""}
+                        </p>
+                        <div className="mt-1 tabular-nums text-sm">
+                          <Money amount={receipt.amount} currency={data.settings.currency} />
+                        </div>
+                      </div>
+                      <div className="shrink-0" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()} onDoubleClick={stopOpen}>
+                        {rowActions}
+                      </div>
+                    </div>
+                  </PhoneDocSwipeRow>
                 );
               })
             )}

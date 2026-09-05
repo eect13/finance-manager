@@ -3969,3 +3969,15 @@ html.tauri-android .app-header-inner {
     vertical-align: top;
   }
 }
+
+@media (max-width: 767px), ((hover: none) and (pointer: coarse)) {
+  .doc-phone-swipe {
+    border-radius: 0;
+  }
+  .doc-phone-swipe-face {
+    background: var(--color-card);
+  }
+  .list-card .doc-phone-swipe .phone-swipe-front > .doc-phone-swipe-face {
+    background: var(--color-card);
+  }
+}

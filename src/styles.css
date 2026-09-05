@@ -51,16 +51,16 @@
   --app-ui-zoom: 1;
 }
 
-/* Chromium / Android WebView: scale whole chrome+content. 100% is a no-op. */
-html {
+/* Display zoom scales the workspace only — NOT html.
+   Portaled overlays (phone menu sheet) stay in real viewport pixels so
+   status-bar safe-area padding is not shrunk by zoom. */
+.app-workspace {
   zoom: var(--app-ui-zoom, 1);
 }
 
 @supports not (zoom: 1) {
-  html {
+  .app-workspace {
     zoom: unset;
-  }
-  .app-zoom-root {
     transform: scale(var(--app-ui-zoom, 1));
     transform-origin: top left;
     width: calc(100% / var(--app-ui-zoom, 1));
@@ -439,7 +439,7 @@ html {
     }
 
     .sheet-close {
-      top: max(2.75rem, env(safe-area-inset-top, 0px));
+      top: max(2.85rem, env(safe-area-inset-top, 0px)) !important;
     }
 
     .app-sidebar-footer {
@@ -3207,21 +3207,24 @@ body.printing [data-radix-popper-content-wrapper]:has(.print-paper-menu) {
 
 
 
-/* Fixed chrome must undo html zoom on safe-area pads — otherwise 80% zoom
-   shrinks padding while the system status bar stays full size. */
+/* Phone menu sheet portals to body (outside .app-workspace zoom).
+   Use real-pixel safe-area so it clears the status bar like the header. */
 .sheet-panel {
-  padding-top: calc(max(3.75rem, env(safe-area-inset-top, 0px)) / var(--app-ui-zoom, 1));
+  padding-top: max(2.75rem, env(safe-area-inset-top, 0px)) !important;
+  box-sizing: border-box;
 }
 .sheet-close {
-  top: calc(max(1.1rem, env(safe-area-inset-top, 0px)) / var(--app-ui-zoom, 1) + 0.35rem);
+  top: max(0.85rem, env(safe-area-inset-top, 0px)) !important;
 }
 @media (hover: none) and (pointer: coarse) {
   .sheet-panel {
-    padding-top: calc(max(4rem, env(safe-area-inset-top, 0px)) / var(--app-ui-zoom, 1));
+    /* Android WebView often reports 0 for safe-area — match header fallback */
+    padding-top: max(3rem, env(safe-area-inset-top, 0px)) !important;
   }
   .sheet-close {
-    top: calc(max(3.75rem, env(safe-area-inset-top, 0px)) / var(--app-ui-zoom, 1));
+    top: max(2.85rem, env(safe-area-inset-top, 0px)) !important;
   }
+  /* Header lives inside zoomed .app-workspace — undo zoom on the inset */
   .app-header-bar {
     padding-top: calc(max(2.75rem, env(safe-area-inset-top, 0px)) / var(--app-ui-zoom, 1));
   }
@@ -3229,7 +3232,7 @@ body.printing [data-radix-popper-content-wrapper]:has(.print-paper-menu) {
     padding-top: calc(max(2.75rem, env(safe-area-inset-top, 0px)) / var(--app-ui-zoom, 1));
   }
   .app-shell-loading {
-    padding-top: calc(max(2.75rem, env(safe-area-inset-top, 0px)) / var(--app-ui-zoom, 1));
+    padding-top: max(2.75rem, env(safe-area-inset-top, 0px));
   }
 }
 

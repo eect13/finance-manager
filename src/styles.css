@@ -3900,7 +3900,7 @@ html.tauri-android .app-header-inner {
   .recon-phone-list li {
     list-style: none;
   }
-  /* Grid cards — quiet outline (uniform borders without swipe wrappers) */
+  /* Grid cards — quiet outline (uniform borders) */
   .register-phone-list:not(.is-list) > ul > li > .register-phone-card,
   .recon-phone-list:not(.is-list) > ul > li > .recon-phone-card,
   .register-phone-list:not(.is-list) > ul > li > div > .register-phone-card,
@@ -4070,7 +4070,7 @@ html.tauri-android .app-header-inner {
   }
   .register-phone-card,
   .recon-phone-card {
-    box-shadow: none; /* outline only — matches swipe wrapper 1px border */
+    box-shadow: none; /* outline only — 1px card border */
   }
 }
 

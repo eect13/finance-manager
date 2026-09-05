@@ -1,5 +1,5 @@
 import { differenceInCalendarDays, parseISO } from "date-fns";
-import { cashBook, type CashLine } from "./register";
+import { cashBook, compareCashLines, type CashLine } from "./register";
 import { todayIso } from "./format";
 import type { FinanceData, ReconNamedLine, ReconStatement } from "./types";
 
@@ -49,9 +49,10 @@ export function bookBalanceOn(data: FinanceData, bankId: string, asOf: string): 
 /** Posted, not void, not yet R, on or before the statement date. */
 export function unclearedLines(data: FinanceData, bankId: string, statementDate: string): CashLine[] {
   const { lines } = cashBook(data, bankId, { dateTo: statementDate });
+  const order = data.registerOrder ?? {};
   return lines
     .filter((line) => line.kind !== "opening" && line.counts && line.recon !== "reconciled")
-    .sort((a, b) => a.date.localeCompare(b.date) || (a.createdAt ?? 0) - (b.createdAt ?? 0));
+    .sort((a, b) => compareCashLines(a, b, order));
 }
 
 export function reconClearedNet(ticked: CashLine[]): number {

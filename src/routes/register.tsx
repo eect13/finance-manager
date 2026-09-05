@@ -71,6 +71,7 @@ import {
   type RegisterCols,
 } from "@/lib/finance/types";
 import { cn } from "@/lib/utils";
+import { getWorkspaceScrollElement } from "@/lib/workspace-scroll";
 
 export const Route = createFileRoute("/register")({ component: RegisterPage });
 
@@ -136,6 +137,7 @@ function parseColWidths(raw: unknown): ColWidths {
 }
 
 const SORT_OPTIONS = [
+  { value: "passbook:asc", label: "Passbook" },
   { value: "date:asc", label: "Date · oldest" },
   { value: "date:desc", label: "Date · newest" },
   { value: "type:asc", label: "Type" },
@@ -146,6 +148,8 @@ const SORT_OPTIONS = [
   { value: "bank:asc", label: "Bank" },
   { value: "payment:desc", label: "Payment" },
   { value: "deposit:desc", label: "Deposit" },
+  { value: "balance:asc", label: "Balance · low–high" },
+  { value: "balance:desc", label: "Balance · high–low" },
 ];
 
 const COL_LABELS: Record<RegisterColId, string> = {
@@ -323,10 +327,12 @@ function RegisterPage() {
       bank: (l: BalancedCashLine) => data.banks.find((b) => b.id === l.bankId)?.nickname ?? "",
       payment: (l: BalancedCashLine) => l.payment,
       deposit: (l: BalancedCashLine) => l.deposit,
+      balance: (l: BalancedCashLine) => l.balance,
     }),
     [data.banks],
   );
-  const sort = useEntrySort(dataRows, "date", getters, "asc", true);
+  // Default Passbook = cashBook order (date + registerOrder). Bal column values stay passbook running bals.
+  const sort = useEntrySort(dataRows, "passbook", getters, "asc", true);
   const display = useMemo(
     () => (openingRow && !searching ? [openingRow, ...sort.sorted] : sort.sorted),
     [openingRow, searching, sort.sorted],
@@ -662,7 +668,7 @@ function RegisterPage() {
             }}
             onSort={(v) => {
               const [key, dir] = v.split(":");
-              sort.set(key ?? "date", dir === "desc" ? "desc" : "asc");
+              sort.set(key ?? "passbook", dir === "desc" ? "desc" : "asc");
             }}
             onClear={() => {
               setTypeFilter("all");
@@ -679,6 +685,7 @@ function RegisterPage() {
             onFontSize={(n) => updateSettings({ registerFontSize: n })}
             onDragOn={(on) => {
               setDragOn(on);
+              if (on) sort.set("passbook", "asc");
               if (!on) {
                 setDragging(null);
                 setOverPlace(null);
@@ -1136,7 +1143,7 @@ function RegisterTable({
   const phoneGrid = phone && phoneLayout === "grid";
   const virtualizer = useVirtualizer({
     count: lines.length,
-    getScrollElement: () => document.querySelector("[data-workspace-scroll]"),
+    getScrollElement: () => getWorkspaceScrollElement(),
     estimateSize: () => (phoneGrid ? 168 : phone ? 52 : 44),
     overscan: phoneGrid ? 8 : 12,
     getItemKey: (index) => lines[index]?.id ?? index,
@@ -1327,19 +1334,35 @@ function RegisterTable({
                 <tr className="border-b border-border text-muted-foreground">
                   <th className="w-10 px-2 py-2.5 no-print whitespace-nowrap" aria-label="Select" />
                   {dragOn ? <th className="w-9 px-1 py-2.5 no-print whitespace-nowrap" aria-label="Move" /> : null}
-                  {visibleCols.map((col) => (
-                    <th
-                      key={col.id}
-                      className={cn(
-                        "whitespace-nowrap px-2 py-2.5 font-medium",
-                        (col.id === "payment" || col.id === "deposit" || col.id === "balance") && "text-right",
-                        col.id === "status" && "text-center",
-                        col.id !== "payment" && col.id !== "deposit" && col.id !== "balance" && col.id !== "status" && "text-left",
-                      )}
-                    >
-                      {COL_LABELS[col.id]}
-                    </th>
-                  ))}
+                  {visibleCols.map((col) => {
+                    const sortable = col.id !== "status";
+                    const active = sortable && sortKey === col.id;
+                    return (
+                      <th
+                        key={col.id}
+                        className={cn(
+                          "whitespace-nowrap px-2 py-2.5 font-medium",
+                          (col.id === "payment" || col.id === "deposit" || col.id === "balance") && "text-right",
+                          col.id === "status" && "text-center",
+                          col.id !== "payment" && col.id !== "deposit" && col.id !== "balance" && col.id !== "status" && "text-left",
+                          active ? "text-foreground" : "text-muted-foreground",
+                        )}
+                      >
+                        {sortable ? (
+                          <button
+                            type="button"
+                            className="inline-flex min-h-8 w-full items-center justify-center gap-0.5 whitespace-nowrap font-medium"
+                            onClick={() => onSort(col.id)}
+                          >
+                            {COL_LABELS[col.id]}
+                            {active ? (sortDir === "asc" ? " ↑" : " ↓") : null}
+                          </button>
+                        ) : (
+                          COL_LABELS[col.id]
+                        )}
+                      </th>
+                    );
+                  })}
                 </tr>
               </thead>
               <tbody>
@@ -1841,19 +1864,16 @@ function RegisterTable({
                 className={cn("col-money col-deposit", lastVisible === "deposit" && "col-fill")}
                 {...resizeProps("deposit")}
               />
-              <th
-                className={cn(
-                  "col-money col-balance relative px-4 py-3 text-center font-medium text-muted-foreground",
-                  lastVisible === "balance" && "col-fill",
-                )}
-                data-col="balance"
-                data-align="right"
-              >
-                Balance
-                {lastVisible === "balance" ? null : (
-                  <ColResize width={colWidths.balance} onWidth={setWidth("balance")} onFit={fitWidth("balance", "Balance")} />
-                )}
-              </th>
+              <SortHeader
+                label="Balance"
+                column="balance"
+                sortKey={sortKey}
+                dir={sortDir}
+                onToggle={onSort}
+                align="right"
+                className={cn("col-money col-balance", lastVisible === "balance" && "col-fill")}
+                {...resizeProps("balance")}
+              />
               <th
                 className={cn(
                   "col-status relative px-4 py-3 text-center font-medium text-muted-foreground",
@@ -2056,7 +2076,11 @@ const RegisterRow = memo(
           const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
           onOverRow(line.id, dropPlaceFromPoint(e.clientY, rect.top, rect.height));
         }}
-        onDragLeave={() => onOverRow(null, null)}
+        onDragLeave={(e) => {
+          const related = e.relatedTarget as Node | null;
+          if (related && (e.currentTarget as HTMLElement).contains(related)) return;
+          onOverRow(null, null);
+        }}
         onDrop={(e) => {
           if (!dragOn || isOpening) return;
           e.preventDefault();

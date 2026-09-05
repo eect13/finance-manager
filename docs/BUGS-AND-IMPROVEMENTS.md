@@ -1,6 +1,18 @@
 # Finance Manager — bugs & improvements (v3.62)
 
-Re-verified in code 2026-09-05 (Asia/Manila). UI direction: gestalt / professional ledger — cream paper, navy ink, real chrome — not an overly-minimal white sheet.
+Re-verified in code 2026-09-05 (Asia/Manila). Updated for v3.62.45. UI direction: gestalt / professional ledger — cream paper, navy ink, real chrome — not an overly-minimal white sheet.
+
+## Fixed in v3.62.45
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| 1 | Med (UX) | Phone Move could not reach far dates without scroll-then-re-drag | Edge auto-scroll on `[data-workspace-scroll]` while dragging |
+| 2 | Low | Reconcile uncleared ignored same-day `registerOrder` | `unclearedLines` uses `compareCashLines` (passbook order) |
+| 3 | Low | Deleted lines left orphan `registerOrder` keys | `pruneRegisterOrder` on delete; arrange renumber drops orphans |
+| 4 | Med (UX) | Arranging one transfer leg split the pair in All-banks | Transfer legs move as a block (preserve relative out/in order) |
+| 5 | Low | Desk Move drop highlight flickered across child nodes | `onDragLeave` ignores leave-to-descendant (`relatedTarget`) |
+| 6 | Low | Register had no Balance column sort / passbook restore | SortHeader + filters: **Balance** asc/desc and **Passbook** (default) |
+| 7 | Low | Virtualizer scroll parent lookup fragile | Shared `getWorkspaceScrollElement()` helper |
 
 ## Fixed in v3.62
 
@@ -52,7 +64,7 @@ Re-verified in code 2026-09-05 (Asia/Manila). UI direction: gestalt / profession
 | # | Severity | Area | Notes | Status |
 | --- | --- | --- | --- | --- |
 | A | Low–med | Register “All dates” | `datePresetRange("all")` sets `from` = prior Jan 1 and **`to` = ""** (open-ended). Not all-time; README still says “through today” in one place but the window does not cap at `todayIso()`. | Still open (by design for memory) |
-| B | Low | Register column sort vs running balance | Balance is computed chronologically then mapped onto sorted rows; sorting by payee looks “wrong” but is intentional. | Still open |
+| B | Low | Register column sort vs running balance | Running Bal stays passbook values mapped onto rows. **Passbook** sort restores arrangement; **Balance** / other columns reorder display only. | Improved (v3.62.45) |
 | C | Low–med | VAT model | Output VAT only (`createBill` is expense↔AP, no input VAT). | Still open (product) |
 | D | Low | `ensureOutputVat` | Still hardcodes `acct-2200` when inserting code 2200 (`normalize.ts`). Lookups elsewhere use `code === "2200"`. | Still open |
 | E | Low | Debounced persist (~280ms) | `pagehide` / `visibilitychange` flush exist; hard kill/crash can still drop last keystrokes. | Still open |
@@ -69,7 +81,7 @@ Re-verified in code 2026-09-05 (Asia/Manila). UI direction: gestalt / profession
 | K | Low | Tax % visibility | Invoice/receipt Tax % fields hide when Settings tax is off, even if the document still carries historical `taxRate > 0` (totals remain correct). Matches “Settings seeds new docs” but can surprise editors. |
 | L | Info | Dead / unused | `src/lib/multiplayer/p2p.ts` exported but unused by app routes (multi-device still aspirational). |
 | M | Low | `removeCashLines` | Per-line failures are swallowed (`catch {}`). If a closed-period line is mixed into a bulk delete, the toast can still say N deleted while some remain. Return the actual deleted count. |
-| N | Low | Register virtualizer | `getScrollElement` uses `document.querySelector("[data-workspace-scroll]")` — fragile if a second scroll root is ever mounted. Prefer a ref from AppShell. |
+| N | Low | Register virtualizer | Uses `getWorkspaceScrollElement()` (`main[data-workspace-scroll]`). Full AppShell ref still optional. |
 | O | Low | Nested dialogs | Post **Delete** opens `ConfirmDelete` (both Dialog z-50). Sibling order puts confirm on top today; a dedicated higher z on confirm would be safer than relying on DOM order. |
 | P | Info | `actions.ts` | Still `@ts-nocheck` restored from production build — types live via `typeof` in store. Prefer small surgical fixes over a rewrite. |
 | Q | Low | List virtualization | Only the register uses `@tanstack/react-virtual`. Invoices/bills/receipts/checks/ledger/employees paint every row. Fine at sample size (~1k docs); will hitch on fat files. |

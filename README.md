@@ -1,4 +1,4 @@
-# Finance Manager v3.62.44
+# Finance Manager v3.62.45
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -11,6 +11,16 @@ No accounts, no server setup. Books stay on this computer (IndexedDB). Settings 
 The app mark is a **navy tile with cream pillars** — a full opaque square (Windows 11 already rounds the tile; transparent corners were a white plate). Web uses the SVG favicon. Windows uses a **BMP 32-bit** `.ico` (PNG-in-ICO is a white square on the shortcut and the taskbar). After install, **delete any leftover blank shortcut** and pin the new one — Explorer caches the last icon.
 
 
+
+## What's new in v3.62.45
+
+- Phone Move: **edge auto-scroll** while dragging near top/bottom of the workspace — drop far dates without scroll-then-re-drag
+- Reconcile uncleared list follows **passbook same-day order** (`compareCashLines` / `registerOrder`)
+- Prune orphan `registerOrder` keys on delete; arrange renumber no longer keeps ghosts
+- Transfer arrange moves **both legs as a block** (All-banks stays consecutive)
+- Desk Move drop highlight: no flicker when the pointer crosses child nodes
+- Register sort: **Balance** column (desk + phone List) + **Passbook** option (default) — Bal values stay passbook running totals; Passbook restores arrangement order
+- Shared workspace scroll helper for virtualizers; stale swipe-wrapper CSS comment cleaned
 
 ## What's new in v3.62.44
 

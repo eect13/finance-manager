@@ -46,19 +46,32 @@ export function useEntrySort<T>(
   const [dir, setDir] = useState<SortDir>(defaultDir);
 
   function toggle(column: string) {
-    if (key === column) setDir((d) => (d === "asc" ? "desc" : "asc"));
-    else {
+    if (key === column) {
+      if (column === "passbook") return;
+      setDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
       setKey(column);
-      setDir(column === "order" || column === "date" || column === "name" ? "asc" : defaultDir);
+      setDir(
+        column === "order" || column === "date" || column === "name" || column === "passbook" || column === "balance"
+          ? "asc"
+          : defaultDir,
+      );
     }
   }
 
   function set(column: string, nextDir?: SortDir) {
     setKey(column);
-    setDir(nextDir ?? (column === "order" || column === "date" || column === "name" ? "asc" : defaultDir));
+    setDir(
+      nextDir ??
+        (column === "order" || column === "date" || column === "name" || column === "passbook" || column === "balance"
+          ? "asc"
+          : defaultDir),
+    );
   }
 
   const sorted = useMemo(() => {
+    // Passbook = cashBook / registerOrder arrangement (caller supplies already-ordered rows).
+    if (key === "passbook") return items;
     if (presorted && key === defaultKey && dir === defaultDir) return items;
     return sortEntries(items, key, dir, getters);
   }, [items, key, dir, getters, presorted, defaultKey, defaultDir]);

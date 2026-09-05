@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPoi
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { dropPlaceFromPoint, type ArrangePlace } from "@/lib/finance/register";
+import { autoScrollWorkspaceAt } from "@/lib/workspace-scroll";
 
 const THRESHOLD_PX = 10;
 
@@ -144,7 +145,12 @@ export function usePhoneMoveDrag({
         const pt = pendingPointRef.current;
         if (!s?.active || !pt) return;
         setGhost({ x: pt.x, y: pt.y, label: s.label });
+        // Edge auto-scroll so far-date drops work without scroll-then-re-drag.
+        const scrolled = autoScrollWorkspaceAt(pt.y);
         applyOver(hitTest(pt.x, pt.y));
+        if (scrolled && sessionRef.current?.active && pendingPointRef.current) {
+          rafRef.current = requestAnimationFrame(flushFrame);
+        }
       };
 
       const onMove = (ev: PointerEvent) => {

@@ -26,7 +26,7 @@ import type {
   Vendor,
   RecurringItem,
 } from "./types";
-import { applyRegisterOrderPlacement, cashBook, type ArrangePlace, type CashLineKind } from "./register";
+import { applyRegisterOrderPlacement, cashBook, pruneRegisterOrder, type ArrangePlace, type CashLineKind } from "./register";
 import { methodNeedsReference, methodLabel } from "./methods";
 import {
   bookBalanceOn,
@@ -870,6 +870,7 @@ export function removeCashLines(data: FinanceData, lines): {
   for (const line of unique) {
     next = removeCashLine(next, line);
   }
+  next = { ...next, registerOrder: pruneRegisterOrder(next) };
   return { data: next, deleted: unique.length + dupes, failed: 0 };
 }
 export function reorderBills(data: FinanceData, ids): FinanceData {

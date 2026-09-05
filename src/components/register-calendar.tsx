@@ -166,7 +166,11 @@ export function CashCalendar() {
                     e.preventDefault();
                     setOverDate(day.date);
                   }}
-                  onDragLeave={() => setOverDate(null)}
+                  onDragLeave={(e) => {
+                    const related = e.relatedTarget as Node | null;
+                    if (related && (e.currentTarget as HTMLElement).contains(related)) return;
+                    setOverDate(null);
+                  }}
                   onDrop={(e) => {
                     e.preventDefault();
                     const line = parseDrag(e);

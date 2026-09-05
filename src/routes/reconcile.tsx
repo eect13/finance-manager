@@ -35,6 +35,7 @@ import { openProps } from "@/lib/finance/open-record";
 import { useEntrySort } from "@/lib/finance/sort";
 import { useFinanceData, useFinanceStore } from "@/lib/finance/store";
 import { cn } from "@/lib/utils";
+import { getWorkspaceScrollElement } from "@/lib/workspace-scroll";
 
 export const Route = createFileRoute("/reconcile")({ component: ReconcilePage });
 
@@ -129,11 +130,11 @@ function ReconcilePage() {
     }),
     [statementDate],
   );
-  const sort = useEntrySort(uncleared, "date", getters, "asc");
+  const sort = useEntrySort(uncleared, "date", getters, "asc", true);
   const phoneGrid = isPhoneUi() && phoneLayout === "grid";
   const phoneVirt = useVirtualizer({
     count: sort.sorted.length,
-    getScrollElement: () => document.querySelector("[data-workspace-scroll]"),
+    getScrollElement: () => getWorkspaceScrollElement(),
     estimateSize: () => (phoneGrid ? 148 : 56),
     overscan: phoneGrid ? 8 : 12,
     getItemKey: (index) => sort.sorted[index]?.id ?? index,
@@ -142,7 +143,7 @@ function ReconcilePage() {
   // Desk table rows (phone uses phoneVirt above — do not regress phone).
   const deskVirt = useVirtualizer({
     count: sort.sorted.length,
-    getScrollElement: () => document.querySelector("[data-workspace-scroll]"),
+    getScrollElement: () => getWorkspaceScrollElement(),
     estimateSize: () => 44,
     overscan: 12,
     getItemKey: (index) => sort.sorted[index]?.id ?? index,

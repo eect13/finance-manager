@@ -286,9 +286,25 @@ export function compareCashLines(
   return a.id.localeCompare(b.id);
 }
 
-/** Fill missing CashLine ids with stable defaults (date → createdAt → id). Does not reshuffle existing keys. */
+/** Drop registerOrder keys that no longer map to a cash line. */
+export function pruneRegisterOrder(data: FinanceData): Record<string, number> {
+  const prev = data.registerOrder ?? {};
+  const probe: FinanceData = { ...data, registerOrder: {} };
+  const live = new Set(
+    cashBook(probe)
+      .lines.filter((l) => l.kind !== "opening")
+      .map((l) => l.id),
+  );
+  const next: Record<string, number> = {};
+  for (const [k, v] of Object.entries(prev)) {
+    if (live.has(k) && typeof v === "number" && Number.isFinite(v)) next[k] = v;
+  }
+  return next;
+}
+
+/** Fill missing CashLine ids with stable defaults (date → createdAt → id). Prunes orphans; does not reshuffle existing keys. */
 export function ensureRegisterOrder(data: FinanceData): Record<string, number> {
-  const prev = { ...(data.registerOrder ?? {}) };
+  const prev = pruneRegisterOrder(data);
   const probe: FinanceData = { ...data, registerOrder: {} };
   const { lines } = cashBook(probe);
   let max = -1;
@@ -307,8 +323,9 @@ export type ArrangePlace = "before" | "after";
 
 /**
  * Place `lineId` before/after `targetId` in passbook order.
+ * Transfer legs move as a block (preserve relative out/in order) so All-banks stays consecutive.
  * If dates differ, caller should reschedule first (or use arrangeCashLine in actions).
- * Renumbers every non-opening line so relative order stays dense and durable.
+ * Renumbers every non-opening line so relative order stays dense and durable (orphans dropped).
  */
 export function applyRegisterOrderPlacement(
   data: FinanceData,
@@ -319,13 +336,32 @@ export function applyRegisterOrderPlacement(
   const order = ensureRegisterOrder(data);
   const { lines } = cashBook({ ...data, registerOrder: order });
   const ids = lines.filter((l) => l.kind !== "opening").map((l) => l.id);
-  if (!ids.includes(lineId) || !ids.includes(targetId) || lineId === targetId) return order;
-  const without = ids.filter((id) => id !== lineId);
+  if (!ids.includes(lineId) || lineId === targetId) return order;
+
+  const moved = lines.find((l) => l.id === lineId);
+  const mateId =
+    moved?.kind === "transfer"
+      ? lines.find((l) => l.kind === "transfer" && l.sourceId === moved.sourceId && l.id !== lineId)?.id
+      : undefined;
+
+  // Block preserves prior relative order of the two transfer legs.
+  const block: string[] = [lineId];
+  if (mateId && ids.includes(mateId)) {
+    const lineIdx = ids.indexOf(lineId);
+    const mateIdx = ids.indexOf(mateId);
+    if (mateIdx < lineIdx) block.unshift(mateId);
+    else block.push(mateId);
+  }
+
+  // Dropping on the mate: no-op (legs already a unit).
+  if (mateId && targetId === mateId) return order;
+
+  const without = ids.filter((id) => !block.includes(id));
   const at = without.indexOf(targetId);
   if (at < 0) return order;
   const insertAt = place === "before" ? at : at + 1;
-  without.splice(insertAt, 0, lineId);
-  const next: Record<string, number> = { ...order };
+  without.splice(insertAt, 0, ...block);
+  const next: Record<string, number> = {};
   without.forEach((id, i) => {
     next[id] = i;
   });

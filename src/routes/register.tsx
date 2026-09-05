@@ -1252,6 +1252,10 @@ function RegisterTable({
   if (isPhoneUi()) {
     const listMode = phoneLayout === "list";
     const visibleCols = REGISTER_COLS.filter((col) => cols[col.id]);
+    const phoneListMinWidth =
+      colWidths.check +
+      (dragOn ? 36 : 0) +
+      visibleCols.reduce((sum, col) => sum + colWidths[col.id], 0);
     const toolbar = (
       <div className="register-phone-toolbar no-print mb-2 flex flex-wrap items-center justify-between gap-2">
         <span className="inline-flex items-center gap-1">
@@ -1324,11 +1328,11 @@ function RegisterTable({
           {toolbar}
           {moveHint}
           <div className="list-card list-grid register-phone-table min-w-0">
-            <table style={{ width: "100%" }}>
+            <table style={{ width: "max-content", minWidth: phoneListMinWidth }}>
               <thead>
                 <tr className="border-b border-border text-muted-foreground">
-                  <th className="w-10 px-2 py-2.5 no-print" aria-label="Select" />
-                  {dragOn ? <th className="w-9 px-1 py-2.5 no-print" aria-label="Move" /> : null}
+                  <th className="w-10 px-2 py-2.5 no-print whitespace-nowrap" aria-label="Select" />
+                  {dragOn ? <th className="w-9 px-1 py-2.5 no-print whitespace-nowrap" aria-label="Move" /> : null}
                   {visibleCols.map((col) => (
                     <th
                       key={col.id}
@@ -1419,16 +1423,17 @@ function RegisterTable({
                           <td
                             key={col.id}
                             className={cn(
-                              "px-2 py-3 align-top",
-                              money && "text-right tabular-nums whitespace-nowrap",
+                              "px-2 py-3 align-middle whitespace-nowrap",
+                              money && "text-right tabular-nums",
                               status && "text-center",
                               (col.id === "date" || col.id === "number" || col.id === "type") && "tabular-nums",
-                              (col.id === "payee" || col.id === "memo" || col.id === "bank") && "min-w-0 break-words",
-                              col.id === "date" && "text-muted-foreground whitespace-nowrap",
+                              (col.id === "payee" || col.id === "memo" || col.id === "bank") &&
+                                "min-w-[10rem] whitespace-normal break-words",
+                              col.id === "date" && "text-muted-foreground",
                             )}
                           >
                             {col.id === "payee" ? (
-                              <p className="break-words font-medium">{phoneCell(line, col.id)}</p>
+                              <p className="font-medium break-words">{phoneCell(line, col.id)}</p>
                             ) : (
                               phoneCell(line, col.id)
                             )}
@@ -1630,15 +1635,15 @@ function RegisterTable({
                                 type="button"
                                 className="phone-card-chip inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1"
                                 onClick={() => onCycleRecon(line)}
-                              >
-                                <LineStatus line={line} />
-                                <span className="text-muted-foreground">
-                                  {line.recon === "reconciled"
+                                aria-label={
+                                  line.recon === "reconciled"
                                     ? "Reconciled"
                                     : line.recon === "cleared"
                                       ? "Cleared"
-                                      : "Pending"}
-                                </span>
+                                      : "Pending"
+                                }
+                              >
+                                <LineStatus line={line} />
                               </button>
                             ) : null}
                             {line.reassignable ? (

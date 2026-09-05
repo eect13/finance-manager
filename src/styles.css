@@ -3120,14 +3120,11 @@ body.printing [data-radix-popper-content-wrapper]:has(.print-paper-menu) {
     overflow: visible;
   }
 
-  /* —— Page titles: content starts sooner —— */
-  .app-page-title {
-    font-size: 1.35rem !important;
-    line-height: 1.25;
-  }
-
+  /* —— Page titles: full readable size (user scrolls; do not compact) —— */
+  .app-page-title,
   .app-page-title.app-page-title-compact {
-    font-size: 1.2rem !important;
+    font-size: 1.5rem !important; /* text-2xl — matches non-compact phone */
+    line-height: 1.25;
   }
 
   .app-page-hint {
@@ -3997,7 +3994,8 @@ html.tauri-android .app-header-inner {
     margin-top: 0;
   }
   .register-phone-table table {
-    width: 100%;
+    width: max-content;
+    min-width: 100%;
     border-collapse: collapse;
     font-size: inherit; /* honor --register-font from View → Resize type */
   }
@@ -4006,35 +4004,52 @@ html.tauri-android .app-header-inner {
     letter-spacing: 0.01em;
     text-transform: none;
     font-weight: 600;
+    white-space: nowrap;
   }
   .register-phone-table tbody td {
-    vertical-align: top;
+    vertical-align: middle;
     font-size: inherit;
     line-height: 1.4;
   }
-  .register-phone-table td .truncate {
-    overflow: visible;
-    text-overflow: clip;
-    white-space: normal;
-  }
 }
 
-/* v3.62.31: phone list tables — wrap cells, show full memo/amount (no ellipsis cutoff) */
+/* v3.62.33: phone list tables — nowrap + horizontal scroll (no letter crush) */
 @media (max-width: 767px), ((hover: none) and (pointer: coarse)) {
-  .list-card.list-grid td,
-  .list-card.list-grid th {
-    white-space: normal !important;
-    overflow-wrap: anywhere;
-    word-break: break-word;
-    text-overflow: clip !important;
-    overflow: visible !important;
+  /* Keep natural/min column widths; card scrolls sideways when columns exceed viewport */
+  .list-card.list-grid table {
+    width: max-content !important;
+    min-width: 100%;
+  }
+  /* Do not zero out col mins — that crushed every phone list table */
+  .list-card.list-grid colgroup col:not(.col-actions) {
+    min-width: unset;
+  }
+  .list-card.list-grid th,
+  .list-card.list-grid td {
+    white-space: nowrap;
+    overflow-wrap: normal;
+    word-break: normal;
   }
   .list-card.list-grid td.col-actions,
   .list-card.list-grid th.col-actions {
     white-space: nowrap !important;
     overflow: visible !important;
   }
-  /* Money columns stay visible; allow slightly denser wrapping if needed */
+  /* Memo/payee/description may wrap at word boundaries only, with a floor width */
+  .list-card.list-grid td[data-col="payee"],
+  .list-card.list-grid td[data-col="party"],
+  .list-card.list-grid td[data-col="customer"],
+  .list-card.list-grid td[data-col="vendor"],
+  .list-card.list-grid td[data-col="memo"],
+  .list-card.list-grid td[data-col="description"],
+  .list-card.list-grid td[data-col="name"],
+  .list-card.list-grid td[data-col="bank"] {
+    white-space: normal;
+    overflow-wrap: break-word; /* word boundaries — never anywhere / break-word on all cells */
+    word-break: normal;
+    min-width: 10rem;
+  }
+  /* Money stays nowrap at normal size — no denser 0.8125rem override */
   .list-card.list-grid td[data-col="amount"],
   .list-card.list-grid td[data-col="debit"],
   .list-card.list-grid td[data-col="credit"],
@@ -4047,36 +4062,11 @@ html.tauri-android .app-header-inner {
   .list-card.list-grid td[data-col="pending"] {
     white-space: nowrap !important;
     overflow: visible !important;
-    font-size: 0.8125rem;
-  }
-  .list-grid td:not(.col-actions) {
-    overflow: visible;
-  }
-  /* Soften fixed min widths so phone does not clip identity/memo */
-  .list-card.list-grid table {
-    width: 100%;
-    min-width: 0;
-  }
-  .list-card.list-grid colgroup col:not(.col-actions) {
-    min-width: 0 !important;
-  }
-  /* Aging: keep Amount on-screen; party+number can wrap above */
-  .reports-aging .list-card.list-grid td[data-col="party"],
-  .reports-aging .list-card.list-grid td[data-col="customer"],
-  .reports-aging .list-card.list-grid td[data-col="vendor"],
-  .reports-aging .list-card.list-grid td[data-col="number"] {
-    white-space: normal !important;
   }
   .reports-aging .list-card.list-grid td[data-col="amount"],
   .reports-aging .list-card.list-grid td[data-col="balance"],
   .reports-aging .list-card.list-grid td[data-col="total"] {
     white-space: nowrap !important;
-  }
-  /* Kill aggressive single-line truncate on phone-visible identity lines in list cells */
-  .list-card.list-grid td .truncate {
-    overflow: visible;
-    text-overflow: clip;
-    white-space: normal;
   }
 }
 

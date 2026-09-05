@@ -496,14 +496,14 @@ function ReconcilePage() {
             </p>
           ) : phoneLayout === "list" ? (
             <div className="list-card list-grid register-phone-table min-w-0">
-              <table style={{ width: "100%" }}>
+              <table style={{ width: "max-content", minWidth: "100%" }}>
                 <thead>
                   <tr className="border-b border-border text-muted-foreground">
-                    <th className="w-10 px-2 py-2 no-print" aria-label="Cleared" />
-                    <th className="px-2 py-2 text-left font-medium">Date</th>
-                    <th className="px-2 py-2 text-left font-medium">Payee</th>
-                    <th className="px-2 py-2 text-right font-medium">Amount</th>
-                    <th className="px-2 py-2 text-right font-medium">Days</th>
+                    <th className="w-10 px-2 py-2 no-print whitespace-nowrap" aria-label="Cleared" />
+                    <th className="px-2 py-2 text-left font-medium whitespace-nowrap">Date</th>
+                    <th className="min-w-[10rem] px-2 py-2 text-left font-medium whitespace-nowrap">Payee</th>
+                    <th className="px-2 py-2 text-right font-medium whitespace-nowrap">Amount</th>
+                    <th className="px-2 py-2 text-right font-medium whitespace-nowrap">Days</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -533,8 +533,8 @@ function ReconcilePage() {
                         <td className="whitespace-nowrap px-2 py-2.5 text-muted-foreground tabular-nums">
                           {formatDate(line.date)}
                         </td>
-                        <td className="min-w-0 px-2 py-3">
-                          <p className="break-words font-medium">{line.party}</p>
+                        <td className="min-w-[10rem] whitespace-normal px-2 py-3">
+                          <p className="font-medium break-words">{line.party}</p>
                           <p className="mt-0.5 break-words text-muted-foreground">
                             {KIND_LABEL[line.kind]}
                             {line.number ? ` · ${line.number}` : ""}

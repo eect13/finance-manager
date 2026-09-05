@@ -237,7 +237,7 @@ function BanksPage() {
                 <SortHeader label="Status" column="status" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.status} onWidth={(n) => cols.setWidth("status", n)} onFit={() => fit("status", "Status")} align={colAligns.aligns.status ?? "center"} onAlign={(a) => colAligns.setAlign("status", a)} />
                 <SortHeader label="Book" column="book" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.book} onWidth={(n) => cols.setWidth("book", n)} onFit={() => fit("book", "Book")} align={colAligns.aligns.book ?? "center"} onAlign={(a) => colAligns.setAlign("book", a)} />
                 <SortHeader label="Pending" column="pending" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.pending} onWidth={(n) => cols.setWidth("pending", n)} onFit={() => fit("pending", "Pending")} align={colAligns.aligns.pending ?? "center"} onAlign={(a) => colAligns.setAlign("pending", a)} />
-                <th className="col-actions px-4 py-3"><span className="sr-only">Actions</span></th>
+                <th className="col-actions"><span className="sr-only">Actions</span></th>
               </tr>
             </thead>
             <tbody>
@@ -255,13 +255,13 @@ function BanksPage() {
                     onClick={() => pointer.setActiveId(bank.id)}
                     style={bank.archived ? { opacity: 0.55 } : undefined}
                   >
-                    <td className="px-4 py-3 font-medium" data-col="nickname">{bank.nickname}</td>
-                    <td className="px-4 py-3 text-muted-foreground" data-col="name">{bank.name}</td>
-                    <td className="px-4 py-3 text-muted-foreground" data-col="number">{bank.accountNumber}</td>
-                    <td className="px-4 py-3 text-muted-foreground" data-col="status">{bank.archived ? "Closed" : "Active"}</td>
+                    <td className={cn("px-4 py-3 font-medium", alignClass(colAligns.aligns.nickname ?? "center"))} data-col="nickname" data-align={colAligns.aligns.nickname ?? "center"}>{bank.nickname}</td>
+                    <td className={cn("px-4 py-3 text-muted-foreground", alignClass(colAligns.aligns.name ?? "center"))} data-col="name" data-align={colAligns.aligns.name ?? "center"}>{bank.name}</td>
+                    <td className={cn("px-4 py-3 text-muted-foreground", alignClass(colAligns.aligns.number ?? "center"))} data-col="number" data-align={colAligns.aligns.number ?? "center"}>{bank.accountNumber}</td>
+                    <td className={cn("px-4 py-3 text-muted-foreground", alignClass(colAligns.aligns.status ?? "center"))} data-col="status" data-align={colAligns.aligns.status ?? "center"}>{bank.archived ? "Closed" : "Active"}</td>
                     <td className={cn("px-4 py-3", alignClass(colAligns.aligns.book ?? "center"))} data-col="book" data-align={colAligns.aligns.book ?? "center"}><Money amount={book} currency={settings.currency} /></td>
                     <td className={cn("px-4 py-3", alignClass(colAligns.aligns.pending ?? "center"))} data-col="pending" data-align={colAligns.aligns.pending ?? "center"}><Money amount={pending} currency={settings.currency} /></td>
-                    <td className="col-actions px-4 py-3 text-right" data-col="actions" onClick={stopOpen} onDoubleClick={stopOpen} onPointerDown={stopOpen}>
+                    <td className="col-actions text-right" data-col="actions" onClick={stopOpen} onDoubleClick={stopOpen} onPointerDown={stopOpen}>
                       <RowDeleteButton onDelete={() => setDeletingId(bank.id)} />
                     </td>
                   </tr>

@@ -1226,6 +1226,12 @@ function RegisterTable({
     (col) => cols[col.id] && col.id !== "payment" && col.id !== "deposit" && col.id !== "balance",
   )?.id;
   const lastVisible = [...REGISTER_COLS].reverse().find((col) => cols[col.id])?.id;
+  /* Exactly one leftover absorber — never payee+memo both flex (void / last-col stretch). */
+  const flexColId: RegisterColId | undefined = cols.payee
+    ? "payee"
+    : cols.memo
+      ? "memo"
+      : lastVisible;
   function widthOf(id: RegisterColId) {
     return colWidths[id];
   }
@@ -1233,7 +1239,6 @@ function RegisterTable({
     return (next: number) => onColWidth(id, next);
   }
   function resizeProps(id: RegisterColId) {
-    if (id === lastVisible) return {};
     return { width: widthOf(id), onWidth: setWidth(id), onFit: fitWidth(id, COL_LABELS[id]) };
   }
   function fitWidth(id: RegisterColId, label: string) {
@@ -1586,7 +1591,7 @@ function RegisterTable({
                     data-selected={isOn ? "true" : undefined}
                     className={cn(
                       "register-phone-card rounded-2xl border border-border/40 bg-card px-3 py-3 touch-manipulation shadow-none",
-                      isOn && "border-primary bg-primary/15 ring-1 ring-primary",
+                      isOn && "bg-primary/15",
                       activeId === line.id && "bg-accent/30",
                       isDragging && "ring-2 ring-primary opacity-60",
                       overRow === line.id && dragOn && "bg-accent/50",
@@ -1835,8 +1840,7 @@ function RegisterTable({
                 key={col.id}
                 className={cn(
                   REGISTER_COL_CLASS[col.id],
-                  (col.id === "payee" || col.id === "memo" || (col.id === lastVisible && !cols.payee && !cols.memo)) &&
-                    "col-flex",
+                  col.id === flexColId && "col-flex",
                 )}
                 style={{ width: !cols[col.id] ? 0 : colWidths[col.id] }}
               />

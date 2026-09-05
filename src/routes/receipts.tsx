@@ -260,7 +260,7 @@ function ReceiptsPage() {
               <SortHeader label="Kind" column="kind" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.kind} onWidth={(n) => cols.setWidth("kind", n)} onFit={() => fit("kind", "Kind")} align={colAligns.aligns.kind ?? "center"} onAlign={(a) => colAligns.setAlign("kind", a)} />
               <SortHeader label="Amount" column="amount" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.amount} onWidth={(n) => cols.setWidth("amount", n)} onFit={() => fit("amount", "Amount")} align={colAligns.aligns.amount ?? "center"} onAlign={(a) => colAligns.setAlign("amount", a)} />
               <SortHeader label="Status" column="status" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.status} onWidth={(n) => cols.setWidth("status", n)} onFit={() => fit("status", "Status")} align={colAligns.aligns.status ?? "center"} onAlign={(a) => colAligns.setAlign("status", a)} />
-              <th className="col-actions relative px-4 py-3">
+              <th className="col-actions relative">
                 <span className="sr-only">Actions</span>
               </th>
             </tr>
@@ -313,22 +313,22 @@ function ReceiptsPage() {
                             <DragHandle enabled={dragOn} />
                           </td>
                         ) : null}
-                        <td className="px-4 py-3 font-medium" data-col="number">{receipt.number}</td>
-                        <td className="px-4 py-3 whitespace-nowrap" data-col="date">{formatDate(receipt.date)}</td>
-                        <td className="px-4 py-3" data-col="from">
+                        <td className={cn("px-4 py-3 font-medium", alignClass(colAligns.aligns.number ?? "center"))} data-col="number" data-align={colAligns.aligns.number ?? "center"}>{receipt.number}</td>
+                        <td className={cn("px-4 py-3 whitespace-nowrap", alignClass(colAligns.aligns.date ?? "center"))} data-col="date" data-align={colAligns.aligns.date ?? "center"}>{formatDate(receipt.date)}</td>
+                        <td className={cn("px-4 py-3", alignClass(colAligns.aligns.from ?? "center"))} data-col="from" data-align={colAligns.aligns.from ?? "center"}>
                           <p>{receipt.receivedFrom}</p>
                           <p className="text-xs text-muted-foreground">
                             {bank?.nickname}
                             {receipt.checkNumber ? ` · Chk ${receipt.checkNumber}` : ""}
                           </p>
                         </td>
-                        <td className="px-4 py-3" data-col="kind">
+                        <td className={cn("px-4 py-3", alignClass(colAligns.aligns.kind ?? "center"))} data-col="kind" data-align={colAligns.aligns.kind ?? "center"}>
                           <ReceiptBadge status={receipt.status} kind={receipt.kind} method={receipt.method} />
                         </td>
-                        <td className="px-4 py-3 text-right" data-col="amount">
+                        <td className={cn("px-4 py-3", alignClass(colAligns.aligns.amount ?? "center"))} data-col="amount" data-align={colAligns.aligns.amount ?? "center"}>
                           <Money amount={receipt.amount} currency={data.settings.currency} />
                         </td>
-                        <td className="px-4 py-3" data-col="status" onClick={(e) => e.stopPropagation()} onDoubleClick={stopOpen}>
+                        <td className={cn("px-4 py-3", alignClass(colAligns.aligns.status ?? "center"))} data-col="status" data-align={colAligns.aligns.status ?? "center"} onClick={(e) => e.stopPropagation()} onDoubleClick={stopOpen}>
                           <ReceiptStatusControl
                             status={receipt.status}
                             recon={receipt.recon ?? "pending"}
@@ -337,7 +337,7 @@ function ReceiptsPage() {
                             onAction={applyStatus}
                           />
                         </td>
-                        <td className="col-actions px-4 py-3" onDoubleClick={stopOpen}>
+                        <td className="col-actions" onDoubleClick={stopOpen}>
                           {rowActions}
                         </td>
                       </tr>

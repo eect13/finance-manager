@@ -208,7 +208,7 @@ function InvoicesPage() {
               <SortHeader label="Total" column="total" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.total} onWidth={(n) => cols.setWidth("total", n)} onFit={() => fit("total", "Total")} align={colAligns.aligns.total ?? "center"} onAlign={(a) => colAligns.setAlign("total", a)} />
               <SortHeader label="Balance" column="balance" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.balance} onWidth={(n) => cols.setWidth("balance", n)} onFit={() => fit("balance", "Balance")} align={colAligns.aligns.balance ?? "center"} onAlign={(a) => colAligns.setAlign("balance", a)} />
               <SortHeader label="Status" column="status" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.status} onWidth={(n) => cols.setWidth("status", n)} onFit={() => fit("status", "Status")} align={colAligns.aligns.status ?? "center"} onAlign={(a) => colAligns.setAlign("status", a)} />
-              <th className="col-actions relative px-4 py-3">
+              <th className="col-actions relative">
                 <span className="sr-only">Actions</span>
               </th>
             </tr>
@@ -292,20 +292,20 @@ function InvoicesPage() {
                       {...openProps("invoice", inv.id)}
                       onClick={() => pointer.setActiveId(inv.id)}
                     >
-                      <td className="px-4 py-3 font-medium" data-col="number">{inv.number}</td>
-                      <td className="px-4 py-3" data-col="customer">{customer?.name ?? "—"}</td>
-                      <td className="px-4 py-3 whitespace-nowrap" data-col="date">{formatDate(inv.date)}</td>
-                      <td className="px-4 py-3 whitespace-nowrap" data-col="due">{formatDate(inv.dueDate)}</td>
-                      <td className="px-4 py-3 text-right" data-col="total">
+                      <td className={cn("px-4 py-3 font-medium", alignClass(colAligns.aligns.number ?? "center"))} data-col="number" data-align={colAligns.aligns.number ?? "center"}>{inv.number}</td>
+                      <td className={cn("px-4 py-3", alignClass(colAligns.aligns.customer ?? "center"))} data-col="customer" data-align={colAligns.aligns.customer ?? "center"}>{customer?.name ?? "—"}</td>
+                      <td className={cn("px-4 py-3 whitespace-nowrap", alignClass(colAligns.aligns.date ?? "center"))} data-col="date" data-align={colAligns.aligns.date ?? "center"}>{formatDate(inv.date)}</td>
+                      <td className={cn("px-4 py-3 whitespace-nowrap", alignClass(colAligns.aligns.due ?? "center"))} data-col="due" data-align={colAligns.aligns.due ?? "center"}>{formatDate(inv.dueDate)}</td>
+                      <td className={cn("px-4 py-3", alignClass(colAligns.aligns.total ?? "center"))} data-col="total" data-align={colAligns.aligns.total ?? "center"}>
                         <Money amount={invoiceTotal(data, inv.id)} currency={data.settings.currency} />
                       </td>
-                      <td className="px-4 py-3 text-right" data-col="balance">
+                      <td className={cn("px-4 py-3", alignClass(colAligns.aligns.balance ?? "center"))} data-col="balance" data-align={colAligns.aligns.balance ?? "center"}>
                         <Money amount={due} currency={data.settings.currency} />
                       </td>
-                      <td className="px-4 py-3" data-col="status" data-align={colAligns.aligns.status ?? "center"}>
+                      <td className={cn("px-4 py-3", alignClass(colAligns.aligns.status ?? "center"))} data-col="status" data-align={colAligns.aligns.status ?? "center"}>
                         <InvoiceBadge status={inv.status} overdue={overdue} />
                       </td>
-                      <td className="col-actions px-4 py-3" onDoubleClick={stopOpen}>
+                      <td className="col-actions" onDoubleClick={stopOpen}>
                         {rowActions}
                       </td>
                     </tr>

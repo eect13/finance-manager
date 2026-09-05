@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Printer } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
+import { cn } from "@/lib/utils";
 import { AppShell } from "@/components/app-shell";
 import { CsvButton } from "@/components/export-menu";
 import { ListToolbar } from "@/components/filter-pills";
@@ -12,7 +13,7 @@ import { requestPrint } from "@/components/print-preview";
 import { SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
 import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
-import { useColAligns } from "@/components/use-col-aligns";
+import { useColAligns, alignClass } from "@/components/use-col-aligns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -222,11 +223,11 @@ function JournalTable({
                 {...openProps("journal", entry.id)}
                 onClick={() => pointer.setActiveId(entry.id)}
               >
-                <td className="px-4 py-3 whitespace-nowrap" data-col="date">{formatDate(entry.date)}</td>
-                <td className="px-4 py-3 font-medium" data-col="description">{entry.description}</td>
-                <td className="px-4 py-3 capitalize text-muted-foreground" data-col="source">{entry.sourceType}</td>
-                <td className="px-4 py-3 text-right" data-col="debit"><Money amount={debit} currency={currency} /></td>
-                <td className="px-4 py-3 text-right" data-col="credit"><Money amount={credit} currency={currency} /></td>
+                <td className={cn("px-4 py-3 whitespace-nowrap", alignClass(colAligns.aligns.date ?? "center"))} data-col="date" data-align={colAligns.aligns.date ?? "center"}>{formatDate(entry.date)}</td>
+                <td className={cn("px-4 py-3 font-medium", alignClass(colAligns.aligns.description ?? "center"))} data-col="description" data-align={colAligns.aligns.description ?? "center"}>{entry.description}</td>
+                <td className={cn("px-4 py-3 capitalize text-muted-foreground", alignClass(colAligns.aligns.source ?? "center"))} data-col="source" data-align={colAligns.aligns.source ?? "center"}>{entry.sourceType}</td>
+                <td className={cn("px-4 py-3", alignClass(colAligns.aligns.debit ?? "center"))} data-col="debit" data-align={colAligns.aligns.debit ?? "center"}><Money amount={debit} currency={currency} /></td>
+                <td className={cn("px-4 py-3", alignClass(colAligns.aligns.credit ?? "center"))} data-col="credit" data-align={colAligns.aligns.credit ?? "center"}><Money amount={credit} currency={currency} /></td>
               </tr>
             );
           })}
@@ -300,10 +301,10 @@ function AccountsTable({
               aria-current={pointer.activeId === account.id ? "true" : undefined}
               onClick={() => pointer.setActiveId(account.id)}
             >
-              <td className="px-4 py-3 tabular-nums" data-col="code">{account.code}</td>
-              <td className="px-4 py-3" data-col="name">{account.name}</td>
-              <td className="px-4 py-3 capitalize text-muted-foreground" data-col="type">{account.type}</td>
-              <td className="px-4 py-3 text-right" data-col="balance">
+              <td className={cn("px-4 py-3 tabular-nums", alignClass(colAligns.aligns.code ?? "center"))} data-col="code" data-align={colAligns.aligns.code ?? "center"}>{account.code}</td>
+              <td className={cn("px-4 py-3", alignClass(colAligns.aligns.name ?? "center"))} data-col="name" data-align={colAligns.aligns.name ?? "center"}>{account.name}</td>
+              <td className={cn("px-4 py-3 capitalize text-muted-foreground", alignClass(colAligns.aligns.type ?? "center"))} data-col="type" data-align={colAligns.aligns.type ?? "center"}>{account.type}</td>
+              <td className={cn("px-4 py-3", alignClass(colAligns.aligns.balance ?? "center"))} data-col="balance" data-align={colAligns.aligns.balance ?? "center"}>
                 <Money amount={accountBalance(data, account.id)} currency={currency} />
               </td>
             </tr>

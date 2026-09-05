@@ -725,10 +725,8 @@
     background: color-mix(in oklab, var(--color-ring) 70%, transparent);
   }
 
-  .list-grid thead th:last-child .col-resize-handle,
-  .register-matrix thead th:last-child .col-resize-handle,
-  .list-grid thead th.col-fill .col-resize-handle,
-  .register-matrix thead th.col-fill .col-resize-handle {
+  /* Only actions never resizes. Last data col (Status/Balance) keeps a handle. */
+  .list-grid thead th.col-actions .col-resize-handle {
     display: none;
   }
 
@@ -792,7 +790,7 @@
   [data-open="true"]:focus-visible {
     outline: none;
     background-color: color-mix(in oklab, var(--color-primary) 9%, var(--color-card));
-    box-shadow: inset 2px 0 0 color-mix(in oklab, var(--color-primary) 45%, transparent);
+    box-shadow: none;
   }
 
   .register-matrix {
@@ -847,7 +845,7 @@
 
   .register-matrix tr[data-selected="true"] td {
     background: color-mix(in oklab, var(--color-primary) 15%, var(--color-card));
-    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-primary) 45%, transparent);
+    box-shadow: none;
   }
 
   .register-matrix tr[data-selected="true"]:hover td {
@@ -856,7 +854,7 @@
 
   .dark .register-matrix tr[data-selected="true"] td {
     background: color-mix(in oklab, var(--color-primary) 22%, var(--color-card));
-    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-primary) 65%, transparent);
+    box-shadow: none;
   }
 
   .dark .register-matrix tr[data-selected="true"]:hover td {
@@ -1058,7 +1056,7 @@
   .item-card:focus-visible {
     outline: none;
     background: color-mix(in oklab, var(--color-primary) 9%, var(--color-card));
-    box-shadow: inset 2px 0 0 color-mix(in oklab, var(--color-primary) 45%, transparent);
+    box-shadow: none;
   }
 
   .workspace-split {
@@ -4264,7 +4262,7 @@ body.is-phone-move-dragging {
 }
 .dark .recon-table-card tr[data-selected="true"] td {
   background: color-mix(in oklab, var(--color-primary) 18%, var(--color-card));
-  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-primary) 55%, transparent);
+  box-shadow: none;
 }
 .dark .register-matrix tr[data-selected="true"] .col-check {
   background: color-mix(in oklab, var(--color-primary) 22%, var(--color-card));
@@ -4273,49 +4271,68 @@ body.is-phone-move-dragging {
   box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-primary) 80%, transparent);
 }
 
-/* v3.62.56: soft keyboard focus — background + thin left bar only (no hard outline box) */
+/* v3.62.59: select/focus — soft background tint only (no ring, border, outline, or left bar) */
 .list-grid tbody tr[data-focused="true"] td,
 .register-matrix tbody tr[data-focused="true"] td,
 .list-grid tbody tr[aria-current="true"] td,
 .register-matrix tbody tr[aria-current="true"] td,
 .party-dir-table tbody tr[data-focused="true"] td,
-.party-txn-table tbody tr[data-focused="true"] td {
+.party-txn-table tbody tr[data-focused="true"] td,
+.recon-table-card tbody tr[data-focused="true"] td,
+.recon-table-card tbody tr[aria-current="true"] td {
   background: color-mix(in oklab, var(--color-primary) 9%, var(--color-card));
-  box-shadow: inset 2px 0 0 color-mix(in oklab, var(--color-primary) 45%, transparent);
+  box-shadow: none;
   outline: none;
+  border-color: transparent;
 }
 .dark .list-grid tbody tr[data-focused="true"] td,
 .dark .register-matrix tbody tr[data-focused="true"] td,
 .dark .list-grid tbody tr[aria-current="true"] td,
 .dark .register-matrix tbody tr[aria-current="true"] td,
 .dark .party-dir-table tbody tr[data-focused="true"] td,
-.dark .party-txn-table tbody tr[data-focused="true"] td {
+.dark .party-txn-table tbody tr[data-focused="true"] td,
+.dark .recon-table-card tbody tr[data-focused="true"] td,
+.dark .recon-table-card tbody tr[aria-current="true"] td {
   background: color-mix(in oklab, var(--color-primary) 16%, var(--color-card));
-  box-shadow: inset 2px 0 0 color-mix(in oklab, var(--color-primary) 55%, transparent);
+  box-shadow: none;
 }
-/* Selected (tick) + focused: keep primary tint, keep subtle focus bar */
+.list-grid tbody tr[data-selected="true"] td,
+.register-matrix tbody tr[data-selected="true"] td,
+.recon-table-card tbody tr[data-selected="true"] td {
+  box-shadow: none !important;
+  outline: none;
+}
 .list-grid tbody tr[data-focused="true"][data-selected="true"] td,
-.register-matrix tbody tr[data-focused="true"][data-selected="true"] td {
+.register-matrix tbody tr[data-focused="true"][data-selected="true"] td,
+.recon-table-card tbody tr[data-focused="true"][data-selected="true"] td {
   background: color-mix(in oklab, var(--color-primary) 18%, var(--color-card));
+  box-shadow: none !important;
 }
 .register-phone-card[data-focused="true"],
 .recon-phone-card[data-focused="true"],
-[data-list-card][data-focused="true"] {
-  outline: none;
-  box-shadow: inset 2px 0 0 color-mix(in oklab, var(--color-primary) 45%, transparent);
+[data-list-card][data-focused="true"],
+.register-phone-card[data-selected="true"],
+.recon-phone-card[data-selected="true"] {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: transparent !important;
+  --tw-ring-shadow: 0 0 #0000 !important;
   background: color-mix(in oklab, var(--color-primary) 9%, var(--color-card));
 }
 .dark .register-phone-card[data-focused="true"],
 .dark .recon-phone-card[data-focused="true"],
-.dark [data-list-card][data-focused="true"] {
+.dark [data-list-card][data-focused="true"],
+.dark .register-phone-card[data-selected="true"],
+.dark .recon-phone-card[data-selected="true"] {
   background: color-mix(in oklab, var(--color-primary) 16%, var(--color-card));
-  box-shadow: inset 2px 0 0 color-mix(in oklab, var(--color-primary) 55%, transparent);
+  box-shadow: none !important;
+  border-color: transparent !important;
 }
 /* Soft highlight for Options shortcut rows if they receive focus */
 .options-shortcut-row:focus-visible {
   outline: none;
   background: color-mix(in oklab, var(--color-primary) 8%, transparent);
-  box-shadow: inset 2px 0 0 color-mix(in oklab, var(--color-primary) 45%, transparent);
+  box-shadow: none;
   border-radius: 0.35rem;
 }
 .list-card.list-grid:focus,
@@ -4437,6 +4454,7 @@ body.is-phone-move-dragging {
   position: relative;
   display: flex;
   width: 100%;
+  height: 100%;
   min-width: 0;
   min-height: 1.75rem;
   align-items: center;
@@ -4575,3 +4593,108 @@ body.is-phone-move-dragging {
 }
 
 /* SortHeader stays title-centered (content align is cells only) — unchanged from 3.62.56 */
+
+/* v3.62.59: table structure — header H+V center, body honor align, last col / outside width */
+.list-grid thead th,
+.register-matrix thead th,
+.recon-table-card thead th,
+.party-dir-table thead th,
+.party-txn-table thead th {
+  vertical-align: middle;
+  text-align: center;
+}
+
+/* Body cells: default center; data-align beats money/right leftovers */
+.list-grid tbody td:not(.col-actions):not([data-align]),
+.register-matrix tbody td:not([data-align]),
+.recon-table-card tbody td:not(.col-check):not([data-align]),
+.party-dir-table tbody td:not([data-align]),
+.party-txn-table tbody td:not([data-align]) {
+  text-align: center;
+}
+
+.list-grid td[data-align="left"],
+.register-matrix td[data-align="left"],
+.recon-table-card td[data-align="left"],
+.party-dir-table td[data-align="left"],
+.party-txn-table td[data-align="left"] {
+  text-align: left !important;
+}
+.list-grid td[data-align="center"],
+.register-matrix td[data-align="center"],
+.recon-table-card td[data-align="center"],
+.party-dir-table td[data-align="center"],
+.party-txn-table td[data-align="center"] {
+  text-align: center !important;
+}
+.list-grid td[data-align="right"],
+.register-matrix td[data-align="right"],
+.recon-table-card td[data-align="right"],
+.party-dir-table td[data-align="right"],
+.party-txn-table td[data-align="right"] {
+  text-align: right !important;
+}
+
+/* col-money default center only when no explicit data-align */
+.list-grid td.col-money:not([data-align]),
+.register-matrix td.col-money:not([data-align]),
+.register-matrix tfoot td.col-money:not([data-align]) {
+  text-align: center;
+}
+
+/*
+  Outside / last-col width:
+  - table fills ListCard (100%) without forcing trailing stretch
+  - one .col-flex absorbs leftover; .col-actions hugs (1%)
+  - actions pad uses shared --list-actions-px (no px-4 explosion)
+*/
+.list-grid table,
+.register-matrix table,
+.recon-table-card table,
+.party-dir-table table,
+.party-txn-table table {
+  width: 100%;
+  max-width: 100%;
+  table-layout: fixed;
+}
+
+.list-grid colgroup col.col-actions {
+  width: 1% !important;
+  min-width: 0 !important;
+  max-width: none;
+}
+
+.list-grid th.col-actions,
+.list-grid td.col-actions {
+  width: 1%;
+  max-width: none;
+  white-space: nowrap;
+  vertical-align: middle;
+  text-align: right;
+  padding-left: var(--list-actions-px) !important;
+  padding-right: var(--list-actions-px) !important;
+  overflow: visible;
+  min-width: 0;
+}
+
+.list-grid td.col-actions > div {
+  justify-content: flex-end;
+  flex-wrap: nowrap !important;
+}
+
+
+/* v3.62.59: selected rows/cards — highlight bg only, never a dark border/ring */
+.register-matrix tr[data-selected="true"] td,
+.recon-table-card tr[data-selected="true"] td,
+.list-grid tbody tr[data-selected="true"] td {
+  box-shadow: none !important;
+  outline: none !important;
+}
+.register-phone-card.border-primary,
+.recon-phone-card.border-primary,
+.register-phone-card.ring-1,
+.recon-phone-card.ring-1 {
+  border-color: transparent !important;
+  box-shadow: none !important;
+  --tw-ring-shadow: 0 0 #0000 !important;
+}

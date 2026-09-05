@@ -180,13 +180,13 @@ export function PartyTxnTable({
                 align={colAligns.aligns.date ?? "center"}
                 onAlign={(a) => colAligns.setAlign("date", a)}
               />
-                <SortHeader label="Type" column="type" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-txn-type" width={cols.widths.type} onWidth={(n) => cols.setWidth("type", n)} onFit={() => fit("type", "Type")} />
-                <SortHeader label="No." column="number" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-txn-number" width={cols.widths.number} onWidth={(n) => cols.setWidth("number", n)} onFit={() => fit("number", "No.")} />
-                <SortHeader label="Memo" column="memo" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-txn-memo" width={cols.widths.memo} onWidth={(n) => cols.setWidth("memo", n)} onFit={() => fit("memo", "Memo")} />
-                <SortHeader label="Amount" column="amount" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-txn-amount" align="center" width={cols.widths.amount} onWidth={(n) => cols.setWidth("amount", n)} onFit={() => fit("amount", "Amount")} />
-                <SortHeader label="Open" column="open" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-txn-open" align="center" width={cols.widths.open} onWidth={(n) => cols.setWidth("open", n)} onFit={() => fit("open", "Open")} />
-                <SortHeader label="Balance" column="balance" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-txn-balance" align="center" width={cols.widths.balance} onWidth={(n) => cols.setWidth("balance", n)} onFit={() => fit("balance", "Balance")} />
-                <SortHeader label="Status" column="status" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-txn-status" width={cols.widths.status} />
+                <SortHeader label="Type" column="type" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-txn-type" width={cols.widths.type} onWidth={(n) => cols.setWidth("type", n)} onFit={() => fit("type", "Type")} align={colAligns.aligns.type ?? "center"} onAlign={(a) => colAligns.setAlign("type", a)} />
+                <SortHeader label="No." column="number" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-txn-number" width={cols.widths.number} onWidth={(n) => cols.setWidth("number", n)} onFit={() => fit("number", "No.")} align={colAligns.aligns.number ?? "center"} onAlign={(a) => colAligns.setAlign("number", a)} />
+                <SortHeader label="Memo" column="memo" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-txn-memo" width={cols.widths.memo} onWidth={(n) => cols.setWidth("memo", n)} onFit={() => fit("memo", "Memo")} align={colAligns.aligns.memo ?? "center"} onAlign={(a) => colAligns.setAlign("memo", a)} />
+                <SortHeader label="Amount" column="amount" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-txn-amount" width={cols.widths.amount} onWidth={(n) => cols.setWidth("amount", n)} onFit={() => fit("amount", "Amount")} align={colAligns.aligns.amount ?? "center"} onAlign={(a) => colAligns.setAlign("amount", a)} />
+                <SortHeader label="Open" column="open" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-txn-open" width={cols.widths.open} onWidth={(n) => cols.setWidth("open", n)} onFit={() => fit("open", "Open")} align={colAligns.aligns.open ?? "center"} onAlign={(a) => colAligns.setAlign("open", a)} />
+                <SortHeader label="Balance" column="balance" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-txn-balance" width={cols.widths.balance} onWidth={(n) => cols.setWidth("balance", n)} onFit={() => fit("balance", "Balance")} align={colAligns.aligns.balance ?? "center"} onAlign={(a) => colAligns.setAlign("balance", a)} />
+                <SortHeader label="Status" column="status" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-txn-status" width={cols.widths.status} onWidth={(n) => cols.setWidth("status", n)} onFit={() => fit("status", "Status")} align={colAligns.aligns.status ?? "center"} onAlign={(a) => colAligns.setAlign("status", a)} />
               </tr>
             </thead>
             <tbody>
@@ -209,22 +209,22 @@ export function PartyTxnTable({
                       }
                     }}
                   >
-                    <td className="col-txn-date px-3 py-2 whitespace-nowrap" data-col="date">{formatRegisterDate(row.date)}</td>
-                    <td className="col-txn-type px-3 py-2" data-col="type">{row.type}</td>
-                    <td className="col-txn-number px-3 py-2 whitespace-nowrap" data-col="number">{row.number}</td>
-                    <td className="col-txn-memo px-3 py-2 text-muted-foreground" data-col="memo">{row.memo || "—"}</td>
-                    <td className="col-txn-amount px-3 py-2 text-right whitespace-nowrap" data-col="amount">
+                    <td className={cn("col-txn-date px-3 py-2 whitespace-nowrap", alignClass(colAligns.aligns.date ?? "center"))} data-col="date" data-align={colAligns.aligns.date ?? "center"}>{formatRegisterDate(row.date)}</td>
+                    <td className={cn("col-txn-type px-3 py-2", alignClass(colAligns.aligns.type ?? "center"))} data-col="type" data-align={colAligns.aligns.type ?? "center"}>{row.type}</td>
+                    <td className={cn("col-txn-number px-3 py-2 whitespace-nowrap", alignClass(colAligns.aligns.number ?? "center"))} data-col="number" data-align={colAligns.aligns.number ?? "center"}>{row.number}</td>
+                    <td className={cn("col-txn-memo px-3 py-2 text-muted-foreground", alignClass(colAligns.aligns.memo ?? "center"))} data-col="memo" data-align={colAligns.aligns.memo ?? "center"}>{row.memo || "—"}</td>
+                    <td className={cn("col-txn-amount px-3 py-2 whitespace-nowrap", alignClass(colAligns.aligns.amount ?? "center"))} data-col="amount" data-align={colAligns.aligns.amount ?? "center"}>
                       <Money
                         amount={row.amount}
                         currency={currency}
                         className={row.openKind === "receipt" || row.openKind === "check" ? "text-credit" : undefined}
                       />
                     </td>
-                    <td className="col-txn-open px-3 py-2 text-right" data-col="open">{row.open ? <Money amount={row.open} currency={currency} /> : "—"}</td>
-                    <td className="col-txn-balance px-3 py-2 text-right" data-col="balance">
+                    <td className={cn("col-txn-open px-3 py-2", alignClass(colAligns.aligns.open ?? "center"))} data-col="open" data-align={colAligns.aligns.open ?? "center"}>{row.open ? <Money amount={row.open} currency={currency} /> : "—"}</td>
+                    <td className={cn("col-txn-balance px-3 py-2", alignClass(colAligns.aligns.balance ?? "center"))} data-col="balance" data-align={colAligns.aligns.balance ?? "center"}>
                       <Money amount={row.balance} currency={currency} />
                     </td>
-                    <td className="col-txn-status px-3 py-2" data-col="status">
+                    <td className={cn("col-txn-status px-3 py-2", alignClass(colAligns.aligns.status ?? "center"))} data-col="status" data-align={colAligns.aligns.status ?? "center"}>
                       <TxnBadge row={row} />
                     </td>
                   </tr>
@@ -612,11 +612,11 @@ function PartyDirectoryTable({
         </colgroup>
         <thead>
           <tr className="border-b border-border text-muted-foreground">
-            <SortHeader label="Name" column="name" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-dir-name" width={cols.widths.name} onWidth={(n) => cols.setWidth("name", n)} onFit={() => fit("name", "Name")} />
-            <SortHeader label="Contact" column="contact" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-dir-contact" width={cols.widths.contact} onWidth={(n) => cols.setWidth("contact", n)} onFit={() => fit("contact", "Contact")} />
-            <SortHeader label="Email" column="email" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-dir-email" width={cols.widths.email} onWidth={(n) => cols.setWidth("email", n)} onFit={() => fit("email", "Email")} />
-            <SortHeader label="Phone" column="phone" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-dir-phone" width={cols.widths.phone} onWidth={(n) => cols.setWidth("phone", n)} onFit={() => fit("phone", "Phone")} />
-            <SortHeader label="Open" column="balance" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-dir-balance" align="center" width={cols.widths.balance} />
+            <SortHeader label="Name" column="name" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-dir-name" width={cols.widths.name} onWidth={(n) => cols.setWidth("name", n)} onFit={() => fit("name", "Name")} align={colAligns.aligns.name ?? "center"} onAlign={(a) => colAligns.setAlign("name", a)} />
+            <SortHeader label="Contact" column="contact" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-dir-contact" width={cols.widths.contact} onWidth={(n) => cols.setWidth("contact", n)} onFit={() => fit("contact", "Contact")} align={colAligns.aligns.contact ?? "center"} onAlign={(a) => colAligns.setAlign("contact", a)} />
+            <SortHeader label="Email" column="email" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-dir-email" width={cols.widths.email} onWidth={(n) => cols.setWidth("email", n)} onFit={() => fit("email", "Email")} align={colAligns.aligns.email ?? "center"} onAlign={(a) => colAligns.setAlign("email", a)} />
+            <SortHeader label="Phone" column="phone" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-dir-phone" width={cols.widths.phone} onWidth={(n) => cols.setWidth("phone", n)} onFit={() => fit("phone", "Phone")} align={colAligns.aligns.phone ?? "center"} onAlign={(a) => colAligns.setAlign("phone", a)} />
+            <SortHeader label="Open" column="balance" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-dir-balance" width={cols.widths.balance} onWidth={(n) => cols.setWidth("balance", n)} onFit={() => fit("balance", "Open")} align={colAligns.aligns.balance ?? "center"} onAlign={(a) => colAligns.setAlign("balance", a)} />
           </tr>
         </thead>
         <tbody>
@@ -650,11 +650,11 @@ function PartyDirectoryTable({
                   }
                 }}
               >
-                <td className="px-4 py-3 font-medium" data-col="name">{row.title}</td>
-                <td className="px-4 py-3 text-muted-foreground" data-col="contact">{row.contact || "—"}</td>
-                <td className="px-4 py-3 text-muted-foreground" data-col="email">{row.email || "—"}</td>
-                <td className="px-4 py-3 text-muted-foreground" data-col="phone">{row.phone || "—"}</td>
-                <td className="px-4 py-3 text-right" data-col="balance">
+                <td className={cn("px-4 py-3 font-medium", alignClass(colAligns.aligns.name ?? "center"))} data-col="name" data-align={colAligns.aligns.name ?? "center"}>{row.title}</td>
+                <td className={cn("px-4 py-3 text-muted-foreground", alignClass(colAligns.aligns.contact ?? "center"))} data-col="contact" data-align={colAligns.aligns.contact ?? "center"}>{row.contact || "—"}</td>
+                <td className={cn("px-4 py-3 text-muted-foreground", alignClass(colAligns.aligns.email ?? "center"))} data-col="email" data-align={colAligns.aligns.email ?? "center"}>{row.email || "—"}</td>
+                <td className={cn("px-4 py-3 text-muted-foreground", alignClass(colAligns.aligns.phone ?? "center"))} data-col="phone" data-align={colAligns.aligns.phone ?? "center"}>{row.phone || "—"}</td>
+                <td className={cn("px-4 py-3", alignClass(colAligns.aligns.balance ?? "center"))} data-col="balance" data-align={colAligns.aligns.balance ?? "center"}>
                   <Money amount={row.balance} currency={currency} />
                 </td>
               </tr>

@@ -25,7 +25,7 @@ import {
 import { SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
 import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
-import { useColAligns } from "@/components/use-col-aligns";
+import { useColAligns, alignClass } from "@/components/use-col-aligns";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
@@ -681,7 +681,7 @@ function ReconcilePage() {
                       <div
                         className={cn(
                           "recon-phone-card flex items-start gap-2 rounded-2xl border border-border/40 bg-card px-3 py-3 touch-manipulation shadow-none",
-                          on && "border-primary bg-primary/15 ring-1 ring-primary",
+                          on && "bg-primary/15",
                         )}
                         {...openProps(openKindFor(line), openId, { click: true })}
                       >
@@ -907,14 +907,14 @@ function ReconcilePage() {
                           <ShopTick checked={on} onChange={(next) => toggle(line, next)} label="Cleared" />
                         </span>
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap" data-col="date">{formatDate(line.date)}</td>
-                      <td className="px-4 py-3" data-col="type">{KIND_LABEL[line.kind]}</td>
-                      <td className="px-4 py-3" data-col="payee">{line.party}</td>
-                      <td className={cn("px-4 py-3 text-right", daysOutstanding(line.date, statementDate) > 90 && "text-debit")} data-col="days">{daysOutstanding(line.date, statementDate) || ""}</td>
-                      <td className="px-4 py-3 text-right" data-col="payment">
+                      <td className={cn("px-4 py-3 whitespace-nowrap", alignClass(colAligns.aligns.date ?? "center"))} data-col="date" data-align={colAligns.aligns.date ?? "center"}>{formatDate(line.date)}</td>
+                      <td className={cn("px-4 py-3", alignClass(colAligns.aligns.type ?? "center"))} data-col="type" data-align={colAligns.aligns.type ?? "center"}>{KIND_LABEL[line.kind]}</td>
+                      <td className={cn("px-4 py-3", alignClass(colAligns.aligns.payee ?? "center"))} data-col="payee" data-align={colAligns.aligns.payee ?? "center"}>{line.party}</td>
+                      <td className={cn("px-4 py-3", alignClass(colAligns.aligns.days ?? "center"), daysOutstanding(line.date, statementDate) > 90 && "text-debit")} data-col="days" data-align={colAligns.aligns.days ?? "center"}>{daysOutstanding(line.date, statementDate) || ""}</td>
+                      <td className={cn("px-4 py-3", alignClass(colAligns.aligns.payment ?? "center"))} data-col="payment" data-align={colAligns.aligns.payment ?? "center"}>
                         {line.payment ? <Money amount={line.payment} currency={data.settings.currency} /> : ""}
                       </td>
-                      <td className="px-4 py-3 text-right" data-col="deposit">
+                      <td className={cn("px-4 py-3", alignClass(colAligns.aligns.deposit ?? "center"))} data-col="deposit" data-align={colAligns.aligns.deposit ?? "center"}>
                         {line.deposit ? <Money amount={line.deposit} currency={data.settings.currency} /> : ""}
                       </td>
                     </tr>

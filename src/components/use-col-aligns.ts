@@ -13,6 +13,12 @@ export function alignClass(align: ColAlign) {
   return "text-left";
 }
 
+/** Body cell class + data-align so CSS/⋮ prefs actually stick. */
+export function cellAlign(align?: ColAlign) {
+  const a: ColAlign = align ?? "center";
+  return { className: alignClass(a), "data-align": a } as const;
+}
+
 export function headerJustify(align: ColAlign) {
   if (align === "right") return "justify-end";
   if (align === "center") return "justify-center";

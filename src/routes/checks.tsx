@@ -209,7 +209,7 @@ function ChecksPage() {
               <SortHeader label="Post" column="post" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.post} onWidth={(n) => cols.setWidth("post", n)} onFit={() => fit("post", "Post")} align={colAligns.aligns.post ?? "center"} onAlign={(a) => colAligns.setAlign("post", a)} />
               <SortHeader label="Amount" column="amount" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.amount} onWidth={(n) => cols.setWidth("amount", n)} onFit={() => fit("amount", "Amount")} align={colAligns.aligns.amount ?? "center"} onAlign={(a) => colAligns.setAlign("amount", a)} />
               <SortHeader label="Status" column="status" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.status} onWidth={(n) => cols.setWidth("status", n)} onFit={() => fit("status", "Status")} align={colAligns.aligns.status ?? "center"} onAlign={(a) => colAligns.setAlign("status", a)} />
-              <th className="col-actions relative px-2 py-3">
+              <th className="col-actions relative">
                 <span className="sr-only">Actions</span>
               </th>
             </tr>
@@ -242,14 +242,14 @@ function ChecksPage() {
                       {...openProps("check", check.id)}
                       onClick={() => pointer.setActiveId(check.id)}
                     >
-                      <td className="px-4 py-3 tabular-nums font-medium" data-col="number">#{check.checkNumber}</td>
-                      <td className="px-4 py-3" data-col="payee">
+                      <td className={cn("px-4 py-3 tabular-nums font-medium", alignClass(colAligns.aligns.number ?? "center"))} data-col="number" data-align={colAligns.aligns.number ?? "center"}>#{check.checkNumber}</td>
+                      <td className={cn("px-4 py-3", alignClass(colAligns.aligns.payee ?? "center"))} data-col="payee" data-align={colAligns.aligns.payee ?? "center"}>
                         <p>{check.payee}</p>
                         {check.memo ? <p className="text-xs text-muted-foreground">{check.memo}</p> : null}
                       </td>
-                      <td className="px-4 py-3 text-muted-foreground" data-col="bank">{bank?.nickname}</td>
-                      <td className="px-4 py-3 whitespace-nowrap" data-col="issued">{formatDate(check.issueDate)}</td>
-                      <td className="px-4 py-3 whitespace-nowrap" data-col="post">{formatDate(check.postDate)}</td>
+                      <td className={cn("px-4 py-3 text-muted-foreground", alignClass(colAligns.aligns.bank ?? "center"))} data-col="bank" data-align={colAligns.aligns.bank ?? "center"}>{bank?.nickname}</td>
+                      <td className={cn("px-4 py-3 whitespace-nowrap", alignClass(colAligns.aligns.issued ?? "center"))} data-col="issued" data-align={colAligns.aligns.issued ?? "center"}>{formatDate(check.issueDate)}</td>
+                      <td className={cn("px-4 py-3 whitespace-nowrap", alignClass(colAligns.aligns.post ?? "center"))} data-col="post" data-align={colAligns.aligns.post ?? "center"}>{formatDate(check.postDate)}</td>
                       <td className={cn("px-4 py-3", alignClass(colAligns.aligns.amount ?? "center"))} data-col="amount" data-align={colAligns.aligns.amount ?? "center"}>
                         <Money amount={check.amount} currency={data.settings.currency} />
                       </td>
@@ -269,7 +269,7 @@ function ChecksPage() {
                           />
                         </div>
                       </td>
-                      <td className="col-actions px-2 py-3" onClick={stopOpen} onDoubleClick={stopOpen}>
+                      <td className="col-actions" onClick={stopOpen} onDoubleClick={stopOpen}>
                         {rowActions}
                       </td>
                     </tr>

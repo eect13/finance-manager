@@ -110,7 +110,7 @@ export function SortHeader({
   return (
     <th
       className={cn(
-        "relative font-medium text-center",
+        "relative align-middle font-medium text-center",
         compact ? "py-2 px-2" : "px-4 py-3",
         className,
       )}
@@ -127,7 +127,7 @@ export function SortHeader({
       }
       title={hasMenu ? "Click to sort · right-click for align / column options" : undefined}
     >
-      <div className="sort-header-row">
+      <div className="sort-header-row h-full">
         <button
           type="button"
           onClick={() => onToggle(column)}

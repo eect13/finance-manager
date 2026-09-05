@@ -300,7 +300,7 @@ function EmployeesPage() {
               <SortHeader label="Pay" column="rate" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.rate} onWidth={(n) => cols.setWidth("rate", n)} align={colAligns.aligns.rate ?? "center"} onAlign={(a) => colAligns.setAlign("rate", a)} />
               <SortHeader label="Bank" column="bank" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.bank} onWidth={(n) => cols.setWidth("bank", n)} align={colAligns.aligns.bank ?? "center"} onAlign={(a) => colAligns.setAlign("bank", a)} />
               <SortHeader label="Status" column="status" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.status} onWidth={(n) => cols.setWidth("status", n)} align={colAligns.aligns.status ?? "center"} onAlign={(a) => colAligns.setAlign("status", a)} />
-              <th className="col-actions px-4 py-3"><span className="sr-only">Actions</span></th>
+              <th className="col-actions"><span className="sr-only">Actions</span></th>
             </tr>
           </thead>
           <tbody>
@@ -325,24 +325,24 @@ function EmployeesPage() {
                     onClick={() => pointer.setActiveId(e.id)}
                     onDoubleClick={() => openEdit(e)}
                   >
-                    <td className="px-4 py-3" data-col="name">
+                    <td className={cn("px-4 py-3", alignClass(colAligns.aligns.name ?? "center"))} data-col="name" data-align={colAligns.aligns.name ?? "center"}>
                       <button type="button" className="font-medium hover:underline" onClick={() => openEdit(e)}>
                         {e.name}
                       </button>
                       {e.email ? <p className="text-xs text-muted-foreground">{e.email}</p> : null}
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground" data-col="title">{e.title || "—"}</td>
-                    <td className="px-4 py-3" data-col="rate">
+                    <td className={cn("px-4 py-3 text-muted-foreground", alignClass(colAligns.aligns.title ?? "center"))} data-col="title" data-align={colAligns.aligns.title ?? "center"}>{e.title || "—"}</td>
+                    <td className={cn("px-4 py-3", alignClass(colAligns.aligns.rate ?? "center"))} data-col="rate" data-align={colAligns.aligns.rate ?? "center"}>
                       <Money amount={e.rate} currency={data.settings.currency} />
                       <span className="ml-1 text-xs text-muted-foreground">{e.payType === "hourly" ? "/ hr" : "/ mo"}</span>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground" data-col="bank">{bank?.nickname ?? "—"}</td>
-                    <td className="px-4 py-3" data-col="status">
+                    <td className={cn("px-4 py-3 text-muted-foreground", alignClass(colAligns.aligns.bank ?? "center"))} data-col="bank" data-align={colAligns.aligns.bank ?? "center"}>{bank?.nickname ?? "—"}</td>
+                    <td className={cn("px-4 py-3", alignClass(colAligns.aligns.status ?? "center"))} data-col="status" data-align={colAligns.aligns.status ?? "center"}>
                       <span className={`rounded-full px-2 py-0.5 text-xs ${e.active ? "bg-muted" : "bg-destructive/10 text-destructive"}`}>
                         {e.active ? "Active" : "Inactive"}
                       </span>
                     </td>
-                    <td className="col-actions px-4 py-3 text-right" data-col="actions">
+                    <td className="col-actions text-right" data-col="actions">
                       <div className="flex flex-nowrap justify-end gap-1">
                         <Button size="sm" variant="outline" disabled={!e.active} onClick={() => openPay(e)}>
                           Pay

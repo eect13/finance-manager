@@ -3519,3 +3519,81 @@ html.tauri-android .app-header-inner {
     bottom: max(0.85rem, env(safe-area-inset-bottom, 0px)) !important;
   }
 }
+
+
+/* v3.62.20 table phone — Register + Reconcile readable without hunting */
+@media (max-width: 767px), ((hover: none) and (pointer: coarse)) {
+  .register-matrix,
+  .recon-table-card table,
+  .list-card table {
+    font-size: 0.72rem !important;
+  }
+  .register-matrix th,
+  .register-matrix td,
+  .recon-table-card th,
+  .recon-table-card td,
+  .list-card th,
+  .list-card td {
+    padding: 0.35rem 0.4rem !important;
+    vertical-align: middle;
+  }
+  /* Fix L-shaped ticks: keep full box, no clip from sticky/overflow */
+  .register-tick span[class*="border"],
+  .register-tick > span {
+    box-sizing: border-box;
+    border-style: solid !important;
+    border-width: 2px !important;
+    overflow: visible;
+  }
+  .col-check,
+  .register-check-cell {
+    overflow: visible !important;
+  }
+  .register-matrix .col-check,
+  .recon-table-card .col-check {
+    width: 2.5rem !important;
+    min-width: 2.5rem !important;
+    max-width: 2.5rem !important;
+  }
+  /* Sticky check only — drop sticky date (it stole width + collided with payee) */
+  .register-matrix .col-date {
+    position: static !important;
+    left: auto !important;
+  }
+  .register-matrix .col-check {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: var(--color-card);
+    box-shadow: 1px 0 0 color-mix(in oklab, var(--color-border) 80%, transparent);
+  }
+  .register-matrix thead .col-check {
+    z-index: 3;
+  }
+  .register-matrix .col-payee,
+  .recon-table-card td[data-col="payee"],
+  .recon-table-card th.col-payee {
+    max-width: 9.5rem;
+  }
+  .register-matrix td.col-payee,
+  .recon-table-card td[data-col="payee"] {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding-left: 0.5rem !important;
+  }
+  /* Horizontal scroll with a faint edge hint */
+  .register-card,
+  .recon-table-card,
+  .list-card {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    background:
+      linear-gradient(to right, var(--color-card) 70%, transparent) left center / 1.25rem 100% no-repeat local,
+      linear-gradient(to left, var(--color-card) 70%, transparent) right center / 1.25rem 100% no-repeat local;
+  }
+  .recon-aging {
+    margin-top: 0.15rem;
+  }
+}

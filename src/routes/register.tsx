@@ -85,24 +85,24 @@ const DEFAULT_COL_WIDTHS = {
 };
 /** Narrower defaults for phone so Register fits more useful columns before scrolling. */
 const MOBILE_COL_WIDTHS: typeof DEFAULT_COL_WIDTHS = {
-  check: 36,
-  date: 64,
-  type: 64,
-  number: 78,
-  payee: 118,
+  check: 40,
+  date: 56,
+  type: 70,
+  number: 64,
+  payee: 140,
   memo: 88,
   bank: 80,
-  payment: 84,
-  deposit: 84,
-  balance: 92,
+  payment: 88,
+  deposit: 88,
+  balance: 96,
   status: 64,
 };
 
-/** Phone / narrow: show money + payee; hide type/memo/bank/status until View toggles them. */
+/** Phone: Date + Payee + money. Hide type/number/memo/bank/status until View. */
 const MOBILE_REGISTER_COLS: RegisterCols = {
   date: true,
   type: false,
-  number: true,
+  number: false,
   payee: true,
   memo: false,
   bank: false,
@@ -193,9 +193,14 @@ function RegisterPage() {
     if (!isPhoneUi()) return;
     const cur = useFinanceStore.getState().data?.settings.registerColumns;
     if (!cur) return;
-    const looksFullDesktop =
-      cur.type && cur.memo && cur.bank && cur.status && cur.payee && cur.payment && cur.deposit && cur.balance;
-    if (!looksFullDesktop) return;
+    // Re-apply when still showing desktop-ish extras (type/number/memo/bank/status).
+    const needsPhoneSet =
+      cur.payee &&
+      cur.payment &&
+      cur.deposit &&
+      cur.balance &&
+      (cur.type || cur.number || cur.memo || cur.bank || cur.status);
+    if (!needsPhoneSet) return;
     patch(
       (d) => ({
         ...d,

@@ -38,6 +38,14 @@ const RECON_COLS = {
   deposit: 128,
 } as const;
 
+
+function reconDefaultCols() {
+  if (typeof window !== "undefined" && window.matchMedia("(max-width: 767px), ((hover: none) and (pointer: coarse))").matches) {
+    return { date: 64, type: 72, payee: 128, days: 44, payment: 86, deposit: 86 };
+  }
+  return { ...RECON_COLS };
+}
+
 function lineKey(line: CashLine) {
   return `${line.kind}:${line.sourceId}`;
 }
@@ -66,7 +74,7 @@ function ReconcilePage() {
   const [undoing, setUndoing] = useState(false);
   const [printLast, setPrintLast] = useState(false);
   const gridRef = useRef<HTMLDivElement>(null);
-  const cols = useColWidths("finance-manager-recon-cols", RECON_COLS);
+  const cols = useColWidths("finance-manager-recon-cols-v2", reconDefaultCols());
 
   const bank = data.banks.find((b) => b.id === bankId) ?? live[0];
   const effectiveBankId = bank?.id ?? "";
@@ -327,16 +335,33 @@ function ReconcilePage() {
         </section>
       </div>
       {ages.lateCount > 0 ? (
-        <p className="mb-3 text-sm text-debit">
+        <p className="mb-2 text-sm text-debit">
           {ages.lateCount} uncleared {ages.lateCount === 1 ? "item is" : "items are"} 90+ days old.
         </p>
       ) : null}
-      <p className="mb-3 text-sm text-muted-foreground">
-        Uncleared age · 1–30 <Money amount={ages.d30} currency={data.settings.currency} /> · 31–60{" "}
-        <Money amount={ages.d60} currency={data.settings.currency} /> · 61–90{" "}
-        <Money amount={ages.d90} currency={data.settings.currency} /> · 90+{" "}
-        <Money amount={ages.late} currency={data.settings.currency} />
-      </p>
+      <div className="recon-aging mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {[
+          { label: "1–30", amount: ages.d30 },
+          { label: "31–60", amount: ages.d60 },
+          { label: "61–90", amount: ages.d90 },
+          { label: "90+", amount: ages.late, hot: true },
+        ].map((b) => (
+          <div
+            key={b.label}
+            className={cn(
+              "rounded-xl border border-border bg-muted/40 px-3 py-2",
+              b.hot && ages.lateCount > 0 && "border-debit/40",
+            )}
+          >
+            <p className="text-[0.65rem] font-medium uppercase tracking-wider text-muted-foreground">{b.label}</p>
+            <Money
+              amount={b.amount}
+              currency={data.settings.currency}
+              className={cn("mt-0.5 block text-sm font-medium", b.hot && ages.late > 0 && "text-debit")}
+            />
+          </div>
+        ))}
+      </div>
 
       <ListToolbar
         query={query}
@@ -369,7 +394,7 @@ function ReconcilePage() {
         />
       </ListToolbar>
 
-      <ListCard ref={gridRef}>
+      <ListCard ref={gridRef} className="recon-table-card">
         <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
           <colgroup>
             <col className="col-check no-print" style={{ width: CHECK_COL }} />

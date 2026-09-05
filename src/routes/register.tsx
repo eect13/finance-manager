@@ -862,7 +862,7 @@ function ViewOptions({
       <PopoverContent className="w-80" align="end">
         <ColumnChips cols={cols} onToggle={onToggleCol} onShowAll={onShowAllCols} />
         <label className="mt-3 mb-3 flex flex-col gap-1.5">
-          <span className="text-xs font-medium text-muted-foreground">Type size {fontSize}px</span>
+          <span className="text-xs font-medium text-muted-foreground">Resize type {fontSize}px</span>
           <input
             type="range"
             min={10}
@@ -876,7 +876,7 @@ function ViewOptions({
         </label>
         <div className="flex min-h-10 items-center justify-between gap-3">
           <Label htmlFor="drag-dates" className="text-sm">
-            Drag rows
+            Move dates
           </Label>
           <Switch id="drag-dates" checked={dragOn} onCheckedChange={onDragOn} />
         </div>
@@ -1144,7 +1144,7 @@ function RegisterTable({
           </span>
         </div>
         {dragOn ? (
-          <p className="mb-2 text-[0.7rem] text-muted-foreground no-print">
+          <p className="phone-card-meta mb-2 text-muted-foreground no-print">
             Move on: tap the grip on a row, then tap a date chip above.
           </p>
         ) : null}
@@ -1221,24 +1221,24 @@ function RegisterTable({
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-baseline justify-between gap-2">
-                        <p className="min-w-0 truncate text-sm font-medium">
+                        <p className="phone-card-party min-w-0 truncate">
                           {line.party || (isOpening ? "Opening balance" : "—")}
                         </p>
-                        <p className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                        <p className="phone-card-date shrink-0 text-muted-foreground tabular-nums">
                           {isOpening && !line.date ? "Opening" : formatRegisterDate(line.date)}
                         </p>
                       </div>
-                      <p className="mt-0.5 text-[0.7rem] leading-snug text-muted-foreground">
+                      <p className="phone-card-meta mt-0.5 text-muted-foreground">
                         <span>{KIND_LABEL[line.kind]}</span>
                         {line.number ? <span> · {line.number}</span> : null}
                         {bank ? <span> · {bank.nickname}</span> : null}
                       </p>
                       {line.memo ? (
-                        <p className="mt-0.5 text-[0.7rem] leading-snug text-muted-foreground/90 break-words">{line.memo}</p>
+                        <p className="phone-card-memo mt-0.5 text-muted-foreground/90 break-words">{line.memo}</p>
                       ) : null}
-                      <div className="mt-1.5 grid grid-cols-3 gap-2 text-xs tabular-nums">
+                      <div className="phone-card-money mt-1.5 grid grid-cols-3 gap-2 tabular-nums">
                         <div>
-                          <p className="text-[0.6rem] uppercase tracking-wide text-muted-foreground">Out</p>
+                          <p className="phone-card-label text-muted-foreground">Out</p>
                           {line.payment ? (
                             <Money amount={line.payment} currency={currency} className="text-debit" />
                           ) : (
@@ -1246,7 +1246,7 @@ function RegisterTable({
                           )}
                         </div>
                         <div>
-                          <p className="text-[0.6rem] uppercase tracking-wide text-muted-foreground">In</p>
+                          <p className="phone-card-label text-muted-foreground">In</p>
                           {line.deposit ? (
                             <Money amount={line.deposit} currency={currency} className="text-credit" />
                           ) : (
@@ -1254,7 +1254,7 @@ function RegisterTable({
                           )}
                         </div>
                         <div className="text-right">
-                          <p className="text-[0.6rem] uppercase tracking-wide text-muted-foreground">Bal</p>
+                          <p className="phone-card-label text-muted-foreground">Bal</p>
                           <Money amount={line.balance} currency={currency} className="font-medium" />
                         </div>
                       </div>
@@ -1266,7 +1266,7 @@ function RegisterTable({
                         >
                           <button
                             type="button"
-                            className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-[0.7rem]"
+                            className="phone-card-chip inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1"
                             onClick={() => onCycleRecon(line)}
                           >
                             <LineStatus line={line} />
@@ -1281,7 +1281,7 @@ function RegisterTable({
                           {line.reassignable ? (
                             <Select value={line.bankId} onValueChange={(v) => onSwap(line, v)}>
                               <SelectTrigger
-                                className="h-8 min-h-8 w-auto max-w-[9rem] border-border bg-transparent px-2 text-[0.7rem] shadow-none"
+                                className="h-8 min-h-8 w-auto max-w-[9rem] border-border bg-transparent phone-card-chip px-2 shadow-none"
                                 aria-label={`Bank for ${line.party}`}
                               >
                                 <SelectValue placeholder="Bank" />

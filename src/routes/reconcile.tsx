@@ -400,7 +400,10 @@ function ReconcilePage() {
       </ListToolbar>
 
             {isPhoneUi() ? (
-        <div className="recon-phone-list">
+        <div
+          className="recon-phone-list"
+          style={{ ["--register-font" as string]: `${data.settings.registerFontSize ?? 12}px` }}
+        >
           <div className="mb-2 flex items-center justify-between gap-2 no-print">
             <span className="inline-flex items-center gap-1">
               <ShopTick checked={allOn} indeterminate={someOn} onChange={toggleAll} label="Select all" />
@@ -441,19 +444,19 @@ function ReconcilePage() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-baseline justify-between gap-2">
-                          <p className="min-w-0 truncate text-sm font-medium">{line.party}</p>
-                          <p className="shrink-0 text-xs text-muted-foreground tabular-nums">{formatDate(line.date)}</p>
+                          <p className="phone-card-party min-w-0 truncate">{line.party}</p>
+                          <p className="phone-card-date shrink-0 text-muted-foreground tabular-nums">{formatDate(line.date)}</p>
                         </div>
-                        <p className="mt-0.5 text-[0.7rem] leading-snug text-muted-foreground">
+                        <p className="phone-card-meta mt-0.5 text-muted-foreground">
                           {KIND_LABEL[line.kind]}
                           {line.number ? ` · ${line.number}` : ""}
                           {days ? (
                             <span className={cn(" · ", days > 90 && "text-debit")}>{days}d outstanding</span>
                           ) : null}
                         </p>
-                        <div className="mt-1.5 grid grid-cols-2 gap-2 text-xs tabular-nums">
+                        <div className="phone-card-money mt-1.5 grid grid-cols-2 gap-2 tabular-nums">
                           <div>
-                            <p className="text-[0.6rem] uppercase tracking-wide text-muted-foreground">Payment</p>
+                            <p className="phone-card-label text-muted-foreground">Payment</p>
                             {line.payment ? (
                               <Money amount={line.payment} currency={data.settings.currency} className="text-debit" />
                             ) : (
@@ -461,7 +464,7 @@ function ReconcilePage() {
                             )}
                           </div>
                           <div className="text-right">
-                            <p className="text-[0.6rem] uppercase tracking-wide text-muted-foreground">Deposit</p>
+                            <p className="phone-card-label text-muted-foreground">Deposit</p>
                             {line.deposit ? (
                               <Money amount={line.deposit} currency={data.settings.currency} className="text-credit" />
                             ) : (

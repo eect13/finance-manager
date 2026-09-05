@@ -46,18 +46,13 @@ export function CompanySwitcher({ className }: { className?: string } = {}) {
           <button
             type="button"
             className={cn(
-              "company-switcher-trigger flex min-h-11 min-w-0 max-w-full items-center gap-2 rounded-md px-2 text-left hover:bg-accent",
+              "company-switcher-trigger flex min-h-10 min-w-0 max-w-full items-center gap-1.5 rounded-xl px-2.5 text-left hover:bg-accent",
               className,
             )}
-            aria-label="Switch company"
+            aria-label={`Switch company (current: ${name})`}
           >
-            <span className="min-w-0 flex-1 truncate">
-              <span className="block text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                Company
-              </span>
-              <span className="block truncate text-sm font-medium leading-tight">{name}</span>
-            </span>
-            <span className="hidden shrink-0 whitespace-nowrap text-xs text-muted-foreground sm:inline">
+            <span className="min-w-0 flex-1 truncate text-sm font-medium">{name}</span>
+            <span className="hidden shrink-0 whitespace-nowrap text-xs text-muted-foreground md:inline">
               {formatDate(todayIso())}
             </span>
             <ChevronDown className="size-4 shrink-0 text-muted-foreground" />

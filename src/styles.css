@@ -3098,10 +3098,16 @@ body.printing [data-radix-popper-content-wrapper]:has(.print-paper-menu) {
     letter-spacing: -0.02em;
   }
 
-  /* Company sits on its own full-width row on phone (see .app-header-company-row). */
-  .app-header-company-row .company-switcher-trigger {
-    min-height: 2.75rem;
-    gap: 0.35rem;
+  /* Single-row header: company takes remaining width between menu and actions */
+  .app-header-company {
+    min-width: 0;
+    max-width: none;
+  }
+  .app-header-company .company-switcher-trigger {
+    min-height: 2.5rem;
+  }
+  .app-header-actions {
+    overflow: visible;
   }
 
   /* —— Page titles: content starts sooner —— */
@@ -3224,5 +3230,33 @@ body.printing [data-radix-popper-content-wrapper]:has(.print-paper-menu) {
   }
   .app-shell-loading {
     padding-top: calc(max(2.75rem, env(safe-area-inset-top, 0px)) / var(--app-ui-zoom, 1));
+  }
+}
+
+
+/* v3.62.11 mobile layout — one-row header, denser page chrome */
+@media (max-width: 767px), ((hover: none) and (pointer: coarse)) {
+  .app-header-inner {
+    gap: 0.4rem;
+    padding-inline: 0.55rem;
+    padding-block: 0.35rem;
+  }
+  .app-page-head {
+    margin-bottom: 0.65rem !important;
+    gap: 0.5rem;
+  }
+  .app-page-title {
+    font-size: 1.25rem !important;
+  }
+  .app-page-hint {
+    font-size: 0.78rem;
+    margin-top: 0.15rem;
+  }
+  main[data-workspace-scroll] {
+    padding-top: 0.65rem;
+    padding-bottom: 0.85rem;
+  }
+  .workspace-split {
+    gap: 0.75rem;
   }
 }

@@ -14,6 +14,7 @@ import {
   LayoutDashboard,
   Lock,
   Menu,
+  MoreHorizontal,
   NotebookPen,
   PanelLeftClose,
   PanelLeftOpen,
@@ -27,6 +28,13 @@ import {
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { bootBooks, useFinanceData, useFinanceStore } from "@/lib/finance/store";
 import { cn } from "@/lib/utils";
@@ -228,7 +236,7 @@ export function AppShell({
   const [rail, setRail] = useState(false);
   const hydrated = useFinanceStore((s) => s.hydrated);
   const data = useFinanceData();
-  const { resolved } = useTheme();
+  const { resolved, setTheme } = useTheme();
   const canUndo = useFinanceStore((s) => (s.undoStack?.length ?? 0) > 0);
   const canRedo = useFinanceStore((s) => (s.redoStack?.length ?? 0) > 0);
   const undoPeek = useFinanceStore((s) => s.undoStack?.at(-1)?.label ?? "");
@@ -310,10 +318,10 @@ export function AppShell({
 
       <div className="app-workspace flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <header className="app-header-bar no-print min-w-0 shrink-0">
-          <div className="app-header-inner flex items-center gap-1 px-3 py-2 sm:gap-3 md:px-8 md:py-3">
+          <div className="app-header-inner flex items-center gap-1.5 px-2.5 py-1.5 sm:gap-3 sm:px-3 sm:py-2 md:px-8 md:py-3">
             <Sheet open={open} onOpenChange={setOpen}>
               <SheetTrigger asChild>
-                <Button variant="outline" size="icon" className="shrink-0 md:hidden" aria-label="Open menu">
+                <Button variant="outline" size="icon" className="size-10 shrink-0 md:hidden" aria-label="Open menu">
                   <Menu />
                 </Button>
               </SheetTrigger>
@@ -325,16 +333,15 @@ export function AppShell({
                 <SidebarBody rail={rail} onNavigate={() => setOpen(false)} onToggleRail={toggleRail} />
               </SheetContent>
             </Sheet>
-            {/* Desktop/tablet: company sits in the top row. Phone: dedicated full-width row below. */}
-            <div className="app-header-company hidden min-w-0 flex-1 overflow-visible md:block">
-              <CompanySwitcher />
+            <div className="app-header-company min-w-0 flex-1">
+              <CompanySwitcher className="w-full rounded-xl border border-border bg-muted/50" />
             </div>
-            <div className="app-header-actions ml-auto flex min-w-0 shrink-0 items-center gap-1 overflow-x-auto sm:gap-2">
+            <div className="app-header-actions flex shrink-0 items-center gap-1 sm:gap-2">
               <div className="flex">
                 <Button
                   variant="outline"
                   size="icon"
-                  className="rounded-r-none"
+                  className="size-10 rounded-r-none sm:size-11"
                   disabled={!canUndo}
                   aria-label={undoPeek ? `Undo: ${undoPeek} (${undoChord})` : `Undo ${undoChord}`}
                   title={undoPeek ? `Undo: ${undoPeek} (${undoChord})` : `Undo ${undoChord}`}
@@ -348,7 +355,7 @@ export function AppShell({
                 <Button
                   variant="outline"
                   size="icon"
-                  className="-ml-px rounded-l-none"
+                  className="size-10 -ml-px rounded-l-none sm:size-11"
                   disabled={!canRedo}
                   aria-label={redoPeek ? `Redo: ${redoPeek} (${redoChord})` : `Redo ${redoChord}`}
                   title={redoPeek ? `Redo: ${redoPeek} (${redoChord})` : `Redo ${redoChord}`}
@@ -360,21 +367,40 @@ export function AppShell({
                   <Redo2 />
                 </Button>
               </div>
-              <FindButton onClick={() => setFindOpen(true)} />
-              <DisplayZoomHeaderControl />
-              <ThemeToggle compact />
-              <ExportMenu data={data} />
+              {/* Desktop keeps full chrome; phone folds Find / zoom / theme / export into More */}
+              <div className="hidden items-center gap-2 md:flex">
+                <FindButton onClick={() => setFindOpen(true)} />
+                <DisplayZoomHeaderControl />
+                <ThemeToggle compact />
+                <ExportMenu data={data} />
+              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon" className="size-10 shrink-0 md:hidden" aria-label="More">
+                    <MoreHorizontal />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="min-w-48">
+                  <DropdownMenuItem onClick={() => setFindOpen(true)}>Find transaction</DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setTheme(resolved === "dark" ? "light" : "dark")}
+                  >
+                    {resolved === "dark" ? "Switch to light" : "Switch to dark"}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/settings">Options (zoom, export, companies)</Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
-          </div>
-          <div className="app-header-company-row border-t border-border/60 px-3 py-1.5 md:hidden">
-            <CompanySwitcher className="w-full rounded-xl border border-border bg-muted/60 px-2" />
           </div>
         </header>
 
         <main
           data-workspace-scroll
           className={cn(
-            "mx-auto w-full min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-3 py-4 sm:px-4 sm:py-6 md:px-8 md:py-8",
+            "mx-auto w-full min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-2.5 py-3 sm:px-4 sm:py-6 md:px-8 md:py-8",
             wide ? "max-w-none" : "max-w-6xl",
           )}
         >

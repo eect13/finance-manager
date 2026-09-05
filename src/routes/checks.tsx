@@ -15,7 +15,7 @@ import { Field } from "@/components/field";
 import { ListPrint } from "@/components/list-print";
 import { Money } from "@/components/money";
 import { requestPrint } from "@/components/print-preview";
-import { CheckStatusControl, checkStatusMenuItems } from "@/components/check-status-menu";
+import { CheckStatusControl } from "@/components/check-status-menu";
 import { SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
 import { useListPointer } from "@/components/use-list-pointer";
@@ -226,18 +226,7 @@ function ChecksPage() {
                 }
               };
               const rowActions = (
-                <RowActions
-                  items={[
-                    ...checkStatusMenuItems(check.status, applyStatus).map((item) =>
-                      item.label === "Cleared"
-                        ? { ...item, label: "Clear" }
-                        : item.label === "Pending"
-                          ? { ...item, label: "Mark pending" }
-                          : item,
-                    ),
-                    { label: "Delete", danger: true, onSelect: () => setDeleting(check) },
-                  ]}
-                />
+                <RowActions items={[{ label: "Delete", danger: true, onSelect: () => setDeleting(check) }]} />
               );
               return (
                   <tr

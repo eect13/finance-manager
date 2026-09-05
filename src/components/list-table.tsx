@@ -1,7 +1,7 @@
 import { forwardRef, type HTMLAttributes, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-/** Name-like columns take leftover width (CSS grid `1fr`). Actions/money stay content-sized. */
+/** One name-like column takes leftover width. Keep bank/status/money as fit — not flex. */
 const FLEX_COL = new Set([
   "payee",
   "from",
@@ -10,9 +10,7 @@ const FLEX_COL = new Set([
   "memo",
   "description",
   "name",
-  "nickname",
   "party",
-  "bank",
 ]);
 
 export function listColClass(id: string) {
@@ -21,7 +19,7 @@ export function listColClass(id: string) {
   return "col-fit";
 }
 
-/** Register-style card. Flex columns share leftover width — no empty end col. */
+/** Register-style card. One flex name col absorbs leftover; fit/actions stay compact. */
 export const ListCard = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(function ListCard(
   { className, children, ...rest },
   ref,

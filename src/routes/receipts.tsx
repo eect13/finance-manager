@@ -18,7 +18,7 @@ import { Field } from "@/components/field";
 import { ListPrint } from "@/components/list-print";
 import { Money } from "@/components/money";
 import { requestPrint } from "@/components/print-preview";
-import { ReceiptStatusControl, receiptStatusMenuItems, type ReceiptStatusAction } from "@/components/receipt-status-menu";
+import { ReceiptStatusControl, type ReceiptStatusAction } from "@/components/receipt-status-menu";
 import { ReceiptBadge } from "@/components/status-badge";
 import { SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
@@ -291,18 +291,7 @@ function ReceiptsPage() {
                   }
                 };
                 const rowActions = (
-                  <RowActions
-                    items={[
-                      ...receiptStatusMenuItems(receipt.status, receipt.recon ?? "pending", applyStatus).map((item) =>
-                        item.label === "Cleared"
-                          ? { ...item, label: "Clear" }
-                          : item.label === "Pending"
-                            ? { ...item, label: "Mark pending" }
-                            : item,
-                      ),
-                      { label: "Delete", danger: true, onSelect: () => setDeleting(receipt) },
-                    ]}
-                  />
+                  <RowActions items={[{ label: "Delete", danger: true, onSelect: () => setDeleting(receipt) }]} />
                 );
                 return (
                   <tr

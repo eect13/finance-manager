@@ -1,4 +1,4 @@
-# Finance Manager v3.62.52
+# Finance Manager v3.62.53
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -11,6 +11,12 @@ No accounts, no server setup. Books stay on this computer (IndexedDB). Settings 
 The app mark is a **navy tile with cream pillars** — a full opaque square (Windows 11 already rounds the tile; transparent corners were a white plate). Web uses the SVG favicon. Windows uses a **BMP 32-bit** `.ico` (PNG-in-ICO is a white square on the shortcut and the taskbar). After install, **delete any leftover blank shortcut** and pin the new one — Explorer caches the last icon.
 
 
+
+## What's new in v3.62.53
+
+- **Desk list anti-stretch**: `table-layout: fixed` so one name/payee/customer flex column absorbs leftover width; Number/Date/money/status stay compact; Actions hugs content (no huge gap before Collect/⋯). Phone keeps `max-content` + horizontal scroll
+- **Row actions**: desk shows ≤2 extras as buttons (Delete, Void, …); ⋯ only when crowded or on phone. Checks/Receipts Delete is on the row (status stays on the Status chip). Banks uses `RowDeleteButton`. Bills Void+Delete promote on desk
+- Employees roster uses the same list-grid column model
 
 ## What's new in v3.62.52
 
@@ -517,7 +523,7 @@ The menu is a framed rail: it does not scroll with the books. **Options** (Setti
 The same muscle memory as the register, without turning those pages into a second bank book:
 
 - Arrow Up / Down moves a › pointer. Enter (or double-click) opens the row. Click parks the pointer.
-- Each row shows one primary action (Collect, Pay, Print, Update) and a **⋯** for the rest, so Status is never covered.
+- Primary actions (Collect, Pay, Print) stay on the row. Desk: short extras (Delete, Void) are buttons; **⋯** only when many secondary actions or on phone/narrow. Status chips stay separate.
 - Drag the column **hairline** to resize. Double-click the line to auto-fit the visible cells (content, not the title).
 - Header titles are centered; money **figures** stay right. Forecast, ledger, reports, and Settings recurring use the same alignment.
 - Type a customer or vendor to filter. If there is no match, **+ Add “Name”** and Enter creates them without leaving the form.

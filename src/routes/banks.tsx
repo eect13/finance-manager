@@ -12,7 +12,7 @@ import { ListCard, listColClass } from "@/components/list-table";
 import { ListPrint } from "@/components/list-print";
 import { Money } from "@/components/money";
 import { requestPrint } from "@/components/print-preview";
-import { RowActions } from "@/components/row-actions";
+import { RowDeleteButton } from "@/components/row-actions";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -132,7 +132,7 @@ function BanksPage() {
   return (
     <AppShell
       title="Banks"
-      description="Balances across every account. List matches the register. Double-tap or double-click a row to edit, or tap a card. Delete is on the list row — not on every card."
+      description="Balances across every account. List matches the register. Double-tap or double-click a row to edit, or tap a card. Delete is a button on the desk list row (⋯ on phone) — not on every card."
       wide
       actions={
         <>
@@ -250,7 +250,7 @@ function BanksPage() {
                     <td className="px-4 py-3 text-right" data-col="book"><Money amount={book} currency={settings.currency} /></td>
                     <td className="px-4 py-3 text-right" data-col="pending"><Money amount={pending} currency={settings.currency} /></td>
                     <td className="col-actions px-4 py-3 text-right" data-col="actions" onClick={stopOpen} onDoubleClick={stopOpen} onPointerDown={stopOpen}>
-                      <RowActions items={[{ label: "Delete", onSelect: () => setDeletingId(bank.id), danger: true }]} />
+                      <RowDeleteButton onDelete={() => setDeletingId(bank.id)} />
                     </td>
                   </tr>
                 );

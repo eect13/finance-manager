@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { ConfirmDelete } from "@/components/confirm-delete";
@@ -7,8 +7,10 @@ import { DateInput } from "@/components/date-input";
 import { Field } from "@/components/field";
 import { FilterPills, ListToolbar } from "@/components/filter-pills";
 import { ListFilters, applySortValue } from "@/components/list-filters";
+import { ListCard, listColClass } from "@/components/list-table";
 import { Money } from "@/components/money";
 import { SortHeader } from "@/components/sort-header";
+import { useColWidths } from "@/components/use-col-widths";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -20,6 +22,15 @@ import { EMPTY_EMPLOYEE, type Employee, type PayType } from "@/lib/finance/types
 import { useFinanceData, useFinanceStore } from "@/lib/finance/store";
 
 export const Route = createFileRoute("/employees")({ component: EmployeesPage });
+
+const EMP_COLS = {
+  name: 180,
+  title: 140,
+  rate: 128,
+  bank: 120,
+  status: 100,
+  actions: 200,
+} as const;
 
 const EMP_SORT = [
   { value: "name:asc", label: "Name A–Z" },
@@ -113,6 +124,8 @@ function EmployeesPage() {
   }, [data.employees, data.banks, query, statusFilter, payTypeFilter]);
 
   const sort = useEntrySort(filtered, "name", getters, "asc");
+  const cols = useColWidths("finance-manager-employees-cols", EMP_COLS);
+  const gridRef = useRef<HTMLDivElement>(null);
   const activeCount = (data.employees ?? []).filter((e) => e.active).length;
 
   const [editId, setEditId] = useState<string | null>(null);
@@ -262,16 +275,21 @@ function EmployeesPage() {
         />
       </ListToolbar>
 
-      <div className="overflow-x-auto rounded-3xl bg-card elevation">
-        <table className="w-full min-w-[44rem] text-sm">
+      <ListCard ref={gridRef}>
+        <table ref={cols.tableRef} className="text-sm">
+          <colgroup>
+            {(Object.keys(EMP_COLS) as Array<keyof typeof EMP_COLS>).map((id) => (
+              <col key={id} className={listColClass(id)} style={{ width: cols.widths[id] }} />
+            ))}
+          </colgroup>
           <thead>
-            <tr className="border-b border-border text-left text-muted-foreground">
-              <SortHeader label="Name" column="name" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} />
-              <SortHeader label="Title" column="title" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} />
-              <SortHeader label="Pay" column="rate" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} />
-              <SortHeader label="Bank" column="bank" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} />
-              <SortHeader label="Status" column="status" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} />
-              <th className="px-4 py-3 font-medium text-right">Actions</th>
+            <tr className="border-b border-border text-muted-foreground">
+              <SortHeader label="Name" column="name" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.name} onWidth={(n) => cols.setWidth("name", n)} />
+              <SortHeader label="Title" column="title" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.title} onWidth={(n) => cols.setWidth("title", n)} />
+              <SortHeader label="Pay" column="rate" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.rate} onWidth={(n) => cols.setWidth("rate", n)} />
+              <SortHeader label="Bank" column="bank" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.bank} onWidth={(n) => cols.setWidth("bank", n)} />
+              <SortHeader label="Status" column="status" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.status} onWidth={(n) => cols.setWidth("status", n)} />
+              <th className="col-actions px-4 py-3"><span className="sr-only">Actions</span></th>
             </tr>
           </thead>
           <tbody>
@@ -288,32 +306,32 @@ function EmployeesPage() {
                 const bank = data.banks.find((b) => b.id === e.bankId);
                 return (
                   <tr key={e.id} className="border-b border-border/70">
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3" data-col="name">
                       <button type="button" className="font-medium hover:underline" onClick={() => openEdit(e)}>
                         {e.name}
                       </button>
                       {e.email ? <p className="text-xs text-muted-foreground">{e.email}</p> : null}
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{e.title || "—"}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 text-muted-foreground" data-col="title">{e.title || "—"}</td>
+                    <td className="px-4 py-3" data-col="rate">
                       <Money amount={e.rate} currency={data.settings.currency} />
                       <span className="ml-1 text-xs text-muted-foreground">{e.payType === "hourly" ? "/ hr" : "/ mo"}</span>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{bank?.nickname ?? "—"}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 text-muted-foreground" data-col="bank">{bank?.nickname ?? "—"}</td>
+                    <td className="px-4 py-3" data-col="status">
                       <span className={`rounded-full px-2 py-0.5 text-xs ${e.active ? "bg-muted" : "bg-destructive/10 text-destructive"}`}>
                         {e.active ? "Active" : "Inactive"}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex justify-end gap-2">
+                    <td className="col-actions px-4 py-3 text-right" data-col="actions">
+                      <div className="flex flex-nowrap justify-end gap-1">
                         <Button size="sm" variant="outline" disabled={!e.active} onClick={() => openPay(e)}>
                           Pay
                         </Button>
-                        <Button size="sm" variant="ghost" onClick={() => openEdit(e)}>
+                        <Button size="sm" variant="outline" onClick={() => openEdit(e)}>
                           Edit
                         </Button>
-                        <Button size="sm" variant="ghost" onClick={() => setDropId(e.id)}>
+                        <Button size="sm" variant="outline" className="text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => setDropId(e.id)}>
                           Delete
                         </Button>
                       </div>
@@ -324,7 +342,7 @@ function EmployeesPage() {
             )}
           </tbody>
         </table>
-      </div>
+      </ListCard>
 
       <Dialog open={dialogOpen} onOpenChange={(on) => (!on ? closeDialog() : undefined)}>
         <DialogContent className="max-w-lg">

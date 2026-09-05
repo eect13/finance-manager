@@ -3,6 +3,7 @@ import { MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { stopOpen } from "@/lib/finance/open-record";
+import { usePhoneUi } from "@/lib/phone-layout";
 
 export type RowMenuItem = {
   label: string;
@@ -10,26 +11,41 @@ export type RowMenuItem = {
   danger?: boolean;
 };
 
-/** Primary action stays on the row. Extra items go in ⋯ — except delete-only menus, which render Delete on the row. */
+/** Desk with room: at most this many extras render as buttons; more go in ⋯. Phone always uses ⋯. */
+const DESK_INLINE_MAX = 2;
+
+function ItemButton({ item }: { item: RowMenuItem }) {
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      className={
+        item.danger
+          ? "shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+          : "shrink-0"
+      }
+      onClick={item.onSelect}
+    >
+      {item.label}
+    </Button>
+  );
+}
+
+/**
+ * Primary stays on the row.
+ * Desk: ≤2 extras (Delete, Void, …) are visible buttons; crowded menus stay in ⋯.
+ * Phone / narrow: extras stay in compact ⋯.
+ */
 export function RowActions({ primary, items }: { primary?: ReactNode; items?: RowMenuItem[] }) {
+  const phone = usePhoneUi();
   const extra = (items ?? []).filter(Boolean);
-  const deleteOnly = extra.length > 0 && extra.every((i) => i.danger);
+  const showInline = !phone && extra.length > 0 && extra.length <= DESK_INLINE_MAX;
 
   return (
     <div className="flex flex-nowrap items-center justify-end gap-1" onClick={stopOpen} onPointerDown={stopOpen}>
       {primary}
-      {deleteOnly
-        ? extra.map((item) => (
-            <Button
-              key={item.label}
-              size="sm"
-              variant="outline"
-              className="shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
-              onClick={item.onSelect}
-            >
-              {item.label}
-            </Button>
-          ))
+      {showInline
+        ? extra.map((item) => <ItemButton key={item.label} item={item} />)
         : extra.length > 0
           ? (
               <DropdownMenu>
@@ -60,4 +76,9 @@ export function RowActions({ primary, items }: { primary?: ReactNode; items?: Ro
           : null}
     </div>
   );
+}
+
+/** Delete-only row control — desk button, phone ⋯ via RowActions. */
+export function RowDeleteButton({ onDelete, label = "Delete" }: { onDelete: () => void; label?: string }) {
+  return <RowActions items={[{ label, onSelect: onDelete, danger: true }]} />;
 }

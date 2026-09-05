@@ -550,15 +550,16 @@
   .list-grid table {
     width: 100%;
     min-width: 100%;
-    table-layout: auto;
+    /* Fixed: one .col-flex takes leftover; fit/actions stay compact (no mid-table void). */
+    table-layout: fixed;
     border-collapse: separate;
     border-spacing: 0;
   }
 
   /*
     Grid-track analog on a real <table> (virtualizer + print need table layout):
-    .col-flex = minmax(content, 1fr) — leftover is shared, not dumped on the last col.
-    .col-fit / .col-actions = max-content. Tight card → table min-width + horizontal scroll.
+    .col-flex = leftover width (1fr). .col-fit = stored px. .col-actions = hug content.
+    Phone media keeps width:max-content + horizontal scroll.
   */
   .list-grid colgroup col.col-flex,
   .register-matrix colgroup col.col-flex,
@@ -568,14 +569,16 @@
   }
 
   .list-grid colgroup col.col-actions {
-    width: max-content;
+    /* Classic hug-content trailing col under table-layout:fixed */
+    width: 1% !important;
     min-width: 2.75rem;
     max-width: none;
   }
 
   .list-grid colgroup col.col-fit,
   .register-matrix colgroup col.col-fit {
-    width: max-content;
+    /* Prefer inline useColWidths px; avoid max-content fighting fixed layout */
+    max-width: 20rem;
   }
 
   .list-grid th.col-actions,
@@ -2272,9 +2275,9 @@
 }
 
 
-/* Unlayered: list tables size to content; money titles sit in the column center. */
+/* Unlayered: desk lists use fixed layout so flex col absorbs leftover (not equal stretch). */
 .list-grid table {
-  table-layout: auto;
+  table-layout: fixed;
 }
 
 .list-grid td:not(.col-actions) {
@@ -4015,6 +4018,7 @@ html.tauri-android .app-header-inner {
   .list-card.list-grid table {
     width: max-content !important;
     min-width: 100%;
+    table-layout: auto !important;
   }
   /* Do not zero out col mins — that crushed every phone list table */
   .list-card.list-grid colgroup col:not(.col-actions) {

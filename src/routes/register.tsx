@@ -1,12 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Printer, SlidersHorizontal } from "lucide-react";
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type DragEvent, type MutableRefObject, type PointerEvent as ReactPointerEvent } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type MutableRefObject, type PointerEvent as ReactPointerEvent } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { ColumnChips } from "@/components/column-chips";
 import { ConfirmDelete } from "@/components/confirm-delete";
-import { DragHandle, setCashDragImage } from "@/components/drag-handle";
+import { DragHandle } from "@/components/drag-handle";
 import { usePhoneMoveDrag } from "@/components/use-phone-move-drag";
 import { PhoneLayoutToggle } from "@/components/phone-layout-toggle";
 import {
@@ -39,7 +39,6 @@ import { fitColumnWidth, widthsMatch } from "@/lib/finance/fit-column";
 import { formatDate, formatRegisterDate, formatShortDate } from "@/lib/finance/format";
 import { openCashLine, stopOpen } from "@/lib/finance/open-record";
 import {
-  dropPlaceFromPoint,
   type ArrangePlace,
   cashBook,
   datePresetRange,
@@ -418,18 +417,6 @@ function RegisterPage() {
     [reassignCashBank],
   );
 
-  const parseDrag = useCallback(
-    (e: DragEvent) => {
-      try {
-        const rawId = e.dataTransfer.getData("text/plain");
-        return filtered.find((l) => l.id === rawId) ?? null;
-      } catch {
-        return null;
-      }
-    },
-    [filtered],
-  );
-
   const toggleOne = useCallback((id: string) => {
     if (!keepIdsRef.current.has(id)) {
       toast.error("On a finished statement. Undo that rec to change this line.");
@@ -568,8 +555,14 @@ function RegisterPage() {
     return displayRef.current.find((l) => l.id === id) ?? filteredRef.current.find((l) => l.id === id) ?? null;
   }, []);
 
+  useEffect(() => {
+    if (dragOn && sort.key !== "passbook") sort.set("passbook", "asc");
+    // Move dates requires passbook order so before/after arrange is visible.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dragOn, sort.key]);
+
   const phoneMove = usePhoneMoveDrag({
-    enabled: Boolean(phone && dragOn),
+    enabled: Boolean(dragOn),
     onDragId: setDragging,
     onOverRow: setOverRow,
     onOverPlace: setOverPlace,
@@ -584,34 +577,6 @@ function RegisterPage() {
     },
     onTapWithoutDrag: () => toast.message("Drag above or below another row."),
   });
-
-  const clearPhoneMove = phoneMove.clear;
-  const handleDragStart = useCallback((id: string) => setDragging(id), []);
-  const handleDragEnd = useCallback(() => {
-    setDragging(null);
-    setOverPlace(null);
-    setOverRow(null);
-    clearPhoneMove();
-  }, [clearPhoneMove]);
-  const handleDropRow = useCallback(
-    (target: CashLine, e: DragEvent) => {
-      const line = parseDrag(e);
-      const place = dropPlaceFromPoint(
-        e.clientY,
-        (e.currentTarget as HTMLElement).getBoundingClientRect().top,
-        (e.currentTarget as HTMLElement).getBoundingClientRect().height,
-      );
-      setOverRow(null);
-      setOverPlace(null);
-      setDragging(null);
-      if (line && target.kind !== "opening") arrangeLine(line, target, place);
-    },
-    [parseDrag, arrangeLine],
-  );
-  const handleOverRow = useCallback((id: string | null, place: ArrangePlace | null = null) => {
-    setOverRow(id);
-    setOverPlace(id ? place : null);
-  }, []);
 
   function targets(ids: string[]) {
     return deletable.filter((l) => ids.includes(l.id)).map((l) => ({ kind: l.kind, sourceId: l.sourceId }));
@@ -716,6 +681,11 @@ function RegisterPage() {
               setDateTo(v);
             }}
             onSort={(v) => {
+              if (dragOn) {
+                sort.set("passbook", "asc");
+                toast.message("Passbook order while Move dates is on.");
+                return;
+              }
               const [key, dir] = v.split(":");
               sort.set(key ?? "passbook", dir === "desc" ? "desc" : "asc");
             }}
@@ -848,10 +818,6 @@ function RegisterPage() {
             setConfirm("selected");
           }}
           onSwap={swapBank}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
-          onOverRow={handleOverRow}
-          onDropRow={handleDropRow}
           onPhoneMoveGrip={phoneMove.onGripPointerDown}
         />
       </div>
@@ -1018,12 +984,15 @@ function ViewOptions({
           <Switch id="drag-dates-desk" checked={dragOn} onCheckedChange={onDragOn} />
         </div>
       )}
-      {phone ? (
-        <div className="mb-3 flex items-center justify-between gap-3">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="min-w-0">
           <span className="text-sm font-medium">Layout</span>
-          <PhoneLayoutToggle value={phoneLayout} onChange={onPhoneLayout} />
+          <p className="text-[0.7rem] text-muted-foreground">
+            {phone ? "Cards or compact rows" : "Cards grid or table rows"}
+          </p>
         </div>
-      ) : null}
+        <PhoneLayoutToggle value={phoneLayout} onChange={onPhoneLayout} />
+      </div>
       <ColumnChips cols={cols} onToggle={onToggleCol} onShowAll={onShowAllCols} />
       <label className="mt-3 mb-3 flex flex-col gap-1.5">
         <span className="text-xs font-medium text-muted-foreground">Resize type {fontSize}px</span>
@@ -1147,10 +1116,6 @@ function RegisterTable({
   onReceiptAction,
   onAskDelete,
   onSwap,
-  onDragStart,
-  onDragEnd,
-  onOverRow,
-  onDropRow,
   onPhoneMoveGrip,
 }: {
   lines: BalancedCashLine[];
@@ -1187,31 +1152,35 @@ function RegisterTable({
   onReceiptAction: (line: CashLine, action: ReceiptStatusAction) => void;
   onAskDelete: (id: string) => void;
   onSwap: (line: CashLine, bankId: string) => void;
-  onDragStart: (id: string) => void;
-  onDragEnd: () => void;
-  onOverRow: (id: string | null, place?: ArrangePlace | null) => void;
-  onDropRow: (line: CashLine, e: DragEvent) => void;
   onPhoneMoveGrip: (lineId: string, e: ReactPointerEvent) => void;
 }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const phone = isPhoneUi();
-  const phoneGrid = phone && phoneLayout === "grid";
+  const cardMode = phoneLayout === "grid";
+  const phoneGrid = phone && cardMode;
+  function requestSort(column: string) {
+    if (dragOn) {
+      toast.message("Passbook order while Move dates is on.");
+      return;
+    }
+    onSort(column);
+  }
   const virtualizer = useVirtualizer({
     count: lines.length,
     getScrollElement: () => getWorkspaceScrollElement(),
-    estimateSize: () => (phoneGrid ? 168 : phone ? 52 : 44),
-    overscan: phoneGrid ? 8 : 12,
+    estimateSize: () => (cardMode ? (phone ? 168 : 148) : phone ? 52 : 44),
+    overscan: cardMode ? 8 : 12,
     getItemKey: (index) => lines[index]?.id ?? index,
-    gap: phoneGrid ? 8 : 0,
+    gap: cardMode ? 8 : 0,
   });
   scrollToRow.current = (index) => {
     virtualizer.scrollToIndex(index, { align: "auto" });
   };
   useEffect(() => {
     virtualizer.measure();
-    // Remeasure when phone Grid/List or column set changes card heights.
+    // Remeasure when Grid/List or column set changes card heights.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phoneLayout, phoneGrid, cols]);
+  }, [phoneLayout, cardMode, cols]);
   const { outTotal, inTotal } = useMemo(() => {
     let out = 0;
     let inn = 0;
@@ -1304,9 +1273,10 @@ function RegisterTable({
     };
   }
 
-  // Phone: Grid + List both honor View column chips (incl. Status) and --register-font.
-  if (isPhoneUi()) {
-    const listMode = phoneLayout === "list";
+  // Grid cards (phone + desk) and phone List honor View column chips + --register-font.
+  // Desk List keeps the classic matrix table below.
+  if (cardMode || phone) {
+    const listMode = !cardMode; // phone list only when not grid
     const visibleCols = REGISTER_COLS.filter((col) => cols[col.id]);
     const phoneListMinWidth =
       colWidths.check +
@@ -1417,7 +1387,7 @@ function RegisterTable({
                           <button
                             type="button"
                             className="inline-flex min-h-8 w-full items-center justify-center gap-0.5 whitespace-nowrap font-medium"
-                            onClick={() => onSort(col.id)}
+                            onClick={() => requestSort(col.id)}
                           >
                             {COL_LABELS[col.id]}
                             {active ? (sortDir === "asc" ? " ↑" : " ↓") : null}
@@ -1565,7 +1535,10 @@ function RegisterTable({
     }
 
     return (
-      <div className="register-phone-list" data-layout="grid">
+      <div
+        className={cn("register-phone-list", !phone && "register-desk-grid")}
+        data-layout="grid"
+      >
         {toolbar}
         {moveHint}
         <ul className="flex flex-col">
@@ -1853,7 +1826,7 @@ function RegisterTable({
                 column="date"
                 sortKey={sortKey}
                 dir={sortDir}
-                onToggle={onSort}
+                onToggle={requestSort}
                 className={cn("col-date", lastVisible === "date" && "col-fill")}
                 {...resizeProps("date")}
               />
@@ -1862,7 +1835,7 @@ function RegisterTable({
                 column="type"
                 sortKey={sortKey}
                 dir={sortDir}
-                onToggle={onSort}
+                onToggle={requestSort}
                 className={cn("col-type", lastVisible === "type" && "col-fill")}
                 {...resizeProps("type")}
               />
@@ -1871,7 +1844,7 @@ function RegisterTable({
                 column="number"
                 sortKey={sortKey}
                 dir={sortDir}
-                onToggle={onSort}
+                onToggle={requestSort}
                 className={cn("col-num", lastVisible === "number" && "col-fill")}
                 {...resizeProps("number")}
               />
@@ -1880,7 +1853,7 @@ function RegisterTable({
                 column="payee"
                 sortKey={sortKey}
                 dir={sortDir}
-                onToggle={onSort}
+                onToggle={requestSort}
                 className={cn("col-payee", lastVisible === "payee" && "col-fill")}
                 {...resizeProps("payee")}
               />
@@ -1889,7 +1862,7 @@ function RegisterTable({
                 column="memo"
                 sortKey={sortKey}
                 dir={sortDir}
-                onToggle={onSort}
+                onToggle={requestSort}
                 className={cn("col-memo", lastVisible === "memo" && "col-fill")}
                 {...resizeProps("memo")}
               />
@@ -1898,7 +1871,7 @@ function RegisterTable({
                 column="bank"
                 sortKey={sortKey}
                 dir={sortDir}
-                onToggle={onSort}
+                onToggle={requestSort}
                 className={cn("col-bank", lastVisible === "bank" && "col-fill")}
                 {...resizeProps("bank")}
               />
@@ -1907,7 +1880,7 @@ function RegisterTable({
                 column="payment"
                 sortKey={sortKey}
                 dir={sortDir}
-                onToggle={onSort}
+                onToggle={requestSort}
                 align="right"
                 className={cn("col-money col-payment", lastVisible === "payment" && "col-fill")}
                 {...resizeProps("payment")}
@@ -1917,7 +1890,7 @@ function RegisterTable({
                 column="deposit"
                 sortKey={sortKey}
                 dir={sortDir}
-                onToggle={onSort}
+                onToggle={requestSort}
                 align="right"
                 className={cn("col-money col-deposit", lastVisible === "deposit" && "col-fill")}
                 {...resizeProps("deposit")}
@@ -1927,7 +1900,7 @@ function RegisterTable({
                 column="balance"
                 sortKey={sortKey}
                 dir={sortDir}
-                onToggle={onSort}
+                onToggle={requestSort}
                 align="right"
                 className={cn("col-money col-balance", lastVisible === "balance" && "col-fill")}
                 {...resizeProps("balance")}
@@ -1973,10 +1946,7 @@ function RegisterTable({
                   onSetCheckStatus={onSetCheckStatus}
                   onReceiptAction={onReceiptAction}
                   onSwap={onSwap}
-                  onDragStart={onDragStart}
-                  onDragEnd={onDragEnd}
-                  onOverRow={onOverRow}
-                  onDropRow={onDropRow}
+                  onPhoneMoveGrip={onPhoneMoveGrip}
                 />
               );
             })}
@@ -2069,10 +2039,7 @@ const RegisterRow = memo(
     onSetCheckStatus,
     onReceiptAction,
     onSwap,
-    onDragStart,
-    onDragEnd,
-    onOverRow,
-    onDropRow,
+    onPhoneMoveGrip,
   }: {
     index: number;
     line: BalancedCashLine;
@@ -2092,10 +2059,7 @@ const RegisterRow = memo(
     onSetCheckStatus: (line: CashLine, status: CheckStatus) => void;
     onReceiptAction: (line: CashLine, action: ReceiptStatusAction) => void;
     onSwap: (line: CashLine, bankId: string) => void;
-    onDragStart: (id: string) => void;
-    onDragEnd: () => void;
-    onOverRow: (id: string | null, place?: ArrangePlace | null) => void;
-    onDropRow: (line: CashLine, e: DragEvent) => void;
+    onPhoneMoveGrip: (lineId: string, e: ReactPointerEvent) => void;
   }) {
     const bank = banks.find((b) => b.id === line.bankId);
     const isOpening = line.kind === "opening";
@@ -2105,7 +2069,6 @@ const RegisterRow = memo(
       <tr
         ref={measureRef}
         data-index={index}
-        draggable={canDrag}
         data-open={isOpening ? undefined : "true"}
         data-selected={isOn ? "true" : undefined}
         data-active={isActive ? "true" : undefined}
@@ -2123,33 +2086,6 @@ const RegisterRow = memo(
         onKeyDown={(e) => {
           if (e.key === "Enter" && e.currentTarget === e.target) onOpen(line);
         }}
-        onDragStart={(e) => {
-          if (!canDrag) {
-            e.preventDefault();
-            return;
-          }
-          e.dataTransfer.setData("text/plain", line.id);
-          e.dataTransfer.effectAllowed = "move";
-          setCashDragImage(e, transferDragCaption(line));
-          onDragStart(line.id);
-        }}
-        onDragEnd={onDragEnd}
-        onDragOver={(e) => {
-          if (!dragOn || isOpening) return;
-          e.preventDefault();
-          const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-          onOverRow(line.id, dropPlaceFromPoint(e.clientY, rect.top, rect.height));
-        }}
-        onDragLeave={(e) => {
-          const related = e.relatedTarget as Node | null;
-          if (related && (e.currentTarget as HTMLElement).contains(related)) return;
-          onOverRow(null, null);
-        }}
-        onDrop={(e) => {
-          if (!dragOn || isOpening) return;
-          e.preventDefault();
-          onDropRow(line, e);
-        }}
       >
         <td className="col-check no-print" onClick={stopOpen} onDoubleClick={stopOpen} onPointerDown={stopOpen}>
           {isOpening ? null : (
@@ -2163,9 +2099,49 @@ const RegisterRow = memo(
             </span>
           )}
         </td>
-        <td className="col-date">
+        <td
+          className="col-date"
+          onClick={dragOn ? stopOpen : undefined}
+          onDoubleClick={dragOn ? stopOpen : undefined}
+          onPointerDown={dragOn ? stopOpen : undefined}
+        >
           <span className="inline-flex items-center gap-1">
-            {canDrag ? <DragHandle enabled className="no-print" /> : null}
+            {dragOn && !isOpening ? (
+              canDrag ? (
+                <button
+                  type="button"
+                  className={
+                    "register-phone-grip register-desk-grip no-print inline-flex size-7 items-center justify-center rounded-md border border-border text-muted-foreground " +
+                    (dragging ? "border-primary bg-primary/10 text-foreground" : "")
+                  }
+                  aria-label="Drag to rearrange"
+                  aria-pressed={dragging}
+                  onPointerDown={(e) => {
+                    e.stopPropagation();
+                    onPhoneMoveGrip(line.id, e);
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <DragHandle enabled className="pointer-events-none" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="register-phone-grip register-desk-grip no-print inline-flex size-7 items-center justify-center rounded-md border border-border/50 text-muted-foreground/50"
+                  aria-label="Date locked — can't move"
+                  onPointerDown={(e) => {
+                    e.stopPropagation();
+                    toast.error("Reconciled or locked lines can't move.");
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toast.error("Reconciled or locked lines can't move.");
+                  }}
+                >
+                  <DragHandle enabled className="pointer-events-none opacity-50" />
+                </button>
+              )
+            ) : null}
             {isOpening && !line.date ? "Opening" : formatRegisterDate(line.date)}
           </span>
         </td>
@@ -2238,10 +2214,7 @@ const RegisterRow = memo(
     prev.onSetCheckStatus === next.onSetCheckStatus &&
     prev.onReceiptAction === next.onReceiptAction &&
     prev.onSwap === next.onSwap &&
-    prev.onDragStart === next.onDragStart &&
-    prev.onDragEnd === next.onDragEnd &&
-    prev.onOverRow === next.onOverRow &&
-    prev.onDropRow === next.onDropRow &&
+    prev.onPhoneMoveGrip === next.onPhoneMoveGrip &&
     prev.measureRef === next.measureRef &&
     sameBanks(prev.banks, next.banks) &&
     sameLine(prev.line, next.line),

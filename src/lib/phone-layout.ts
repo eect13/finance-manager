@@ -20,6 +20,7 @@ export function writePhoneLayout(key: string, layout: PhoneLayout) {
   }
 }
 
+/** Shared desk+phone Register Grid|List preference. */
 export const REGISTER_PHONE_LAYOUT_KEY = "finance-manager-register-phone-layout";
 export const RECONCILE_PHONE_LAYOUT_KEY = "finance-manager-reconcile-phone-layout";
 

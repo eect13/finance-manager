@@ -1,4 +1,4 @@
-# Finance Manager v3.62.49
+# Finance Manager v3.62.50
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -11,6 +11,13 @@ No accounts, no server setup. Books stay on this computer (IndexedDB). Settings 
 The app mark is a **navy tile with cream pillars** — a full opaque square (Windows 11 already rounds the tile; transparent corners were a white plate). Web uses the SVG favicon. Windows uses a **BMP 32-bit** `.ico` (PNG-in-ICO is a white square on the shortcut and the taskbar). After install, **delete any leftover blank shortcut** and pin the new one — Explorer caches the last icon.
 
 
+
+## What's new in v3.62.50
+
+- **Register desk passbook arrange**: Move dates uses the same pointer grip → ghost → before/after drop as phone (HTML5 `tr` draggable removed — grips were visible but desk arrange felt broken)
+- Move dates locks **Passbook** sort (column headers + Filters sort) so same-day reorder is visible
+- **Register desk Grid|List** toggle in View (same `finance-manager-register-phone-layout` persistence as phone); List = matrix table, Grid = card stack
+- Before/after drop markers + move ghost CSS work on desk too (were phone-media-only)
 
 ## What's new in v3.62.49
 

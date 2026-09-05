@@ -4074,6 +4074,94 @@ html.tauri-android .app-header-inner {
   }
 }
 
+
+/* Register passbook arrange — desk + phone (pointer grip drag) */
+.register-phone-grip,
+.register-desk-grip {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+}
+.register-phone-grip:active,
+.register-desk-grip:active,
+.register-phone-grip[aria-pressed="true"],
+.register-desk-grip[aria-pressed="true"] {
+  cursor: grabbing;
+}
+.register-phone-grip[aria-pressed="true"],
+.register-desk-grip[aria-pressed="true"] {
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--primary) 45%, transparent);
+}
+[data-drop-place="before"] {
+  box-shadow: inset 0 2px 0 0 color-mix(in oklab, var(--primary) 75%, transparent);
+}
+[data-drop-place="after"] {
+  box-shadow: inset 0 -2px 0 0 color-mix(in oklab, var(--primary) 75%, transparent);
+}
+.register-phone-move-ghost {
+  position: fixed;
+  z-index: 10000;
+  pointer-events: none;
+  transform: translate(-12px, -120%);
+  max-width: min(70vw, 16rem);
+  padding: 0.45rem 0.7rem;
+  border-radius: 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--color-primary-foreground, #fff);
+  background: color-mix(in oklab, var(--primary) 92%, #000);
+  box-shadow: 0 8px 24px color-mix(in oklab, #000 28%, transparent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+body.is-phone-move-dragging {
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grabbing;
+}
+/* Desk Grid: virtualized card stack (same 1D virtualizer as phone; max width for readability) */
+.register-desk-grid[data-layout="grid"] > ul {
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-width: min(52rem, 100%);
+}
+.register-desk-grid[data-layout="grid"] > ul > li {
+  min-width: 0;
+}
+.register-desk-grid .register-phone-card {
+  height: 100%;
+  box-shadow: none;
+}
+.register-desk-grid .register-phone-card .phone-card-party {
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+.register-desk-grid .register-phone-card .phone-card-date,
+.register-desk-grid .register-phone-card .phone-card-money {
+  font-size: 0.85rem;
+}
+.register-desk-grid .register-phone-card .phone-card-meta,
+.register-desk-grid .register-phone-card .phone-card-memo,
+.register-desk-grid .register-phone-card .phone-card-chip {
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+.register-desk-grid .register-phone-card .phone-card-label {
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.register-desk-grid {
+  font-size: var(--register-font, 12px);
+  line-height: 1.35;
+}
+
 .register-drag-ghost {
   position: fixed;
   top: -1000px;

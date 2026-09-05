@@ -36,8 +36,9 @@ export type PhoneMoveDragApi = {
 };
 
 /**
- * Pointer-based Move / passbook arrange for phone (Android WebView-safe).
+ * Pointer-based Move / passbook arrange (desk + phone; Android WebView-safe).
  * Grip → ghost → hit-test row drop zones (before/after insert).
+ * Prefer over HTML5 tr draggable — table-row DnD is flaky on desktop.
  */
 export function usePhoneMoveDrag({
   enabled,

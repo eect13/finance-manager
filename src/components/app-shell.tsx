@@ -29,12 +29,12 @@ import {
 import { toast, Toaster } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { bootBooks, useFinanceData, useFinanceStore } from "@/lib/finance/store";
 import { cn } from "@/lib/utils";
@@ -233,6 +233,7 @@ export function AppShell({
 }) {
   const [open, setOpen] = useState(false);
   const [findOpen, setFindOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const [rail, setRail] = useState(false);
   const hydrated = useFinanceStore((s) => s.hydrated);
   const data = useFinanceData();
@@ -374,25 +375,52 @@ export function AppShell({
                 <ThemeToggle compact />
                 <ExportMenu data={data} />
               </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon" className="size-10 shrink-0 md:hidden" aria-label="More">
-                    <MoreHorizontal />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="min-w-48">
-                  <DropdownMenuItem onClick={() => setFindOpen(true)}>Find transaction</DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => setTheme(resolved === "dark" ? "light" : "dark")}
-                  >
-                    {resolved === "dark" ? "Switch to light" : "Switch to dark"}
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link to="/settings">Options (zoom, export, companies)</Link>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <Button
+                variant="outline"
+                size="icon"
+                className="size-10 shrink-0 touch-manipulation md:hidden"
+                aria-label="More"
+                onClick={() => setMoreOpen(true)}
+              >
+                <MoreHorizontal />
+              </Button>
+              <Dialog open={moreOpen} onOpenChange={setMoreOpen}>
+                <DialogContent className="max-w-sm">
+                  <DialogHeader>
+                    <DialogTitle>More</DialogTitle>
+                    <DialogDescription>Find, theme, and Options.</DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-1">
+                    <button
+                      type="button"
+                      className="flex min-h-11 w-full items-center rounded-xl px-3 text-left text-sm hover:bg-muted"
+                      onClick={() => {
+                        setMoreOpen(false);
+                        setFindOpen(true);
+                      }}
+                    >
+                      Find transaction
+                    </button>
+                    <button
+                      type="button"
+                      className="flex min-h-11 w-full items-center rounded-xl px-3 text-left text-sm hover:bg-muted"
+                      onClick={() => {
+                        setTheme(resolved === "dark" ? "light" : "dark");
+                        setMoreOpen(false);
+                      }}
+                    >
+                      {resolved === "dark" ? "Switch to light" : "Switch to dark"}
+                    </button>
+                    <Link
+                      to="/settings"
+                      className="flex min-h-11 w-full items-center rounded-xl px-3 text-left text-sm hover:bg-muted"
+                      onClick={() => setMoreOpen(false)}
+                    >
+                      Options (zoom, export, companies)
+                    </Link>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
         </header>

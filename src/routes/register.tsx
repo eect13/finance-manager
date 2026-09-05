@@ -83,7 +83,30 @@ const DEFAULT_COL_WIDTHS = {
   balance: 128,
   status: 108,
 };
+/** Narrower defaults for phone so Register fits more useful columns before scrolling. */
+const MOBILE_COL_WIDTHS: typeof DEFAULT_COL_WIDTHS = {
+  check: 36,
+  date: 78,
+  type: 72,
+  number: 56,
+  payee: 132,
+  memo: 96,
+  bank: 88,
+  payment: 92,
+  deposit: 92,
+  balance: 100,
+  status: 72,
+};
 type ColWidths = typeof DEFAULT_COL_WIDTHS;
+
+function isPhoneUi() {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(max-width: 767px), ((hover: none) and (pointer: coarse))").matches;
+}
+
+function defaultColWidths(): ColWidths {
+  return isPhoneUi() ? { ...MOBILE_COL_WIDTHS } : { ...DEFAULT_COL_WIDTHS };
+}
 
 function clampCol(n: number, min = COL_MIN, max = COL_MAX) {
   return Math.min(max, Math.max(min, Math.round(n)));
@@ -91,7 +114,7 @@ function clampCol(n: number, min = COL_MIN, max = COL_MAX) {
 
 function parseColWidths(raw: unknown): ColWidths {
   const src = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
-  const next = { ...DEFAULT_COL_WIDTHS };
+  const next = defaultColWidths();
   for (const key of Object.keys(next) as Array<keyof ColWidths>) {
     const value = src[key];
     if (typeof value === "number" && Number.isFinite(value) && key !== "check") next[key] = clampCol(value);
@@ -150,7 +173,7 @@ function RegisterPage() {
   const [confirm, setConfirm] = useState<"all" | "selected" | null>(null);
   const [editLine, setEditLine] = useState<CashLine | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [colWidths, setColWidths] = useState<ColWidths>(DEFAULT_COL_WIDTHS);
+  const [colWidths, setColWidths] = useState<ColWidths>(defaultColWidths);
   const [needFit, setNeedFit] = useState(false);
   const fontSize = data.settings.registerFontSize ?? 12;
   const cols = data.settings.registerColumns ?? DEFAULT_REGISTER_COLS;
@@ -172,10 +195,13 @@ function RegisterPage() {
       if (raw) {
         const saved = JSON.parse(raw) as Record<string, unknown>;
         if (typeof saved.bankFilter === "string") setBankFilter(saved.bankFilter);
-        if (saved.colWidths && !forceContent) {
+        if (saved.colWidths && !forceContent && !isPhoneUi()) {
           const parsed = parseColWidths(saved.colWidths);
           setColWidths(parsed);
           setNeedFit(widthsMatch({ ...parsed, check: DEFAULT_COL_WIDTHS.check }, DEFAULT_COL_WIDTHS));
+        } else if (isPhoneUi()) {
+          setColWidths(defaultColWidths());
+          setNeedFit(false);
         } else setNeedFit(true);
         if (saved.datePreset === "month" || saved.datePreset === "year" || saved.datePreset === "all") {
           const range = datePresetRange(saved.datePreset);

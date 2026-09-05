@@ -3327,3 +3327,37 @@ body.printing [data-radix-popper-content-wrapper]:has(.print-paper-menu) {
     gap: 0.65rem !important;
   }
 }
+
+
+/* v3.62.16 company tap + register density on phone */
+@media (max-width: 767px), ((hover: none) and (pointer: coarse)) {
+  .app-header-company {
+    position: relative;
+    z-index: 30;
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+  .app-header-company .company-switcher-trigger {
+    min-height: 2.6rem;
+    pointer-events: auto;
+  }
+  .app-header-actions {
+    position: relative;
+    z-index: 10;
+  }
+  .register-matrix {
+    font-size: 0.78rem;
+  }
+  .register-matrix th,
+  .register-matrix td {
+    padding: 0.32rem 0.4rem !important;
+  }
+  .register-matrix .col-check {
+    width: 2.25rem !important;
+    min-width: 2.25rem !important;
+  }
+  .page-scroll-x {
+    margin-inline: -0.15rem;
+    padding-inline: 0.15rem;
+  }
+}

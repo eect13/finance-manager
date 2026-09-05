@@ -790,7 +790,7 @@ function ReconcilePage() {
                 onWidth={(n) => cols.setWidth("date", n)}
                 onFit={() => fit("date", "Date")}
               
-                align={colAligns.aligns.date ?? "left"}
+                align={colAligns.aligns.date ?? "center"}
                 onAlign={(a) => colAligns.setAlign("date", a)}
               />
               <SortHeader
@@ -802,6 +802,8 @@ function ReconcilePage() {
                 width={cols.widths.type}
                 onWidth={(n) => cols.setWidth("type", n)}
                 onFit={() => fit("type", "Type")}
+                align={colAligns.aligns.type ?? "center"}
+                onAlign={(a) => colAligns.setAlign("type", a)}
               />
               <SortHeader
                 label="Payee"
@@ -812,6 +814,8 @@ function ReconcilePage() {
                 width={cols.widths.payee}
                 onWidth={(n) => cols.setWidth("payee", n)}
                 onFit={() => fit("payee", "Payee")}
+                align={colAligns.aligns.payee ?? "center"}
+                onAlign={(a) => colAligns.setAlign("payee", a)}
               />
               <SortHeader
                 label="Days"
@@ -819,10 +823,11 @@ function ReconcilePage() {
                 sortKey={sort.key}
                 dir={sort.dir}
                 onToggle={sort.toggle}
-                align="right"
                 width={cols.widths.days}
                 onWidth={(n) => cols.setWidth("days", n)}
                 onFit={() => fit("days", "Days")}
+                align={colAligns.aligns.days ?? "center"}
+                onAlign={(a) => colAligns.setAlign("days", a)}
               />
               <SortHeader
                 label="Payment"
@@ -830,10 +835,11 @@ function ReconcilePage() {
                 sortKey={sort.key}
                 dir={sort.dir}
                 onToggle={sort.toggle}
-                align="right"
                 width={cols.widths.payment}
                 onWidth={(n) => cols.setWidth("payment", n)}
                 onFit={() => fit("payment", "Payment")}
+                align={colAligns.aligns.payment ?? "center"}
+                onAlign={(a) => colAligns.setAlign("payment", a)}
               />
               <SortHeader
                 label="Deposit"
@@ -841,10 +847,11 @@ function ReconcilePage() {
                 sortKey={sort.key}
                 dir={sort.dir}
                 onToggle={sort.toggle}
-                align="right"
                 width={cols.widths.deposit}
                 onWidth={(n) => cols.setWidth("deposit", n)}
                 onFit={() => fit("deposit", "Deposit")}
+                align={colAligns.aligns.deposit ?? "center"}
+                onAlign={(a) => colAligns.setAlign("deposit", a)}
               />
             </tr>
           </thead>

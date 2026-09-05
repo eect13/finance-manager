@@ -165,7 +165,7 @@ function ForecastPage() {
                         if (!table) return;
                         budgetCols.setWidth("start", fitColumnWidth({ table, selector: `td[data-col="start"]`, header: "From" }));
                       }} />
-                      <SortHeader label="Amount" column="amount" sortKey={budgetSort.key} dir={budgetSort.dir} onToggle={budgetSort.toggle} align="right" width={budgetCols.widths.amount} onWidth={(n) => budgetCols.setWidth("amount", n)} onFit={() => {
+                      <SortHeader label="Amount" column="amount" sortKey={budgetSort.key} dir={budgetSort.dir} onToggle={budgetSort.toggle} align="center" width={budgetCols.widths.amount} onWidth={(n) => budgetCols.setWidth("amount", n)} onFit={() => {
                         const table = budgetRef.current?.querySelector("table");
                         if (!table) return;
                         budgetCols.setWidth("amount", fitColumnWidth({ table, selector: `td[data-col="amount"]`, header: "Amount" }));

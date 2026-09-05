@@ -201,11 +201,11 @@ function JournalTable({
         </colgroup>
         <thead>
           <tr className="border-b border-border text-muted-foreground">
-            <SortHeader label="Date" column="date" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.date} onWidth={(n) => cols.setWidth("date", n)} onFit={() => fit("date", "Date")} align={colAligns.aligns.date ?? "left"} onAlign={(a) => colAligns.setAlign("date", a)} />
-            <SortHeader label="Description" column="description" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.description} onWidth={(n) => cols.setWidth("description", n)} onFit={() => fit("description", "Description")} align={colAligns.aligns.description ?? "left"} onAlign={(a) => colAligns.setAlign("description", a)} />
-            <SortHeader label="Source" column="source" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.source} onWidth={(n) => cols.setWidth("source", n)} onFit={() => fit("source", "Source")} align={colAligns.aligns.source ?? "left"} onAlign={(a) => colAligns.setAlign("source", a)} />
-            <SortHeader label="Debit" column="debit" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.debit} onWidth={(n) => cols.setWidth("debit", n)} onFit={() => fit("debit", "Debit")} align={colAligns.aligns.debit ?? "right"} onAlign={(a) => colAligns.setAlign("debit", a)} />
-            <SortHeader label="Credit" column="credit" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.credit} onWidth={(n) => cols.setWidth("credit", n)} onFit={() => fit("credit", "Credit")} align={colAligns.aligns.credit ?? "right"} onAlign={(a) => colAligns.setAlign("credit", a)} />
+            <SortHeader label="Date" column="date" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.date} onWidth={(n) => cols.setWidth("date", n)} onFit={() => fit("date", "Date")} align={colAligns.aligns.date ?? "center"} onAlign={(a) => colAligns.setAlign("date", a)} />
+            <SortHeader label="Description" column="description" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.description} onWidth={(n) => cols.setWidth("description", n)} onFit={() => fit("description", "Description")} align={colAligns.aligns.description ?? "center"} onAlign={(a) => colAligns.setAlign("description", a)} />
+            <SortHeader label="Source" column="source" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.source} onWidth={(n) => cols.setWidth("source", n)} onFit={() => fit("source", "Source")} align={colAligns.aligns.source ?? "center"} onAlign={(a) => colAligns.setAlign("source", a)} />
+            <SortHeader label="Debit" column="debit" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.debit} onWidth={(n) => cols.setWidth("debit", n)} onFit={() => fit("debit", "Debit")} align={colAligns.aligns.debit ?? "center"} onAlign={(a) => colAligns.setAlign("debit", a)} />
+            <SortHeader label="Credit" column="credit" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.credit} onWidth={(n) => cols.setWidth("credit", n)} onFit={() => fit("credit", "Credit")} align={colAligns.aligns.credit ?? "center"} onAlign={(a) => colAligns.setAlign("credit", a)} />
           </tr>
         </thead>
         <tbody>
@@ -284,10 +284,10 @@ function AccountsTable({
         </colgroup>
         <thead>
           <tr className="border-b border-border text-muted-foreground">
-            <SortHeader label="Code" column="code" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.code} onWidth={(n) => cols.setWidth("code", n)} onFit={() => fit("code", "Code")} align={colAligns.aligns.code ?? "left"} onAlign={(a) => colAligns.setAlign("code", a)} />
-            <SortHeader label="Account" column="name" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.name} onWidth={(n) => cols.setWidth("name", n)} onFit={() => fit("name", "Account")} align={colAligns.aligns.name ?? "left"} onAlign={(a) => colAligns.setAlign("name", a)} />
-            <SortHeader label="Type" column="type" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.type} onWidth={(n) => cols.setWidth("type", n)} onFit={() => fit("type", "Type")} align={colAligns.aligns.type ?? "left"} onAlign={(a) => colAligns.setAlign("type", a)} />
-            <SortHeader label="Balance" column="balance" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.balance} onWidth={(n) => cols.setWidth("balance", n)} onFit={() => fit("balance", "Balance")} align={colAligns.aligns.balance ?? "right"} onAlign={(a) => colAligns.setAlign("balance", a)} />
+            <SortHeader label="Code" column="code" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.code} onWidth={(n) => cols.setWidth("code", n)} onFit={() => fit("code", "Code")} align={colAligns.aligns.code ?? "center"} onAlign={(a) => colAligns.setAlign("code", a)} />
+            <SortHeader label="Account" column="name" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.name} onWidth={(n) => cols.setWidth("name", n)} onFit={() => fit("name", "Account")} align={colAligns.aligns.name ?? "center"} onAlign={(a) => colAligns.setAlign("name", a)} />
+            <SortHeader label="Type" column="type" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.type} onWidth={(n) => cols.setWidth("type", n)} onFit={() => fit("type", "Type")} align={colAligns.aligns.type ?? "center"} onAlign={(a) => colAligns.setAlign("type", a)} />
+            <SortHeader label="Balance" column="balance" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.balance} onWidth={(n) => cols.setWidth("balance", n)} onFit={() => fit("balance", "Balance")} align={colAligns.aligns.balance ?? "center"} onAlign={(a) => colAligns.setAlign("balance", a)} />
           </tr>
         </thead>
         <tbody>

@@ -231,12 +231,12 @@ function BanksPage() {
             </colgroup>
             <thead>
               <tr className="border-b border-border text-muted-foreground">
-                <SortHeader label="Nickname" column="nickname" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.nickname} onWidth={(n) => cols.setWidth("nickname", n)} onFit={() => fit("nickname", "Nickname")}  align={colAligns.aligns.nickname ?? "left"} onAlign={(a) => colAligns.setAlign("nickname", a)} />
-                <SortHeader label="Bank" column="name" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.name} onWidth={(n) => cols.setWidth("name", n)} onFit={() => fit("name", "Bank")} align={colAligns.aligns.name ?? "left"} onAlign={(a) => colAligns.setAlign("name", a)} />
-                <SortHeader label="Number" column="number" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.number} onWidth={(n) => cols.setWidth("number", n)} onFit={() => fit("number", "Number")} align={colAligns.aligns.number ?? "left"} onAlign={(a) => colAligns.setAlign("number", a)} />
+                <SortHeader label="Nickname" column="nickname" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.nickname} onWidth={(n) => cols.setWidth("nickname", n)} onFit={() => fit("nickname", "Nickname")}  align={colAligns.aligns.nickname ?? "center"} onAlign={(a) => colAligns.setAlign("nickname", a)} />
+                <SortHeader label="Bank" column="name" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.name} onWidth={(n) => cols.setWidth("name", n)} onFit={() => fit("name", "Bank")} align={colAligns.aligns.name ?? "center"} onAlign={(a) => colAligns.setAlign("name", a)} />
+                <SortHeader label="Number" column="number" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.number} onWidth={(n) => cols.setWidth("number", n)} onFit={() => fit("number", "Number")} align={colAligns.aligns.number ?? "center"} onAlign={(a) => colAligns.setAlign("number", a)} />
                 <SortHeader label="Status" column="status" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.status} onWidth={(n) => cols.setWidth("status", n)} onFit={() => fit("status", "Status")} align={colAligns.aligns.status ?? "center"} onAlign={(a) => colAligns.setAlign("status", a)} />
-                <SortHeader label="Book" column="book" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.book} onWidth={(n) => cols.setWidth("book", n)} onFit={() => fit("book", "Book")} align={colAligns.aligns.book ?? "right"} onAlign={(a) => colAligns.setAlign("book", a)} />
-                <SortHeader label="Pending" column="pending" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.pending} onWidth={(n) => cols.setWidth("pending", n)} onFit={() => fit("pending", "Pending")} align={colAligns.aligns.pending ?? "right"} onAlign={(a) => colAligns.setAlign("pending", a)} />
+                <SortHeader label="Book" column="book" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.book} onWidth={(n) => cols.setWidth("book", n)} onFit={() => fit("book", "Book")} align={colAligns.aligns.book ?? "center"} onAlign={(a) => colAligns.setAlign("book", a)} />
+                <SortHeader label="Pending" column="pending" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.pending} onWidth={(n) => cols.setWidth("pending", n)} onFit={() => fit("pending", "Pending")} align={colAligns.aligns.pending ?? "center"} onAlign={(a) => colAligns.setAlign("pending", a)} />
                 <th className="col-actions px-4 py-3"><span className="sr-only">Actions</span></th>
               </tr>
             </thead>
@@ -259,8 +259,8 @@ function BanksPage() {
                     <td className="px-4 py-3 text-muted-foreground" data-col="name">{bank.name}</td>
                     <td className="px-4 py-3 text-muted-foreground" data-col="number">{bank.accountNumber}</td>
                     <td className="px-4 py-3 text-muted-foreground" data-col="status">{bank.archived ? "Closed" : "Active"}</td>
-                    <td className={cn("px-4 py-3", alignClass(colAligns.aligns.book ?? "right"))} data-col="book" data-align={colAligns.aligns.book ?? "right"}><Money amount={book} currency={settings.currency} /></td>
-                    <td className={cn("px-4 py-3", alignClass(colAligns.aligns.pending ?? "right"))} data-col="pending" data-align={colAligns.aligns.pending ?? "right"}><Money amount={pending} currency={settings.currency} /></td>
+                    <td className={cn("px-4 py-3", alignClass(colAligns.aligns.book ?? "center"))} data-col="book" data-align={colAligns.aligns.book ?? "center"}><Money amount={book} currency={settings.currency} /></td>
+                    <td className={cn("px-4 py-3", alignClass(colAligns.aligns.pending ?? "center"))} data-col="pending" data-align={colAligns.aligns.pending ?? "center"}><Money amount={pending} currency={settings.currency} /></td>
                     <td className="col-actions px-4 py-3 text-right" data-col="actions" onClick={stopOpen} onDoubleClick={stopOpen} onPointerDown={stopOpen}>
                       <RowDeleteButton onDelete={() => setDeletingId(bank.id)} />
                     </td>

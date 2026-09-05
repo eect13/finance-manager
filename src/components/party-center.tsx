@@ -177,15 +177,15 @@ export function PartyTxnTable({
             <thead>
               <tr className="border-b border-border text-muted-foreground">
                 <SortHeader label="Date" column="date" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-txn-date" width={cols.widths.date} onWidth={(n) => cols.setWidth("date", n)} onFit={() => fit("date", "Date")} 
-                align={colAligns.aligns.date ?? "left"}
+                align={colAligns.aligns.date ?? "center"}
                 onAlign={(a) => colAligns.setAlign("date", a)}
               />
                 <SortHeader label="Type" column="type" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-txn-type" width={cols.widths.type} onWidth={(n) => cols.setWidth("type", n)} onFit={() => fit("type", "Type")} />
                 <SortHeader label="No." column="number" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-txn-number" width={cols.widths.number} onWidth={(n) => cols.setWidth("number", n)} onFit={() => fit("number", "No.")} />
                 <SortHeader label="Memo" column="memo" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-txn-memo" width={cols.widths.memo} onWidth={(n) => cols.setWidth("memo", n)} onFit={() => fit("memo", "Memo")} />
-                <SortHeader label="Amount" column="amount" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-txn-amount" align="right" width={cols.widths.amount} onWidth={(n) => cols.setWidth("amount", n)} onFit={() => fit("amount", "Amount")} />
-                <SortHeader label="Open" column="open" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-txn-open" align="right" width={cols.widths.open} onWidth={(n) => cols.setWidth("open", n)} onFit={() => fit("open", "Open")} />
-                <SortHeader label="Balance" column="balance" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-txn-balance" align="right" width={cols.widths.balance} onWidth={(n) => cols.setWidth("balance", n)} onFit={() => fit("balance", "Balance")} />
+                <SortHeader label="Amount" column="amount" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-txn-amount" align="center" width={cols.widths.amount} onWidth={(n) => cols.setWidth("amount", n)} onFit={() => fit("amount", "Amount")} />
+                <SortHeader label="Open" column="open" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-txn-open" align="center" width={cols.widths.open} onWidth={(n) => cols.setWidth("open", n)} onFit={() => fit("open", "Open")} />
+                <SortHeader label="Balance" column="balance" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-txn-balance" align="center" width={cols.widths.balance} onWidth={(n) => cols.setWidth("balance", n)} onFit={() => fit("balance", "Balance")} />
                 <SortHeader label="Status" column="status" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-txn-status" width={cols.widths.status} />
               </tr>
             </thead>
@@ -616,7 +616,7 @@ function PartyDirectoryTable({
             <SortHeader label="Contact" column="contact" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-dir-contact" width={cols.widths.contact} onWidth={(n) => cols.setWidth("contact", n)} onFit={() => fit("contact", "Contact")} />
             <SortHeader label="Email" column="email" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-dir-email" width={cols.widths.email} onWidth={(n) => cols.setWidth("email", n)} onFit={() => fit("email", "Email")} />
             <SortHeader label="Phone" column="phone" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-dir-phone" width={cols.widths.phone} onWidth={(n) => cols.setWidth("phone", n)} onFit={() => fit("phone", "Phone")} />
-            <SortHeader label="Open" column="balance" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-dir-balance" align="right" width={cols.widths.balance} />
+            <SortHeader label="Open" column="balance" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-dir-balance" align="center" width={cols.widths.balance} />
           </tr>
         </thead>
         <tbody>

@@ -82,7 +82,7 @@ export const Route = createFileRoute("/register")({ component: RegisterPage });
 
 const UI_KEY = "finance-manager-register-ui";
 const FIT_MARK = "finance-manager-colfit";
-const FIT_VERSION = "content-1";
+const FIT_VERSION = "content-6";
 const MONTH_RANGE = datePresetRange("month");
 const CHECK_COL = 44;
 const COL_MIN = 56;
@@ -1809,6 +1809,17 @@ function RegisterTable({
         ref={kbBindContainer(wrapRef)}
         tabIndex={0}
         className={cn("list-grid register-matrix min-w-0 outline-none", hidden.map((col) => `hide-${col.id}`))}
+        style={{
+          ["--reg-align-date" as string]: colAligns.aligns.date ?? "center",
+          ["--reg-align-type" as string]: colAligns.aligns.type ?? "center",
+          ["--reg-align-number" as string]: colAligns.aligns.number ?? "center",
+          ["--reg-align-payee" as string]: colAligns.aligns.payee ?? "center",
+          ["--reg-align-memo" as string]: colAligns.aligns.memo ?? "center",
+          ["--reg-align-bank" as string]: colAligns.aligns.bank ?? "center",
+          ["--reg-align-payment" as string]: colAligns.aligns.payment ?? "center",
+          ["--reg-align-deposit" as string]: colAligns.aligns.deposit ?? "center",
+          ["--reg-align-balance" as string]: colAligns.aligns.balance ?? "center",
+        }}
         {...Object.fromEntries(hidden.map((col) => [`data-hide-${col.id}`, "true"]))}
         onMouseDown={(e) => {
           const t = e.target as HTMLElement | null;
@@ -1859,7 +1870,7 @@ function RegisterTable({
               <SortHeader
                 label="Date"
                 column="date"
-                align={colAligns.aligns.date ?? "left"}
+                align={colAligns.aligns.date ?? "center"}
                 sortKey={sortKey}
                 dir={sortDir}
                 onToggle={requestSort}
@@ -1872,7 +1883,7 @@ function RegisterTable({
               <SortHeader
                 label="Type"
                 column="type"
-                align={colAligns.aligns.type ?? "left"}
+                align={colAligns.aligns.type ?? "center"}
                 onAlign={(a) => colAligns.setAlign("type", a)}
                 sortKey={sortKey}
                 dir={sortDir}
@@ -1883,7 +1894,7 @@ function RegisterTable({
               <SortHeader
                 label="No."
                 column="number"
-                align={colAligns.aligns.number ?? "left"}
+                align={colAligns.aligns.number ?? "center"}
                 onAlign={(a) => colAligns.setAlign("number", a)}
                 sortKey={sortKey}
                 dir={sortDir}
@@ -1894,7 +1905,7 @@ function RegisterTable({
               <SortHeader
                 label="Payee"
                 column="payee"
-                align={colAligns.aligns.payee ?? "left"}
+                align={colAligns.aligns.payee ?? "center"}
                 onAlign={(a) => colAligns.setAlign("payee", a)}
                 sortKey={sortKey}
                 dir={sortDir}
@@ -1905,7 +1916,7 @@ function RegisterTable({
               <SortHeader
                 label="Memo"
                 column="memo"
-                align={colAligns.aligns.memo ?? "left"}
+                align={colAligns.aligns.memo ?? "center"}
                 onAlign={(a) => colAligns.setAlign("memo", a)}
                 sortKey={sortKey}
                 dir={sortDir}
@@ -1916,7 +1927,7 @@ function RegisterTable({
               <SortHeader
                 label="Bank"
                 column="bank"
-                align={colAligns.aligns.bank ?? "left"}
+                align={colAligns.aligns.bank ?? "center"}
                 onAlign={(a) => colAligns.setAlign("bank", a)}
                 sortKey={sortKey}
                 dir={sortDir}
@@ -1927,7 +1938,7 @@ function RegisterTable({
               <SortHeader
                 label="Payment"
                 column="payment"
-                align={colAligns.aligns.payment ?? "right"}
+                align={colAligns.aligns.payment ?? "center"}
                 onAlign={(a) => colAligns.setAlign("payment", a)}
                 sortKey={sortKey}
                 dir={sortDir}
@@ -1938,7 +1949,7 @@ function RegisterTable({
               <SortHeader
                 label="Deposit"
                 column="deposit"
-                align={colAligns.aligns.deposit ?? "right"}
+                align={colAligns.aligns.deposit ?? "center"}
                 onAlign={(a) => colAligns.setAlign("deposit", a)}
                 sortKey={sortKey}
                 dir={sortDir}
@@ -1949,7 +1960,7 @@ function RegisterTable({
               <SortHeader
                 label="Balance"
                 column="balance"
-                align={colAligns.aligns.balance ?? "right"}
+                align={colAligns.aligns.balance ?? "center"}
                 onAlign={(a) => colAligns.setAlign("balance", a)}
                 sortKey={sortKey}
                 dir={sortDir}

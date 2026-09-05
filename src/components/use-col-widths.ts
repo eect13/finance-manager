@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { autoFitTable, widthsMatch } from "@/lib/finance/fit-column";
 
 const FIT_MARK = "finance-manager-colfit";
-const FIT_VERSION = "content-5";
+const FIT_VERSION = "content-6";
 
 export function clampCol(n: number, min = 56, max = 420) {
   return Math.min(max, Math.max(min, Math.round(n)));

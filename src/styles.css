@@ -891,7 +891,7 @@
   }
 
   .register-matrix .col-money {
-    text-align: right;
+    text-align: center;
     font-variant-numeric: tabular-nums;
   }
 
@@ -902,11 +902,13 @@
     text-align: center;
   }
 
-  .list-grid td[data-align="right"],
+  .list-grid td[data-align="right"] {
+    text-align: right;
+  }
   .list-grid td.col-money,
   .register-matrix td.col-money,
   .register-matrix tfoot td.col-money {
-    text-align: right;
+    text-align: center;
   }
 
   .list-grid th[data-align="right"] > button,
@@ -4430,54 +4432,71 @@ body.is-phone-move-dragging {
   color: var(--color-muted-foreground);
 }
 
-/* v3.62.56: SortHeader — centered title, colon flush before ↑/↓ / ⋮ */
+/* v3.62.58: SortHeader — absolute-centered title; ↑/↓ then ⋮ clustered at trailing edge (no colon) */
 .sort-header-row {
+  position: relative;
   display: flex;
   width: 100%;
   min-width: 0;
+  min-height: 1.75rem;
   align-items: center;
-  gap: 0.1rem;
+  justify-content: flex-end;
 }
 .sort-header-main {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
   display: flex;
   min-width: 0;
-  flex: 1 1 auto;
   align-items: center;
+  justify-content: center;
+  /* keep long titles clear of ↓+⋮ hit targets */
+  padding-inline: 1.85rem;
   font-weight: 500;
 }
 .sort-header-title {
-  flex: 1 1 auto;
-  min-width: 0;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   text-align: center;
 }
-.sort-header-trail {
+.sort-header-controls {
+  position: relative;
+  z-index: 1;
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
   gap: 0.05rem;
-  margin-inline-start: 0.15rem;
-}
-.sort-header-colon {
-  flex: 0 0 auto;
-  color: var(--color-muted-foreground);
-  font-weight: 500;
-  line-height: 1;
-  user-select: none;
+  margin-inline-start: auto;
 }
 .sort-header-dir {
   display: inline-flex;
-  flex: 0 0 0.9rem;
+  flex: 0 0 0.95rem;
+  width: 0.95rem;
   align-items: center;
   justify-content: center;
-  min-height: 0.9rem;
+  min-height: 0.95rem;
 }
 .col-opts-trigger {
   margin-inline: 0;
   margin-inline-start: 0;
 }
+
+/* v3.62.58: Register body cells follow header ⋮ align prefs (CSS vars on .register-matrix) */
+.register-matrix td.col-date { text-align: var(--reg-align-date, center); }
+.register-matrix td.col-type { text-align: var(--reg-align-type, center); }
+.register-matrix td.col-num { text-align: var(--reg-align-number, center); }
+.register-matrix td.col-payee { text-align: var(--reg-align-payee, center); }
+.register-matrix td.col-memo { text-align: var(--reg-align-memo, center); }
+.register-matrix td.col-bank { text-align: var(--reg-align-bank, center); }
+.register-matrix td.col-payment,
+.register-matrix tfoot td.col-payment { text-align: var(--reg-align-payment, center); }
+.register-matrix td.col-deposit,
+.register-matrix tfoot td.col-deposit { text-align: var(--reg-align-deposit, center); }
+.register-matrix td.col-balance,
+.register-matrix tfoot td.col-balance { text-align: var(--reg-align-balance, center); }
+
 
 
 /* v3.62.57: shared list spacing tokens — one rule for every list tab */

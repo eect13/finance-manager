@@ -331,7 +331,7 @@ function SnapshotTable({
         <thead>
           <tr className="border-b border-border text-muted-foreground">
             <SortHeader label="Bank" column="bank" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.bank} onWidth={(n) => cols.setWidth("bank", n)} onFit={() => fit("bank", "Bank")} />
-            <SortHeader label="Balance" column="balance" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} align="right" width={cols.widths.balance} onWidth={(n) => cols.setWidth("balance", n)} onFit={() => fit("balance", "Balance")} />
+            <SortHeader label="Balance" column="balance" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} align="center" width={cols.widths.balance} onWidth={(n) => cols.setWidth("balance", n)} onFit={() => fit("balance", "Balance")} />
             <SortHeader label="Statement" column="statement" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.statement} onWidth={(n) => cols.setWidth("statement", n)} onFit={() => fit("statement", "Statement")} />
           </tr>
         </thead>

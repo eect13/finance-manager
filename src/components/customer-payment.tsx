@@ -620,7 +620,7 @@ export function CustomerPayment({
                       sortKey={invSort.key}
                       dir={invSort.dir}
                       onToggle={invSort.toggle}
-                      align="right"
+                      align="center"
                       width={allocCols.widths.orig}
                       onWidth={(n) => allocCols.setWidth("orig", n)}
                       onFit={() => {
@@ -636,7 +636,7 @@ export function CustomerPayment({
                       sortKey={invSort.key}
                       dir={invSort.dir}
                       onToggle={invSort.toggle}
-                      align="right"
+                      align="center"
                       width={allocCols.widths.due}
                       onWidth={(n) => allocCols.setWidth("due", n)}
                       onFit={() => {
@@ -652,7 +652,7 @@ export function CustomerPayment({
                       sortKey={invSort.key}
                       dir={invSort.dir}
                       onToggle={invSort.toggle}
-                      align="right"
+                      align="center"
                       width={allocCols.widths.payment}
                       onWidth={(n) => allocCols.setWidth("payment", n)}
                       onFit={() => {

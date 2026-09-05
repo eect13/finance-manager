@@ -16,6 +16,7 @@ The app mark is a **navy tile with cream pillars** — a full opaque square (Win
 
 - Phone: company switcher and ⋯ More open reliable dialogs (dropdowns were missing taps under Display zoom)
 - Register: narrower mobile column defaults + denser cells so more fits before sideways scroll
+- Undo/redo (and other) toasts sit at the bottom so they don’t cover the header
 
 ## What's new in v3.62.15
 

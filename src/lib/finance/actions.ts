@@ -282,9 +282,11 @@ export function setCheckStatus(data: FinanceData, id, status, date = todayIso())
   const check = data.checks.find((c) => c.id === id);
   if (!check) throw new Error("Check not found");
   if (check.recon === "reconciled") throw new Error("This line is reconciled. Unlock it first.");
+  if (check.status === "voided" || check.status === "bounced") {
+    throw new Error("Voided checks cannot be edited. Delete them to re-enter.");
+  }
   if (check.status === status) return data;
   if (status === "voided" || status === "bounced") {
-    if (check.status === "voided" || check.status === "bounced") return data;
     const original = data.journals.find((j) => j.id === check.journalId);
     if (!original) throw new Error("Original journal missing");
     const reversal = reverseJournal(original, date, `Check ${check.checkNumber} ${status}`);
@@ -293,16 +295,20 @@ export function setCheckStatus(data: FinanceData, id, status, date = todayIso())
       checks: data.checks.map((c) => c.id === id ? {
         ...c,
         status,
+        recon: "pending",
         reversalJournalId: reversal.id
       } : c),
       journals: [...data.journals, reversal]
     };
   }
+  // pending ↔ cleared keeps check.status and recon aligned (register badge + Checks list).
+  const recon = status === "cleared" ? "cleared" : "pending";
   return {
     ...data,
     checks: data.checks.map((c) => c.id === id ? {
       ...c,
-      status
+      status,
+      recon
     } : c)
   };
 }

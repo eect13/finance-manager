@@ -1,6 +1,14 @@
 # Finance Manager — bugs & improvements (v3.62)
 
-Re-verified in code 2026-09-05 (Asia/Manila). Updated for v3.62.45. UI direction: gestalt / professional ledger — cream paper, navy ink, real chrome — not an overly-minimal white sheet.
+Re-verified in code 2026-09-05 (Asia/Manila). Updated for v3.62.46. UI direction: gestalt / professional ledger — cream paper, navy ink, real chrome — not an overly-minimal white sheet.
+
+## Fixed in v3.62.46
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| 1 | Med | Checks → Clear set `status` without `recon` — Register still showed Pending | `setCheckStatus` syncs recon; normalize heals legacy rows |
+| 2 | Med (UX) | Bounce/Void only when pending; cleared checks had no Pending/Void/Bounce | Shared menu on Register, Checks ⋯, and check record |
+| 3 | Low (UX) | Phone Register List status was display-only | Tappable status chip (same as Grid/desk) |
 
 ## Fixed in v3.62.45
 

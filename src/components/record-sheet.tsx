@@ -11,6 +11,7 @@ import { PartyFields } from "@/components/party-form";
 import { PartyTxnTable } from "@/components/party-center";
 import { SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
+import { checkStatusMenuItems } from "@/components/check-status-menu";
 import { BillBadge, CheckBadge, InvoiceBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -564,29 +565,28 @@ function CheckBody({ id, onClose }: { id: string; onClose: () => void }) {
             Save
           </Button>
         )}
-        {check.status === "pending" ? (
+        {check.status === "pending" || check.status === "cleared" ? (
           <>
-            <Button variant="outline" onClick={() => setCheckStatus(check.id, "cleared")}>
-              Clear
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setCheckStatus(check.id, "voided");
-                toast.success("Check voided.");
-              }}
-            >
-              Void
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setCheckStatus(check.id, "bounced");
-                toast.success("Marked bounced.");
-              }}
-            >
-              Bounce
-            </Button>
+            {checkStatusMenuItems(check.status, (next) => {
+              try {
+                setCheckStatus(check.id, next);
+                if (next === "voided") toast.success("Check voided.");
+                else if (next === "bounced") toast.success("Marked bounced.");
+                else if (next === "cleared") toast.success("Cleared.");
+                else toast.success("Pending.");
+              } catch (err) {
+                toast.error(err instanceof Error ? err.message : "Could not update status.");
+              }
+            }).map((item) => (
+              <Button
+                key={item.label}
+                variant={item.label === "Cleared" || item.label === "Pending" ? "outline" : "ghost"}
+                className={item.danger ? "text-destructive" : undefined}
+                onClick={item.onSelect}
+              >
+                {item.label === "Cleared" ? "Clear" : item.label === "Pending" ? "Pending" : item.label}
+              </Button>
+            ))}
           </>
         ) : null}
         <Button variant="ghost" onClick={() => setDeleting(true)}>

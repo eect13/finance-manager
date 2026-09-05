@@ -24,6 +24,7 @@ import { RegisterPost } from "@/components/register-post";
 import { RegisterSwap } from "@/components/register-swap";
 import { ShopTick } from "@/components/shop-tick";
 import { ColResize, SortHeader } from "@/components/sort-header";
+import { CheckStatusControl } from "@/components/check-status-menu";
 import { CheckBadge, ReceiptBadge, ReconBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,6 +68,7 @@ import {
   REGISTER_COL_CLASS,
   REGISTER_COLS,
   toggleRegisterCol,
+  type CheckStatus,
   type RegisterColId,
   type RegisterCols,
 } from "@/lib/finance/types";
@@ -171,6 +173,7 @@ function RegisterPage() {
   const removeCashLines = useFinanceStore((s) => s.removeCashLines);
   const reassignCashBank = useFinanceStore((s) => s.reassignCashBank);
   const setCashRecon = useFinanceStore((s) => s.setCashRecon);
+  const setCheckStatus = useFinanceStore((s) => s.setCheckStatus);
   const updateSettings = useFinanceStore((s) => s.updateSettings);
   const patch = useFinanceStore((s) => s.patch);
   const [bankFilter, setBankFilter] = useState("all");
@@ -466,6 +469,26 @@ function RegisterPage() {
       }
     },
     [setCashRecon],
+  );
+
+  const applyCheckStatus = useCallback(
+    (line: CashLine, status: CheckStatus) => {
+      if (line.kind !== "check") return;
+      if (line.recon === "reconciled") {
+        toast.error("On a finished statement. Undo that rec to change it.");
+        return;
+      }
+      try {
+        setCheckStatus(line.sourceId, status);
+        if (status === "voided") toast.success("Check voided and reversed.");
+        else if (status === "bounced") toast.success("Marked bounced and reversed.");
+        else if (status === "cleared") toast.success("Cleared.");
+        else toast.success("Pending.");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Could not update status.");
+      }
+    },
+    [setCheckStatus],
   );
 
   useEffect(() => {
@@ -792,6 +815,7 @@ function RegisterPage() {
           onOpen={handleOpen}
           onActivate={setActiveId}
           onCycleRecon={cycleRecon}
+          onSetCheckStatus={applyCheckStatus}
           onAskDelete={(id) => {
             setSelected([id]);
             setConfirm("selected");
@@ -1092,6 +1116,7 @@ function RegisterTable({
   onOpen,
   onActivate,
   onCycleRecon,
+  onSetCheckStatus,
   onAskDelete,
   onSwap,
   onDragStart,
@@ -1130,6 +1155,7 @@ function RegisterTable({
   onOpen: (line: CashLine) => void;
   onActivate: (id: string) => void;
   onCycleRecon: (line: CashLine) => void;
+  onSetCheckStatus: (line: CashLine, status: CheckStatus) => void;
   onAskDelete: (id: string) => void;
   onSwap: (line: CashLine, bankId: string) => void;
   onDragStart: (id: string) => void;
@@ -1317,7 +1343,16 @@ function RegisterTable({
         case "balance":
           return <Money amount={line.balance} currency={currency} className="font-medium" />;
         case "status":
-          return isOpening ? <span className="text-muted-foreground">—</span> : <LineStatus line={line} />;
+          return isOpening ? (
+            <span className="text-muted-foreground">—</span>
+          ) : (
+            <LineStatusControl
+              line={line}
+              onCycleRecon={onCycleRecon}
+              onSetCheckStatus={onSetCheckStatus}
+              className="phone-card-chip inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1"
+            />
+          );
         default:
           return null;
       }
@@ -1688,20 +1723,12 @@ function RegisterTable({
                             onPointerDown={(e) => e.stopPropagation()}
                           >
                             {cols.status ? (
-                              <button
-                                type="button"
+                              <LineStatusControl
+                                line={line}
+                                onCycleRecon={onCycleRecon}
+                                onSetCheckStatus={onSetCheckStatus}
                                 className="phone-card-chip inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1"
-                                onClick={() => onCycleRecon(line)}
-                                aria-label={
-                                  line.recon === "reconciled"
-                                    ? "Reconciled"
-                                    : line.recon === "cleared"
-                                      ? "Cleared"
-                                      : "Pending"
-                                }
-                              >
-                                <LineStatus line={line} />
-                              </button>
+                              />
                             ) : null}
                             {line.reassignable ? (
                               <Select value={line.bankId} onValueChange={(v) => onSwap(line, v)}>
@@ -1912,6 +1939,7 @@ function RegisterTable({
                   onOpen={onOpen}
                   onActivate={onActivate}
                   onCycleRecon={onCycleRecon}
+                  onSetCheckStatus={onSetCheckStatus}
                   onSwap={onSwap}
                   onDragStart={onDragStart}
                   onDragEnd={onDragEnd}
@@ -2006,6 +2034,7 @@ const RegisterRow = memo(
     onOpen,
     onActivate,
     onCycleRecon,
+    onSetCheckStatus,
     onSwap,
     onDragStart,
     onDragEnd,
@@ -2027,6 +2056,7 @@ const RegisterRow = memo(
     onOpen: (line: CashLine) => void;
     onActivate: (id: string) => void;
     onCycleRecon: (line: CashLine) => void;
+    onSetCheckStatus: (line: CashLine, status: CheckStatus) => void;
     onSwap: (line: CashLine, bankId: string) => void;
     onDragStart: (id: string) => void;
     onDragEnd: () => void;
@@ -2146,15 +2176,13 @@ const RegisterRow = memo(
         <td className="col-money col-balance">
           <Money amount={line.balance} currency={currency} />
         </td>
-        <td
-          className="col-status"
-          onClick={(e) => {
-            e.stopPropagation();
-            onCycleRecon(line);
-          }}
-          onDoubleClick={stopOpen}
-        >
-          <LineStatus line={line} />
+        <td className="col-status" onClick={(e) => e.stopPropagation()} onDoubleClick={stopOpen}>
+          <LineStatusControl
+            line={line}
+            onCycleRecon={onCycleRecon}
+            onSetCheckStatus={onSetCheckStatus}
+            className="inline-flex items-center justify-center rounded-lg border border-transparent px-1 py-0.5 hover:border-border"
+          />
         </td>
       </tr>
     );
@@ -2172,6 +2200,7 @@ const RegisterRow = memo(
     prev.onOpen === next.onOpen &&
     prev.onActivate === next.onActivate &&
     prev.onCycleRecon === next.onCycleRecon &&
+    prev.onSetCheckStatus === next.onSetCheckStatus &&
     prev.onSwap === next.onSwap &&
     prev.onDragStart === next.onDragStart &&
     prev.onDragEnd === next.onDragEnd &&
@@ -2184,12 +2213,65 @@ const RegisterRow = memo(
 
 function LineStatus({ line }: { line: BalancedCashLine }) {
   if (line.kind === "opening") return null;
-  if (line.kind === "check" && (line.status === "voided" || line.status === "bounced")) {
-    return <CheckBadge status={line.status} />;
+  if (line.kind === "check") {
+    if (line.recon === "reconciled") return <ReconBadge recon="reconciled" />;
+    if (
+      line.status === "pending" ||
+      line.status === "cleared" ||
+      line.status === "voided" ||
+      line.status === "bounced"
+    ) {
+      return <CheckBadge status={line.status} />;
+    }
   }
   if ((line.kind === "receipt" || line.kind === "payment") && line.status === "void") {
     return <ReceiptBadge status="void" />;
   }
   if (line.recon) return <ReconBadge recon={line.recon} />;
   return null;
+}
+
+function LineStatusControl({
+  line,
+  onCycleRecon,
+  onSetCheckStatus,
+  className,
+}: {
+  line: BalancedCashLine;
+  onCycleRecon: (line: CashLine) => void;
+  onSetCheckStatus: (line: CashLine, status: CheckStatus) => void;
+  className?: string;
+}) {
+  if (line.kind === "opening") return null;
+  if (line.kind === "check") {
+    return (
+      <CheckStatusControl
+        status={line.status as CheckStatus}
+        recon={line.recon}
+        onSetStatus={(next) => onSetCheckStatus(line, next)}
+        className={className}
+      />
+    );
+  }
+  if ((line.kind === "receipt" || line.kind === "payment") && line.status === "void") {
+    return <ReceiptBadge status="void" />;
+  }
+  if (line.recon === "reconciled") {
+    return <ReconBadge recon="reconciled" />;
+  }
+  return (
+    <button
+      type="button"
+      className={className}
+      onClick={(e) => {
+        e.stopPropagation();
+        onCycleRecon(line);
+      }}
+      onPointerDown={(e) => e.stopPropagation()}
+      onDoubleClick={(e) => e.stopPropagation()}
+      aria-label={line.recon === "cleared" ? "Cleared" : "Pending"}
+    >
+      <LineStatus line={line} />
+    </button>
+  );
 }

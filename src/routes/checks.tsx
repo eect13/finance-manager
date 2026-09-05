@@ -15,6 +15,7 @@ import { Field } from "@/components/field";
 import { ListPrint } from "@/components/list-print";
 import { Money } from "@/components/money";
 import { requestPrint } from "@/components/print-preview";
+import { checkStatusMenuItems } from "@/components/check-status-menu";
 import { CheckBadge } from "@/components/status-badge";
 import { SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
@@ -214,31 +215,27 @@ function ChecksPage() {
           <tbody>
             {sort.sorted.map((check) => {
               const bank = data.banks.find((b) => b.id === check.bankId);
+              const applyStatus = (next: typeof check.status) => {
+                try {
+                  setCheckStatus(check.id, next);
+                  if (next === "voided") toast.success("Check voided and reversed.");
+                  else if (next === "bounced") toast.success("Marked bounced and reversed.");
+                  else if (next === "cleared") toast.success("Cleared.");
+                  else toast.success("Pending.");
+                } catch (err) {
+                  toast.error(err instanceof Error ? err.message : "Could not update status.");
+                }
+              };
               const rowActions = (
                 <RowActions
                   items={[
-                    ...(check.status === "pending"
-                      ? [
-                          {
-                            label: "Clear",
-                            onSelect: () => setCheckStatus(check.id, "cleared"),
-                          },
-                          {
-                            label: "Void",
-                            onSelect: () => {
-                              setCheckStatus(check.id, "voided");
-                              toast.success("Check voided and reversed.");
-                            },
-                          },
-                          {
-                            label: "Bounce",
-                            onSelect: () => {
-                              setCheckStatus(check.id, "bounced");
-                              toast.success("Marked bounced and reversed.");
-                            },
-                          },
-                        ]
-                      : []),
+                    ...checkStatusMenuItems(check.status, applyStatus).map((item) =>
+                      item.label === "Cleared"
+                        ? { ...item, label: "Clear" }
+                        : item.label === "Pending"
+                          ? { ...item, label: "Mark pending" }
+                          : item,
+                    ),
                     { label: "Delete", danger: true, onSelect: () => setDeleting(check) },
                   ]}
                 />

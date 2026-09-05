@@ -1,4 +1,4 @@
-# Finance Manager v3.62.45
+# Finance Manager v3.62.46
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -11,6 +11,13 @@ No accounts, no server setup. Books stay on this computer (IndexedDB). Settings 
 The app mark is a **navy tile with cream pillars** — a full opaque square (Windows 11 already rounds the tile; transparent corners were a white plate). Web uses the SVG favicon. Windows uses a **BMP 32-bit** `.ico` (PNG-in-ICO is a white square on the shortcut and the taskbar). After install, **delete any leftover blank shortcut** and pin the new one — Explorer caches the last icon.
 
 
+
+## What's new in v3.62.46
+
+- **Check status menu** (Register desk + phone Grid/List, Checks ⋯, check record): Pending / Cleared / Bounce / Void — not only pending↔cleared
+- `setCheckStatus` keeps **status + recon in sync** (Clear from Checks no longer leaves Register showing Pending)
+- Normalize heals legacy cleared-without-recon checks on load
+- Phone Register **List** status chip is tappable (was display-only vs desk/Grid)
 
 ## What's new in v3.62.45
 
@@ -316,7 +323,9 @@ Lists (banks, register, receipts, checks, reports, reconcile) wrap actions and k
 
 ![Banks — accounts and balances](docs/screenshots/banks.png)
 
-![Bank register — tick column, Cleared badges, comma amounts, Post](docs/screenshots/register.png)
+![Bank register — check status menu (Pending / Cleared / Bounce / Void)](docs/screenshots/register.png)
+
+![Checks — Clear / Bounce / Void from row ⋯](docs/screenshots/checks-status.png)
 
 ![Employees — roster, filters, and Pay](docs/screenshots/employees.png)
 
@@ -387,7 +396,7 @@ Books do **not** follow you to another phone or laptop. Download a backup on one
 ## Close the month
 
 - **Close** (Books): rec every live bank through the date, post recurring, trial balance in balance. Open AR / AP / TB stay in a low sticky summary so the Close-through calendar can sit on top. Desk banner **Post rent** (or Post N due) writes every recurrence through month-end and rolls next dates — same as Settings → Recurring → Post. **Print the period pack** (TB, P&L by account for the month and YTD, AR/AP aging as of the date, each finished rec report, open customer statements) — that is the review. There is no aging checkbox. Close posts a **close journal**; those bank balances as of the close date are the **opening fact** for the next month’s register (the first row reads Closed through that date). Reopen is a dated audit event (type REOPEN), not a toggle.
-- **Reconcile**: beginning is the **last finished statement ending** (or bank opening). Tick what is on the paper — the tick column is always on this page (register ticks are for delete / bank reassign, not rec). Outstanding checks and deposits in transit stay off the statement and prove the book. Proof is two boards: **Statement** (beginning, cleared in/out, cleared difference) and **Book** (book, outstanding, in transit, explained difference). Amounts stay on one line. **Cleared difference** and **explained difference** must both be **0**. Post a service charge or interest from this screen if the bank has a line the books do not — those freeze as adjustments on the rec document. **Last statement** prints the frozen rec (named outstanding, DIT, adjustments, 30/60/90). **Undo last** requires UNDO and is blocked inside a closed period. Register click only cycles Pending ↔ C. **R is Finish statement**, not a register click, and it survives a restore. Uncleared 90+ days is called out.
+- **Reconcile**: beginning is the **last finished statement ending** (or bank opening). Tick what is on the paper — the tick column is always on this page (register ticks are for delete / bank reassign, not rec). Outstanding checks and deposits in transit stay off the statement and prove the book. Proof is two boards: **Statement** (beginning, cleared in/out, cleared difference) and **Book** (book, outstanding, in transit, explained difference). Amounts stay on one line. **Cleared difference** and **explained difference** must both be **0**. Post a service charge or interest from this screen if the bank has a line the books do not — those freeze as adjustments on the rec document. **Last statement** prints the frozen rec (named outstanding, DIT, adjustments, 30/60/90). **Undo last** requires UNDO and is blocked inside a closed period. Register status: non-checks cycle Pending ↔ Cleared; checks use the Pending/Cleared/Bounce/Void menu. **R is Finish statement**, not a register click, and it survives a restore. Uncleared 90+ days is called out.
 - **Audit** on Close: who (this browser), what, old/new, timestamp. Export CSV. Merge writes both sides.
 - **Settings → Company file**: one JSON that **is** this company (recon, close, audit included). **Save company file** / Open. Open replaces this company or adds that file. There is no “download this company” and no “download all companies” — the local copy in this browser is first; Settings → **Save company file** is the off-device backup (header Export is spreadsheets only). After every successful save this browser also writes a **local copy** (IndexedDB, one slot per company, timestamped). **Restore last local copy** puts that snapshot back for the company you are in; if you removed the sample, that is how it returns without Reload sample. Settings → Storage shows IndexedDB vs fallback, whether the browser granted **persistent** storage (so it is less likely to evict the books), and usage. There is no cloud. Tables are flat: banks, customers, vendors, employees, invoices, bills, receipts, checks, journals (lines stay on the journal), and the rest. Parties do not nest transactions. New ids are UUIDs.
 - **Settings → Recurring**: warehouse rent is due in the sample (1 Sep) so September cannot close until you post it.
@@ -416,13 +425,14 @@ A transfer is one journal with two bank lines sharing one date. Drag either leg 
 
 ## Reconciliation
 
-Status on the register cycles **Pending ↔ C**. **R** is only written by Reconcile → Finish statement.
+Non-check lines on the register cycle **Pending ↔ Cleared**. **Checks** open a status menu: **Pending / Cleared / Bounce / Void** (same actions on Checks ⋯ and the check record). **R** is only written by Reconcile → Finish statement.
 
 - **Pending** — not matched to a statement
-- **C** — cleared (working tick; the rec page still has to finish)
-- **R** — on a finished statement and locked. Undo that rec to change it. Closed periods stay locked.
+- **Cleared** — working tick; the rec page still has to finish
+- **Bounced / Voided** — reversed off the books (delete to re-enter)
+- **Reconciled (R)** — on a finished statement and locked. Undo that rec to change it. Closed periods stay locked.
 
-Checks that already cleared in the sample start as **C**. **R** is only written by Reconcile → Finish statement — the sample does not fake finished recs, so ticks (delete / bank reassign) work on every type until you finish one.
+Checks that already cleared in the sample start as **Cleared**. **R** is only written by Reconcile → Finish statement — the sample does not fake finished recs, so ticks (delete / bank reassign) work on every type until you finish one.
 
 ## Find and undo
 

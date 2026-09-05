@@ -54,11 +54,19 @@ export function normalizeBooks(raw: unknown): FinanceData {
     recon: parseRecon(r.recon),
     createdAt: typeof r.createdAt === "number" ? r.createdAt : i,
   }));
-  const checks = asArray<CheckRecord>(p.checks).map((c, i) => ({
-    ...c,
-    recon: parseRecon(c.recon, c.status === "cleared" ? "cleared" : "pending"),
-    createdAt: typeof c.createdAt === "number" ? c.createdAt : i,
-  }));
+  const checks = asArray<CheckRecord>(p.checks).map((c, i) => {
+    let recon = parseRecon(c.recon, c.status === "cleared" ? "cleared" : "pending");
+    // Heal legacy Clear-from-Checks that wrote status without recon.
+    if (recon !== "reconciled") {
+      if (c.status === "cleared") recon = "cleared";
+      else if (c.status === "pending") recon = "pending";
+    }
+    return {
+      ...c,
+      recon,
+      createdAt: typeof c.createdAt === "number" ? c.createdAt : i,
+    };
+  });
   const journals = asArray<JournalEntry>(p.journals).map((j, i) => ({
     ...j,
     recon: parseRecon(j.recon),

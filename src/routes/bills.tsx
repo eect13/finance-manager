@@ -11,7 +11,6 @@ import { CsvButton } from "@/components/export-menu";
 import { ListToolbar } from "@/components/filter-pills";
 import { ListFilters, applySortValue, useListPeriod } from "@/components/list-filters";
 import { ListCard, listColClass } from "@/components/list-table";
-import { PhoneDocSwipeRow } from "@/components/phone-doc-swipe-row";
 import { RowActions } from "@/components/row-actions";
 import { Field } from "@/components/field";
 import { ListPrint } from "@/components/list-print";
@@ -239,25 +238,6 @@ function BillsPage() {
                 const vendor = data.vendors.find((v) => v.id === bill.vendorId);
                 const due = billBalance(bill);
                 const overdue = due > 0 && bill.dueDate < today && bill.status !== "void" && bill.status !== "paid";
-                const actions = [
-                  ...(bill.status !== "void" && bill.status !== "paid"
-                    ? [
-                        {
-                          label: "Void",
-                          tone: "default" as const,
-                          onAction: () => {
-                            voidBill(bill.id);
-                            toast.success("Bill voided.");
-                          },
-                        },
-                      ]
-                    : []),
-                  {
-                    label: "Delete",
-                    tone: "danger" as const,
-                    onAction: () => setDeleting(bill),
-                  },
-                ];
                 const rowActions = (
                   <RowActions
                     primary={
@@ -295,12 +275,8 @@ function BillsPage() {
                   />
                 );
                 return (
-                  <PhoneDocSwipeRow
-                    key={bill.id}
-                    colSpan={dragEnabled ? 9 : 8}
-                    actions={actions}
-                    desktopRow={
-                      <tr
+                  <tr
+                      key={bill.id}
                         className="border-b border-border/70 last:border-0"
                         data-active={pointer.activeId === bill.id ? "true" : undefined}
                         {...drag.bind(bill.id)}
@@ -329,35 +305,6 @@ function BillsPage() {
                           {rowActions}
                         </td>
                       </tr>
-                    }
-                  >
-                    <div
-                      className="flex items-start gap-2"
-                      data-active={pointer.activeId === bill.id ? "true" : undefined}
-                      {...openProps("bill", bill.id, { click: true })}
-                      onClick={() => pointer.setActiveId(bill.id)}
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-baseline justify-between gap-2">
-                          <p className="truncate font-medium">{bill.number}</p>
-                          <BillBadge status={bill.status} overdue={overdue} />
-                        </div>
-                        <p className="truncate text-sm">{vendor?.name ?? "—"}</p>
-                        <p className="mt-0.5 text-xs text-muted-foreground">
-                          {formatDate(bill.date)} · due {formatDate(bill.dueDate)}
-                        </p>
-                        <div className="mt-1 flex justify-between gap-2 tabular-nums text-sm">
-                          <Money amount={bill.amount} currency={data.settings.currency} />
-                          <span className="text-muted-foreground">
-                            Open <Money amount={due} currency={data.settings.currency} className="inline text-foreground" />
-                          </span>
-                        </div>
-                      </div>
-                      <div className="shrink-0" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()} onDoubleClick={stopOpen}>
-                        {rowActions}
-                      </div>
-                    </div>
-                  </PhoneDocSwipeRow>
                 );
               })
             )}

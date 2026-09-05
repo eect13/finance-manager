@@ -3835,6 +3835,9 @@ html.tauri-android .app-header-inner {
   .sheet-bottom-panel .sheet-sat {
     display: none;
   }
+  .sheet-bottom-panel .sheet-close {
+    display: none;
+  }
   .card-desc-more summary {
     cursor: pointer;
     list-style: none;
@@ -3870,6 +3873,8 @@ html.tauri-android .app-header-inner {
     overflow: hidden;
     border-radius: 1rem;
     isolation: isolate;
+    /* Clip action colors fully inside the card radius — no edge bleed when closed */
+    background: var(--color-card);
   }
   .register-phone-list.is-list .phone-swipe,
   .recon-phone-list.is-list .phone-swipe {
@@ -3882,6 +3887,8 @@ html.tauri-android .app-header-inner {
     align-items: stretch;
     justify-content: flex-end;
     z-index: 0;
+    border-radius: inherit;
+    overflow: hidden;
   }
   .phone-swipe-btn {
     min-width: 4.5rem;
@@ -3900,6 +3907,10 @@ html.tauri-android .app-header-inner {
     touch-action: pan-y;
     transition: transform 0.12s ease-out;
     will-change: transform;
+    /* Opaque face so red/green actions never peek at card edges when closed */
+    background: var(--color-card);
+    border-radius: inherit;
+    min-height: 100%;
   }
   /* Keep card chrome on the sliding face so swipe peeks actions behind */
   .phone-swipe-front > .register-phone-card,
@@ -3970,14 +3981,63 @@ html.tauri-android .app-header-inner {
   }
 }
 
+/* v3.62.31: phone list tables — wrap cells, show full memo/amount (no ellipsis cutoff) */
 @media (max-width: 767px), ((hover: none) and (pointer: coarse)) {
-  .doc-phone-swipe {
-    border-radius: 0;
+  .list-card.list-grid td,
+  .list-card.list-grid th {
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    text-overflow: clip !important;
+    overflow: visible !important;
   }
-  .doc-phone-swipe-face {
-    background: var(--color-card);
+  .list-card.list-grid td.col-actions,
+  .list-card.list-grid th.col-actions {
+    white-space: nowrap !important;
+    overflow: visible !important;
   }
-  .list-card .doc-phone-swipe .phone-swipe-front > .doc-phone-swipe-face {
-    background: var(--color-card);
+  /* Money columns stay visible; allow slightly denser wrapping if needed */
+  .list-card.list-grid td[data-col="amount"],
+  .list-card.list-grid td[data-col="debit"],
+  .list-card.list-grid td[data-col="credit"],
+  .list-card.list-grid td[data-col="balance"],
+  .list-card.list-grid td[data-col="total"],
+  .list-card.list-grid td[data-col="open"],
+  .list-card.list-grid td[data-col="payment"],
+  .list-card.list-grid td[data-col="deposit"],
+  .list-card.list-grid td[data-col="book"],
+  .list-card.list-grid td[data-col="pending"] {
+    white-space: nowrap !important;
+    overflow: visible !important;
+    font-size: 0.8125rem;
+  }
+  .list-grid td:not(.col-actions) {
+    overflow: visible;
+  }
+  /* Soften fixed min widths so phone does not clip identity/memo */
+  .list-card.list-grid table {
+    width: 100%;
+    min-width: 0;
+  }
+  .list-card.list-grid colgroup col:not(.col-actions) {
+    min-width: 0 !important;
+  }
+  /* Aging: keep Amount on-screen; party+number can wrap above */
+  .reports-aging .list-card.list-grid td[data-col="party"],
+  .reports-aging .list-card.list-grid td[data-col="customer"],
+  .reports-aging .list-card.list-grid td[data-col="vendor"],
+  .reports-aging .list-card.list-grid td[data-col="number"] {
+    white-space: normal !important;
+  }
+  .reports-aging .list-card.list-grid td[data-col="amount"],
+  .reports-aging .list-card.list-grid td[data-col="balance"],
+  .reports-aging .list-card.list-grid td[data-col="total"] {
+    white-space: nowrap !important;
+  }
+  /* Kill aggressive single-line truncate on phone-visible identity lines in list cells */
+  .list-card.list-grid td .truncate {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
   }
 }

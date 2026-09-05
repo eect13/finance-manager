@@ -1,4 +1,4 @@
-# Finance Manager v3.62.30
+# Finance Manager v3.62.31
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -11,6 +11,13 @@ No accounts, no server setup. Books stay on this computer (IndexedDB). Settings 
 The app mark is a **navy tile with cream pillars** — a full opaque square (Windows 11 already rounds the tile; transparent corners were a white plate). Web uses the SVG favicon. Windows uses a **BMP 32-bit** `.ico` (PNG-in-ICO is a white square on the shortcut and the taskbar). After install, **delete any leftover blank shortcut** and pin the new one — Explorer caches the last icon.
 
 
+
+## What's new in v3.62.31
+
+- Phone doc lists (Invoices, Checks, Bills, Receipts): **no swipe** — uniform tables with full row info and RowActions (Register/Reconcile keep Grid/List + PhoneSwipe)
+- Phone tables: wrap cells so memo/description/amounts stay visible; no aggressive ellipsis cutoff
+- Bottom sheet close **X** hidden (Done already closes); Register/Reconcile swipe colors no longer bleed at card edges
+- Employees summary chips stay one row on phone (Active / On file / Showing)
 
 ## What's new in v3.62.30
 

@@ -201,21 +201,21 @@ function EmployeesPage() {
       description="People on payroll. Keep a roster, set pay type and rate, and post paychecks to a bank — the check lands in Register like any other payment."
       actions={<Button onClick={openNew}>+ Add employee</Button>}
     >
-      <section className="mb-4 grid gap-3 sm:grid-cols-3">
+      <section className="mb-4 grid grid-cols-3 gap-2">
         <Card>
-          <CardContent className="p-5">
+          <CardContent className="p-3 sm:p-5">
             <p className="eyebrow">Active</p>
             <p className="mt-2 text-2xl font-medium tabular-nums">{activeCount}</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-5">
+          <CardContent className="p-3 sm:p-5">
             <p className="eyebrow">On file</p>
             <p className="mt-2 text-2xl font-medium tabular-nums">{(data.employees ?? []).length}</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-5">
+          <CardContent className="p-3 sm:p-5">
             <p className="eyebrow">Showing</p>
             <p className="mt-2 text-2xl font-medium tabular-nums">{sort.sorted.length}</p>
           </CardContent>

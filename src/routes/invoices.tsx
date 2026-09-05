@@ -13,7 +13,6 @@ import { ListToolbar } from "@/components/filter-pills";
 import { ListFilters, applySortValue, useListPeriod } from "@/components/list-filters";
 import { ListCard, listColClass } from "@/components/list-table";
 import { RowActions } from "@/components/row-actions";
-import { PhoneDocSwipeRow } from "@/components/phone-doc-swipe-row";
 import { Field } from "@/components/field";
 import { ListPrint } from "@/components/list-print";
 import { Money } from "@/components/money";
@@ -225,25 +224,6 @@ function InvoicesPage() {
               const customer = data.customers.find((c) => c.id === inv.customerId);
               const due = invoiceBalance(data, inv.id);
               const overdue = due > 0 && inv.dueDate < today && inv.status !== "void" && inv.status !== "paid";
-              const actions = [
-                ...(inv.status !== "void" && inv.status !== "paid"
-                  ? [
-                      {
-                        label: "Void",
-                        tone: "default" as const,
-                        onAction: () => {
-                          voidInvoice(inv.id);
-                          toast.success("Invoice voided.");
-                        },
-                      },
-                    ]
-                  : []),
-                {
-                  label: "Delete",
-                  tone: "danger" as const,
-                  onAction: () => setDeleting(inv),
-                },
-              ];
               const rowActions = (
                 <RowActions
                   primary={
@@ -289,12 +269,8 @@ function InvoicesPage() {
                 />
               );
               return (
-                <PhoneDocSwipeRow
-                  key={inv.id}
-                  colSpan={8}
-                  actions={actions}
-                  desktopRow={
-                    <tr
+                  <tr
+                      key={inv.id}
                       className="border-b border-border/70 last:border-0"
                       data-active={pointer.activeId === inv.id ? "true" : undefined}
                       {...openProps("invoice", inv.id)}
@@ -317,36 +293,7 @@ function InvoicesPage() {
                         {rowActions}
                       </td>
                     </tr>
-                  }
-                >
-                  <div
-                    className="flex items-start gap-2"
-                    data-active={pointer.activeId === inv.id ? "true" : undefined}
-                    {...openProps("invoice", inv.id, { click: true })}
-                    onClick={() => pointer.setActiveId(inv.id)}
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-baseline justify-between gap-2">
-                        <p className="truncate font-medium">{inv.number}</p>
-                        <InvoiceBadge status={inv.status} overdue={overdue} />
-                      </div>
-                      <p className="truncate text-sm">{customer?.name ?? "—"}</p>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        {formatDate(inv.date)} · due {formatDate(inv.dueDate)}
-                      </p>
-                      <div className="mt-1 flex justify-between gap-2 tabular-nums text-sm">
-                        <Money amount={invoiceTotal(data, inv.id)} currency={data.settings.currency} />
-                        <span className="text-muted-foreground">
-                          Open <Money amount={due} currency={data.settings.currency} className="inline text-foreground" />
-                        </span>
-                      </div>
-                    </div>
-                    <div className="shrink-0" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()} onDoubleClick={stopOpen}>
-                      {rowActions}
-                    </div>
-                  </div>
-                </PhoneDocSwipeRow>
-              );
+                );
             })
             )}
           </tbody>

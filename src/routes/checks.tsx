@@ -10,7 +10,6 @@ import { CsvButton } from "@/components/export-menu";
 import { ListToolbar } from "@/components/filter-pills";
 import { ListFilters, applySortValue, useListPeriod } from "@/components/list-filters";
 import { ListCard, listColClass } from "@/components/list-table";
-import { PhoneDocSwipeRow } from "@/components/phone-doc-swipe-row";
 import { RowActions } from "@/components/row-actions";
 import { Field } from "@/components/field";
 import { ListPrint } from "@/components/list-print";
@@ -215,30 +214,6 @@ function ChecksPage() {
           <tbody>
             {sort.sorted.map((check) => {
               const bank = data.banks.find((b) => b.id === check.bankId);
-              const actions = [
-                ...(check.status === "pending"
-                  ? [
-                      {
-                        label: "Clear",
-                        tone: "default" as const,
-                        onAction: () => setCheckStatus(check.id, "cleared"),
-                      },
-                      {
-                        label: "Void",
-                        tone: "default" as const,
-                        onAction: () => {
-                          setCheckStatus(check.id, "voided");
-                          toast.success("Check voided and reversed.");
-                        },
-                      },
-                    ]
-                  : []),
-                {
-                  label: "Delete",
-                  tone: "danger" as const,
-                  onAction: () => setDeleting(check),
-                },
-              ];
               const rowActions = (
                 <RowActions
                   items={[
@@ -269,12 +244,8 @@ function ChecksPage() {
                 />
               );
               return (
-                <PhoneDocSwipeRow
-                  key={check.id}
-                  colSpan={8}
-                  actions={actions}
-                  desktopRow={
-                    <tr
+                  <tr
+                      key={check.id}
                       className="border-b border-border/70 last:border-0"
                       data-active={pointer.activeId === check.id ? "true" : undefined}
                       {...openProps("check", check.id)}
@@ -298,33 +269,7 @@ function ChecksPage() {
                         {rowActions}
                       </td>
                     </tr>
-                  }
-                >
-                  <div
-                    className="flex items-start gap-2"
-                    data-active={pointer.activeId === check.id ? "true" : undefined}
-                    {...openProps("check", check.id, { click: true })}
-                    onClick={() => pointer.setActiveId(check.id)}
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-baseline justify-between gap-2">
-                        <p className="truncate font-medium tabular-nums">#{check.checkNumber}</p>
-                        <CheckBadge status={check.status} />
-                      </div>
-                      <p className="truncate text-sm">{check.payee}</p>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        {bank?.nickname ?? "—"} · {formatDate(check.issueDate)}
-                      </p>
-                      <div className="mt-1 tabular-nums text-sm">
-                        <Money amount={check.amount} currency={data.settings.currency} />
-                      </div>
-                    </div>
-                    <div className="shrink-0" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()} onDoubleClick={stopOpen}>
-                      {rowActions}
-                    </div>
-                  </div>
-                </PhoneDocSwipeRow>
-              );
+                );
             })}
           </tbody>
         </table>

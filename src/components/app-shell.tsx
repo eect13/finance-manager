@@ -317,9 +317,12 @@ export function AppShell({
                   <Menu />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="sheet-nav">
-                {/* Always labeled on phone (never rail=true). Collapse still toggles the md sidebar rail. */}
-                <SidebarBody onNavigate={() => setOpen(false)} onToggleRail={toggleRail} />
+              <SheetContent
+                side="left"
+                className={cn("sheet-nav", rail ? "w-16 max-w-16 [&_.sheet-close]:hidden" : "w-[min(18rem,100%)]")}
+              >
+                {/* Collapse toggles the same rail state as the md sidebar (icons-only + narrow sheet). */}
+                <SidebarBody rail={rail} onNavigate={() => setOpen(false)} onToggleRail={toggleRail} />
               </SheetContent>
             </Sheet>
             <div className="app-header-company min-w-0 flex-1 overflow-hidden">

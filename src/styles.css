@@ -3204,3 +3204,30 @@ body.printing [data-radix-popper-content-wrapper]:has(.print-paper-menu) {
   }
 }
 
+
+
+/* Fixed chrome must undo html zoom on safe-area pads — otherwise 80% zoom
+   shrinks padding while the system status bar stays full size. */
+.sheet-panel {
+  padding-top: calc(max(3.75rem, env(safe-area-inset-top, 0px)) / var(--app-ui-zoom, 1));
+}
+.sheet-close {
+  top: calc(max(1.1rem, env(safe-area-inset-top, 0px)) / var(--app-ui-zoom, 1) + 0.35rem);
+}
+@media (hover: none) and (pointer: coarse) {
+  .sheet-panel {
+    padding-top: calc(max(4rem, env(safe-area-inset-top, 0px)) / var(--app-ui-zoom, 1));
+  }
+  .sheet-close {
+    top: calc(max(3.75rem, env(safe-area-inset-top, 0px)) / var(--app-ui-zoom, 1));
+  }
+  .app-header-bar {
+    padding-top: calc(max(2.75rem, env(safe-area-inset-top, 0px)) / var(--app-ui-zoom, 1));
+  }
+  .app-sidebar {
+    padding-top: calc(max(2.75rem, env(safe-area-inset-top, 0px)) / var(--app-ui-zoom, 1));
+  }
+  .app-shell-loading {
+    padding-top: calc(max(2.75rem, env(safe-area-inset-top, 0px)) / var(--app-ui-zoom, 1));
+  }
+}

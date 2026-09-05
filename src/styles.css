@@ -3896,34 +3896,11 @@ html.tauri-android .app-header-inner {
 }
 
 @media (max-width: 767px), ((hover: none) and (pointer: coarse)) {
-  /* Swipe works on Grid cards and List rows (Register + Reconcile) */
   .register-phone-list li,
   .recon-phone-list li {
     list-style: none;
   }
-  .phone-swipe {
-    position: relative;
-    overflow: hidden;
-    border-radius: 1rem;
-    isolation: isolate;
-    /* Quiet outline — avoid heavy lined/cluttered Grid cards */
-    border: 1px solid color-mix(in oklab, var(--color-border) 45%, transparent);
-    background: var(--color-card);
-    box-sizing: border-box;
-  }
-  .register-phone-list.is-list .phone-swipe,
-  .recon-phone-list.is-list .phone-swipe {
-    border-radius: 0.75rem;
-  }
-  /* Avoid double borders: card chrome lives on .phone-swipe when swipe is on */
-  .phone-swipe-front > .register-phone-card,
-  .phone-swipe-front > .recon-phone-card {
-    border: 0 !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
-    background: transparent;
-  }
-  /* Grid cards — quiet outline (avoid heavy stacked chrome / double borders with swipe) */
+  /* Grid cards — quiet outline (uniform borders without swipe wrappers) */
   .register-phone-list:not(.is-list) > ul > li > .register-phone-card,
   .recon-phone-list:not(.is-list) > ul > li > .recon-phone-card,
   .register-phone-list:not(.is-list) > ul > li > div > .register-phone-card,
@@ -3942,45 +3919,6 @@ html.tauri-android .app-header-inner {
   .register-phone-list:not(.is-list) li,
   .recon-phone-list:not(.is-list) li {
     margin: 0;
-  }
-  .phone-swipe-actions {
-    position: absolute;
-    inset: 0 0 0 auto;
-    display: flex;
-    align-items: stretch;
-    justify-content: flex-end;
-    z-index: 0;
-    border-radius: inherit;
-    overflow: hidden;
-  }
-  .phone-swipe-btn {
-    min-width: 4.5rem;
-    padding: 0 0.75rem;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: #fff;
-    background: var(--color-primary);
-    border: 0;
-  }
-  .phone-swipe-btn.is-danger { background: var(--color-debit, #b91c1c); }
-  .phone-swipe-btn.is-success { background: var(--color-credit, #15803d); }
-  .phone-swipe-front {
-    position: relative;
-    z-index: 1;
-    touch-action: pan-y;
-    transition: transform 0.12s ease-out;
-    will-change: transform;
-    /* Opaque face so red/green actions never peek at card edges when closed */
-    background: var(--color-card);
-    border-radius: inherit;
-    min-height: 100%;
-  }
-  /* Keep card chrome on the sliding face so swipe peeks actions behind */
-  .phone-swipe-front > .register-phone-card,
-  .phone-swipe-front > .recon-phone-card,
-  .phone-swipe-front > .register-phone-row,
-  .phone-swipe-front > .recon-phone-row {
-    background: var(--color-card);
   }
   .register-select-bar.phone-safe-bar,
   .recon-finish-bar.phone-safe-bar {
@@ -4002,9 +3940,7 @@ html.tauri-android .app-header-inner {
     background: var(--color-card);
   }
   .register-phone-list.is-list li + li .register-phone-row,
-  .recon-phone-list.is-list li + li .recon-phone-row,
-  .register-phone-list.is-list li + li .phone-swipe,
-  .recon-phone-list.is-list li + li .phone-swipe {
+  .recon-phone-list.is-list li + li .recon-phone-row {
     border-top: 1px solid color-mix(in oklab, var(--color-border) 80%, transparent);
   }
   .register-phone-list.is-list .register-phone-row,
@@ -4015,10 +3951,6 @@ html.tauri-android .app-header-inner {
     background: transparent;
     padding: 0.45rem 0.55rem;
     min-height: 2.75rem;
-  }
-  .register-phone-list.is-list .phone-swipe,
-  .recon-phone-list.is-list .phone-swipe {
-    border-radius: 0;
   }
   .register-phone-list:not(.is-list) ul,
   .recon-phone-list:not(.is-list) ul {

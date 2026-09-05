@@ -11,6 +11,7 @@ import { PartyFields } from "@/components/party-form";
 import { PartyTxnTable } from "@/components/party-center";
 import { SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
+import { listColClass, listColWidthStyle } from "@/components/list-table";
 import { checkStatusMenuItems } from "@/components/check-status-menu";
 import { BillBadge, CheckBadge, InvoiceBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
@@ -955,7 +956,7 @@ function JournalLineTable({
       <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
         <colgroup>
           {(Object.keys(JL_COLS) as Array<keyof typeof JL_COLS>).map((id) => (
-            <col key={id} style={{ width: cols.widths[id] }} />
+            <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id])} />
           ))}
         </colgroup>
         <thead>

@@ -10,7 +10,7 @@ import { Money } from "@/components/money";
 import { PeriodPackPrint } from "@/components/period-print";
 import { requestPrint } from "@/components/print-preview";
 import { SortHeader } from "@/components/sort-header";
-import { listColClass } from "@/components/list-table";
+import { listColClass, listColWidthStyle } from "@/components/list-table";
 import { useColWidths } from "@/components/use-col-widths";
 import { Button } from "@/components/ui/button";
 import { closeChecklist, closeTotals, monthEndIso, type CloseCheck } from "@/lib/finance/close";
@@ -216,7 +216,7 @@ function ClosePage() {
   );
 }
 
-const CHECK_COLS = { check: 200, status: 100, detail: 360 } as const;
+const CHECK_COLS = { check: 200, status: 136, detail: 360 } as const;
 
 function ChecklistTable({
   items,
@@ -227,7 +227,7 @@ function ChecklistTable({
   onPostDue?: () => void;
   dueLabel?: string;
 }) {
-  const cols = useColWidths("finance-manager-close-check-cols", CHECK_COLS);
+  const cols = useColWidths("finance-manager-close-check-cols", CHECK_COLS, { min: 120 });
   const gridRef = useRef<HTMLDivElement>(null);
   const getters = useMemo(
     () => ({
@@ -248,14 +248,14 @@ function ChecklistTable({
       <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
         <colgroup>
           {(Object.keys(CHECK_COLS) as Array<keyof typeof CHECK_COLS>).map((id) => (
-            <col key={id} className={listColClass(id)} style={{ width: cols.widths[id] }} />
+            <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id])} />
           ))}
         </colgroup>
         <thead>
           <tr className="border-b border-border text-muted-foreground">
             <SortHeader label="Check" column="check" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.check} onWidth={(n) => cols.setWidth("check", n)} onFit={() => fit("check", "Check")} />
-            <SortHeader label="Status" column="status" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.status} onWidth={(n) => cols.setWidth("status", n)} onFit={() => fit("status", "Status")} />
-            <SortHeader label="Detail" column="detail" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.detail} onWidth={(n) => cols.setWidth("detail", n)} onFit={() => fit("detail", "Detail")} />
+            <SortHeader label="Status" column="status" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.status} onWidth={(n) => cols.setWidth("status", n)} onFit={() => fit("status", "Status")} className="whitespace-nowrap" />
+            <SortHeader label="Detail" column="detail" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.detail} onWidth={(n) => cols.setWidth("detail", n)} onFit={() => fit("detail", "Detail")} fill />
           </tr>
         </thead>
         <tbody>
@@ -270,17 +270,19 @@ function ChecklistTable({
               <tr key={item.id} className="border-b border-border/70 last:border-0" data-active={item.ok ? undefined : "true"}>
                 <td className="px-4 py-3 font-medium" data-col="check">{item.label}</td>
                 <td className="px-4 py-3" data-col="status">{item.ok ? "Clear" : "Blocked"}</td>
-                <td className="px-4 py-3" data-col="detail">
-                  <div className="flex flex-wrap items-center gap-2">
-                    {item.href ? (
-                      <Link to={item.href} className="underline-offset-2 hover:underline">
-                        {item.detail}
-                      </Link>
-                    ) : (
-                      item.detail
-                    )}
+                <td className="px-4 py-3 col-fill" data-col="detail" data-align="left">
+                  <div className="flex w-full min-w-0 flex-wrap items-center gap-2">
+                    <span className="min-w-0 flex-1 text-left">
+                      {item.href ? (
+                        <Link to={item.href} className="underline-offset-2 hover:underline">
+                          {item.detail}
+                        </Link>
+                      ) : (
+                        item.detail
+                      )}
+                    </span>
                     {item.id === "recurring" && !item.ok && onPostDue ? (
-                      <Button size="sm" onClick={onPostDue}>
+                      <Button size="sm" className="ml-auto shrink-0" onClick={onPostDue}>
                         {dueLabel || "Post due"}
                       </Button>
                     ) : null}
@@ -325,7 +327,7 @@ function SnapshotTable({
       <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
         <colgroup>
           {(Object.keys(SNAP_COLS) as Array<keyof typeof SNAP_COLS>).map((id) => (
-            <col key={id} className={listColClass(id)} style={{ width: cols.widths[id] }} />
+            <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id])} />
           ))}
         </colgroup>
         <thead>
@@ -408,7 +410,7 @@ function AuditTable({ rows }: { rows: AuditEvent[] }) {
         <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
           <colgroup>
             {(Object.keys(AUDIT_COLS) as Array<keyof typeof AUDIT_COLS>).map((id) => (
-              <col key={id} className={listColClass(id)} style={{ width: cols.widths[id] }} />
+              <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id])} />
             ))}
           </colgroup>
           <thead>
@@ -416,7 +418,7 @@ function AuditTable({ rows }: { rows: AuditEvent[] }) {
               <SortHeader label="When" column="when" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.when} onWidth={(n) => cols.setWidth("when", n)} onFit={() => fit("when", "When")} />
               <SortHeader label="Who" column="who" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.who} onWidth={(n) => cols.setWidth("who", n)} onFit={() => fit("who", "Who")} />
               <SortHeader label="Action" column="action" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.action} onWidth={(n) => cols.setWidth("action", n)} onFit={() => fit("action", "Action")} />
-              <SortHeader label="Detail" column="detail" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.detail} onWidth={(n) => cols.setWidth("detail", n)} onFit={() => fit("detail", "Detail")} />
+              <SortHeader label="Detail" column="detail" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.detail} onWidth={(n) => cols.setWidth("detail", n)} onFit={() => fit("detail", "Detail")} fill />
               <SortHeader label="Old" column="old" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.old} onWidth={(n) => cols.setWidth("old", n)} onFit={() => fit("old", "Old")} />
               <SortHeader label="New" column="next" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.next} onWidth={(n) => cols.setWidth("next", n)} onFit={() => fit("next", "New")} />
             </tr>

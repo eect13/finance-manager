@@ -7,7 +7,7 @@ import { Field } from "@/components/field";
 import { FilterPills } from "@/components/filter-pills";
 import { Money } from "@/components/money";
 import { Sparkline } from "@/components/sparkline";
-import { listColClass } from "@/components/list-table";
+import { listColClass, listColWidthStyle } from "@/components/list-table";
 import { SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
 import { Button } from "@/components/ui/button";
@@ -144,7 +144,7 @@ function ForecastPage() {
                 <table ref={budgetCols.tableRef} className="text-sm" style={{ width: "100%" }}>
                   <colgroup>
                     {(Object.keys(BUDGET_COLS) as Array<keyof typeof BUDGET_COLS>).map((id) => (
-                      <col key={id} className={listColClass(id)} style={{ width: budgetCols.widths[id] }} />
+                      <col key={id} className={listColClass(id)} style={listColWidthStyle(id, budgetCols.widths[id])} />
                     ))}
                     <col className="col-actions" style={{ width: 88 }} />
                   </colgroup>
@@ -154,7 +154,7 @@ function ForecastPage() {
                         const table = budgetRef.current?.querySelector("table");
                         if (!table) return;
                         budgetCols.setWidth("name", fitColumnWidth({ table, selector: `td[data-col="name"]`, header: "Name" }));
-                      }} />
+                      }}  fill/>
                       <SortHeader label="Kind" column="kind" sortKey={budgetSort.key} dir={budgetSort.dir} onToggle={budgetSort.toggle} width={budgetCols.widths.kind} onWidth={(n) => budgetCols.setWidth("kind", n)} onFit={() => {
                         const table = budgetRef.current?.querySelector("table");
                         if (!table) return;

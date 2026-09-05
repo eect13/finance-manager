@@ -9,7 +9,7 @@ import { ReportsPrint } from "@/components/period-print";
 import { Money } from "@/components/money";
 import { requestPrint } from "@/components/print-preview";
 import { SortHeader } from "@/components/sort-header";
-import { listColClass } from "@/components/list-table";
+import { listColClass, listColWidthStyle } from "@/components/list-table";
 import { useColWidths } from "@/components/use-col-widths";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -158,12 +158,12 @@ function AgingTable({
         <table ref={cols.tableRef} className="text-sm" style={{ width: "100%", minWidth: cols.tableWidth }}>
           <colgroup>
             {(Object.keys(AGE_COLS) as Array<keyof typeof AGE_COLS>).map((id) => (
-              <col key={id} className={listColClass(id)} style={{ width: cols.widths[id] }} />
+              <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id])} />
             ))}
           </colgroup>
           <thead>
             <tr className="border-b border-border text-muted-foreground">
-              <SortHeader label="Party" column="party" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.party} onWidth={(n) => cols.setWidth("party", n)} onFit={() => fit("party", "Party")} />
+              <SortHeader label="Party" column="party" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.party} onWidth={(n) => cols.setWidth("party", n)} onFit={() => fit("party", "Party")} fill />
               <SortHeader label="No." column="number" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.number} onWidth={(n) => cols.setWidth("number", n)} onFit={() => fit("number", "No.")} />
               <SortHeader label="Due" column="due" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.due} onWidth={(n) => cols.setWidth("due", n)} onFit={() => fit("due", "Due")} />
               <SortHeader label="Age" column="age" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.age} onWidth={(n) => cols.setWidth("age", n)} onFit={() => fit("age", "Age")} />
@@ -236,7 +236,7 @@ function TrialTable({ rows, currency }: { rows: TbRow[]; currency: string }) {
       <table ref={cols.tableRef} className="text-sm" style={{ width: "100%", minWidth: cols.tableWidth }}>
         <colgroup>
           {(Object.keys(TB_COLS) as Array<keyof typeof TB_COLS>).map((id) => (
-            <col key={id} className={listColClass(id)} style={{ width: cols.widths[id] }} />
+            <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id])} />
           ))}
         </colgroup>
         <thead>
@@ -292,7 +292,7 @@ function PlTable({ rows, net, currency }: { rows: PlRow[]; net: number; currency
       <table ref={cols.tableRef} className="text-sm" style={{ width: "100%", minWidth: cols.tableWidth }}>
         <colgroup>
           {(Object.keys(PL_COLS) as Array<keyof typeof PL_COLS>).map((id) => (
-            <col key={id} className={listColClass(id)} style={{ width: cols.widths[id] }} />
+            <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id])} />
           ))}
         </colgroup>
         <thead>

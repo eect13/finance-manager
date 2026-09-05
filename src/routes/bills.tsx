@@ -10,7 +10,7 @@ import { DragHandle } from "@/components/drag-handle";
 import { CsvButton } from "@/components/export-menu";
 import { ListToolbar } from "@/components/filter-pills";
 import { ListFilters, applySortValue, useListPeriod } from "@/components/list-filters";
-import { ListCard, listColClass } from "@/components/list-table";
+import { ListCard, listColClass, listColWidthStyle } from "@/components/list-table";
 import { RowActions } from "@/components/row-actions";
 import { Field } from "@/components/field";
 import { ListPrint } from "@/components/list-print";
@@ -209,7 +209,7 @@ function BillsPage() {
           <colgroup>
             {dragEnabled ? <col style={{ width: 44 }} /> : null}
             {(Object.keys(BILL_COLS) as Array<keyof typeof BILL_COLS>).map((id) => (
-              <col key={id} className={listColClass(id)} style={{ width: cols.widths[id] }} />
+              <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id])} />
             ))}
           </colgroup>
           <thead>
@@ -218,7 +218,7 @@ function BillsPage() {
                 <SortHeader label="Order" column="order" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} />
               ) : null}
               <SortHeader label="Number" column="number" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.number} onWidth={(n) => cols.setWidth("number", n)} onFit={() => fit("number", "Number")} align={colAligns.aligns.number ?? "center"} onAlign={(a) => colAligns.setAlign("number", a)} />
-              <SortHeader label="Vendor" column="vendor" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.vendor} onWidth={(n) => cols.setWidth("vendor", n)} onFit={() => fit("vendor", "Vendor")} align={colAligns.aligns.vendor ?? "center"} onAlign={(a) => colAligns.setAlign("vendor", a)} />
+              <SortHeader label="Vendor" column="vendor" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.vendor} onWidth={(n) => cols.setWidth("vendor", n)} onFit={() => fit("vendor", "Vendor")} align={colAligns.aligns.vendor ?? "center"} onAlign={(a) => colAligns.setAlign("vendor", a)} fill />
               <SortHeader label="Date" column="date" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.date} onWidth={(n) => cols.setWidth("date", n)} onFit={() => fit("date", "Date")} align={colAligns.aligns.date ?? "center"} onAlign={(a) => colAligns.setAlign("date", a)} />
               <SortHeader label="Due" column="due" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.due} onWidth={(n) => cols.setWidth("due", n)} onFit={() => fit("due", "Due")} align={colAligns.aligns.due ?? "center"} onAlign={(a) => colAligns.setAlign("due", a)} />
               <SortHeader label="Amount" column="amount" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.amount} onWidth={(n) => cols.setWidth("amount", n)} onFit={() => fit("amount", "Amount")} align={colAligns.aligns.amount ?? "center"} onAlign={(a) => colAligns.setAlign("amount", a)} />

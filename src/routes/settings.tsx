@@ -8,7 +8,7 @@ import { ConfirmDelete } from "@/components/confirm-delete";
 import { CompanySwitcher, NewCompanyDialog } from "@/components/company-switcher";
 import { Field } from "@/components/field";
 import { Money } from "@/components/money";
-import { listColClass } from "@/components/list-table";
+import { listColClass, listColWidthStyle } from "@/components/list-table";
 import { SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
 import { Button } from "@/components/ui/button";
@@ -774,7 +774,7 @@ function RecurringCard() {
                   <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
                     <colgroup>
                       {(Object.keys(REC_COLS) as Array<keyof typeof REC_COLS>).map((id) => (
-                        <col key={id} className={listColClass(id)} style={{ width: cols.widths[id] }} />
+                        <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id])} />
                       ))}
                       <col className="col-actions" style={{ width: 88 }} />
                     </colgroup>

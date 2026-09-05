@@ -8,7 +8,7 @@ import { ConfirmDelete } from "@/components/confirm-delete";
 import { DateInput } from "@/components/date-input";
 import { ListToolbar } from "@/components/filter-pills";
 import { ListFilters, applySortValue } from "@/components/list-filters";
-import { ListCard, listColClass } from "@/components/list-table";
+import { ListCard, listColClass, listColWidthStyle } from "@/components/list-table";
 import { Field } from "@/components/field";
 import { Money } from "@/components/money";
 import { ReconPrint } from "@/components/period-print";
@@ -765,7 +765,7 @@ function ReconcilePage() {
           <colgroup>
             <col className="col-check no-print" style={{ width: CHECK_COL }} />
             {(Object.keys(RECON_COLS) as Array<keyof typeof RECON_COLS>).map((id) => (
-              <col key={id} className={listColClass(id)} style={{ width: cols.widths[id] }} />
+              <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id])} />
             ))}
           </colgroup>
           <thead>
@@ -816,6 +816,7 @@ function ReconcilePage() {
                 onFit={() => fit("payee", "Payee")}
                 align={colAligns.aligns.payee ?? "center"}
                 onAlign={(a) => colAligns.setAlign("payee", a)}
+                fill
               />
               <SortHeader
                 label="Days"

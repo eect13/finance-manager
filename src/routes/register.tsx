@@ -1842,7 +1842,9 @@ function RegisterTable({
                   REGISTER_COL_CLASS[col.id],
                   col.id === flexColId && "col-flex",
                 )}
-                style={{ width: !cols[col.id] ? 0 : colWidths[col.id] }}
+                style={{
+                  width: !cols[col.id] ? 0 : col.id === flexColId ? undefined : colWidths[col.id],
+                }}
               />
             ))}
           </colgroup>
@@ -1879,6 +1881,7 @@ function RegisterTable({
                 dir={sortDir}
                 onToggle={requestSort}
                 className={cn("col-date", lastVisible === "date" && "col-fill")}
+                fill={flexColId === "date"}
                 {...resizeProps("date")}
               
                 onAlign={(a) => colAligns.setAlign("date", a)}
@@ -1893,6 +1896,7 @@ function RegisterTable({
                 dir={sortDir}
                 onToggle={requestSort}
                 className={cn("col-type", lastVisible === "type" && "col-fill")}
+                fill={flexColId === "type"}
                 {...resizeProps("type")}
               />
               <SortHeader
@@ -1904,6 +1908,7 @@ function RegisterTable({
                 dir={sortDir}
                 onToggle={requestSort}
                 className={cn("col-num", lastVisible === "number" && "col-fill")}
+                fill={flexColId === "number"}
                 {...resizeProps("number")}
               />
               <SortHeader
@@ -1915,6 +1920,7 @@ function RegisterTable({
                 dir={sortDir}
                 onToggle={requestSort}
                 className={cn("col-payee", lastVisible === "payee" && "col-fill")}
+                fill={flexColId === "payee"}
                 {...resizeProps("payee")}
               />
               <SortHeader
@@ -1926,6 +1932,7 @@ function RegisterTable({
                 dir={sortDir}
                 onToggle={requestSort}
                 className={cn("col-memo", lastVisible === "memo" && "col-fill")}
+                fill={flexColId === "memo"}
                 {...resizeProps("memo")}
               />
               <SortHeader
@@ -1937,6 +1944,7 @@ function RegisterTable({
                 dir={sortDir}
                 onToggle={requestSort}
                 className={cn("col-bank", lastVisible === "bank" && "col-fill")}
+                fill={flexColId === "bank"}
                 {...resizeProps("bank")}
               />
               <SortHeader
@@ -1948,6 +1956,7 @@ function RegisterTable({
                 dir={sortDir}
                 onToggle={requestSort}
                 className={cn("col-money col-payment", lastVisible === "payment" && "col-fill")}
+                fill={flexColId === "payment"}
                 {...resizeProps("payment")}
               />
               <SortHeader
@@ -1959,6 +1968,7 @@ function RegisterTable({
                 dir={sortDir}
                 onToggle={requestSort}
                 className={cn("col-money col-deposit", lastVisible === "deposit" && "col-fill")}
+                fill={flexColId === "deposit"}
                 {...resizeProps("deposit")}
               />
               <SortHeader
@@ -1970,6 +1980,7 @@ function RegisterTable({
                 dir={sortDir}
                 onToggle={requestSort}
                 className={cn("col-money col-balance", lastVisible === "balance" && "col-fill")}
+                fill={flexColId === "balance"}
                 {...resizeProps("balance")}
               />
               <th

@@ -1,4 +1,4 @@
-# Finance Manager v3.62.59
+# Finance Manager v3.62.60
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -11,6 +11,12 @@ No accounts, no server setup. Books stay on this computer (IndexedDB). Settings 
 The app mark is a **navy tile with cream pillars** — a full opaque square (Windows 11 already rounds the tile; transparent corners were a white plate). Web uses the SVG favicon. Windows uses a **BMP 32-bit** `.ico` (PNG-in-ICO is a white square on the shortcut and the taskbar). After install, **delete any leftover blank shortcut** and pin the new one — Explorer caches the last icon.
 
 
+
+## What's new in v3.62.60
+
+- **Trailing table void**: leftover card width goes to the one middle flex col (`width: 100%` under `table-layout: fixed`) — not a phantom strip after Actions / Status / Balance. SortHeader no longer locks flex cols to a stored px width; FIT `content-8`
+- **Actions col**: still content-hug (`1%`) but with healthy `--list-actions-min` + `--list-actions-px` so Delete / ⋯ are not cramped against the card edge
+- **Close checklist**: Status min-width so header never reads “Stat…”; Detail sole flex with text left + Post-due button `ml-auto` (no barren floating strip); Audit Who is fit (only Detail flexes)
 
 ## What's new in v3.62.59
 

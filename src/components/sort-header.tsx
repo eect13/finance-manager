@@ -87,6 +87,8 @@ export function SortHeader({
   width,
   onWidth,
   onFit,
+  /** When true (or className has col-flex/col-fill), do not lock th to a px width — leftover goes to the flex col. */
+  fill = false,
 }: {
   label: string;
   column: string;
@@ -102,19 +104,23 @@ export function SortHeader({
   width?: number;
   onWidth?: (next: number) => void;
   onFit?: () => void;
+  fill?: boolean;
 }) {
   const active = sortKey === column;
   const [menuOpen, setMenuOpen] = useState(false);
   const hasMenu = Boolean(onAlign || onVisible);
+  const absorb =
+    fill || Boolean(className && /\bcol-(?:flex|fill)\b/.test(className));
 
   return (
     <th
       className={cn(
         "relative align-middle font-medium text-center",
         compact ? "py-2 px-2" : "px-4 py-3",
+        absorb && "col-flex",
         className,
       )}
-      style={width ? { minWidth: width, width } : undefined}
+      style={width && !absorb ? { minWidth: width, width } : undefined}
       data-align={align}
       data-col={column}
       onContextMenu={

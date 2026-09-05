@@ -51,7 +51,7 @@ import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
 import { ListToolbar } from "@/components/filter-pills";
 import { ListFilters, applySortValue, useListPeriod, type FilterSelect } from "@/components/list-filters";
-import { ListCard, listColClass } from "@/components/list-table";
+import { ListCard, listColClass, listColWidthStyle } from "@/components/list-table";
 import { ViewToggle, useListView } from "@/components/view-toggle";
 
 const TXN_COLS = {
@@ -171,7 +171,7 @@ export function PartyTxnTable({
           <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
             <colgroup>
               {(Object.keys(TXN_COLS) as Array<keyof typeof TXN_COLS>).map((id) => (
-                <col key={id} className={cn(`col-txn-${id}`, listColClass(id))} style={{ width: cols.widths[id] }} />
+                <col key={id} className={cn(`col-txn-${id}`, listColClass(id))} style={listColWidthStyle(id, cols.widths[id])} />
               ))}
             </colgroup>
             <thead>
@@ -182,7 +182,7 @@ export function PartyTxnTable({
               />
                 <SortHeader label="Type" column="type" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-txn-type" width={cols.widths.type} onWidth={(n) => cols.setWidth("type", n)} onFit={() => fit("type", "Type")} align={colAligns.aligns.type ?? "center"} onAlign={(a) => colAligns.setAlign("type", a)} />
                 <SortHeader label="No." column="number" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-txn-number" width={cols.widths.number} onWidth={(n) => cols.setWidth("number", n)} onFit={() => fit("number", "No.")} align={colAligns.aligns.number ?? "center"} onAlign={(a) => colAligns.setAlign("number", a)} />
-                <SortHeader label="Memo" column="memo" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-txn-memo" width={cols.widths.memo} onWidth={(n) => cols.setWidth("memo", n)} onFit={() => fit("memo", "Memo")} align={colAligns.aligns.memo ?? "center"} onAlign={(a) => colAligns.setAlign("memo", a)} />
+                <SortHeader label="Memo" column="memo" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-txn-memo" width={cols.widths.memo} onWidth={(n) => cols.setWidth("memo", n)} onFit={() => fit("memo", "Memo")} align={colAligns.aligns.memo ?? "center"} onAlign={(a) => colAligns.setAlign("memo", a)} fill />
                 <SortHeader label="Amount" column="amount" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-txn-amount" width={cols.widths.amount} onWidth={(n) => cols.setWidth("amount", n)} onFit={() => fit("amount", "Amount")} align={colAligns.aligns.amount ?? "center"} onAlign={(a) => colAligns.setAlign("amount", a)} />
                 <SortHeader label="Open" column="open" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-txn-open" width={cols.widths.open} onWidth={(n) => cols.setWidth("open", n)} onFit={() => fit("open", "Open")} align={colAligns.aligns.open ?? "center"} onAlign={(a) => colAligns.setAlign("open", a)} />
                 <SortHeader label="Balance" column="balance" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-txn-balance" width={cols.widths.balance} onWidth={(n) => cols.setWidth("balance", n)} onFit={() => fit("balance", "Balance")} align={colAligns.aligns.balance ?? "center"} onAlign={(a) => colAligns.setAlign("balance", a)} />
@@ -607,12 +607,12 @@ function PartyDirectoryTable({
       <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
         <colgroup>
           {(Object.keys(DIR_COLS) as Array<keyof typeof DIR_COLS>).map((id) => (
-            <col key={id} className={cn(`col-dir-${id}`, listColClass(id))} style={{ width: cols.widths[id] }} />
+            <col key={id} className={cn(`col-dir-${id}`, listColClass(id))} style={listColWidthStyle(id, cols.widths[id])} />
           ))}
         </colgroup>
         <thead>
           <tr className="border-b border-border text-muted-foreground">
-            <SortHeader label="Name" column="name" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-dir-name" width={cols.widths.name} onWidth={(n) => cols.setWidth("name", n)} onFit={() => fit("name", "Name")} align={colAligns.aligns.name ?? "center"} onAlign={(a) => colAligns.setAlign("name", a)} />
+            <SortHeader label="Name" column="name" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-dir-name" width={cols.widths.name} onWidth={(n) => cols.setWidth("name", n)} onFit={() => fit("name", "Name")} align={colAligns.aligns.name ?? "center"} onAlign={(a) => colAligns.setAlign("name", a)} fill />
             <SortHeader label="Contact" column="contact" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-dir-contact" width={cols.widths.contact} onWidth={(n) => cols.setWidth("contact", n)} onFit={() => fit("contact", "Contact")} align={colAligns.aligns.contact ?? "center"} onAlign={(a) => colAligns.setAlign("contact", a)} />
             <SortHeader label="Email" column="email" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-dir-email" width={cols.widths.email} onWidth={(n) => cols.setWidth("email", n)} onFit={() => fit("email", "Email")} align={colAligns.aligns.email ?? "center"} onAlign={(a) => colAligns.setAlign("email", a)} />
             <SortHeader label="Phone" column="phone" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-dir-phone" width={cols.widths.phone} onWidth={(n) => cols.setWidth("phone", n)} onFit={() => fit("phone", "Phone")} align={colAligns.aligns.phone ?? "center"} onAlign={(a) => colAligns.setAlign("phone", a)} />

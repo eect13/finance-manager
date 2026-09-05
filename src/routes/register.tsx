@@ -1033,7 +1033,12 @@ function ViewOptions({
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline" className="h-11 min-h-11 justify-start" aria-label="View options">
+        <Button
+          variant="outline"
+          className="h-11 min-h-11 justify-start"
+          aria-label="View options"
+          title="View — columns, layout, Move dates"
+        >
           <SlidersHorizontal />
           View
           {hiddenCount ? (

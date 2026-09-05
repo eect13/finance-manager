@@ -291,7 +291,12 @@ export function ListFilters({
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline" className="h-11 min-h-11 justify-start" aria-label="Filters">
+        <Button
+          variant="outline"
+          className="h-11 min-h-11 justify-start"
+          aria-label="Filters"
+          title="Filters — date range, type, sort"
+        >
           <Filter />
           Filters
           {active ? (

@@ -1,5 +1,6 @@
 import { Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tip } from "@/components/ui/tooltip";
 import { UI_ZOOM_MAX, UI_ZOOM_MIN, UI_ZOOM_STEP, useUiZoom } from "@/lib/ui-zoom";
 import { cn } from "@/lib/utils";
 
@@ -14,39 +15,46 @@ export function DisplayZoomHeaderControl({ className }: { className?: string }) 
       role="group"
       aria-label="Display zoom"
     >
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        className="size-9 shrink-0 rounded-r-none"
-        aria-label="Zoom out"
-        title="Zoom out"
-        disabled={!canZoomOut}
-        onClick={zoomOut}
-      >
-        <Minus className="size-3.5" />
-      </Button>
-      <button
-        type="button"
-        className="ui-zoom-pct min-w-[2.75rem] px-0.5 text-center text-[11px] font-medium tabular-nums text-muted-foreground hover:text-foreground"
-        aria-label={`Display zoom ${percent} percent. Tap to reset`}
-        title="Reset zoom"
-        onClick={reset}
-      >
-        {percent}%
-      </button>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        className="size-9 shrink-0 rounded-l-none"
-        aria-label="Zoom in"
-        title="Zoom in"
-        disabled={!canZoomIn}
-        onClick={zoomIn}
-      >
-        <Plus className="size-3.5" />
-      </Button>
+      <Tip label="Zoom out">
+        <span className="inline-flex">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-9 shrink-0 rounded-r-none"
+            aria-label="Zoom out"
+            disabled={!canZoomOut}
+            onClick={zoomOut}
+          >
+            <Minus className="size-3.5" />
+          </Button>
+        </span>
+      </Tip>
+      <Tip label={`Display zoom ${percent}% — click to reset`}>
+        <button
+          type="button"
+          className="ui-zoom-pct min-w-[2.75rem] px-0.5 text-center text-[11px] font-medium tabular-nums text-muted-foreground hover:text-foreground"
+          aria-label={`Display zoom ${percent} percent. Tap to reset`}
+          onClick={reset}
+        >
+          {percent}%
+        </button>
+      </Tip>
+      <Tip label="Zoom in">
+        <span className="inline-flex">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-9 shrink-0 rounded-l-none"
+            aria-label="Zoom in"
+            disabled={!canZoomIn}
+            onClick={zoomIn}
+          >
+            <Plus className="size-3.5" />
+          </Button>
+        </span>
+      </Tip>
     </div>
   );
 }

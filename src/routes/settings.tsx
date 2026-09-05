@@ -12,7 +12,7 @@ import { listColClass } from "@/components/list-table";
 import { SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { OptionsDescMore } from "@/components/options-desc-more";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -29,28 +29,121 @@ import { COUNTRY_TAX_PACKS, CURRENCIES, countryTaxPackForCurrency, type Recurrin
 import { useShallow } from "zustand/react/shallow";
 import { AppearancePicker } from "@/components/theme-toggle";
 import { DisplayZoomSettings } from "@/components/ui-zoom-controls";
+import { usePhoneUi } from "@/lib/phone-layout";
+import { findShortcutLabel, isApplePlatform, redoShortcutLabel, undoShortcutLabel } from "@/lib/hotkey";
 
 export const Route = createFileRoute("/settings")({ component: SettingsPage });
 
-const OPTIONS_JUMP: Array<{ id: string; label: string }> = [
-  { id: "opt-profile", label: "Profile" },
-  { id: "opt-display", label: "Display" },
-  { id: "opt-companies", label: "Companies" },
-  { id: "opt-tax", label: "Tax" },
-  { id: "opt-backup", label: "Backup" },
-  { id: "opt-recurring", label: "Recurring" },
-  { id: "opt-storage", label: "Storage" },
-];
-
 function OptionsJump() {
+  const phone = usePhoneUi();
+  const sections: Array<{ id: string; label: string }> = [
+    { id: "opt-profile", label: "Profile" },
+    { id: "opt-display", label: "Display" },
+    { id: phone ? "opt-tips" : "opt-keyboard", label: phone ? "Tips" : "Shortcuts" },
+    { id: "opt-companies", label: "Companies" },
+    { id: "opt-tax", label: "Tax" },
+    { id: "opt-backup", label: "Backup" },
+    { id: "opt-recurring", label: "Recurring" },
+    { id: "opt-storage", label: "Storage" },
+  ];
   return (
     <nav className="options-jump no-print" aria-label="Jump to section">
-      {OPTIONS_JUMP.map((s) => (
+      {sections.map((s) => (
         <a key={s.id} href={`#${s.id}`} className="options-jump-chip">
           {s.label}
         </a>
       ))}
     </nav>
+  );
+}
+
+function ShortcutRow({ keys, label }: { keys: string; label: string }) {
+  return (
+    <div className="options-shortcut-row">
+      <kbd className="options-shortcut-keys">{keys}</kbd>
+      <span className="min-w-0 text-sm">{label}</span>
+    </div>
+  );
+}
+
+function KeyboardOrTipsCard() {
+  const phone = usePhoneUi();
+  const [findChord, setFindChord] = useState("Ctrl+K");
+  const [undoChord, setUndoChord] = useState("Ctrl+Z");
+  const [redoChord, setRedoChord] = useState("Ctrl+Y");
+  const [fitChord, setFitChord] = useState("Ctrl+0");
+  useEffect(() => {
+    setFindChord(findShortcutLabel());
+    setUndoChord(undoShortcutLabel());
+    setRedoChord(redoShortcutLabel());
+    setFitChord(isApplePlatform() ? "⌘0" : "Ctrl+0");
+  }, []);
+
+  if (phone) {
+    return (
+      <Card id="opt-tips" className="scroll-mt-16">
+        <CardHeader>
+          <CardTitle>Gestures & tips</CardTitle>
+          <CardDescription>Touch-friendly — keyboard chords live on desktop Options.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ul className="options-tips-list">
+            <li>Tap a row or card to open and edit.</li>
+            <li>Find, theme, and export are under <strong>More</strong> in the header.</li>
+            <li>Register: turn on <strong>Move dates</strong> in View, then drag the grip above/below a row.</li>
+            <li>Row actions use the ⋯ menu — swipe-to-act is gone.</li>
+            <li>Pinch to zoom the whole app (or Options → Display zoom).</li>
+          </ul>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card id="opt-keyboard" className="scroll-mt-16">
+      <CardHeader>
+        <CardTitle>Keyboard shortcuts</CardTitle>
+        <OptionsDescMore>
+          Shortcuts that work in the app today. List focus needs a click on the table first. Undo/redo skip when you are typing in a field.
+        </OptionsDescMore>
+      </CardHeader>
+      <CardContent className="grid gap-4">
+        <div>
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Anywhere</p>
+          <div className="grid gap-1.5">
+            <ShortcutRow keys={findChord} label="Find transaction" />
+            <ShortcutRow keys={undoChord} label="Undo last change" />
+            <ShortcutRow keys={redoChord} label="Redo" />
+          </div>
+        </div>
+        <div>
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Lists & register</p>
+          <div className="grid gap-1.5">
+            <ShortcutRow keys="Click table" label="Focus the list for keyboard navigation" />
+            <ShortcutRow keys="↑ / ↓" label="Move focused row" />
+            <ShortcutRow keys="Enter" label="Open / edit focused row" />
+            <ShortcutRow keys="Space" label="Tick / untick (Register & Reconcile)" />
+          </div>
+        </div>
+        <div>
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Date fields</p>
+          <div className="grid gap-1.5">
+            <ShortcutRow keys="T" label="Today" />
+            <ShortcutRow keys="+ / −" label="Next / previous day" />
+            <ShortcutRow keys="↓" label="Open calendar" />
+            <ShortcutRow keys="Esc" label="Close calendar" />
+          </div>
+        </div>
+        <div>
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Print preview</p>
+          <div className="grid gap-1.5">
+            <ShortcutRow keys="Esc" label="Close preview" />
+            <ShortcutRow keys="+ / −" label="Zoom in / out" />
+            <ShortcutRow keys={fitChord} label="Fit to window" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -200,6 +293,8 @@ function SettingsPage() {
             </Field>
           </CardContent>
         </Card>
+
+        <KeyboardOrTipsCard />
 
         <Card id="opt-companies" className="scroll-mt-16">
           <CardHeader>

@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Tip, TooltipProvider } from "@/components/ui/tooltip";
 import {
   Dialog,
   DialogContent,
@@ -320,6 +321,7 @@ export function AppShell({
   }
 
   return (
+    <TooltipProvider delayDuration={400} skipDelayDuration={0}>
     <div className="app-zoom-root flex h-dvh min-h-0 min-w-0 overflow-hidden bg-background text-foreground">
       <ThemeSync />
       <aside
@@ -353,34 +355,40 @@ export function AppShell({
             </div>
             <div className="app-header-actions flex shrink-0 items-center gap-1 sm:gap-2">
               <div className="flex">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="size-10 rounded-r-none sm:size-11"
-                  disabled={!canUndo}
-                  aria-label={undoPeek ? `Undo: ${undoPeek} (${undoChord})` : `Undo ${undoChord}`}
-                  title={undoPeek ? `Undo: ${undoPeek} (${undoChord})` : `Undo ${undoChord}`}
-                  onClick={() => {
-                    const undone = useFinanceStore.getState().undo();
-                    if (undone) toast.success(`Undid: ${undone}`);
-                  }}
-                >
-                  <Undo2 />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="size-10 -ml-px rounded-l-none sm:size-11"
-                  disabled={!canRedo}
-                  aria-label={redoPeek ? `Redo: ${redoPeek} (${redoChord})` : `Redo ${redoChord}`}
-                  title={redoPeek ? `Redo: ${redoPeek} (${redoChord})` : `Redo ${redoChord}`}
-                  onClick={() => {
-                    const redone = useFinanceStore.getState().redo();
-                    if (redone) toast.success(`Redid: ${redone}`);
-                  }}
-                >
-                  <Redo2 />
-                </Button>
+                <Tip label={undoPeek ? `Undo: ${undoPeek} (${undoChord})` : `Undo (${undoChord})`}>
+                  <span className="inline-flex">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="size-10 rounded-r-none sm:size-11"
+                      disabled={!canUndo}
+                      aria-label={undoPeek ? `Undo: ${undoPeek} (${undoChord})` : `Undo ${undoChord}`}
+                      onClick={() => {
+                        const undone = useFinanceStore.getState().undo();
+                        if (undone) toast.success(`Undid: ${undone}`);
+                      }}
+                    >
+                      <Undo2 />
+                    </Button>
+                  </span>
+                </Tip>
+                <Tip label={redoPeek ? `Redo: ${redoPeek} (${redoChord})` : `Redo (${redoChord})`}>
+                  <span className="inline-flex">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="size-10 -ml-px rounded-l-none sm:size-11"
+                      disabled={!canRedo}
+                      aria-label={redoPeek ? `Redo: ${redoPeek} (${redoChord})` : `Redo ${redoChord}`}
+                      onClick={() => {
+                        const redone = useFinanceStore.getState().redo();
+                        if (redone) toast.success(`Redid: ${redone}`);
+                      }}
+                    >
+                      <Redo2 />
+                    </Button>
+                  </span>
+                </Tip>
               </div>
               {/* Desktop keeps full chrome; phone folds Find / zoom / theme / export into More */}
               <div className="hidden items-center gap-2 md:flex">
@@ -389,15 +397,17 @@ export function AppShell({
                 <ThemeToggle compact />
                 <ExportMenu data={data} />
               </div>
-              <Button
-                variant="outline"
-                size="icon"
-                className="size-10 shrink-0 touch-manipulation md:hidden"
-                aria-label="More"
-                onClick={() => setMoreOpen(true)}
-              >
-                <MoreHorizontal />
-              </Button>
+              <Tip label="More — Find, theme, Options">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="size-10 shrink-0 touch-manipulation md:hidden"
+                  aria-label="More"
+                  onClick={() => setMoreOpen(true)}
+                >
+                  <MoreHorizontal />
+                </Button>
+              </Tip>
               <Dialog open={moreOpen} onOpenChange={setMoreOpen}>
                 <DialogContent className="max-w-sm">
                   <DialogHeader>
@@ -488,5 +498,6 @@ export function AppShell({
       <PrintStage />
       <FindTransaction open={findOpen} onClose={() => setFindOpen(false)} />
     </div>
+    </TooltipProvider>
   );
 }

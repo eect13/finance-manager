@@ -1,5 +1,6 @@
 import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tip } from "@/components/ui/tooltip";
 import { type ThemeMode, useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
@@ -12,17 +13,19 @@ export function ThemeToggle({ compact = false }: { compact?: boolean }) {
   const { resolved, setTheme } = useTheme();
   const dark = resolved === "dark";
 
+  const tip = dark ? "Switch to light" : "Switch to dark";
   return (
-    <Button
-      variant="outline"
-      size={compact ? "icon" : "default"}
-      aria-label={dark ? "Switch to light" : "Switch to dark"}
-      title={dark ? "Light" : "Dark"}
-      onClick={() => setTheme(dark ? "light" : "dark")}
-    >
-      {dark ? <Moon /> : <Sun />}
-      {compact ? null : <span className="hidden sm:inline">{dark ? "Dark" : "Light"}</span>}
-    </Button>
+    <Tip label={tip}>
+      <Button
+        variant="outline"
+        size={compact ? "icon" : "default"}
+        aria-label={tip}
+        onClick={() => setTheme(dark ? "light" : "dark")}
+      >
+        {dark ? <Moon /> : <Sun />}
+        {compact ? null : <span className="hidden sm:inline">{dark ? "Dark" : "Light"}</span>}
+      </Button>
+    </Tip>
   );
 }
 

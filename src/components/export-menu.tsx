@@ -37,7 +37,13 @@ export function ExportMenu({ data }: { data: FinanceData }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon" className="lg:h-11 lg:w-auto lg:px-4" aria-label="Export">
+        <Button
+          variant="outline"
+          size="icon"
+          className="lg:h-11 lg:w-auto lg:px-4"
+          aria-label="Export"
+          title="Export spreadsheets (CSV)"
+        >
           <Download />
           <span className="hidden lg:inline">Export</span>
         </Button>

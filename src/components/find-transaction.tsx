@@ -23,6 +23,7 @@ import {
 import { openCashLine } from "@/lib/finance/open-record";
 import { useFinanceData } from "@/lib/finance/store";
 import { findShortcutLabel } from "@/lib/hotkey";
+import { Tip } from "@/components/ui/tooltip";
 
 export function FindTransaction({ open, onClose }: { open: boolean; onClose: () => void }) {
   const data = useFinanceData();
@@ -168,18 +169,22 @@ export function FindButton({ onClick }: { onClick: () => void }) {
   }, []);
   return (
     <>
-      <Button variant="outline" size="icon" className="lg:hidden" aria-label="Find transaction" onClick={onClick}>
-        <Search />
-      </Button>
-      <button
-        type="button"
-        onClick={onClick}
-        className="hidden h-11 min-h-11 min-w-48 items-center gap-2 rounded-xl bg-muted px-3 text-sm text-muted-foreground hover:bg-accent hover:text-foreground lg:inline-flex"
-      >
-        <Search className="size-4 shrink-0" />
-        <span className="flex-1 text-left">Find</span>
-        <kbd className="rounded-sm bg-card px-1.5 py-0.5 text-xs font-medium">{chord}</kbd>
-      </button>
+      <Tip label={`Find transaction (${chord})`}>
+        <Button variant="outline" size="icon" className="lg:hidden" aria-label="Find transaction" onClick={onClick}>
+          <Search />
+        </Button>
+      </Tip>
+      <Tip label={`Find transaction (${chord})`}>
+        <button
+          type="button"
+          onClick={onClick}
+          className="hidden h-11 min-h-11 min-w-48 items-center gap-2 rounded-xl bg-muted px-3 text-sm text-muted-foreground hover:bg-accent hover:text-foreground lg:inline-flex"
+        >
+          <Search className="size-4 shrink-0" />
+          <span className="flex-1 text-left">Find</span>
+          <kbd className="rounded-sm bg-card px-1.5 py-0.5 text-xs font-medium">{chord}</kbd>
+        </button>
+      </Tip>
     </>
   );
 }

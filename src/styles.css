@@ -4350,3 +4350,38 @@ body.is-phone-move-dragging {
 .register-matrix td[data-align="center"] { text-align: center !important; }
 .list-grid td[data-align="right"],
 .register-matrix td[data-align="right"] { text-align: right !important; }
+
+
+/* Options keyboard shortcuts + phone tips */
+.options-shortcut-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  min-height: 1.75rem;
+}
+.options-shortcut-keys {
+  flex: 0 0 7.5rem;
+  display: inline-flex;
+  justify-content: flex-end;
+  padding: 0.15rem 0.45rem;
+  border-radius: 0.35rem;
+  background: var(--color-muted);
+  border: 1px solid var(--color-border);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-foreground);
+  white-space: nowrap;
+}
+.options-tips-list {
+  margin: 0;
+  padding-left: 1.15rem;
+  display: grid;
+  gap: 0.55rem;
+  font-size: 0.9rem;
+  line-height: 1.35;
+  color: var(--color-foreground);
+}
+.options-tips-list li::marker {
+  color: var(--color-muted-foreground);
+}

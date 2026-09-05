@@ -150,6 +150,7 @@ export function SortHeader({
                 type="button"
                 className="col-opts-trigger no-print inline-flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-60 hover:bg-muted hover:opacity-100"
                 aria-label={`${label} column options`}
+                title="Align or hide column"
                 onClick={(e) => e.stopPropagation()}
               >
                 <MoreVertical className="size-3.5" />

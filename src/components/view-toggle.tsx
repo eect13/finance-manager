@@ -38,7 +38,7 @@ export function ViewToggle({ value, onChange }: { value: ListView; onChange: (v:
         <button
           key={id}
           type="button"
-          title={label}
+          title={`${label} view`}
           aria-label={label}
           aria-pressed={value === id}
           className={cn(

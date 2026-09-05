@@ -357,8 +357,14 @@ function RegisterPage() {
   const moveLine = useCallback(
     (line: CashLine, date: string) => {
       const kind = rescheduleKind(line.kind);
-      if (!kind || !line.reschedulable) return;
-      if (line.date === date) return;
+      if (!kind || !line.reschedulable) {
+        toast.error("This line can't change date (reconciled or locked).");
+        return;
+      }
+      if (line.date === date) {
+        toast.message(`Already on ${formatDate(date)}.`);
+        return;
+      }
       try {
         rescheduleCashLine({ kind, sourceId: line.sourceId, date });
         if (line.kind === "transfer") toast.success(`Transfer moved to ${formatDate(date)} — both banks.`);
@@ -620,7 +626,14 @@ function RegisterPage() {
             cols={cols}
             hiddenCount={REGISTER_COLS.filter((col) => !cols[col.id]).length}
             onFontSize={(n) => updateSettings({ registerFontSize: n })}
-            onDragOn={setDragOn}
+            onDragOn={(on) => {
+              setDragOn(on);
+              if (!on) {
+                setDragging(null);
+                setOverDate(null);
+                setOverRow(null);
+              }
+            }}
             onPhoneLayout={(next) => {
               setPhoneLayout(next);
               writePhoneLayout(REGISTER_PHONE_LAYOUT_KEY, next);
@@ -663,9 +676,6 @@ function RegisterPage() {
           </button>
         ))}
       </div>
-      </div>
-      </div>
-
       {dragOn ? (
         <DateChips
           dates={dates}
@@ -690,6 +700,8 @@ function RegisterPage() {
           onAddDate={(date) => setExtraDates((prev) => (prev.includes(date) ? prev : [...prev, date]))}
         />
       ) : null}
+      </div>
+      </div>
 
       <div style={{ ["--register-font" as string]: `${fontSize}px` }}>
         {display.length === 0 ? (
@@ -1038,6 +1050,7 @@ function DateChips({
           type="button"
           onClick={() => {
             if (draggingId && onPickDate) onPickDate(date);
+            else toast.message("Select a row grip first, then choose a date.");
           }}
           onDragOver={(e) => {
             e.preventDefault();
@@ -1413,7 +1426,17 @@ function RegisterTable({
                               <DragHandle enabled className="pointer-events-none" />
                             </button>
                           ) : (
-                            <span className="inline-block size-8" />
+                            <button
+                              type="button"
+                              className="register-phone-grip inline-flex size-8 items-center justify-center rounded-md border border-border/50 text-muted-foreground/50"
+                              aria-label="Date locked — can't move"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toast.error("Reconciled or locked lines can't change date.");
+                              }}
+                            >
+                              <DragHandle enabled className="pointer-events-none opacity-50" />
+                            </button>
                           )}
                         </td>
                       ) : null}
@@ -1527,23 +1550,37 @@ function RegisterTable({
                             label={`Select ${line.party}`}
                           />
                         )}
-                        {canDrag ? (
-                          <button
-                            type="button"
-                            className={cn(
-                              "register-phone-grip inline-flex size-9 items-center justify-center rounded-lg border border-border text-muted-foreground",
-                              armed && "border-primary bg-primary/10 text-foreground",
-                            )}
-                            aria-label={armed ? "Selected to move — tap a date chip" : "Move to another date"}
-                            aria-pressed={armed}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (armed) onDragEnd();
-                              else onDragStart(line.id);
-                            }}
-                          >
-                            <DragHandle enabled className="pointer-events-none" />
-                          </button>
+                        {dragOn && !isOpening ? (
+                          canDrag ? (
+                            <button
+                              type="button"
+                              className={cn(
+                                "register-phone-grip inline-flex size-9 items-center justify-center rounded-lg border border-border text-muted-foreground",
+                                armed && "border-primary bg-primary/10 text-foreground",
+                              )}
+                              aria-label={armed ? "Selected to move — tap a date chip" : "Move to another date"}
+                              aria-pressed={armed}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (armed) onDragEnd();
+                                else onDragStart(line.id);
+                              }}
+                            >
+                              <DragHandle enabled className="pointer-events-none" />
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              className="register-phone-grip inline-flex size-9 items-center justify-center rounded-lg border border-border/50 text-muted-foreground/50"
+                              aria-label="Date locked — can't move"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toast.error("Reconciled or locked lines can't change date.");
+                              }}
+                            >
+                              <DragHandle enabled className="pointer-events-none opacity-50" />
+                            </button>
+                          )
                         ) : null}
                       </div>
                       <div className="min-w-0 flex-1">

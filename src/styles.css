@@ -3648,9 +3648,33 @@ html.tauri-android .app-header-inner {
   .register-phone-grip[aria-pressed="true"] {
     box-shadow: 0 0 0 2px color-mix(in oklab, var(--primary) 45%, transparent);
   }
-  .register-date-chips[data-armed="true"] button,
+  /* Keep Move date chips under sticky Filters/banks so tap-tap stays reachable after scroll */
+  .register-sticky-chrome .register-date-chips {
+    margin-top: 0.25rem;
+    margin-bottom: 0;
+    padding-bottom: 0.35rem;
+  }
+  .register-date-chips[data-armed="true"] button:not([data-add]),
   .register-date-chips button[data-drop="true"] {
     cursor: pointer;
+    border: 1px solid color-mix(in oklab, var(--primary) 55%, transparent);
+    background: color-mix(in oklab, var(--primary) 12%, var(--color-card));
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--primary) 25%, transparent);
+  }
+  .register-date-chips[data-armed="true"]::before {
+    content: "Tap a date";
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    height: 2rem;
+    margin-right: 0.15rem;
+    padding: 0 0.55rem;
+    border-radius: 999px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--color-primary);
+    background: color-mix(in oklab, var(--primary) 14%, transparent);
   }
 
 

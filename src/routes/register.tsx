@@ -7,6 +7,13 @@ import { AppShell } from "@/components/app-shell";
 import { ColumnChips } from "@/components/column-chips";
 import { ConfirmDelete } from "@/components/confirm-delete";
 import { DragHandle, setCashDragImage } from "@/components/drag-handle";
+import { PhoneLayoutToggle } from "@/components/phone-layout-toggle";
+import {
+  REGISTER_PHONE_LAYOUT_KEY,
+  readPhoneLayout,
+  writePhoneLayout,
+  type PhoneLayout,
+} from "@/lib/phone-layout";
 import { CsvButton } from "@/components/export-menu";
 import { ListFilters } from "@/components/list-filters";
 import { Money } from "@/components/money";
@@ -167,6 +174,9 @@ function RegisterPage() {
   const [dateTo, setDateTo] = useState(MONTH_RANGE.to);
   const [uiReady, setUiReady] = useState(false);
   const [dragOn, setDragOn] = useState(false);
+  const [phoneLayout, setPhoneLayout] = useState<PhoneLayout>(() =>
+    readPhoneLayout(REGISTER_PHONE_LAYOUT_KEY, "grid"),
+  );
   const [extraDates, setExtraDates] = useState<string[]>([]);
   const [dragging, setDragging] = useState<string | null>(null);
   const [overDate, setOverDate] = useState<string | null>(null);
@@ -601,10 +611,15 @@ function RegisterPage() {
           <ViewOptions
             fontSize={fontSize}
             dragOn={dragOn}
+            phoneLayout={phoneLayout}
             cols={cols}
             hiddenCount={REGISTER_COLS.filter((col) => !cols[col.id]).length}
             onFontSize={(n) => updateSettings({ registerFontSize: n })}
             onDragOn={setDragOn}
+            onPhoneLayout={(next) => {
+              setPhoneLayout(next);
+              writePhoneLayout(REGISTER_PHONE_LAYOUT_KEY, next);
+            }}
             onToggleCol={(id) => setRegisterCols((current) => toggleRegisterCol(current, id))}
             onShowAllCols={() => setRegisterCols(() => ({ ...DEFAULT_REGISTER_COLS }))}
           />
@@ -684,6 +699,11 @@ function RegisterPage() {
           allOn={allOn}
           someOn={someOn}
           dragOn={dragOn}
+          phoneLayout={phoneLayout}
+          onPhoneLayout={(next) => {
+            setPhoneLayout(next);
+            writePhoneLayout(REGISTER_PHONE_LAYOUT_KEY, next);
+          }}
           dragging={dragging}
           draggingSourceId={draggingSourceId}
           overRow={overRow}
@@ -830,22 +850,27 @@ function RegisterFilters({
 function ViewOptions({
   fontSize,
   dragOn,
+  phoneLayout,
   cols,
   hiddenCount,
   onFontSize,
   onDragOn,
+  onPhoneLayout,
   onToggleCol,
   onShowAllCols,
 }: {
   fontSize: number;
   dragOn: boolean;
+  phoneLayout: PhoneLayout;
   cols: RegisterCols;
   hiddenCount: number;
   onFontSize: (n: number) => void;
   onDragOn: (on: boolean) => void;
+  onPhoneLayout: (next: PhoneLayout) => void;
   onToggleCol: (id: RegisterColId) => void;
   onShowAllCols: () => void;
 }) {
+  const phone = isPhoneUi();
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -860,6 +885,12 @@ function ViewOptions({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-80" align="end">
+        {phone ? (
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <span className="text-sm font-medium">Layout</span>
+            <PhoneLayoutToggle value={phoneLayout} onChange={onPhoneLayout} />
+          </div>
+        ) : null}
         <ColumnChips cols={cols} onToggle={onToggleCol} onShowAll={onShowAllCols} />
         <label className="mt-3 mb-3 flex flex-col gap-1.5">
           <span className="text-xs font-medium text-muted-foreground">Resize type {fontSize}px</span>
@@ -961,6 +992,8 @@ function RegisterTable({
   allOn,
   someOn,
   dragOn,
+  phoneLayout,
+  onPhoneLayout,
   dragging,
   draggingSourceId,
   overRow,
@@ -994,6 +1027,8 @@ function RegisterTable({
   allOn: boolean;
   someOn: boolean;
   dragOn: boolean;
+  phoneLayout: PhoneLayout;
+  onPhoneLayout: (next: PhoneLayout) => void;
   dragging: string | null;
   draggingSourceId: string | null;
   overRow: string | null;
@@ -1118,10 +1153,11 @@ function RegisterTable({
     };
   }
 
-  // Phone: full-data cards (same fields as the matrix). Move dates via grip → date chip (HTML5 DnD is unreliable on Android).
+  // Phone: Grid = full cards; List = dense rows. Move dates via grip → date chip on both.
   if (isPhoneUi()) {
+    const listMode = phoneLayout === "list";
     return (
-      <div className="register-phone-list">
+      <div className={cn("register-phone-list", listMode && "is-list")} data-layout={phoneLayout}>
         <div className="register-phone-toolbar no-print mb-2 flex flex-wrap items-center justify-between gap-2">
           <span className="inline-flex items-center gap-1">
             <ShopTick
@@ -1139,8 +1175,11 @@ function RegisterTable({
             />
             <span className="text-xs text-muted-foreground">Select</span>
           </span>
-          <span className="text-xs text-muted-foreground tabular-nums">
-            Bal <Money amount={lastBalance} currency={currency} className="inline font-medium text-foreground" />
+          <span className="inline-flex items-center gap-2">
+            <PhoneLayoutToggle value={phoneLayout} onChange={onPhoneLayout} />
+            <span className="text-xs text-muted-foreground tabular-nums">
+              Bal <Money amount={lastBalance} currency={currency} className="inline font-medium text-foreground" />
+            </span>
           </span>
         </div>
         {dragOn ? (
@@ -1148,7 +1187,7 @@ function RegisterTable({
             Move on: tap the grip on a row, then tap a date chip above.
           </p>
         ) : null}
-        <ul className="flex flex-col gap-2">
+        <ul className={cn("flex flex-col", listMode ? "gap-1" : "gap-2")}>
           {lines.map((line) => {
             const isOpening = line.kind === "opening";
             const locked = line.recon === "reconciled";
@@ -1156,6 +1195,96 @@ function RegisterTable({
             const bank = banks.find((b) => b.id === line.bankId);
             const canDrag = dragOn && line.reschedulable;
             const armed = dragging === line.id;
+            if (listMode) {
+              return (
+                <li key={line.id}>
+                  <div
+                    role="button"
+                    tabIndex={isOpening ? undefined : 0}
+                    className={cn(
+                      "register-phone-row flex items-center gap-2 rounded-xl border border-border bg-card px-2 py-1.5 touch-manipulation",
+                      isOn && "ring-1 ring-primary/40",
+                      activeId === line.id && "bg-accent/30",
+                      armed && "ring-2 ring-primary",
+                      overRow === line.id && dragOn && "bg-accent/50",
+                    )}
+                    onClick={() => {
+                      if (isOpening) return;
+                      if (dragOn && armed) return;
+                      onActivate(line.id);
+                      onOpen(line);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !isOpening) {
+                        onActivate(line.id);
+                        onOpen(line);
+                      }
+                    }}
+                  >
+                    <div
+                      className="flex shrink-0 items-center gap-0.5"
+                      onClick={(e) => e.stopPropagation()}
+                      onPointerDown={(e) => e.stopPropagation()}
+                    >
+                      {isOpening ? (
+                        <span className="inline-block size-9" />
+                      ) : (
+                        <ShopTick
+                          checked={isOn}
+                          locked={locked}
+                          onChange={() => onToggle(line.id)}
+                          label={`Select ${line.party}`}
+                        />
+                      )}
+                      {canDrag ? (
+                        <button
+                          type="button"
+                          className={cn(
+                            "register-phone-grip inline-flex size-8 items-center justify-center rounded-md border border-border text-muted-foreground",
+                            armed && "border-primary bg-primary/10 text-foreground",
+                          )}
+                          aria-label={armed ? "Selected to move — tap a date chip" : "Move to another date"}
+                          aria-pressed={armed}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (armed) onDragEnd();
+                            else onDragStart(line.id);
+                          }}
+                        >
+                          <DragHandle enabled className="pointer-events-none" />
+                        </button>
+                      ) : null}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <p className="min-w-0 truncate text-[0.95em] font-medium">
+                          {line.party || (isOpening ? "Opening balance" : "—")}
+                        </p>
+                        <p className="shrink-0 text-[0.85em] text-muted-foreground tabular-nums">
+                          {isOpening && !line.date ? "Opening" : formatRegisterDate(line.date)}
+                        </p>
+                      </div>
+                      <div className="mt-0.5 flex items-center justify-between gap-2 text-[0.8em] text-muted-foreground">
+                        <span className="min-w-0 truncate">
+                          {KIND_LABEL[line.kind]}
+                          {line.number ? ` · ${line.number}` : ""}
+                        </span>
+                        <span className="inline-flex shrink-0 items-center gap-2 tabular-nums">
+                          {line.payment ? (
+                            <Money amount={line.payment} currency={currency} className="text-debit" />
+                          ) : line.deposit ? (
+                            <Money amount={line.deposit} currency={currency} className="text-credit" />
+                          ) : (
+                            <span>—</span>
+                          )}
+                          <Money amount={line.balance} currency={currency} className="font-medium text-foreground" />
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </li>
+              );
+            }
             return (
               <li key={line.id}>
                 <div
@@ -1171,7 +1300,6 @@ function RegisterTable({
                   onClick={() => {
                     if (isOpening) return;
                     if (dragOn && armed) {
-                      /* keep armed until date chip */
                       return;
                     }
                     onActivate(line.id);

@@ -3772,3 +3772,12 @@ html.tauri-android .app-header-inner {
     box-shadow: var(--shadow-elevation);
   }
 }
+
+/* Phone Grid | List denser rows */
+.register-phone-row,
+.recon-phone-row {
+  box-shadow: var(--shadow-elevation);
+}
+.phone-layout-toggle button {
+  -webkit-tap-highlight-color: transparent;
+}

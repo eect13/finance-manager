@@ -847,8 +847,9 @@ export function removeCashLines(data: FinanceData, lines): {
   }
   if (unique.length === 0) throw new Error("Could not delete those entries.");
 
-  // Preflight every id against the original books (locks / missing / not deletable).
-  // Any failure aborts with zero deletes — all-or-nothing.
+  // One snapshot only: preflight and chain both use `data` / derived `next`.
+  // Caller (store set updater) must pass the current books — never a stale UI copy.
+  // Any failure aborts with zero deletes — all-or-nothing; no partial writes.
   let failCount = 0;
   let firstError = null;
   for (const line of unique) {
@@ -865,7 +866,6 @@ export function removeCashLines(data: FinanceData, lines): {
     throw new Error(`Nothing deleted — ${failCount} of ${unique.length} could not be removed (${detail})`);
   }
 
-  // Single chained update; store apply persists one write. Mid-apply throw also leaves books unchanged.
   let next = data;
   for (const line of unique) {
     next = removeCashLine(next, line);

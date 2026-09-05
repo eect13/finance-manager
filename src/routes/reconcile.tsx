@@ -140,9 +140,18 @@ function ReconcilePage() {
     getItemKey: (index) => sort.sorted[index]?.id ?? index,
     gap: phoneGrid ? 8 : 0,
   });
+  // Desk table rows (phone uses phoneVirt above — do not regress phone).
+  const deskVirt = useVirtualizer({
+    count: sort.sorted.length,
+    getScrollElement: () => document.querySelector("[data-workspace-scroll]"),
+    estimateSize: () => 44,
+    overscan: 12,
+    getItemKey: (index) => sort.sorted[index]?.id ?? index,
+  });
   useEffect(() => {
     phoneVirt.measure();
-    // Remeasure when layout or type size changes variable card heights.
+    deskVirt.measure();
+    // Remeasure when layout or type size changes variable card / row heights.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phoneLayout, fontSize, sort.sorted.length]);
   const phoneVItems = phoneVirt.getVirtualItems();
@@ -150,6 +159,11 @@ function ReconcilePage() {
   const phoneLast = phoneVItems[phoneVItems.length - 1];
   const phonePadTop = phoneFirst ? phoneFirst.start : 0;
   const phonePadBottom = phoneLast ? Math.max(0, phoneVirt.getTotalSize() - phoneLast.end) : 0;
+  const deskVItems = deskVirt.getVirtualItems();
+  const deskFirst = deskVItems[0];
+  const deskLast = deskVItems[deskVItems.length - 1];
+  const deskPadTop = deskFirst ? deskFirst.start : 0;
+  const deskPadBottom = deskLast ? Math.max(0, deskVirt.getTotalSize() - deskLast.end) : 0;
   const selected = allUncleared.filter((line) => ticked.has(lineKey(line)));
   const statementEnding = parseAmountToCents(ending);
   const difference = reconDifference(beginning, statementEnding, selected);
@@ -812,38 +826,54 @@ function ReconcilePage() {
                 </td>
               </tr>
             ) : (
-              sort.sorted.map((line) => {
-                const on = ticked.has(lineKey(line));
-                return (
-                  <tr
-                    key={line.id}
-                    className="border-b border-border/70 last:border-0"
-                    data-active={on ? "true" : undefined}
-                    {...openProps(
-                      openKindFor(line),
-                      line.kind === "bill-payment"
-                        ? (data.bills.find((b) => b.payments.some((p) => p.id === line.sourceId))?.id ?? line.sourceId)
-                        : line.sourceId,
-                    )}
-                  >
-                    <td className="col-check no-print" onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
-                      <span className="register-check-cell">
-                        <ShopTick checked={on} onChange={(next) => toggle(line, next)} label="Cleared" />
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap" data-col="date">{formatDate(line.date)}</td>
-                    <td className="px-4 py-3" data-col="type">{KIND_LABEL[line.kind]}</td>
-                    <td className="px-4 py-3" data-col="payee">{line.party}</td>
-                    <td className={cn("px-4 py-3 text-right", daysOutstanding(line.date, statementDate) > 90 && "text-debit")} data-col="days">{daysOutstanding(line.date, statementDate) || ""}</td>
-                    <td className="px-4 py-3 text-right" data-col="payment">
-                      {line.payment ? <Money amount={line.payment} currency={data.settings.currency} /> : ""}
-                    </td>
-                    <td className="px-4 py-3 text-right" data-col="deposit">
-                      {line.deposit ? <Money amount={line.deposit} currency={data.settings.currency} /> : ""}
-                    </td>
+              <>
+                {deskPadTop > 0 ? (
+                  <tr aria-hidden>
+                    <td colSpan={7} style={{ height: deskPadTop, padding: 0, border: 0 }} />
                   </tr>
-                );
-              })
+                ) : null}
+                {deskVItems.map((item) => {
+                  const line = sort.sorted[item.index];
+                  if (!line) return null;
+                  const on = ticked.has(lineKey(line));
+                  return (
+                    <tr
+                      key={line.id}
+                      ref={deskVirt.measureElement}
+                      data-index={item.index}
+                      className="border-b border-border/70 last:border-0"
+                      data-active={on ? "true" : undefined}
+                      {...openProps(
+                        openKindFor(line),
+                        line.kind === "bill-payment"
+                          ? (data.bills.find((b) => b.payments.some((p) => p.id === line.sourceId))?.id ?? line.sourceId)
+                          : line.sourceId,
+                      )}
+                    >
+                      <td className="col-check no-print" onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
+                        <span className="register-check-cell">
+                          <ShopTick checked={on} onChange={(next) => toggle(line, next)} label="Cleared" />
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap" data-col="date">{formatDate(line.date)}</td>
+                      <td className="px-4 py-3" data-col="type">{KIND_LABEL[line.kind]}</td>
+                      <td className="px-4 py-3" data-col="payee">{line.party}</td>
+                      <td className={cn("px-4 py-3 text-right", daysOutstanding(line.date, statementDate) > 90 && "text-debit")} data-col="days">{daysOutstanding(line.date, statementDate) || ""}</td>
+                      <td className="px-4 py-3 text-right" data-col="payment">
+                        {line.payment ? <Money amount={line.payment} currency={data.settings.currency} /> : ""}
+                      </td>
+                      <td className="px-4 py-3 text-right" data-col="deposit">
+                        {line.deposit ? <Money amount={line.deposit} currency={data.settings.currency} /> : ""}
+                      </td>
+                    </tr>
+                  );
+                })}
+                {deskPadBottom > 0 ? (
+                  <tr aria-hidden>
+                    <td colSpan={7} style={{ height: deskPadBottom, padding: 0, border: 0 }} />
+                  </tr>
+                ) : null}
+              </>
             )}
           </tbody>
         </table>

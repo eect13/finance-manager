@@ -285,14 +285,17 @@ const EMPTY_BOOKS: FinanceData = emptyBooks();
 export const useFinanceStore = create<FinanceState>()(
   persist(
     (set, get) => {
+      // Functional set: read current books inside the updater so undo/other-tab
+      // cannot slip between get() and set() (no stale overwrite / half-write).
       const apply = (fn: DataFn, label: UndoLabel = "edit") => {
-        const s = get();
-        const id = s.activeCompanyId;
-        const current = s.companies[id] ?? emptyBooks();
-        const next = sliceData(fn(current));
-        set({
-          companies: { ...s.companies, [id]: next },
-          ...pushUndo(s, current, resolveUndoLabel(label, current, next)),
+        set((s) => {
+          const id = s.activeCompanyId;
+          const current = s.companies[id] ?? emptyBooks();
+          const next = sliceData(fn(current));
+          return {
+            companies: { ...s.companies, [id]: next },
+            ...pushUndo(s, current, resolveUndoLabel(label, current, next)),
+          };
         });
       };
       return {
@@ -563,17 +566,32 @@ export const useFinanceStore = create<FinanceState>()(
           }),
         reorderBills: (ids) => apply((d) => reorderBills(d, ids), "reorder bills"),
         removeCashLines: (lines) => {
+          // Single set updater: preflight + chain see one fresh snapshot.
+          // Throw → updater aborts with no write (never half-delete).
           let deleted = 0;
           let failed = 0;
-          apply(
-            (d) => {
-              const result = removeCashLines(d, lines);
+          let err: unknown = null;
+          set((s) => {
+            const id = s.activeCompanyId;
+            const current = s.companies[id] ?? emptyBooks();
+            try {
+              const result = removeCashLines(current, lines);
               deleted = result.deleted;
               failed = result.failed;
-              return result.data;
-            },
-            lines.length === 1 ? "delete register line" : `delete ${lines.length} register lines`,
-          );
+              return {
+                companies: { ...s.companies, [id]: sliceData(result.data) },
+                ...pushUndo(
+                  s,
+                  current,
+                  lines.length === 1 ? "delete register line" : `delete ${lines.length} register lines`,
+                ),
+              };
+            } catch (e) {
+              err = e;
+              return s;
+            }
+          });
+          if (err) throw err;
           return { deleted, failed };
         },
         addDeposit: (input) => apply((d) => addDeposit(d, input), "post deposit"),

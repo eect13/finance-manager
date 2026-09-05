@@ -1,4 +1,4 @@
-# Finance Manager v3.62.40
+# Finance Manager v3.62.41
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -11,6 +11,12 @@ No accounts, no server setup. Books stay on this computer (IndexedDB). Settings 
 The app mark is a **navy tile with cream pillars** — a full opaque square (Windows 11 already rounds the tile; transparent corners were a white plate). Web uses the SVG favicon. Windows uses a **BMP 32-bit** `.ico` (PNG-in-ICO is a white square on the shortcut and the taskbar). After install, **delete any leftover blank shortcut** and pin the new one — Explorer caches the last icon.
 
 
+
+## What's new in v3.62.41
+
+- Phone virtualization: Register **and** Reconcile **List + Grid** use `@tanstack/react-virtual` with `measureElement` (variable card heights), pad pattern, PhoneSwipe + Move dates preserved
+- Register batch delete is **atomic**: preflight all ids (locks / missing / transfer dedupe) then one store write — any block aborts with zero deletes and a clear toast
+- Residual: mid-apply throw after a successful preflight is still theoretically possible if books mutate underfoot; store `apply` does not persist a partial chain
 
 ## What's new in v3.62.40
 

@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Printer, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
@@ -130,6 +131,25 @@ function ReconcilePage() {
     [statementDate],
   );
   const sort = useEntrySort(uncleared, "date", getters, "asc");
+  const phoneGrid = isPhoneUi() && phoneLayout === "grid";
+  const phoneVirt = useVirtualizer({
+    count: sort.sorted.length,
+    getScrollElement: () => document.querySelector("[data-workspace-scroll]"),
+    estimateSize: () => (phoneGrid ? 148 : 56),
+    overscan: phoneGrid ? 8 : 12,
+    getItemKey: (index) => sort.sorted[index]?.id ?? index,
+    gap: phoneGrid ? 8 : 0,
+  });
+  useEffect(() => {
+    phoneVirt.measure();
+    // Remeasure when layout or type size changes variable card heights.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phoneLayout, fontSize, sort.sorted.length]);
+  const phoneVItems = phoneVirt.getVirtualItems();
+  const phoneFirst = phoneVItems[0];
+  const phoneLast = phoneVItems[phoneVItems.length - 1];
+  const phonePadTop = phoneFirst ? phoneFirst.start : 0;
+  const phonePadBottom = phoneLast ? Math.max(0, phoneVirt.getTotalSize() - phoneLast.end) : 0;
   const selected = allUncleared.filter((line) => ticked.has(lineKey(line)));
   const statementEnding = parseAmountToCents(ending);
   const difference = reconDifference(beginning, statementEnding, selected);
@@ -507,16 +527,26 @@ function ReconcilePage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {sort.sorted.map((line) => {
+                  {phonePadTop > 0 ? (
+                    <tr aria-hidden>
+                      <td colSpan={5} style={{ height: phonePadTop, padding: 0, border: 0 }} />
+                    </tr>
+                  ) : null}
+                  {phoneVItems.map((item) => {
+                    const line = sort.sorted[item.index];
+                    if (!line) return null;
                     const on = ticked.has(lineKey(line));
                     const days = daysOutstanding(line.date, statementDate);
                     const openId =
                       line.kind === "bill-payment"
-                        ? (data.bills.find((b) => b.payments.some((p) => p.id === line.sourceId))?.id ?? line.sourceId)
+                        ? (data.bills.find((b) => b.payments.some((p) => p.id === line.sourceId))?.id ??
+                          line.sourceId)
                         : line.sourceId;
                     return (
                       <tr
                         key={line.id}
+                        ref={phoneVirt.measureElement}
+                        data-index={item.index}
                         className={cn(
                           "border-b border-border/70 last:border-0 touch-manipulation",
                           on && "bg-primary/5",
@@ -550,26 +580,52 @@ function ReconcilePage() {
                             <span className="text-muted-foreground">—</span>
                           )}
                         </td>
-                        <td className={cn("whitespace-nowrap px-2 py-2.5 text-right tabular-nums", days > 90 && "text-debit")}>
+                        <td
+                          className={cn(
+                            "whitespace-nowrap px-2 py-2.5 text-right tabular-nums",
+                            days > 90 && "text-debit",
+                          )}
+                        >
                           {days ? `${days}d` : "—"}
                         </td>
                       </tr>
                     );
                   })}
+                  {phonePadBottom > 0 ? (
+                    <tr aria-hidden>
+                      <td colSpan={5} style={{ height: phonePadBottom, padding: 0, border: 0 }} />
+                    </tr>
+                  ) : null}
                 </tbody>
               </table>
             </div>
           ) : (
-            <ul className="flex flex-col gap-2">
-              {sort.sorted.map((line) => {
+            <ul className="flex flex-col">
+              {phonePadTop > 0 ? (
+                <li
+                  aria-hidden
+                  style={{
+                    height: phonePadTop,
+                    margin: 0,
+                    padding: 0,
+                    border: 0,
+                    overflow: "hidden",
+                    listStyle: "none",
+                  }}
+                />
+              ) : null}
+              {phoneVItems.map((item) => {
+                const line = sort.sorted[item.index];
+                if (!line) return null;
                 const on = ticked.has(lineKey(line));
                 const days = daysOutstanding(line.date, statementDate);
                 const openId =
                   line.kind === "bill-payment"
-                    ? (data.bills.find((b) => b.payments.some((p) => p.id === line.sourceId))?.id ?? line.sourceId)
+                    ? (data.bills.find((b) => b.payments.some((p) => p.id === line.sourceId))?.id ??
+                      line.sourceId)
                     : line.sourceId;
                 return (
-                  <li key={line.id}>
+                  <li key={line.id} ref={phoneVirt.measureElement} data-index={item.index}>
                     <PhoneSwipe
                       enabled={phone}
                       actions={[
@@ -597,7 +653,9 @@ function ReconcilePage() {
                         <div className="min-w-0 flex-1">
                           <div className="flex items-baseline justify-between gap-2">
                             <p className="phone-card-party min-w-0 break-words font-medium">{line.party}</p>
-                            <p className="phone-card-date shrink-0 text-muted-foreground tabular-nums">{formatDate(line.date)}</p>
+                            <p className="phone-card-date shrink-0 text-muted-foreground tabular-nums">
+                              {formatDate(line.date)}
+                            </p>
                           </div>
                           <p className="phone-card-meta mt-0.5 text-muted-foreground">
                             {KIND_LABEL[line.kind]}
@@ -616,7 +674,11 @@ function ReconcilePage() {
                             <div>
                               <p className="phone-card-label text-muted-foreground">Payment</p>
                               {line.payment ? (
-                                <Money amount={line.payment} currency={data.settings.currency} className="text-debit" />
+                                <Money
+                                  amount={line.payment}
+                                  currency={data.settings.currency}
+                                  className="text-debit"
+                                />
                               ) : (
                                 <span className="text-muted-foreground">—</span>
                               )}
@@ -624,7 +686,11 @@ function ReconcilePage() {
                             <div className="text-right">
                               <p className="phone-card-label text-muted-foreground">Deposit</p>
                               {line.deposit ? (
-                                <Money amount={line.deposit} currency={data.settings.currency} className="text-credit" />
+                                <Money
+                                  amount={line.deposit}
+                                  currency={data.settings.currency}
+                                  className="text-credit"
+                                />
                               ) : (
                                 <span className="text-muted-foreground">—</span>
                               )}
@@ -636,6 +702,19 @@ function ReconcilePage() {
                   </li>
                 );
               })}
+              {phonePadBottom > 0 ? (
+                <li
+                  aria-hidden
+                  style={{
+                    height: phonePadBottom,
+                    margin: 0,
+                    padding: 0,
+                    border: 0,
+                    overflow: "hidden",
+                    listStyle: "none",
+                  }}
+                />
+              ) : null}
             </ul>
           )}
         </div>

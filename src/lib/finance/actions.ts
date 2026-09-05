@@ -832,27 +832,45 @@ export function removeCashLines(data: FinanceData, lines): {
   deleted: number;
   failed: number;
 } {
-  let next = data;
-  let deleted = 0;
-  let failed = 0;
-  const done = new Set();
+  // Deduplicate transfer (and any) dual-sides by kind:sourceId.
+  const unique = [];
+  const seen = new Set();
+  let dupes = 0;
   for (const line of lines) {
     const key = `${line.kind}:${line.sourceId}`;
-    // Transfer (and any) dual-side: same source already removed in this batch.
-    if (done.has(key)) {
-      deleted += 1;
+    if (seen.has(key)) {
+      dupes += 1;
       continue;
     }
+    seen.add(key);
+    unique.push(line);
+  }
+  if (unique.length === 0) throw new Error("Could not delete those entries.");
+
+  // Preflight every id against the original books (locks / missing / not deletable).
+  // Any failure aborts with zero deletes — all-or-nothing.
+  let failCount = 0;
+  let firstError = null;
+  for (const line of unique) {
     try {
-      next = removeCashLine(next, line);
-      done.add(key);
-      deleted += 1;
-    } catch {
-      failed += 1;
+      removeCashLine(data, line);
+    } catch (err) {
+      failCount += 1;
+      if (!firstError) firstError = err;
     }
   }
-  if (deleted === 0) throw new Error("Could not delete those entries.");
-  return { data: next, deleted, failed };
+  if (failCount > 0) {
+    const detail = firstError instanceof Error ? firstError.message : "Could not delete those entries.";
+    if (failCount === unique.length) throw new Error(detail);
+    throw new Error(`Nothing deleted — ${failCount} of ${unique.length} could not be removed (${detail})`);
+  }
+
+  // Single chained update; store apply persists one write. Mid-apply throw also leaves books unchanged.
+  let next = data;
+  for (const line of unique) {
+    next = removeCashLine(next, line);
+  }
+  return { data: next, deleted: unique.length + dupes, failed: 0 };
 }
 export function reorderBills(data: FinanceData, ids): FinanceData {
   return {

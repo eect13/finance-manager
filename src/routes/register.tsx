@@ -542,16 +542,9 @@ function RegisterPage() {
     const ids = mode === "all" ? deletable.map((l) => l.id) : selectedIds;
     if (ids.length === 0) return;
     try {
-      const { deleted, failed } = removeCashLines(targets(ids));
-      if (failed === 0) {
-        toast.success(deleted === 1 ? "Entry deleted." : `${deleted} entries deleted.`);
-      } else {
-        toast.message(
-          deleted === 1
-            ? `1 entry deleted; ${failed} could not be deleted.`
-            : `${deleted} entries deleted; ${failed} could not be deleted.`,
-        );
-      }
+      // Atomic: all ids valid or nothing deleted (clear error toast from removeCashLines).
+      const { deleted } = removeCashLines(targets(ids));
+      toast.success(deleted === 1 ? "Entry deleted." : `${deleted} entries deleted.`);
       setSelected([]);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not delete.");
@@ -1192,16 +1185,24 @@ function RegisterTable({
   onPhoneMoveGrip: (lineId: string, e: ReactPointerEvent) => void;
 }) {
   const wrapRef = useRef<HTMLDivElement>(null);
+  const phone = isPhoneUi();
+  const phoneGrid = phone && phoneLayout === "grid";
   const virtualizer = useVirtualizer({
     count: lines.length,
     getScrollElement: () => document.querySelector("[data-workspace-scroll]"),
-    estimateSize: () => (isPhoneUi() ? 52 : 44),
-    overscan: 12,
+    estimateSize: () => (phoneGrid ? 168 : phone ? 52 : 44),
+    overscan: phoneGrid ? 8 : 12,
     getItemKey: (index) => lines[index]?.id ?? index,
+    gap: phoneGrid ? 8 : 0,
   });
   scrollToRow.current = (index) => {
     virtualizer.scrollToIndex(index, { align: "auto" });
   };
+  useEffect(() => {
+    virtualizer.measure();
+    // Remeasure when phone Grid/List or column set changes card heights.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phoneLayout, phoneGrid, cols]);
   const { outTotal, inTotal } = useMemo(() => {
     let out = 0;
     let inn = 0;
@@ -1531,8 +1532,16 @@ function RegisterTable({
       <div className="register-phone-list" data-layout="grid">
         {toolbar}
         {moveHint}
-        <ul className="flex flex-col gap-2">
-          {lines.map((line) => {
+        <ul className="flex flex-col">
+          {padTop > 0 ? (
+            <li
+              aria-hidden
+              style={{ height: padTop, margin: 0, padding: 0, border: 0, overflow: "hidden", listStyle: "none" }}
+            />
+          ) : null}
+          {vItems.map((item) => {
+            const line = lines[item.index];
+            if (!line) return null;
             const isOpening = line.kind === "opening";
             const locked = line.recon === "reconciled";
             const isOn = selected.has(line.id);
@@ -1540,7 +1549,7 @@ function RegisterTable({
             const canDrag = dragOn && line.reschedulable;
             const isDragging = dragging === line.id || isTransferMate(line, draggingSourceId);
             return (
-              <li key={line.id}>
+              <li key={line.id} ref={virtualizer.measureElement} data-index={item.index}>
                 <PhoneSwipe
                   enabled={!isOpening && !dragOn}
                   actions={[
@@ -1772,6 +1781,12 @@ function RegisterTable({
               </li>
             );
           })}
+          {padBottom > 0 ? (
+            <li
+              aria-hidden
+              style={{ height: padBottom, margin: 0, padding: 0, border: 0, overflow: "hidden", listStyle: "none" }}
+            />
+          ) : null}
         </ul>
       </div>
     );

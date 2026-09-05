@@ -767,8 +767,9 @@
   }
 
   [data-open="true"]:focus-visible {
-    outline: 2px solid var(--color-ring);
-    outline-offset: -2px;
+    outline: none;
+    background-color: color-mix(in oklab, var(--color-primary) 9%, var(--color-card));
+    box-shadow: inset 2px 0 0 color-mix(in oklab, var(--color-primary) 45%, transparent);
   }
 
   .register-matrix {
@@ -1030,8 +1031,9 @@
   }
 
   .item-card:focus-visible {
-    outline: 2px solid var(--color-ring);
-    outline-offset: 2px;
+    outline: none;
+    background: color-mix(in oklab, var(--color-primary) 9%, var(--color-card));
+    box-shadow: inset 2px 0 0 color-mix(in oklab, var(--color-primary) 45%, transparent);
   }
 
   .workspace-split {
@@ -4246,15 +4248,16 @@ body.is-phone-move-dragging {
   box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-primary) 80%, transparent);
 }
 
-/* v3.62.54: keyboard row focus (QuickBooks-like) — obvious in light + dark */
+/* v3.62.56: soft keyboard focus — background + thin left bar only (no hard outline box) */
 .list-grid tbody tr[data-focused="true"] td,
 .register-matrix tbody tr[data-focused="true"] td,
 .list-grid tbody tr[aria-current="true"] td,
 .register-matrix tbody tr[aria-current="true"] td,
 .party-dir-table tbody tr[data-focused="true"] td,
 .party-txn-table tbody tr[data-focused="true"] td {
-  background: color-mix(in oklab, var(--color-ring) 16%, var(--color-card));
-  box-shadow: inset 3px 0 0 var(--color-ring);
+  background: color-mix(in oklab, var(--color-primary) 9%, var(--color-card));
+  box-shadow: inset 2px 0 0 color-mix(in oklab, var(--color-primary) 45%, transparent);
+  outline: none;
 }
 .dark .list-grid tbody tr[data-focused="true"] td,
 .dark .register-matrix tbody tr[data-focused="true"] td,
@@ -4262,10 +4265,10 @@ body.is-phone-move-dragging {
 .dark .register-matrix tbody tr[aria-current="true"] td,
 .dark .party-dir-table tbody tr[data-focused="true"] td,
 .dark .party-txn-table tbody tr[data-focused="true"] td {
-  background: color-mix(in oklab, var(--color-ring) 28%, var(--color-card));
-  box-shadow: inset 3px 0 0 color-mix(in oklab, var(--color-ring) 85%, #fff);
+  background: color-mix(in oklab, var(--color-primary) 16%, var(--color-card));
+  box-shadow: inset 2px 0 0 color-mix(in oklab, var(--color-primary) 55%, transparent);
 }
-/* Selected (tick) + focused: keep primary tint, keep focus bar */
+/* Selected (tick) + focused: keep primary tint, keep subtle focus bar */
 .list-grid tbody tr[data-focused="true"][data-selected="true"] td,
 .register-matrix tbody tr[data-focused="true"][data-selected="true"] td {
   background: color-mix(in oklab, var(--color-primary) 18%, var(--color-card));
@@ -4273,14 +4276,22 @@ body.is-phone-move-dragging {
 .register-phone-card[data-focused="true"],
 .recon-phone-card[data-focused="true"],
 [data-list-card][data-focused="true"] {
-  outline: 2px solid var(--color-ring);
-  outline-offset: 1px;
-  background: color-mix(in oklab, var(--color-ring) 12%, var(--color-card));
+  outline: none;
+  box-shadow: inset 2px 0 0 color-mix(in oklab, var(--color-primary) 45%, transparent);
+  background: color-mix(in oklab, var(--color-primary) 9%, var(--color-card));
 }
 .dark .register-phone-card[data-focused="true"],
 .dark .recon-phone-card[data-focused="true"],
 .dark [data-list-card][data-focused="true"] {
-  background: color-mix(in oklab, var(--color-ring) 22%, var(--color-card));
+  background: color-mix(in oklab, var(--color-primary) 16%, var(--color-card));
+  box-shadow: inset 2px 0 0 color-mix(in oklab, var(--color-primary) 55%, transparent);
+}
+/* Soft highlight for Options shortcut rows if they receive focus */
+.options-shortcut-row:focus-visible {
+  outline: none;
+  background: color-mix(in oklab, var(--color-primary) 8%, transparent);
+  box-shadow: inset 2px 0 0 color-mix(in oklab, var(--color-primary) 45%, transparent);
+  border-radius: 0.35rem;
 }
 .list-card.list-grid:focus,
 .list-card.list-grid:focus-visible,
@@ -4290,10 +4301,11 @@ body.is-phone-move-dragging {
 .party-dir-table:focus-visible {
   outline: none;
 }
+/* No container ring — avoids double box with row focus */
 .list-card.list-grid:focus-visible,
 .register-card:has(.register-matrix:focus-visible),
 .party-dir-table:focus-visible {
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-ring) 45%, transparent);
+  box-shadow: none;
 }
 
 /* v3.62.54: Register check col — match Reconcile tick spacing (tighter) */
@@ -4340,10 +4352,6 @@ body.is-phone-move-dragging {
 .register-matrix th[data-align="left"] > button {
   justify-content: inherit;
 }
-.col-opts-trigger {
-  margin-inline: 0.1rem;
-}
-
 .list-grid td[data-align="left"],
 .register-matrix td[data-align="left"] { text-align: left !important; }
 .list-grid td[data-align="center"],
@@ -4353,11 +4361,24 @@ body.is-phone-move-dragging {
 
 
 /* Options keyboard shortcuts + phone tips */
+.options-shortcut-heading {
+  margin: 0 0 0.45rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: 0.01em;
+  color: var(--color-foreground);
+  /* plain heading — not a pill / toggle */
+}
 .options-shortcut-row {
   display: flex;
   align-items: baseline;
   gap: 0.75rem;
   min-height: 1.75rem;
+  padding-inline: 0.15rem;
 }
 .options-shortcut-keys {
   flex: 0 0 7.5rem;
@@ -4384,4 +4405,53 @@ body.is-phone-move-dragging {
 }
 .options-tips-list li::marker {
   color: var(--color-muted-foreground);
+}
+
+/* v3.62.56: SortHeader — centered title, colon flush before ↑/↓ / ⋮ */
+.sort-header-row {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  gap: 0.1rem;
+}
+.sort-header-main {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  align-items: center;
+  font-weight: 500;
+}
+.sort-header-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+}
+.sort-header-trail {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.05rem;
+  margin-inline-start: 0.15rem;
+}
+.sort-header-colon {
+  flex: 0 0 auto;
+  color: var(--color-muted-foreground);
+  font-weight: 500;
+  line-height: 1;
+  user-select: none;
+}
+.sort-header-dir {
+  display: inline-flex;
+  flex: 0 0 0.9rem;
+  align-items: center;
+  justify-content: center;
+  min-height: 0.9rem;
+}
+.col-opts-trigger {
+  margin-inline: 0;
+  margin-inline-start: 0;
 }

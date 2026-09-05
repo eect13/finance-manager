@@ -1,4 +1,4 @@
-# Finance Manager v3.62.55
+# Finance Manager v3.62.56
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -11,6 +11,13 @@ No accounts, no server setup. Books stay on this computer (IndexedDB). Settings 
 The app mark is a **navy tile with cream pillars** — a full opaque square (Windows 11 already rounds the tile; transparent corners were a white plate). Web uses the SVG favicon. Windows uses a **BMP 32-bit** `.ico` (PNG-in-ICO is a white square on the shortcut and the taskbar). After install, **delete any leftover blank shortcut** and pin the new one — Explorer caches the last icon.
 
 
+
+## What's new in v3.62.56
+
+- **Soft keyboard focus**: focused list/register rows and cards use background tint + thin left bar only — no cream/white outline box (dark Register Grid). Same for phone cards; dropped container focus ring that doubled with the row
+- **SortHeader**: column title centered; `:` sits flush on the right just before ↑/↓ and ⋮ — no more "Date :" stuck left with a gap to the icons
+- **Options → Keyboard**: section titles (General, Lists & Tables, …) are plain headings, not pill/toggle chrome; key pills stay on the shortcut rows
+- **Sidebar**: active nav no longer draws an inset ring (bg highlight only)
 
 ## What's new in v3.62.55
 

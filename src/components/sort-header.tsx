@@ -3,7 +3,6 @@ import { AlignCenter, AlignLeft, AlignRight, ArrowDown, ArrowUp, Check, MoreVert
 import type { SortDir } from "@/lib/finance/sort";
 import { cn } from "@/lib/utils";
 import type { ColAlign } from "@/components/use-col-aligns";
-import { headerJustify } from "@/components/use-col-aligns";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -129,19 +128,23 @@ export function SortHeader({
       }
       title={hasMenu ? "Click to sort · right-click for align / column options" : undefined}
     >
-      <div className={cn("flex w-full items-center gap-0.5", headerJustify(align))}>
+      <div className="sort-header-row">
         <button
           type="button"
           onClick={() => onToggle(column)}
           className={cn(
-            "inline-flex min-w-0 items-center gap-1 whitespace-nowrap font-medium",
-            align === "center" ? "text-center" : align === "right" ? "text-right" : "text-left",
+            "sort-header-main",
             compact ? "min-h-8 text-xs tracking-wide uppercase" : "min-h-11 text-sm",
             active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
           )}
         >
-          {label}
-          {active ? dir === "asc" ? <ArrowUp className="size-3.5 shrink-0" /> : <ArrowDown className="size-3.5 shrink-0" /> : null}
+          <span className="sort-header-title">{label}</span>
+          <span className="sort-header-trail" aria-hidden={!active}>
+            <span className="sort-header-colon">:</span>
+            <span className="sort-header-dir">
+              {active ? dir === "asc" ? <ArrowUp className="size-3.5 shrink-0" /> : <ArrowDown className="size-3.5 shrink-0" /> : null}
+            </span>
+          </span>
         </button>
         {hasMenu ? (
           <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>

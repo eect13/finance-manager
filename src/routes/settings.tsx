@@ -109,7 +109,7 @@ function KeyboardOrTipsCard() {
       </CardHeader>
       <CardContent className="grid gap-4">
         <div>
-          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Anywhere</p>
+          <h3 className="options-shortcut-heading">General</h3>
           <div className="grid gap-1.5">
             <ShortcutRow keys={findChord} label="Find transaction" />
             <ShortcutRow keys={undoChord} label="Undo last change" />
@@ -117,7 +117,7 @@ function KeyboardOrTipsCard() {
           </div>
         </div>
         <div>
-          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Lists & register</p>
+          <h3 className="options-shortcut-heading">Lists & Tables</h3>
           <div className="grid gap-1.5">
             <ShortcutRow keys="Click table" label="Focus the list for keyboard navigation" />
             <ShortcutRow keys="↑ / ↓" label="Move focused row" />
@@ -126,7 +126,7 @@ function KeyboardOrTipsCard() {
           </div>
         </div>
         <div>
-          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Date fields</p>
+          <h3 className="options-shortcut-heading">Date fields</h3>
           <div className="grid gap-1.5">
             <ShortcutRow keys="T" label="Today" />
             <ShortcutRow keys="+ / −" label="Next / previous day" />
@@ -135,7 +135,7 @@ function KeyboardOrTipsCard() {
           </div>
         </div>
         <div>
-          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Print preview</p>
+          <h3 className="options-shortcut-heading">Print preview</h3>
           <div className="grid gap-1.5">
             <ShortcutRow keys="Esc" label="Close preview" />
             <ShortcutRow keys="+ / −" label="Zoom in / out" />

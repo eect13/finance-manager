@@ -3915,3 +3915,57 @@ html.tauri-android .app-header-inner {
     z-index: 16;
   }
 }
+
+
+/* Phone List = dense ledger rows (not mini-cards). Grid = full cards. */
+@media (max-width: 767px), ((hover: none) and (pointer: coarse)) {
+  .register-phone-list.is-list ul,
+  .recon-phone-list.is-list ul {
+    gap: 0 !important;
+    border: 1px solid var(--color-border);
+    border-radius: 0.75rem;
+    overflow: hidden;
+    background: var(--color-card);
+  }
+  .register-phone-list.is-list li + li .register-phone-row,
+  .recon-phone-list.is-list li + li .recon-phone-row,
+  .register-phone-list.is-list li + li .phone-swipe,
+  .recon-phone-list.is-list li + li .phone-swipe {
+    border-top: 1px solid color-mix(in oklab, var(--color-border) 80%, transparent);
+  }
+  .register-phone-list.is-list .register-phone-row,
+  .recon-phone-list.is-list .recon-phone-row {
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+    padding: 0.45rem 0.55rem;
+    min-height: 2.75rem;
+  }
+  .register-phone-list.is-list .phone-swipe,
+  .recon-phone-list.is-list .phone-swipe {
+    border-radius: 0;
+  }
+  .register-phone-list:not(.is-list) ul,
+  .recon-phone-list:not(.is-list) ul {
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 767px), ((hover: none) and (pointer: coarse)) {
+  .register-phone-table.list-card {
+    margin-top: 0;
+  }
+  .register-phone-table table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .register-phone-table thead th {
+    font-size: 0.7rem;
+    letter-spacing: 0.02em;
+    text-transform: none;
+  }
+  .register-phone-table tbody td {
+    vertical-align: top;
+  }
+}

@@ -447,8 +447,72 @@ function ReconcilePage() {
             <p className="phone-empty text-sm text-muted-foreground">
               Nothing uncleared on or before this date.
             </p>
+          ) : phoneLayout === "list" ? (
+            <div className="list-card list-grid register-phone-table min-w-0">
+              <table className="text-sm" style={{ width: "100%" }}>
+                <thead>
+                  <tr className="border-b border-border text-muted-foreground">
+                    <th className="w-10 px-2 py-2 no-print" aria-label="Cleared" />
+                    <th className="px-2 py-2 text-left font-medium">Date</th>
+                    <th className="px-2 py-2 text-left font-medium">Payee</th>
+                    <th className="px-2 py-2 text-right font-medium">Amount</th>
+                    <th className="px-2 py-2 text-right font-medium">Days</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sort.sorted.map((line) => {
+                    const on = ticked.has(lineKey(line));
+                    const days = daysOutstanding(line.date, statementDate);
+                    const openId =
+                      line.kind === "bill-payment"
+                        ? (data.bills.find((b) => b.payments.some((p) => p.id === line.sourceId))?.id ?? line.sourceId)
+                        : line.sourceId;
+                    return (
+                      <tr
+                        key={line.id}
+                        className={cn(
+                          "border-b border-border/70 last:border-0 touch-manipulation",
+                          on && "bg-primary/5",
+                        )}
+                        {...openProps(openKindFor(line), openId, { click: true })}
+                      >
+                        <td
+                          className="px-2 py-2.5 no-print"
+                          onClick={(e) => e.stopPropagation()}
+                          onPointerDown={(e) => e.stopPropagation()}
+                        >
+                          <ShopTick checked={on} onChange={(next) => toggle(line, next)} label="Cleared" />
+                        </td>
+                        <td className="whitespace-nowrap px-2 py-2.5 text-muted-foreground tabular-nums">
+                          {formatDate(line.date)}
+                        </td>
+                        <td className="min-w-0 px-2 py-2.5">
+                          <p className="truncate font-medium">{line.party}</p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {KIND_LABEL[line.kind]}
+                            {line.number ? ` · ${line.number}` : ""}
+                          </p>
+                        </td>
+                        <td className="whitespace-nowrap px-2 py-2.5 text-right tabular-nums">
+                          {line.payment ? (
+                            <Money amount={line.payment} currency={data.settings.currency} className="text-debit" />
+                          ) : line.deposit ? (
+                            <Money amount={line.deposit} currency={data.settings.currency} className="text-credit" />
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </td>
+                        <td className={cn("whitespace-nowrap px-2 py-2.5 text-right tabular-nums", days > 90 && "text-debit")}>
+                          {days ? `${days}d` : "—"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           ) : (
-            <ul className={cn("flex flex-col", phoneLayout === "list" ? "gap-1" : "gap-2")}>
+            <ul className="flex flex-col gap-2">
               {sort.sorted.map((line) => {
                 const on = ticked.has(lineKey(line));
                 const days = daysOutstanding(line.date, statementDate);
@@ -456,64 +520,6 @@ function ReconcilePage() {
                   line.kind === "bill-payment"
                     ? (data.bills.find((b) => b.payments.some((p) => p.id === line.sourceId))?.id ?? line.sourceId)
                     : line.sourceId;
-                if (phoneLayout === "list") {
-                  return (
-                    <li key={line.id}>
-                      <PhoneSwipe
-                        enabled={phone}
-                        actions={[
-                          {
-                            label: on ? "Untick" : "Clear",
-                            tone: on ? "default" : "success",
-                            onAction: () => toggle(line, !on),
-                          },
-                        ]}
-                      >
-                      <div
-                        className={cn(
-                          "recon-phone-row flex items-center gap-2 rounded-xl border border-border bg-card px-2 py-1.5 touch-manipulation",
-                          on && "ring-1 ring-primary/40",
-                        )}
-                        {...openProps(openKindFor(line), openId, { click: true })}
-                      >
-                        <div
-                          className="shrink-0"
-                          onClick={(e) => e.stopPropagation()}
-                          onPointerDown={(e) => e.stopPropagation()}
-                        >
-                          <ShopTick checked={on} onChange={(next) => toggle(line, next)} label="Cleared" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-baseline justify-between gap-2">
-                            <p className="min-w-0 truncate text-[0.95em] font-medium">{line.party}</p>
-                            <p className="shrink-0 text-[0.85em] text-muted-foreground tabular-nums">
-                              {formatDate(line.date)}
-                            </p>
-                          </div>
-                          <div className="mt-0.5 flex items-center justify-between gap-2 text-[0.8em] text-muted-foreground">
-                            <span className="min-w-0 truncate">
-                              {KIND_LABEL[line.kind]}
-                              {line.number ? ` · ${line.number}` : ""}
-                              {days ? (
-                                <span className={cn(days > 90 && " text-debit")}>{` · ${days}d`}</span>
-                              ) : null}
-                            </span>
-                            <span className="inline-flex shrink-0 items-center gap-2 tabular-nums">
-                              {line.payment ? (
-                                <Money amount={line.payment} currency={data.settings.currency} className="text-debit" />
-                              ) : line.deposit ? (
-                                <Money amount={line.deposit} currency={data.settings.currency} className="text-credit" />
-                              ) : (
-                                <span>—</span>
-                              )}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      </PhoneSwipe>
-                    </li>
-                  );
-                }
                 return (
                   <li key={line.id}>
                     <PhoneSwipe
@@ -526,52 +532,52 @@ function ReconcilePage() {
                         },
                       ]}
                     >
-                    <div
-                      className={cn(
-                        "recon-phone-card flex items-start gap-2 rounded-2xl border border-border bg-card px-3 py-2.5 touch-manipulation",
-                        on && "ring-1 ring-primary/40",
-                      )}
-                      {...openProps(openKindFor(line), openId, { click: true })}
-                    >
                       <div
-                        className="shrink-0 pt-0.5"
-                        onClick={(e) => e.stopPropagation()}
-                        onPointerDown={(e) => e.stopPropagation()}
+                        className={cn(
+                          "recon-phone-card flex items-start gap-2 rounded-2xl border border-border bg-card px-3 py-2.5 touch-manipulation",
+                          on && "ring-1 ring-primary/40",
+                        )}
+                        {...openProps(openKindFor(line), openId, { click: true })}
                       >
-                        <ShopTick checked={on} onChange={(next) => toggle(line, next)} label="Cleared" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-baseline justify-between gap-2">
-                          <p className="phone-card-party min-w-0 truncate">{line.party}</p>
-                          <p className="phone-card-date shrink-0 text-muted-foreground tabular-nums">{formatDate(line.date)}</p>
+                        <div
+                          className="shrink-0 pt-0.5"
+                          onClick={(e) => e.stopPropagation()}
+                          onPointerDown={(e) => e.stopPropagation()}
+                        >
+                          <ShopTick checked={on} onChange={(next) => toggle(line, next)} label="Cleared" />
                         </div>
-                        <p className="phone-card-meta mt-0.5 text-muted-foreground">
-                          {KIND_LABEL[line.kind]}
-                          {line.number ? ` · ${line.number}` : ""}
-                          {days ? (
-                            <span className={cn(" · ", days > 90 && "text-debit")}>{days}d outstanding</span>
-                          ) : null}
-                        </p>
-                        <div className="phone-card-money mt-1.5 grid grid-cols-2 gap-2 tabular-nums">
-                          <div>
-                            <p className="phone-card-label text-muted-foreground">Payment</p>
-                            {line.payment ? (
-                              <Money amount={line.payment} currency={data.settings.currency} className="text-debit" />
-                            ) : (
-                              <span className="text-muted-foreground">—</span>
-                            )}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-baseline justify-between gap-2">
+                            <p className="phone-card-party min-w-0 truncate">{line.party}</p>
+                            <p className="phone-card-date shrink-0 text-muted-foreground tabular-nums">{formatDate(line.date)}</p>
                           </div>
-                          <div className="text-right">
-                            <p className="phone-card-label text-muted-foreground">Deposit</p>
-                            {line.deposit ? (
-                              <Money amount={line.deposit} currency={data.settings.currency} className="text-credit" />
-                            ) : (
-                              <span className="text-muted-foreground">—</span>
-                            )}
+                          <p className="phone-card-meta mt-0.5 text-muted-foreground">
+                            {KIND_LABEL[line.kind]}
+                            {line.number ? ` · ${line.number}` : ""}
+                            {days ? (
+                              <span className={cn(" · ", days > 90 && "text-debit")}>{days}d outstanding</span>
+                            ) : null}
+                          </p>
+                          <div className="phone-card-money mt-1.5 grid grid-cols-2 gap-2 tabular-nums">
+                            <div>
+                              <p className="phone-card-label text-muted-foreground">Payment</p>
+                              {line.payment ? (
+                                <Money amount={line.payment} currency={data.settings.currency} className="text-debit" />
+                              ) : (
+                                <span className="text-muted-foreground">—</span>
+                              )}
+                            </div>
+                            <div className="text-right">
+                              <p className="phone-card-label text-muted-foreground">Deposit</p>
+                              {line.deposit ? (
+                                <Money amount={line.deposit} currency={data.settings.currency} className="text-credit" />
+                              ) : (
+                                <span className="text-muted-foreground">—</span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
                     </PhoneSwipe>
                   </li>
                 );

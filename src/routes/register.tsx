@@ -1253,41 +1253,166 @@ function RegisterTable({
     };
   }
 
-  // Phone: Grid = full cards; List = dense rows. Move dates via grip → date chip on both.
+  // Phone: Grid = full cards (with memo); List = Invoices-style table.
   if (isPhoneUi()) {
     const listMode = phoneLayout === "list";
-    return (
-      <div className={cn("register-phone-list", listMode && "is-list")} data-layout={phoneLayout}>
-        <div className="register-phone-toolbar no-print mb-2 flex flex-wrap items-center justify-between gap-2">
-          <span className="inline-flex items-center gap-1">
-            <ShopTick
-              checked={allOn}
-              indeterminate={someOn}
-              locked={!hasSelectable}
-              onChange={(on) => {
-                if (!hasSelectable) {
-                  toast.error("On a finished statement. Undo that rec to change this line.");
-                  return;
-                }
-                onToggleAll(on);
-              }}
-              label="Select all"
-            />
-            <span className="text-xs text-muted-foreground">Select</span>
+    const toolbar = (
+      <div className="register-phone-toolbar no-print mb-2 flex flex-wrap items-center justify-between gap-2">
+        <span className="inline-flex items-center gap-1">
+          <ShopTick
+            checked={allOn}
+            indeterminate={someOn}
+            locked={!hasSelectable}
+            onChange={(on) => {
+              if (!hasSelectable) {
+                toast.error("On a finished statement. Undo that rec to change this line.");
+                return;
+              }
+              onToggleAll(on);
+            }}
+            label="Select all"
+          />
+          <span className="text-xs text-muted-foreground">Select</span>
+        </span>
+        <span className="inline-flex items-center gap-2">
+          <PhoneLayoutToggle value={phoneLayout} onChange={onPhoneLayout} />
+          <span className="text-xs text-muted-foreground tabular-nums">
+            Bal <Money amount={lastBalance} currency={currency} className="inline font-medium text-foreground" />
           </span>
-          <span className="inline-flex items-center gap-2">
-            <PhoneLayoutToggle value={phoneLayout} onChange={onPhoneLayout} />
-            <span className="text-xs text-muted-foreground tabular-nums">
-              Bal <Money amount={lastBalance} currency={currency} className="inline font-medium text-foreground" />
-            </span>
-          </span>
+        </span>
+      </div>
+    );
+    const moveHint = dragOn ? (
+      <p className="phone-card-meta mb-2 text-muted-foreground no-print">
+        Move on: tap the grip on a row, then tap a date chip above.
+      </p>
+    ) : null;
+
+    if (listMode) {
+      return (
+        <div className="register-phone-list is-list" data-layout="list">
+          {toolbar}
+          {moveHint}
+          <div className="list-card list-grid register-phone-table min-w-0">
+            <table className="text-sm" style={{ width: "100%" }}>
+              <thead>
+                <tr className="border-b border-border text-muted-foreground">
+                  <th className="w-10 px-2 py-2 no-print" aria-label="Select" />
+                  {dragOn ? <th className="w-9 px-1 py-2 no-print" aria-label="Move" /> : null}
+                  <th className="px-2 py-2 text-left font-medium">Date</th>
+                  <th className="px-2 py-2 text-left font-medium">Payee</th>
+                  <th className="px-2 py-2 text-right font-medium">Amount</th>
+                  <th className="px-2 py-2 text-right font-medium">Bal</th>
+                </tr>
+              </thead>
+              <tbody>
+                {lines.map((line) => {
+                  const isOpening = line.kind === "opening";
+                  const locked = line.recon === "reconciled";
+                  const isOn = selected.has(line.id);
+                  const canDrag = dragOn && line.reschedulable;
+                  const armed = dragging === line.id;
+                  return (
+                    <tr
+                      key={line.id}
+                      className={cn(
+                        "border-b border-border/70 last:border-0 touch-manipulation",
+                        isOn && "bg-primary/5",
+                        activeId === line.id && "bg-accent/30",
+                        armed && "ring-1 ring-inset ring-primary",
+                        overRow === line.id && dragOn && "bg-accent/50",
+                      )}
+                      onClick={() => {
+                        if (isOpening) return;
+                        if (dragOn && armed) return;
+                        onActivate(line.id);
+                        onOpen(line);
+                      }}
+                    >
+                      <td
+                        className="px-2 py-2.5 no-print"
+                        onClick={(e) => e.stopPropagation()}
+                        onPointerDown={(e) => e.stopPropagation()}
+                      >
+                        {isOpening ? (
+                          <span className="inline-block size-8" />
+                        ) : (
+                          <ShopTick
+                            checked={isOn}
+                            locked={locked}
+                            onChange={() => onToggle(line.id)}
+                            label={`Select ${line.party}`}
+                          />
+                        )}
+                      </td>
+                      {dragOn ? (
+                        <td
+                          className="px-1 py-2.5 no-print"
+                          onClick={(e) => e.stopPropagation()}
+                          onPointerDown={(e) => e.stopPropagation()}
+                        >
+                          {canDrag ? (
+                            <button
+                              type="button"
+                              className={cn(
+                                "register-phone-grip inline-flex size-8 items-center justify-center rounded-md border border-border text-muted-foreground",
+                                armed && "border-primary bg-primary/10 text-foreground",
+                              )}
+                              aria-label={armed ? "Selected to move — tap a date chip" : "Move to another date"}
+                              aria-pressed={armed}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (armed) onDragEnd();
+                                else onDragStart(line.id);
+                              }}
+                            >
+                              <DragHandle enabled className="pointer-events-none" />
+                            </button>
+                          ) : (
+                            <span className="inline-block size-8" />
+                          )}
+                        </td>
+                      ) : null}
+                      <td className="whitespace-nowrap px-2 py-2.5 text-muted-foreground tabular-nums">
+                        {isOpening && !line.date ? "Opening" : formatRegisterDate(line.date)}
+                      </td>
+                      <td className="min-w-0 px-2 py-2.5">
+                        <p className="truncate font-medium">
+                          {line.party || (isOpening ? "Opening balance" : "—")}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {KIND_LABEL[line.kind]}
+                          {line.number ? ` · ${line.number}` : ""}
+                          {line.memo ? ` · ${line.memo}` : ""}
+                        </p>
+                      </td>
+                      <td className="whitespace-nowrap px-2 py-2.5 text-right tabular-nums">
+                        {line.payment ? (
+                          <Money amount={line.payment} currency={currency} className="text-debit" />
+                        ) : line.deposit ? (
+                          <Money amount={line.deposit} currency={currency} className="text-credit" />
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
+                      <td className="whitespace-nowrap px-2 py-2.5 text-right tabular-nums font-medium">
+                        <Money amount={line.balance} currency={currency} />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
-        {dragOn ? (
-          <p className="phone-card-meta mb-2 text-muted-foreground no-print">
-            Move on: tap the grip on a row, then tap a date chip above.
-          </p>
-        ) : null}
-        <ul className={cn("flex flex-col", listMode ? "gap-1" : "gap-2")}>
+      );
+    }
+
+    return (
+      <div className="register-phone-list" data-layout="grid">
+        {toolbar}
+        {moveHint}
+        <ul className="flex flex-col gap-2">
           {lines.map((line) => {
             const isOpening = line.kind === "opening";
             const locked = line.recon === "reconciled";
@@ -1295,116 +1420,6 @@ function RegisterTable({
             const bank = banks.find((b) => b.id === line.bankId);
             const canDrag = dragOn && line.reschedulable;
             const armed = dragging === line.id;
-            if (listMode) {
-              const swipeActions = !isOpening && !dragOn
-                ? [
-                    {
-                      label: line.recon === "cleared" ? "Pending" : "Clear",
-                      tone: "success" as const,
-                      onAction: () => onCycleRecon(line),
-                    },
-                    ...(locked
-                      ? []
-                      : [
-                          {
-                            label: "Delete",
-                            tone: "danger" as const,
-                            onAction: () => onAskDelete(line.id),
-                          },
-                        ]),
-                  ]
-                : [];
-              return (
-                <li key={line.id}>
-                  <PhoneSwipe enabled={swipeActions.length > 0} actions={swipeActions}>
-                  <div
-                    role="button"
-                    tabIndex={isOpening ? undefined : 0}
-                    className={cn(
-                      "register-phone-row flex items-center gap-2 rounded-xl border border-border bg-card px-2 py-1.5 touch-manipulation",
-                      isOn && "ring-1 ring-primary/40",
-                      activeId === line.id && "bg-accent/30",
-                      armed && "ring-2 ring-primary",
-                      overRow === line.id && dragOn && "bg-accent/50",
-                    )}
-                    onClick={() => {
-                      if (isOpening) return;
-                      if (dragOn && armed) return;
-                      onActivate(line.id);
-                      onOpen(line);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !isOpening) {
-                        onActivate(line.id);
-                        onOpen(line);
-                      }
-                    }}
-                  >
-                    <div
-                      className="flex shrink-0 items-center gap-0.5"
-                      onClick={(e) => e.stopPropagation()}
-                      onPointerDown={(e) => e.stopPropagation()}
-                    >
-                      {isOpening ? (
-                        <span className="inline-block size-9" />
-                      ) : (
-                        <ShopTick
-                          checked={isOn}
-                          locked={locked}
-                          onChange={() => onToggle(line.id)}
-                          label={`Select ${line.party}`}
-                        />
-                      )}
-                      {canDrag ? (
-                        <button
-                          type="button"
-                          className={cn(
-                            "register-phone-grip inline-flex size-8 items-center justify-center rounded-md border border-border text-muted-foreground",
-                            armed && "border-primary bg-primary/10 text-foreground",
-                          )}
-                          aria-label={armed ? "Selected to move — tap a date chip" : "Move to another date"}
-                          aria-pressed={armed}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (armed) onDragEnd();
-                            else onDragStart(line.id);
-                          }}
-                        >
-                          <DragHandle enabled className="pointer-events-none" />
-                        </button>
-                      ) : null}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-baseline justify-between gap-2">
-                        <p className="min-w-0 truncate text-[0.95em] font-medium">
-                          {line.party || (isOpening ? "Opening balance" : "—")}
-                        </p>
-                        <p className="shrink-0 text-[0.85em] text-muted-foreground tabular-nums">
-                          {isOpening && !line.date ? "Opening" : formatRegisterDate(line.date)}
-                        </p>
-                      </div>
-                      <div className="mt-0.5 flex items-center justify-between gap-2 text-[0.8em] text-muted-foreground">
-                        <span className="min-w-0 truncate">
-                          {KIND_LABEL[line.kind]}
-                          {line.number ? ` · ${line.number}` : ""}
-                        </span>
-                        <span className="inline-flex shrink-0 items-center gap-2 tabular-nums">
-                          {line.payment ? (
-                            <Money amount={line.payment} currency={currency} className="text-debit" />
-                          ) : line.deposit ? (
-                            <Money amount={line.deposit} currency={currency} className="text-credit" />
-                          ) : (
-                            <span>—</span>
-                          )}
-                          <Money amount={line.balance} currency={currency} className="font-medium text-foreground" />
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  </PhoneSwipe>
-                </li>
-              );
-            }
             return (
               <li key={line.id}>
                 <PhoneSwipe
@@ -1430,149 +1445,150 @@ function RegisterTable({
                       : []),
                   ]}
                 >
-                <div
-                  role="button"
-                  tabIndex={isOpening ? undefined : 0}
-                  className={cn(
-                    "register-phone-card rounded-2xl border border-border bg-card px-3 py-2.5 touch-manipulation",
-                    isOn && "ring-1 ring-primary/40",
-                    activeId === line.id && "bg-accent/30",
-                    armed && "ring-2 ring-primary",
-                    overRow === line.id && dragOn && "bg-accent/50",
-                  )}
-                  onClick={() => {
-                    if (isOpening) return;
-                    if (dragOn && armed) {
-                      return;
-                    }
-                    onActivate(line.id);
-                    onOpen(line);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !isOpening) {
+                  <div
+                    role="button"
+                    tabIndex={isOpening ? undefined : 0}
+                    className={cn(
+                      "register-phone-card rounded-2xl border border-border bg-card px-3 py-2.5 touch-manipulation",
+                      isOn && "ring-1 ring-primary/40",
+                      activeId === line.id && "bg-accent/30",
+                      armed && "ring-2 ring-primary",
+                      overRow === line.id && dragOn && "bg-accent/50",
+                    )}
+                    onClick={() => {
+                      if (isOpening) return;
+                      if (dragOn && armed) return;
                       onActivate(line.id);
                       onOpen(line);
-                    }
-                  }}
-                >
-                  <div className="flex items-start gap-2">
-                    <div
-                      className="flex shrink-0 flex-col items-center gap-1 pt-0.5"
-                      onClick={(e) => e.stopPropagation()}
-                      onPointerDown={(e) => e.stopPropagation()}
-                    >
-                      {isOpening ? (
-                        <span className="inline-block size-10" />
-                      ) : (
-                        <ShopTick
-                          checked={isOn}
-                          locked={locked}
-                          onChange={() => onToggle(line.id)}
-                          label={`Select ${line.party}`}
-                        />
-                      )}
-                      {canDrag ? (
-                        <button
-                          type="button"
-                          className={cn(
-                            "register-phone-grip inline-flex size-9 items-center justify-center rounded-lg border border-border text-muted-foreground",
-                            armed && "border-primary bg-primary/10 text-foreground",
-                          )}
-                          aria-label={armed ? "Selected to move — tap a date chip" : "Move to another date"}
-                          aria-pressed={armed}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (armed) onDragEnd();
-                            else onDragStart(line.id);
-                          }}
-                        >
-                          <DragHandle enabled className="pointer-events-none" />
-                        </button>
-                      ) : null}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-baseline justify-between gap-2">
-                        <p className="phone-card-party min-w-0 truncate">
-                          {line.party || (isOpening ? "Opening balance" : "—")}
-                        </p>
-                        <p className="phone-card-date shrink-0 text-muted-foreground tabular-nums">
-                          {isOpening && !line.date ? "Opening" : formatRegisterDate(line.date)}
-                        </p>
-                      </div>
-                      <p className="phone-card-meta mt-0.5 text-muted-foreground">
-                        <span>{KIND_LABEL[line.kind]}</span>
-                        {line.number ? <span> · {line.number}</span> : null}
-                        {bank ? <span> · {bank.nickname}</span> : null}
-                      </p>
-                      {line.memo ? (
-                        <p className="phone-card-memo mt-0.5 text-muted-foreground/90 break-words">{line.memo}</p>
-                      ) : null}
-                      <div className="phone-card-money mt-1.5 grid grid-cols-3 gap-2 tabular-nums">
-                        <div>
-                          <p className="phone-card-label text-muted-foreground">Out</p>
-                          {line.payment ? (
-                            <Money amount={line.payment} currency={currency} className="text-debit" />
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-                        </div>
-                        <div>
-                          <p className="phone-card-label text-muted-foreground">In</p>
-                          {line.deposit ? (
-                            <Money amount={line.deposit} currency={currency} className="text-credit" />
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-                        </div>
-                        <div className="text-right">
-                          <p className="phone-card-label text-muted-foreground">Bal</p>
-                          <Money amount={line.balance} currency={currency} className="font-medium" />
-                        </div>
-                      </div>
-                      {!isOpening ? (
-                        <div
-                          className="mt-1.5 flex flex-wrap items-center gap-2"
-                          onClick={(e) => e.stopPropagation()}
-                          onPointerDown={(e) => e.stopPropagation()}
-                        >
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !isOpening) {
+                        onActivate(line.id);
+                        onOpen(line);
+                      }
+                    }}
+                  >
+                    <div className="flex items-start gap-2">
+                      <div
+                        className="flex shrink-0 flex-col items-center gap-1 pt-0.5"
+                        onClick={(e) => e.stopPropagation()}
+                        onPointerDown={(e) => e.stopPropagation()}
+                      >
+                        {isOpening ? (
+                          <span className="inline-block size-10" />
+                        ) : (
+                          <ShopTick
+                            checked={isOn}
+                            locked={locked}
+                            onChange={() => onToggle(line.id)}
+                            label={`Select ${line.party}`}
+                          />
+                        )}
+                        {canDrag ? (
                           <button
                             type="button"
-                            className="phone-card-chip inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1"
-                            onClick={() => onCycleRecon(line)}
+                            className={cn(
+                              "register-phone-grip inline-flex size-9 items-center justify-center rounded-lg border border-border text-muted-foreground",
+                              armed && "border-primary bg-primary/10 text-foreground",
+                            )}
+                            aria-label={armed ? "Selected to move — tap a date chip" : "Move to another date"}
+                            aria-pressed={armed}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (armed) onDragEnd();
+                              else onDragStart(line.id);
+                            }}
                           >
-                            <LineStatus line={line} />
-                            <span className="text-muted-foreground">
-                              {line.recon === "reconciled"
-                                ? "Reconciled"
-                                : line.recon === "cleared"
-                                  ? "Cleared"
-                                  : "Pending"}
-                            </span>
+                            <DragHandle enabled className="pointer-events-none" />
                           </button>
-                          {line.reassignable ? (
-                            <Select value={line.bankId} onValueChange={(v) => onSwap(line, v)}>
-                              <SelectTrigger
-                                className="h-8 min-h-8 w-auto max-w-[9rem] border-border bg-transparent phone-card-chip px-2 shadow-none"
-                                aria-label={`Bank for ${line.party}`}
-                              >
-                                <SelectValue placeholder="Bank" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {banks
-                                  .filter((b) => !b.archived)
-                                  .map((b) => (
-                                    <SelectItem key={b.id} value={b.id}>
-                                      {b.nickname}
-                                    </SelectItem>
-                                  ))}
-                              </SelectContent>
-                            </Select>
-                          ) : null}
+                        ) : null}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-baseline justify-between gap-2">
+                          <p className="phone-card-party min-w-0 truncate">
+                            {line.party || (isOpening ? "Opening balance" : "—")}
+                          </p>
+                          <p className="phone-card-date shrink-0 text-muted-foreground tabular-nums">
+                            {isOpening && !line.date ? "Opening" : formatRegisterDate(line.date)}
+                          </p>
                         </div>
-                      ) : null}
+                        <p className="phone-card-meta mt-0.5 text-muted-foreground">
+                          <span>{KIND_LABEL[line.kind]}</span>
+                          {line.number ? <span> · {line.number}</span> : null}
+                          {bank ? <span> · {bank.nickname}</span> : null}
+                        </p>
+                        <div className="phone-card-memo mt-1">
+                          <p className="phone-card-label text-muted-foreground">Memo</p>
+                          <p className="break-words text-muted-foreground/90">
+                            {line.memo?.trim() ? line.memo : "—"}
+                          </p>
+                        </div>
+                        <div className="phone-card-money mt-1.5 grid grid-cols-3 gap-2 tabular-nums">
+                          <div>
+                            <p className="phone-card-label text-muted-foreground">Out</p>
+                            {line.payment ? (
+                              <Money amount={line.payment} currency={currency} className="text-debit" />
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </div>
+                          <div>
+                            <p className="phone-card-label text-muted-foreground">In</p>
+                            {line.deposit ? (
+                              <Money amount={line.deposit} currency={currency} className="text-credit" />
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </div>
+                          <div className="text-right">
+                            <p className="phone-card-label text-muted-foreground">Bal</p>
+                            <Money amount={line.balance} currency={currency} className="font-medium" />
+                          </div>
+                        </div>
+                        {!isOpening ? (
+                          <div
+                            className="mt-1.5 flex flex-wrap items-center gap-2"
+                            onClick={(e) => e.stopPropagation()}
+                            onPointerDown={(e) => e.stopPropagation()}
+                          >
+                            <button
+                              type="button"
+                              className="phone-card-chip inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1"
+                              onClick={() => onCycleRecon(line)}
+                            >
+                              <LineStatus line={line} />
+                              <span className="text-muted-foreground">
+                                {line.recon === "reconciled"
+                                  ? "Reconciled"
+                                  : line.recon === "cleared"
+                                    ? "Cleared"
+                                    : "Pending"}
+                              </span>
+                            </button>
+                            {line.reassignable ? (
+                              <Select value={line.bankId} onValueChange={(v) => onSwap(line, v)}>
+                                <SelectTrigger
+                                  className="h-8 min-h-8 w-auto max-w-[9rem] border-border bg-transparent phone-card-chip px-2 shadow-none"
+                                  aria-label={`Bank for ${line.party}`}
+                                >
+                                  <SelectValue placeholder="Bank" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {banks
+                                    .filter((b) => !b.archived)
+                                    .map((b) => (
+                                      <SelectItem key={b.id} value={b.id}>
+                                        {b.nickname}
+                                      </SelectItem>
+                                    ))}
+                                </SelectContent>
+                              </Select>
+                            ) : null}
+                          </div>
+                        ) : null}
+                      </div>
                     </div>
                   </div>
-                </div>
                 </PhoneSwipe>
               </li>
             );
@@ -1581,6 +1597,7 @@ function RegisterTable({
       </div>
     );
   }
+
 
   return (
     <div className="register-card list-card">

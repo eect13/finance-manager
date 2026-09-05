@@ -70,13 +70,13 @@ function Desk() {
   return (
     <AppShell
       title="Treasury desk"
-      description="Cash across banks, money still to collect, and bills still to pay. Double-tap or double-click a line to open it."
+      description="Cash across banks, money still to collect, and bills still to pay. Tap a bank or line to open it."
     >
       {!close.ok ? (
-        <div className="close-banner mb-4 rounded-2xl bg-card px-4 py-3 text-sm elevation">
-          <p className="min-w-0 flex-1">
+        <div className="close-banner mb-4 flex flex-col gap-3 rounded-2xl bg-card px-4 py-3 text-sm elevation sm:flex-row sm:items-center">
+          <p className="min-w-0 flex-1 leading-snug">
             {formatDate(through)} cannot close yet. {close.blockers[0]}{" "}
-            <Link to="/close" className="font-medium underline-offset-2 hover:underline">
+            <Link to="/close" className="font-medium underline underline-offset-2">
               Open the checklist
             </Link>
             .
@@ -149,7 +149,7 @@ function Desk() {
             <div
               key={bank.id}
               {...openProps("bank", bank.id, { click: true })}
-              className="desk-row bg-muted/70 px-4"
+              className="desk-row desk-bank-row bg-muted/70 px-4 touch-manipulation"
             >
               <div className="desk-row-copy">
                 <p className="text-sm font-medium">{bank.nickname}</p>
@@ -176,7 +176,7 @@ function Desk() {
               <p className="text-sm text-muted-foreground">No outstanding checks.</p>
             ) : (
               pendingList.slice(0, 5).map((check) => (
-                <div key={check.id} className="desk-row" {...openProps("check", check.id, { click: true })}>
+                <div key={check.id} className="desk-row touch-manipulation" {...openProps("check", check.id, { click: true })}>
                   <div className="desk-row-copy">
                     <p className="text-sm font-medium">{check.payee}</p>
                     <p className="text-xs text-muted-foreground">
@@ -207,7 +207,7 @@ function Desk() {
               overdue.slice(0, 5).map((inv) => {
                 const customer = customers.find((c) => c.id === inv.customerId);
                 return (
-                  <div key={inv.id} className="desk-row" {...openProps("invoice", inv.id, { click: true })}>
+                  <div key={inv.id} className="desk-row touch-manipulation" {...openProps("invoice", inv.id, { click: true })}>
                     <div className="desk-row-copy">
                       <p className="text-sm font-medium">{customer?.name ?? inv.number}</p>
                       <p className="text-xs text-muted-foreground">
@@ -240,7 +240,7 @@ function Desk() {
                 const vendor = vendors.find((v) => v.id === bill.vendorId);
                 const overdueBill = bill.dueDate < new Date().toISOString().slice(0, 10);
                 return (
-                  <div key={bill.id} className="desk-row" {...openProps("bill", bill.id, { click: true })}>
+                  <div key={bill.id} className="desk-row touch-manipulation" {...openProps("bill", bill.id, { click: true })}>
                     <div className="desk-row-copy">
                       <p className="text-sm font-medium">{vendor?.name ?? bill.number}</p>
                       <p className="text-xs text-muted-foreground">

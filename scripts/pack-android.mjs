@@ -598,7 +598,7 @@ function syncAndroidVersionFromPackage() {
  * the phone menu sheet) clears the status bar automatically.
  */
 function patchAndroidSystemBars() {
-  const marker = "finance-manager-system-bars-v3";
+  const marker = "finance-manager-system-bars-v4";
   const appSrc = join(GEN, "app", "src", "main");
   if (!existsSync(appSrc)) {
     console.log("  Skipping system-bars patch (gen/android missing).");
@@ -626,7 +626,7 @@ function patchAndroidSystemBars() {
     return;
   }
 
-  // Full MainActivity v3: decorFits after super; do NOT also pad (that doubles the status-bar gap).
+  // Full MainActivity v4: edge-to-edge + single content padding (one status-bar gap).
   const body = `package app.financemanager.desktop
 
 import android.os.Bundle
@@ -641,35 +641,22 @@ class MainActivity : TauriActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     // ${marker}
-    try {
-      WindowCompat.setDecorFitsSystemWindows(window, true)
-    } catch (_: Throwable) {
-    }
     enableFinanceManagerWebViewZoom()
     applyFinanceManagerSystemBarInsets()
   }
 
   private fun applyFinanceManagerSystemBarInsets() {
-    // v3: WindowCompat.setDecorFitsSystemWindows(true) already clears the status bar.
-    // Extra View padding stacked on top of that and created a double gap under the clock.
+    // v4: draw edge-to-edge, then pad the content root ONCE with system bar insets.
+    // Do not also setDecorFitsSystemWindows(true) — that stacked a second gap.
     try {
+      WindowCompat.setDecorFitsSystemWindows(window, false)
       val content = findViewById<View>(android.R.id.content) ?: return
-      content.setPadding(0, 0, 0, 0)
-      content.post {
-        val webViews = ArrayList<WebView>()
-        fun collect(v: View) {
-          if (v is WebView) webViews.add(v)
-          if (v is ViewGroup) {
-            for (i in 0 until v.childCount) collect(v.getChildAt(i))
-          }
-        }
-        collect(content)
-        for (wv in webViews) {
-          wv.setPadding(0, 0, 0, 0)
-          ViewCompat.setOnApplyWindowInsetsListener(wv, null)
-        }
-        ViewCompat.setOnApplyWindowInsetsListener(content, null)
+      ViewCompat.setOnApplyWindowInsetsListener(content) { v, insets ->
+        val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+        v.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+        WindowInsetsCompat.CONSUMED
       }
+      ViewCompat.requestApplyInsets(content)
     } catch (_: Throwable) {
     }
   }

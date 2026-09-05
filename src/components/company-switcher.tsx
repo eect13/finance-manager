@@ -26,7 +26,10 @@ import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
 
 function usePhoneUi() {
-  const [phone, setPhone] = useState(false);
+  const [phone, setPhone] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(max-width: 767px), ((hover: none) and (pointer: coarse))").matches;
+  });
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 767px), ((hover: none) and (pointer: coarse))");
     const apply = () => setPhone(mq.matches);
@@ -68,9 +71,11 @@ export function CompanySwitcher({ className }: { className?: string } = {}) {
       )}
       aria-label={`Switch company (current: ${name})`}
       onClick={phone ? () => setPickerOpen(true) : undefined}
-    >
-      <span className="min-w-0 flex-1 truncate text-sm font-medium">{name}</span>
-      <span className="hidden shrink-0 whitespace-nowrap text-xs text-muted-foreground md:inline">
+>
+      <span className="company-switcher-name min-w-0 flex-1 truncate text-sm font-medium leading-tight">
+        {name}
+      </span>
+      <span className="company-switcher-date hidden shrink-0 whitespace-nowrap text-xs text-muted-foreground md:inline">
         {formatDate(todayIso())}
       </span>
       <ChevronDown className="size-4 shrink-0 text-muted-foreground" />

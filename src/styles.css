@@ -312,6 +312,8 @@
   }
 
   .desk-row {
+    cursor: pointer;
+    touch-manipulation: manipulation;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -3364,16 +3366,20 @@ body.printing [data-radix-popper-content-wrapper]:has(.print-paper-menu) {
 
 
 /* v3.62.17: no double status-bar gap; phone tables actually scroll; Fold/tablet */
+/* Native pads once; keep CSS at a tiny breath so chrome never hugs the clock */
 html.tauri-android .app-header-bar,
 html.tauri-android .app-sidebar,
 html.tauri-android .app-shell-loading {
-  padding-top: 0 !important;
+  padding-top: 0.2rem !important;
 }
 html.tauri-android .sheet-panel {
-  padding-top: 0.15rem !important;
+  padding-top: 0.2rem !important;
 }
 html.tauri-android .sheet-close {
-  top: 0.5rem !important;
+  top: 0.55rem !important;
+}
+html.tauri-android .app-header-inner {
+  padding-block: 0.35rem !important;
 }
 
 /* Coarse-pointer white-square fix accidentally disabled sideways scroll — restore it */
@@ -3424,10 +3430,15 @@ html.tauri-android .sheet-close {
     flex-wrap: wrap;
     gap: 0.4rem;
   }
+}
+
+/* Non-Android phones still get one modest safe-area gap (not a huge fallback) */
+@media (max-width: 767px) {
   .app-header-bar {
-    padding-top: 0 !important;
+    padding-top: max(0.25rem, env(safe-area-inset-top, 0px));
   }
 }
+
 
 /* Tablet / Fold open (768–1280): denser but keep multi-col table usable */
 @media (min-width: 768px) and (max-width: 1280px) {
@@ -3443,5 +3454,51 @@ html.tauri-android .sheet-close {
   }
   .page-scroll-x {
     overflow-x: auto !important;
+  }
+}
+
+
+/* v3.62.18 desk + company trigger clarity */
+@media (max-width: 767px) {
+  .company-switcher-trigger {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-height: 2.75rem;
+    overflow: hidden;
+  }
+  .company-switcher-trigger > span:first-of-type {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  /* Date never on phone — avoid wrapped ghost text under the name */
+  .company-switcher-trigger .company-switcher-date {
+    display: none !important;
+  }
+  .close-banner {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.65rem;
+  }
+  .close-banner a {
+    display: inline-block;
+    min-height: 1.5rem;
+    padding-block: 0.15rem;
+  }
+  .close-banner button {
+    width: 100%;
+    min-height: 2.75rem;
+  }
+  .desk-bank-row {
+    min-height: 3rem;
+    padding: 0.65rem 0.15rem;
+    border-radius: 0.75rem;
+  }
+  .desk-stats {
+    gap: 0.55rem;
   }
 }

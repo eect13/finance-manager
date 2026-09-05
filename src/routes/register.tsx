@@ -465,7 +465,7 @@ function RegisterPage() {
       }
       const next = line.recon === "cleared" ? "pending" : "cleared";
       try {
-        setCashRecon({ kind: line.kind, sourceId: line.sourceId, recon: next });
+        setCashRecon({ kind: line.kind, sourceId: line.sourceId, bankId: line.bankId, recon: next });
         toast.success(next === "cleared" ? "Cleared." : "Pending.");
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Could not update status.");

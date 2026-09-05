@@ -1,6 +1,6 @@
 import { addDays, addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, parseISO, startOfMonth, startOfWeek } from "date-fns";
 import { parseAmountToCents, todayIso } from "./format";
-import type { FinanceData, ReceiptMethod, ReconStatus } from "./types";
+import { journalAnyLegReconciled, journalLegRecon, type FinanceData, type ReceiptMethod, type ReconStatus } from "./types";
 
 export type CashLineKind =
   | "opening"
@@ -239,7 +239,10 @@ export function cashBook(
       if (bankId && lineBankId !== bankId) continue;
       const inbound = line.debit > 0;
       const amount = inbound ? line.debit : line.credit;
-      const locked = journal.recon === "reconciled";
+      const legRecon = journalLegRecon(journal, lineBankId);
+      // Edit/move locks if any transfer leg is reconciled (shared journal date/amount).
+      const locked =
+        journal.sourceType === "transfer" ? journalAnyLegReconciled(journal) : legRecon === "reconciled";
       const kind: CashLineKind =
         journal.sourceType === "manual" ? (inbound ? "deposit" : "expense") : (journal.sourceType as CashLineKind);
       accept(journal.date, true, inbound ? amount : -amount, () => ({
@@ -254,7 +257,7 @@ export function cashBook(
         deposit: inbound ? amount : 0,
         status: journal.sourceType === "transfer" ? "internal" : "posted",
         memo: line.memo,
-        recon: journal.recon ?? "pending",
+        recon: legRecon,
         counts: true,
         reschedulable: !locked,
         reassignable: !locked,

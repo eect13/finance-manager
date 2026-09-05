@@ -346,9 +346,30 @@ export interface JournalEntry {
   description: string;
   sourceType: JournalSource;
   sourceId?: string;
+  /** Shared / legacy recon (deposits, expenses, and fallback for transfers). */
   recon: ReconStatus;
+  /**
+   * Transfer legs: Pending/Cleared/Reconciled per bankId.
+   * Absent or incomplete maps are filled from `recon` on normalize.
+   */
+  reconByBank?: Record<string, ReconStatus>;
   lines: JournalLine[];
   createdAt?: number;
+}
+
+/** Per-bank recon for a journal (transfers); falls back to journal.recon. */
+export function journalLegRecon(journal: Pick<JournalEntry, "recon" | "reconByBank">, bankId: string): ReconStatus {
+  const map = journal.reconByBank;
+  if (map && Object.prototype.hasOwnProperty.call(map, bankId)) return parseRecon(map[bankId]);
+  return parseRecon(journal.recon);
+}
+
+/** True if any transfer leg (or shared recon) is reconciled — blocks edit/delete/reschedule. */
+export function journalAnyLegReconciled(journal: Pick<JournalEntry, "recon" | "reconByBank">): boolean {
+  if (parseRecon(journal.recon) === "reconciled") return true;
+  const map = journal.reconByBank;
+  if (!map) return false;
+  return Object.values(map).some((r) => parseRecon(r) === "reconciled");
 }
 
 export interface RecurringItem {

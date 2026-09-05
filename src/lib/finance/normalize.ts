@@ -1,4 +1,4 @@
-import { DEFAULT_SETTINGS, normalizeRegisterCols, parseRecon } from "./types";
+import { DEFAULT_SETTINGS, normalizeRegisterCols, parseRecon, type ReconStatus } from "./types";
 import { parseMethod } from "./methods";
 import { ensureRegisterOrder } from "./register";
 import type { Employee, PayType,  Account, AuditEvent, Bank, Bill, CheckRecord, CloseSnapshot, Customer, FinanceData, Invoice, JournalEntry, Receipt, ReconStatement, Vendor } from "./types";
@@ -72,11 +72,46 @@ export function normalizeBooks(raw: unknown): FinanceData {
       createdAt: typeof c.createdAt === "number" ? c.createdAt : i,
     };
   });
-  const journals = asArray<JournalEntry>(p.journals).map((j, i) => ({
-    ...j,
-    recon: parseRecon(j.recon),
-    createdAt: typeof j.createdAt === "number" ? j.createdAt : i,
-  }));
+  const banksEarly = asArray<Bank>(p.banks);
+  const accountToBankId = new Map<string, string>();
+  for (const b of banksEarly) {
+    if (b.accountId) accountToBankId.set(b.accountId, b.id);
+  }
+  const journals = asArray<JournalEntry>(p.journals).map((j, i) => {
+    const recon = parseRecon(j.recon);
+    let reconByBank: Record<string, ReconStatus> | undefined =
+      j.reconByBank && typeof j.reconByBank === "object" && !Array.isArray(j.reconByBank)
+        ? { ...j.reconByBank }
+        : undefined;
+    if (reconByBank) {
+      for (const [k, v] of Object.entries(reconByBank)) {
+        reconByBank[k] = parseRecon(v);
+      }
+    }
+    // Transfers: ensure every bank leg has its own recon (legacy shared journal.recon → both legs).
+    if (j.sourceType === "transfer") {
+      const legBanks = new Set<string>();
+      for (const line of Array.isArray(j.lines) ? j.lines : []) {
+        const bid = accountToBankId.get(line.accountId);
+        if (bid) legBanks.add(bid);
+      }
+      if (legBanks.size > 0) {
+        const nextMap: Record<string, ReconStatus> = { ...(reconByBank ?? {}) };
+        for (const bid of legBanks) {
+          if (!Object.prototype.hasOwnProperty.call(nextMap, bid)) {
+            nextMap[bid] = recon;
+          }
+        }
+        reconByBank = nextMap;
+      }
+    }
+    return {
+      ...j,
+      recon,
+      ...(reconByBank ? { reconByBank } : {}),
+      createdAt: typeof j.createdAt === "number" ? j.createdAt : i,
+    };
+  });
   const nextNumbers = p.nextNumbers ?? { invoice: 1, check: {}, receipt: 1, bill: 1 };
   const employees = asArray<Employee>((p as any).employees).map((e, i) => ({
     ...e,

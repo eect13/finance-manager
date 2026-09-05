@@ -939,7 +939,8 @@ export function createSeed(): FinanceData {
 
   function addTransfer(date: string, amount: number, from: string, to: string, memo: string) {
     const id = `xfer-${date}`;
-    post(
+    const recon = seedCashRecon(date);
+    const entry = post(
       {
         date,
         description: memo,
@@ -951,8 +952,9 @@ export function createSeed(): FinanceData {
         ],
       },
       `j-${id}`,
-      seedCashRecon(date),
+      recon,
     );
+    entry.reconByBank = { [from]: recon, [to]: recon };
   }
 
   post(

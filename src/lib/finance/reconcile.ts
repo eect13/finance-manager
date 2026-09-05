@@ -21,8 +21,11 @@ export function lineOnFinishedRecon(
   data: FinanceData,
   kind: string,
   sourceId: string,
+  bankId?: string,
 ): ReconStatement | null {
   for (const rec of data.reconHistory ?? []) {
+    // Transfer legs share kind+sourceId; only the statement bank locks that leg.
+    if (bankId && rec.bankId !== bankId) continue;
     if (rec.lines.some((l) => l.kind === kind && l.sourceId === sourceId)) return rec;
   }
   return null;

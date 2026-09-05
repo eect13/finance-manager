@@ -43,7 +43,13 @@ import {
   unclearedLines,
 } from "./reconcile";
 import { closeChecklist, closeTotals } from "./close";
-import type { AuditEvent, CloseSnapshot, ReconStatement } from "./types";
+import {
+  journalAnyLegReconciled,
+  journalLegRecon,
+  type AuditEvent,
+  type CloseSnapshot,
+  type ReconStatement,
+} from "./types";
 import { addMonths, format, parseISO } from "date-fns";
 
 function assertOpenPeriod(data: FinanceData, date: string) {
@@ -947,20 +953,23 @@ export function transferBanks(data: FinanceData, input): FinanceData {
   const from = data.banks.find((b) => b.id === input.fromId);
   const to = data.banks.find((b) => b.id === input.toId);
   if (!from || !to) throw new Error("Bank not found");
-  const journal = makeJournal({
-    date: input.date,
-    description: input.memo || `Transfer ${from.nickname} → ${to.nickname}`,
-    sourceType: "transfer",
-    lines: [{
-      accountId: to.accountId,
-      debit: input.amount,
-      credit: 0
-    }, {
-      accountId: from.accountId,
-      debit: 0,
-      credit: input.amount
-    }]
-  });
+  const journal = {
+    ...makeJournal({
+      date: input.date,
+      description: input.memo || `Transfer ${from.nickname} → ${to.nickname}`,
+      sourceType: "transfer",
+      lines: [{
+        accountId: to.accountId,
+        debit: input.amount,
+        credit: 0
+      }, {
+        accountId: from.accountId,
+        debit: 0,
+        credit: input.amount
+      }]
+    }),
+    reconByBank: { [from.id]: "pending", [to.id]: "pending" },
+  };
   return {
     ...data,
     journals: [...data.journals, journal]
@@ -1475,9 +1484,15 @@ function reassignJournalBank(data: FinanceData, journalId, toBankId, fromBankId)
     ...data,
     journals: data.journals.map((j) => {
       if (j.id !== journalId) return j;
+      let reconByBank = j.reconByBank;
+      if (reconByBank && Object.prototype.hasOwnProperty.call(reconByBank, fromBank.id)) {
+        const { [fromBank.id]: moved, ...rest } = reconByBank;
+        reconByBank = { ...rest, [toBank.id]: moved };
+      }
       return {
         ...j,
         description,
+        ...(reconByBank ? { reconByBank } : {}),
         lines: j.lines.map((l) => l.accountId === fromBank.accountId ? {
           ...l,
           accountId: toBank.accountId
@@ -1487,7 +1502,7 @@ function reassignJournalBank(data: FinanceData, journalId, toBankId, fromBankId)
   };
 }
 
-function cashReconOf(data: FinanceData, kind, sourceId): "pending" | "cleared" | "reconciled" {
+function cashReconOf(data: FinanceData, kind, sourceId, bankId?: string): "pending" | "cleared" | "reconciled" {
   if (kind === "check") return data.checks.find((c) => c.id === sourceId)?.recon ?? "pending";
   if (kind === "receipt" || kind === "payment") return data.receipts.find((r) => r.id === sourceId)?.recon ?? "pending";
   if (kind === "bill-payment") {
@@ -1497,13 +1512,20 @@ function cashReconOf(data: FinanceData, kind, sourceId): "pending" | "cleared" |
     }
   }
   if (kind === "deposit" || kind === "expense" || kind === "transfer" || kind === "journal") {
-    return data.journals.find((j) => j.id === sourceId)?.recon ?? "pending";
+    const journal = data.journals.find((j) => j.id === sourceId);
+    if (!journal) return "pending";
+    if (kind === "transfer") {
+      if (bankId) return journalLegRecon(journal, bankId);
+      // No bank: any reconciled leg locks edit/delete/reschedule of the shared journal.
+      return journalAnyLegReconciled(journal) ? "reconciled" : (journal.recon ?? "pending");
+    }
+    return journal.recon ?? "pending";
   }
   return "pending";
 }
 
-function assertUnlocked(data: FinanceData, kind, sourceId) {
-  if (cashReconOf(data, kind, sourceId) === "reconciled") {
+function assertUnlocked(data: FinanceData, kind, sourceId, bankId?: string) {
+  if (cashReconOf(data, kind, sourceId, bankId) === "reconciled") {
     throw new Error("This line is reconciled. Unlock it first.");
   }
 }
@@ -1512,7 +1534,7 @@ export function setCashRecon(data: FinanceData, input): FinanceData {
   if (input.recon === "reconciled") {
     throw new Error("Mark reconciled from Reconcile → Finish statement.");
   }
-  const locked = lineOnFinishedRecon(data, input.kind, input.sourceId);
+  const locked = lineOnFinishedRecon(data, input.kind, input.sourceId, input.bankId);
   if (locked) {
     throw new Error(`This line is on the ${locked.statementDate} statement. Undo that rec first.`);
   }
@@ -1571,6 +1593,20 @@ function applyCashRecon(data: FinanceData, input): FinanceData {
   if (input.kind === "deposit" || input.kind === "expense" || input.kind === "transfer" || input.kind === "journal") {
     const journal = data.journals.find((j) => j.id === input.sourceId);
     if (!journal) throw new Error("Entry not found");
+    // Transfers: only the selected bank leg. Deposits/expenses keep shared journal.recon.
+    if (input.kind === "transfer") {
+      if (!input.bankId) throw new Error("Pick which bank leg to reconcile.");
+      return {
+        ...data,
+        journals: data.journals.map((j) => {
+          if (j.id !== input.sourceId) return j;
+          return {
+            ...j,
+            reconByBank: { ...(j.reconByBank ?? {}), [input.bankId]: recon },
+          };
+        })
+      };
+    }
     return {
       ...data,
       journals: data.journals.map((j) => j.id === input.sourceId ? { ...j, recon } : j)
@@ -1790,7 +1826,12 @@ export function finishRecon(
   if (explained !== 0) throw new Error("Explained difference must be zero — outstanding and in-transit must prove the book.");
   let next = data;
   for (const line of ticked) {
-    next = applyCashRecon(next, { kind: line.kind, sourceId: line.sourceId, recon: "reconciled" });
+    next = applyCashRecon(next, {
+      kind: line.kind,
+      sourceId: line.sourceId,
+      recon: "reconciled",
+      bankId: input.bankId,
+    });
   }
   const leftover = [...explain.outstanding, ...explain.inTransit];
   const report: ReconStatement = {
@@ -1837,7 +1878,12 @@ export function undoLastRecon(data: FinanceData, bankId: string): FinanceData {
   }
   let next = data;
   for (const line of last.lines) {
-    next = applyCashRecon(next, { kind: line.kind, sourceId: line.sourceId, recon: "pending" });
+    next = applyCashRecon(next, {
+      kind: line.kind,
+      sourceId: line.sourceId,
+      recon: "pending",
+      bankId,
+    });
   }
   const rest = (next.reconHistory ?? []).filter((r) => r.id !== last.id);
   const prev = rest.filter((r) => r.bankId === bankId).at(-1);

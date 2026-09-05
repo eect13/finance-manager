@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -11,6 +12,8 @@ import { ListCard, listColClass } from "@/components/list-table";
 import { Money } from "@/components/money";
 import { SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
+import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
+import { useColAligns, alignClass } from "@/components/use-col-aligns";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -125,6 +128,14 @@ function EmployeesPage() {
 
   const sort = useEntrySort(filtered, "name", getters, "asc");
   const cols = useColWidths("finance-manager-employees-cols", EMP_COLS);
+  const colAligns = useColAligns("finance-manager-employees-col-aligns", Object.keys(EMP_COLS) as Array<keyof typeof EMP_COLS>);
+  const pointer = useTableKeyboardFocus({
+    ids: sort.sorted.map((e) => e.id),
+    onOpen: (id) => {
+      const emp = sort.sorted.find((e) => e.id === id);
+      if (emp) openEdit(emp);
+    },
+  });
   const gridRef = useRef<HTMLDivElement>(null);
   const activeCount = (data.employees ?? []).filter((e) => e.active).length;
 
@@ -275,7 +286,7 @@ function EmployeesPage() {
         />
       </ListToolbar>
 
-      <ListCard ref={gridRef}>
+      <ListCard ref={pointer.bindContainer(gridRef)} tabIndex={0} className="outline-none">
         <table ref={cols.tableRef} className="text-sm">
           <colgroup>
             {(Object.keys(EMP_COLS) as Array<keyof typeof EMP_COLS>).map((id) => (
@@ -284,11 +295,11 @@ function EmployeesPage() {
           </colgroup>
           <thead>
             <tr className="border-b border-border text-muted-foreground">
-              <SortHeader label="Name" column="name" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.name} onWidth={(n) => cols.setWidth("name", n)} />
-              <SortHeader label="Title" column="title" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.title} onWidth={(n) => cols.setWidth("title", n)} />
-              <SortHeader label="Pay" column="rate" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.rate} onWidth={(n) => cols.setWidth("rate", n)} />
-              <SortHeader label="Bank" column="bank" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.bank} onWidth={(n) => cols.setWidth("bank", n)} />
-              <SortHeader label="Status" column="status" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.status} onWidth={(n) => cols.setWidth("status", n)} />
+              <SortHeader label="Name" column="name" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.name} onWidth={(n) => cols.setWidth("name", n)}  align={colAligns.aligns.name ?? "left"} onAlign={(a) => colAligns.setAlign("name", a)} />
+              <SortHeader label="Title" column="title" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.title} onWidth={(n) => cols.setWidth("title", n)} align={colAligns.aligns.title ?? "left"} onAlign={(a) => colAligns.setAlign("title", a)} />
+              <SortHeader label="Pay" column="rate" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.rate} onWidth={(n) => cols.setWidth("rate", n)} align={colAligns.aligns.rate ?? "right"} onAlign={(a) => colAligns.setAlign("rate", a)} />
+              <SortHeader label="Bank" column="bank" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.bank} onWidth={(n) => cols.setWidth("bank", n)} align={colAligns.aligns.bank ?? "left"} onAlign={(a) => colAligns.setAlign("bank", a)} />
+              <SortHeader label="Status" column="status" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.status} onWidth={(n) => cols.setWidth("status", n)} align={colAligns.aligns.status ?? "center"} onAlign={(a) => colAligns.setAlign("status", a)} />
               <th className="col-actions px-4 py-3"><span className="sr-only">Actions</span></th>
             </tr>
           </thead>
@@ -305,7 +316,15 @@ function EmployeesPage() {
               sort.sorted.map((e) => {
                 const bank = data.banks.find((b) => b.id === e.bankId);
                 return (
-                  <tr key={e.id} className="border-b border-border/70">
+                  <tr
+                    key={e.id}
+                    className="border-b border-border/70"
+                    data-focused={pointer.activeId === e.id ? "true" : undefined}
+                    data-row-id={e.id}
+                    aria-current={pointer.activeId === e.id ? "true" : undefined}
+                    onClick={() => pointer.setActiveId(e.id)}
+                    onDoubleClick={() => openEdit(e)}
+                  >
                     <td className="px-4 py-3" data-col="name">
                       <button type="button" className="font-medium hover:underline" onClick={() => openEdit(e)}>
                         {e.name}

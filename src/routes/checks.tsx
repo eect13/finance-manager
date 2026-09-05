@@ -18,7 +18,9 @@ import { requestPrint } from "@/components/print-preview";
 import { CheckStatusControl } from "@/components/check-status-menu";
 import { SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
-import { useListPointer } from "@/components/use-list-pointer";
+import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
+import { useColAligns, alignClass } from "@/components/use-col-aligns";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -113,10 +115,11 @@ function ChecksPage() {
   const cols = useColWidths("finance-manager-checks-cols", CHK_COLS);
   const gridRef = useRef<HTMLDivElement>(null);
   const openCheck = useCallback((id: string) => openTxn("check", id), []);
-  const pointer = useListPointer(
-    sort.sorted.map((c) => c.id),
-    openCheck,
-  );
+  const colAligns = useColAligns("finance-manager-checks-col-aligns", Object.keys(CHK_COLS) as Array<keyof typeof CHK_COLS>);
+  const pointer = useTableKeyboardFocus({
+    ids: sort.sorted.map((c) => c.id),
+    onOpen: openCheck,
+  });
   function fit(id: keyof typeof CHK_COLS, label: string) {
     const table = gridRef.current?.querySelector("table");
     if (!table) return;
@@ -190,7 +193,7 @@ function ChecksPage() {
         />
       </ListToolbar>
 
-      <ListCard ref={gridRef}>
+      <ListCard ref={pointer.bindContainer(gridRef)} tabIndex={0} className="outline-none">
         <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
           <colgroup>
             {(Object.keys(CHK_COLS) as Array<keyof typeof CHK_COLS>).map((id) => (
@@ -199,13 +202,13 @@ function ChecksPage() {
           </colgroup>
           <thead>
             <tr className="border-b border-border text-muted-foreground">
-              <SortHeader label="Check" column="number" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.number} onWidth={(n) => cols.setWidth("number", n)} onFit={() => fit("number", "Check")} />
-              <SortHeader label="Payee" column="payee" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.payee} onWidth={(n) => cols.setWidth("payee", n)} onFit={() => fit("payee", "Payee")} />
-              <SortHeader label="Bank" column="bank" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.bank} onWidth={(n) => cols.setWidth("bank", n)} onFit={() => fit("bank", "Bank")} />
-              <SortHeader label="Issued" column="issued" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.issued} onWidth={(n) => cols.setWidth("issued", n)} onFit={() => fit("issued", "Issued")} />
-              <SortHeader label="Post" column="post" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.post} onWidth={(n) => cols.setWidth("post", n)} onFit={() => fit("post", "Post")} />
-              <SortHeader label="Amount" column="amount" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} align="right" width={cols.widths.amount} onWidth={(n) => cols.setWidth("amount", n)} onFit={() => fit("amount", "Amount")} />
-              <SortHeader label="Status" column="status" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.status} onWidth={(n) => cols.setWidth("status", n)} onFit={() => fit("status", "Status")} />
+              <SortHeader label="Check" column="number" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.number} onWidth={(n) => cols.setWidth("number", n)} onFit={() => fit("number", "Check")} align={colAligns.aligns.number ?? "left"} onAlign={(a) => colAligns.setAlign("number", a)} />
+              <SortHeader label="Payee" column="payee" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.payee} onWidth={(n) => cols.setWidth("payee", n)} onFit={() => fit("payee", "Payee")} align={colAligns.aligns.payee ?? "left"} onAlign={(a) => colAligns.setAlign("payee", a)} />
+              <SortHeader label="Bank" column="bank" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.bank} onWidth={(n) => cols.setWidth("bank", n)} onFit={() => fit("bank", "Bank")} align={colAligns.aligns.bank ?? "left"} onAlign={(a) => colAligns.setAlign("bank", a)} />
+              <SortHeader label="Issued" column="issued" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.issued} onWidth={(n) => cols.setWidth("issued", n)} onFit={() => fit("issued", "Issued")} align={colAligns.aligns.issued ?? "left"} onAlign={(a) => colAligns.setAlign("issued", a)} />
+              <SortHeader label="Post" column="post" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.post} onWidth={(n) => cols.setWidth("post", n)} onFit={() => fit("post", "Post")} align={colAligns.aligns.post ?? "left"} onAlign={(a) => colAligns.setAlign("post", a)} />
+              <SortHeader label="Amount" column="amount" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.amount} onWidth={(n) => cols.setWidth("amount", n)} onFit={() => fit("amount", "Amount")} align={colAligns.aligns.amount ?? "right"} onAlign={(a) => colAligns.setAlign("amount", a)} />
+              <SortHeader label="Status" column="status" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.status} onWidth={(n) => cols.setWidth("status", n)} onFit={() => fit("status", "Status")} align={colAligns.aligns.status ?? "center"} onAlign={(a) => colAligns.setAlign("status", a)} />
               <th className="col-actions relative px-2 py-3">
                 <span className="sr-only">Actions</span>
               </th>
@@ -233,6 +236,9 @@ function ChecksPage() {
                       key={check.id}
                       className="border-b border-border/70 last:border-0"
                       data-active={pointer.activeId === check.id ? "true" : undefined}
+                      data-focused={pointer.activeId === check.id ? "true" : undefined}
+                      data-row-id={check.id}
+                      aria-current={pointer.activeId === check.id ? "true" : undefined}
                       {...openProps("check", check.id)}
                       onClick={() => pointer.setActiveId(check.id)}
                     >
@@ -244,12 +250,13 @@ function ChecksPage() {
                       <td className="px-4 py-3 text-muted-foreground" data-col="bank">{bank?.nickname}</td>
                       <td className="px-4 py-3 whitespace-nowrap" data-col="issued">{formatDate(check.issueDate)}</td>
                       <td className="px-4 py-3 whitespace-nowrap" data-col="post">{formatDate(check.postDate)}</td>
-                      <td className="px-4 py-3 text-right" data-col="amount">
+                      <td className={cn("px-4 py-3", alignClass(colAligns.aligns.amount ?? "right"))} data-col="amount" data-align={colAligns.aligns.amount ?? "right"}>
                         <Money amount={check.amount} currency={data.settings.currency} />
                       </td>
                       <td
-                        className="px-3 py-3"
+                        className={cn("px-3 py-3", alignClass(colAligns.aligns.status ?? "center"))}
                         data-col="status"
+                        data-align={colAligns.aligns.status ?? "center"}
                         onClick={stopOpen}
                         onPointerDown={stopOpen}
                         onDoubleClick={stopOpen}

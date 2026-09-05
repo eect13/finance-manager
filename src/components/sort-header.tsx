@@ -1,6 +1,17 @@
-import { ArrowDown, ArrowUp } from "lucide-react";
+import { useState } from "react";
+import { AlignCenter, AlignLeft, AlignRight, ArrowDown, ArrowUp, Check, MoreVertical } from "lucide-react";
 import type { SortDir } from "@/lib/finance/sort";
 import { cn } from "@/lib/utils";
+import type { ColAlign } from "@/components/use-col-aligns";
+import { headerJustify } from "@/components/use-col-aligns";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function ColResize({
   width,
@@ -25,7 +36,6 @@ export function ColResize({
       }}
       onPointerDown={(e) => {
         if (e.detail > 1) return;
-        // Phone/tablet: column drag is unusable — CSS hides the handle; skip events too.
         if (typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches) return;
         e.preventDefault();
         e.stopPropagation();
@@ -35,7 +45,7 @@ export function ColResize({
         try {
           node.setPointerCapture(e.pointerId);
         } catch {
-          /* synthetic pointer events may not support capture */
+          /* ignore */
         }
         node.dataset.dragging = "true";
         let latest = startW;
@@ -70,6 +80,9 @@ export function SortHeader({
   dir,
   onToggle,
   align = "left",
+  onAlign,
+  visible,
+  onVisible,
   compact = false,
   className,
   width,
@@ -81,7 +94,10 @@ export function SortHeader({
   sortKey: string;
   dir: SortDir;
   onToggle: (column: string) => void;
-  align?: "left" | "right" | "center";
+  align?: ColAlign;
+  onAlign?: (align: ColAlign) => void;
+  visible?: boolean;
+  onVisible?: (on: boolean) => void;
   compact?: boolean;
   className?: string;
   width?: number;
@@ -89,30 +105,89 @@ export function SortHeader({
   onFit?: () => void;
 }) {
   const active = sortKey === column;
+  const [menuOpen, setMenuOpen] = useState(false);
+  const hasMenu = Boolean(onAlign || onVisible);
+
   return (
     <th
       className={cn(
-        "relative text-center font-medium",
-        compact ? "py-2" : "px-4 py-3",
-        compact && "px-2",
+        "relative font-medium",
+        align === "center" ? "text-center" : align === "right" ? "text-right" : "text-left",
+        compact ? "py-2 px-2" : "px-4 py-3",
         className,
       )}
       style={width ? { minWidth: width, width } : undefined}
       data-align={align}
       data-col={column}
+      onContextMenu={
+        hasMenu
+          ? (e) => {
+              e.preventDefault();
+              setMenuOpen(true);
+            }
+          : undefined
+      }
+      title={hasMenu ? "Click to sort · right-click for align / column options" : undefined}
     >
-      <button
-        type="button"
-        onClick={() => onToggle(column)}
-        className={cn(
-          "inline-flex w-full items-center justify-center gap-1 whitespace-nowrap text-center font-medium",
-          compact ? "min-h-8 text-xs tracking-wide uppercase" : "min-h-11 text-sm",
-          active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
-        )}
-      >
-        {label}
-        {active ? dir === "asc" ? <ArrowUp className="size-3.5" /> : <ArrowDown className="size-3.5" /> : null}
-      </button>
+      <div className={cn("flex w-full items-center gap-0.5", headerJustify(align))}>
+        <button
+          type="button"
+          onClick={() => onToggle(column)}
+          className={cn(
+            "inline-flex min-w-0 items-center gap-1 whitespace-nowrap font-medium",
+            align === "center" ? "text-center" : align === "right" ? "text-right" : "text-left",
+            compact ? "min-h-8 text-xs tracking-wide uppercase" : "min-h-11 text-sm",
+            active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          {label}
+          {active ? dir === "asc" ? <ArrowUp className="size-3.5 shrink-0" /> : <ArrowDown className="size-3.5 shrink-0" /> : null}
+        </button>
+        {hasMenu ? (
+          <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="col-opts-trigger no-print inline-flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-60 hover:bg-muted hover:opacity-100"
+                aria-label={`${label} column options`}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <MoreVertical className="size-3.5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="min-w-44">
+              <DropdownMenuLabel>{label}</DropdownMenuLabel>
+              {onAlign ? (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="text-[0.65rem] uppercase tracking-wide">Align</DropdownMenuLabel>
+                  {(
+                    [
+                      ["left", "Left", AlignLeft],
+                      ["center", "Center", AlignCenter],
+                      ["right", "Right", AlignRight],
+                    ] as const
+                  ).map(([id, text, Icon]) => (
+                    <DropdownMenuItem key={id} onClick={() => onAlign(id)}>
+                      <Icon className="size-3.5" />
+                      {text}
+                      {align === id ? <Check className="ml-auto size-3.5" /> : null}
+                    </DropdownMenuItem>
+                  ))}
+                </>
+              ) : null}
+              {onVisible ? (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => onVisible(!(visible ?? true))}>
+                    {visible === false ? "Show column" : "Hide column"}
+                  </DropdownMenuItem>
+                </>
+              ) : null}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : null}
+      </div>
       {onWidth && width != null ? <ColResize width={width} onWidth={onWidth} onFit={onFit} /> : null}
     </th>
   );

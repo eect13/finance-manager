@@ -4245,3 +4245,108 @@ body.is-phone-move-dragging {
 .dark .register-tick > span.border-primary {
   box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-primary) 80%, transparent);
 }
+
+/* v3.62.54: keyboard row focus (QuickBooks-like) — obvious in light + dark */
+.list-grid tbody tr[data-focused="true"] td,
+.register-matrix tbody tr[data-focused="true"] td,
+.list-grid tbody tr[aria-current="true"] td,
+.register-matrix tbody tr[aria-current="true"] td,
+.party-dir-table tbody tr[data-focused="true"] td,
+.party-txn-table tbody tr[data-focused="true"] td {
+  background: color-mix(in oklab, var(--color-ring) 16%, var(--color-card));
+  box-shadow: inset 3px 0 0 var(--color-ring);
+}
+.dark .list-grid tbody tr[data-focused="true"] td,
+.dark .register-matrix tbody tr[data-focused="true"] td,
+.dark .list-grid tbody tr[aria-current="true"] td,
+.dark .register-matrix tbody tr[aria-current="true"] td,
+.dark .party-dir-table tbody tr[data-focused="true"] td,
+.dark .party-txn-table tbody tr[data-focused="true"] td {
+  background: color-mix(in oklab, var(--color-ring) 28%, var(--color-card));
+  box-shadow: inset 3px 0 0 color-mix(in oklab, var(--color-ring) 85%, #fff);
+}
+/* Selected (tick) + focused: keep primary tint, keep focus bar */
+.list-grid tbody tr[data-focused="true"][data-selected="true"] td,
+.register-matrix tbody tr[data-focused="true"][data-selected="true"] td {
+  background: color-mix(in oklab, var(--color-primary) 18%, var(--color-card));
+}
+.register-phone-card[data-focused="true"],
+.recon-phone-card[data-focused="true"],
+[data-list-card][data-focused="true"] {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 1px;
+  background: color-mix(in oklab, var(--color-ring) 12%, var(--color-card));
+}
+.dark .register-phone-card[data-focused="true"],
+.dark .recon-phone-card[data-focused="true"],
+.dark [data-list-card][data-focused="true"] {
+  background: color-mix(in oklab, var(--color-ring) 22%, var(--color-card));
+}
+.list-card.list-grid:focus,
+.list-card.list-grid:focus-visible,
+.register-matrix:focus,
+.register-matrix:focus-visible,
+.party-dir-table:focus,
+.party-dir-table:focus-visible {
+  outline: none;
+}
+.list-card.list-grid:focus-visible,
+.register-card:has(.register-matrix:focus-visible),
+.party-dir-table:focus-visible {
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-ring) 45%, transparent);
+}
+
+/* v3.62.54: Register check col — match Reconcile tick spacing (tighter) */
+.register-matrix .col-check {
+  width: 2.75rem !important;
+  min-width: 2.75rem !important;
+  max-width: 2.75rem !important;
+  overflow: visible;
+  text-align: center;
+  vertical-align: middle;
+  padding-left: 0.25rem !important;
+  padding-right: 0.25rem !important;
+}
+.register-matrix .register-check-cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  overflow: visible;
+}
+.register-matrix .register-tick {
+  min-width: 2.25rem;
+  min-height: 2.25rem;
+  width: 2.25rem;
+  height: 2.25rem;
+}
+
+/* Column align: center + left (right already wired) */
+.list-grid th[data-align="center"],
+.register-matrix th[data-align="center"],
+.list-grid td[data-align="center"],
+.register-matrix td[data-align="center"] {
+  text-align: center;
+}
+.list-grid th[data-align="left"],
+.register-matrix th[data-align="left"],
+.list-grid td[data-align="left"],
+.register-matrix td[data-align="left"] {
+  text-align: left;
+}
+.list-grid th[data-align="center"] > button,
+.register-matrix th[data-align="center"] > button,
+.list-grid th[data-align="left"] > button,
+.register-matrix th[data-align="left"] > button {
+  justify-content: inherit;
+}
+.col-opts-trigger {
+  margin-inline: 0.1rem;
+}
+
+.list-grid td[data-align="left"],
+.register-matrix td[data-align="left"] { text-align: left !important; }
+.list-grid td[data-align="center"],
+.register-matrix td[data-align="center"] { text-align: center !important; }
+.list-grid td[data-align="right"],
+.register-matrix td[data-align="right"] { text-align: right !important; }

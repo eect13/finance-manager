@@ -47,7 +47,8 @@ import { ConfirmDelete } from "@/components/confirm-delete";
 import { CsvButton } from "@/components/export-menu";
 import { SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
-import { useListPointer } from "@/components/use-list-pointer";
+import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
+import { useColAligns, alignClass } from "@/components/use-col-aligns";
 import { ListToolbar } from "@/components/filter-pills";
 import { ListFilters, applySortValue, useListPeriod, type FilterSelect } from "@/components/list-filters";
 import { ListCard, listColClass } from "@/components/list-table";
@@ -127,7 +128,8 @@ export function PartyTxnTable({
     },
     [rows],
   );
-  const pointer = useListPointer(ids, openRow, ".party-txn-table");
+  const colAligns = useColAligns("finance-manager-party-txn-col-aligns", Object.keys(TXN_COLS) as Array<keyof typeof TXN_COLS>);
+  const pointer = useTableKeyboardFocus({ ids, onOpen: openRow });
   const wrapRef = useRef<HTMLDivElement>(null);
   const cols = useColWidths("finance-manager-party-txn-cols", TXN_COLS);
 
@@ -162,10 +164,9 @@ export function PartyTxnTable({
         <p className="px-4 py-8 text-center text-sm text-muted-foreground">{query.trim() ? "No transactions match." : empty}</p>
       ) : (
         <ListCard
-          ref={wrapRef}
+          ref={pointer.bindContainer(wrapRef)}
           className="party-txn-table outline-none"
-          tabIndex={-1}
-          onPointerDown={() => wrapRef.current?.focus()}
+          tabIndex={0}
         >
           <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
             <colgroup>
@@ -175,7 +176,10 @@ export function PartyTxnTable({
             </colgroup>
             <thead>
               <tr className="border-b border-border text-muted-foreground">
-                <SortHeader label="Date" column="date" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-txn-date" width={cols.widths.date} onWidth={(n) => cols.setWidth("date", n)} onFit={() => fit("date", "Date")} />
+                <SortHeader label="Date" column="date" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-txn-date" width={cols.widths.date} onWidth={(n) => cols.setWidth("date", n)} onFit={() => fit("date", "Date")} 
+                align={colAligns.aligns.date ?? "left"}
+                onAlign={(a) => colAligns.setAlign("date", a)}
+              />
                 <SortHeader label="Type" column="type" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-txn-type" width={cols.widths.type} onWidth={(n) => cols.setWidth("type", n)} onFit={() => fit("type", "Type")} />
                 <SortHeader label="No." column="number" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-txn-number" width={cols.widths.number} onWidth={(n) => cols.setWidth("number", n)} onFit={() => fit("number", "No.")} />
                 <SortHeader label="Memo" column="memo" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-txn-memo" width={cols.widths.memo} onWidth={(n) => cols.setWidth("memo", n)} onFit={() => fit("memo", "Memo")} />
@@ -193,6 +197,9 @@ export function PartyTxnTable({
                     key={key}
                     className="cursor-pointer"
                     data-active={pointer.activeId === key ? "true" : undefined}
+                    data-focused={pointer.activeId === key ? "true" : undefined}
+                    data-row-id={key}
+                    aria-current={pointer.activeId === key ? "true" : undefined}
                     {...openProps(row.openKind, row.id, { click: tapOpens })}
                     onClick={(e) => {
                       pointer.setActiveId(key);
@@ -577,7 +584,8 @@ function PartyDirectoryTable({
   );
   const sort = useEntrySort(list, "name", getters, "asc");
   const ids = useMemo(() => sort.sorted.map((row) => row.id), [sort.sorted]);
-  const pointer = useListPointer(ids, onOpen, "[data-party-dir]", onSelect);
+  const colAligns = useColAligns(`finance-manager-${kindLabel}-dir-col-aligns`, Object.keys(DIR_COLS) as Array<keyof typeof DIR_COLS>);
+  const pointer = useTableKeyboardFocus({ ids, onOpen, onActive: onSelect });
 
   useEffect(() => {
     if (selectedId) pointer.setActiveId(selectedId);
@@ -591,11 +599,10 @@ function PartyDirectoryTable({
 
   return (
     <div
-      ref={gridRef}
+      ref={pointer.bindContainer(gridRef)}
       data-party-dir
-      tabIndex={-1}
+      tabIndex={0}
       className="party-dir-table list-grid min-w-0 max-w-full overflow-x-auto outline-none"
-      onPointerDown={() => gridRef.current?.focus()}
     >
       <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
         <colgroup>
@@ -628,6 +635,9 @@ function PartyDirectoryTable({
                   selectedId === row.id && "bg-primary/10",
                 )}
                 data-active={pointer.activeId === row.id ? "true" : undefined}
+                data-focused={pointer.activeId === row.id ? "true" : undefined}
+                data-row-id={row.id}
+                aria-current={pointer.activeId === row.id ? "true" : undefined}
                 onClick={() => {
                   pointer.setActiveId(row.id);
                   onSelect(row.id);

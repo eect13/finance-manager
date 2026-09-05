@@ -24,6 +24,8 @@ import {
 } from "@/lib/phone-layout";
 import { SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
+import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
+import { useColAligns } from "@/components/use-col-aligns";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
@@ -31,7 +33,7 @@ import { fitColumnWidth } from "@/lib/finance/fit-column";
 import { formatDate, parseAmountToCents, todayIso } from "@/lib/finance/format";
 import { bookBalanceOn, daysOutstanding, explainedDifference, isReconAdj, lastReconForBank, namedFromCash, namedReconLines, reconBeginning, reconDifference, reconExplain, unclearedAge, unclearedLines } from "@/lib/finance/reconcile";
 import { KIND_LABEL, type CashLine } from "@/lib/finance/register";
-import { openProps } from "@/lib/finance/open-record";
+import { openProps, openTxn } from "@/lib/finance/open-record";
 import { useEntrySort } from "@/lib/finance/sort";
 import { useFinanceData, useFinanceStore } from "@/lib/finance/store";
 import { cn } from "@/lib/utils";
@@ -98,6 +100,10 @@ function ReconcilePage() {
   const [printLast, setPrintLast] = useState(false);
   const gridRef = useRef<HTMLDivElement>(null);
   const cols = useColWidths("finance-manager-recon-cols-v2", reconDefaultCols());
+  const colAligns = useColAligns(
+    "finance-manager-recon-col-aligns",
+    Object.keys(RECON_COLS) as Array<keyof typeof RECON_COLS>,
+  );
 
   const bank = data.banks.find((b) => b.id === bankId) ?? live[0];
   const effectiveBankId = bank?.id ?? "";
@@ -191,6 +197,25 @@ function ReconcilePage() {
       return next;
     });
   }
+
+  const pointer = useTableKeyboardFocus({
+    ids: sort.sorted.map((l) => l.id),
+    onOpen: (id) => {
+      const line = sort.sorted.find((l) => l.id === id);
+      if (!line) return;
+      const kind = openKindFor(line);
+      const targetId =
+        line.kind === "bill-payment"
+          ? (data.bills.find((b) => b.payments.some((p) => p.id === line.sourceId))?.id ?? line.sourceId)
+          : line.sourceId;
+      openTxn(kind, targetId);
+    },
+    onToggle: (id) => {
+      const line = sort.sorted.find((l) => l.id === id);
+      if (line) toggle(line, !ticked.has(lineKey(line)));
+    },
+  });
+
 
   /** Merge with existing ticks so a type/search filter does not wipe or orphan other ticks. */
   function toggleAll(on: boolean) {
@@ -735,7 +760,7 @@ function ReconcilePage() {
           )}
         </div>
       ) : (
-      <ListCard ref={gridRef} className="recon-table-card">
+      <ListCard ref={pointer.bindContainer(gridRef)} tabIndex={0} className="recon-table-card outline-none">
         <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
           <colgroup>
             <col className="col-check no-print" style={{ width: CHECK_COL }} />
@@ -764,6 +789,9 @@ function ReconcilePage() {
                 width={cols.widths.date}
                 onWidth={(n) => cols.setWidth("date", n)}
                 onFit={() => fit("date", "Date")}
+              
+                align={colAligns.aligns.date ?? "left"}
+                onAlign={(a) => colAligns.setAlign("date", a)}
               />
               <SortHeader
                 label="Type"
@@ -849,6 +877,12 @@ function ReconcilePage() {
                       )}
                       data-active={on ? "true" : undefined}
                       data-selected={on ? "true" : undefined}
+                      data-focused={pointer.activeId === line.id ? "true" : undefined}
+                      data-row-id={line.id}
+                      aria-current={pointer.activeId === line.id ? "true" : undefined}
+                      onClick={(e) => {
+                        pointer.setActiveId(line.id);
+                      }}
                       {...openProps(
                         openKindFor(line),
                         line.kind === "bill-payment"

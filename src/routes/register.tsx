@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Printer, SlidersHorizontal } from "lucide-react";
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type MutableRefObject, type PointerEvent as ReactPointerEvent } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type MutableRefObject, type Ref, type PointerEvent as ReactPointerEvent } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { ColumnChips } from "@/components/column-chips";
@@ -24,6 +24,8 @@ import { RegisterPost } from "@/components/register-post";
 import { RegisterSwap } from "@/components/register-swap";
 import { ShopTick } from "@/components/shop-tick";
 import { ColResize, SortHeader } from "@/components/sort-header";
+import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
+import { useColAligns } from "@/components/use-col-aligns";
 import { CheckStatusControl } from "@/components/check-status-menu";
 import { ReceiptStatusControl, type ReceiptStatusAction } from "@/components/receipt-status-menu";
 import { CheckBadge, ReceiptBadge, ReconBadge } from "@/components/status-badge";
@@ -82,7 +84,7 @@ const UI_KEY = "finance-manager-register-ui";
 const FIT_MARK = "finance-manager-colfit";
 const FIT_VERSION = "content-1";
 const MONTH_RANGE = datePresetRange("month");
-const CHECK_COL = 40;
+const CHECK_COL = 44;
 const COL_MIN = 56;
 const COL_MAX = 420;
 const DEFAULT_COL_WIDTHS = {
@@ -197,7 +199,6 @@ function RegisterPage() {
   const [selected, setSelected] = useState<string[]>([]);
   const [confirm, setConfirm] = useState<"all" | "selected" | null>(null);
   const [editLine, setEditLine] = useState<CashLine | null>(null);
-  const [activeId, setActiveId] = useState<string | null>(null);
   const [colWidths, setColWidths] = useState<ColWidths>(defaultColWidths);
 
   const [needFit, setNeedFit] = useState(false);
@@ -356,12 +357,6 @@ function RegisterPage() {
   const draggingSourceId = draggingLine?.kind === "transfer" ? draggingLine.sourceId : null;
 
   useEffect(() => {
-    if (activeId && display.some((l) => l.id === activeId)) return;
-    const first = display.find((l) => l.kind !== "opening");
-    setActiveId(first?.id ?? null);
-  }, [display, activeId]);
-
-  useEffect(() => {
     if (bankFilter === "all") return;
     if (!data.banks.some((b) => !b.archived && b.id === bankFilter)) setBankFilter("all");
   }, [bankFilter, data.banks]);
@@ -504,52 +499,25 @@ function RegisterPage() {
     [setCashRecon, voidReceipt],
   );
 
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      const target = e.target as HTMLElement | null;
-      if (
-        editLine ||
-        target?.closest(
-          "input, textarea, select, [contenteditable='true'], [role='listbox'], [role='dialog'], [data-radix-select-content], [data-radix-popper-content-wrapper]",
-        )
-      )
-        return;
-      const rows = display.filter((l) => l.kind !== "opening");
-      if (rows.length === 0) return;
-      const idx = Math.max(0, rows.findIndex((l) => l.id === activeId));
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        const next = rows[Math.min(rows.length - 1, idx + 1)];
-        if (!next) return;
-        setActiveId(next.id);
-        const i = display.findIndex((l) => l.id === next.id);
-        if (i >= 0) scrollToRow.current(i);
-        return;
-      }
-      if (e.key === "ArrowUp") {
-        e.preventDefault();
-        const next = rows[Math.max(0, idx - 1)];
-        if (!next) return;
-        setActiveId(next.id);
-        const i = display.findIndex((l) => l.id === next.id);
-        if (i >= 0) scrollToRow.current(i);
-        return;
-      }
-      const row = rows[idx];
-      if (!row) return;
-      if (e.key === "Enter") {
-        e.preventDefault();
-        handleOpen(row);
-        return;
-      }
-      if (e.key === " ") {
-        e.preventDefault();
-        toggleOne(row.id);
-      }
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [editLine, display, activeId, handleOpen, toggleOne]);
+  const focusIds = useMemo(
+    () => display.filter((l) => l.kind !== "opening").map((l) => l.id),
+    [display],
+  );
+  const kb = useTableKeyboardFocus({
+    ids: focusIds,
+    onOpen: (id) => {
+      const line = displayRef.current.find((l) => l.id === id);
+      if (line) handleOpen(line);
+    },
+    onToggle: toggleOne,
+    onActive: (id) => {
+      const i = displayRef.current.findIndex((l) => l.id === id);
+      if (i >= 0) scrollToRow.current(i);
+    },
+    enabled: !editLine,
+  });
+  const activeId = kb.focusedId;
+  const setActiveId = kb.setFocusedId;
 
   const resolveLine = useCallback((id: string) => {
     return displayRef.current.find((l) => l.id === id) ?? filteredRef.current.find((l) => l.id === id) ?? null;
@@ -810,6 +778,7 @@ function RegisterPage() {
           onToggleAll={toggleAll}
           onOpen={handleOpen}
           onActivate={setActiveId}
+          kbBindContainer={kb.bindContainer}
           onCycleRecon={cycleRecon}
           onSetCheckStatus={applyCheckStatus}
           onReceiptAction={applyReceiptAction}
@@ -994,6 +963,9 @@ function ViewOptions({
         <PhoneLayoutToggle value={phoneLayout} onChange={onPhoneLayout} />
       </div>
       <ColumnChips cols={cols} onToggle={onToggleCol} onShowAll={onShowAllCols} />
+      <p className="mt-2 text-[0.7rem] text-muted-foreground">
+        Column ⋮ menu (or right-click a header): align left / center / right. Money defaults right; status center.
+      </p>
       <label className="mt-3 mb-3 flex flex-col gap-1.5">
         <span className="text-xs font-medium text-muted-foreground">Resize type {fontSize}px</span>
         <input
@@ -1111,6 +1083,7 @@ function RegisterTable({
   onToggleAll,
   onOpen,
   onActivate,
+  kbBindContainer,
   onCycleRecon,
   onSetCheckStatus,
   onReceiptAction,
@@ -1147,6 +1120,7 @@ function RegisterTable({
   onToggleAll: (on: boolean) => void;
   onOpen: (line: CashLine) => void;
   onActivate: (id: string) => void;
+  kbBindContainer: <T extends HTMLElement>(outer?: Ref<T> | null) => (node: T | null) => void;
   onCycleRecon: (line: CashLine) => void;
   onSetCheckStatus: (line: CashLine, status: CheckStatus) => void;
   onReceiptAction: (line: CashLine, action: ReceiptStatusAction) => void;
@@ -1155,6 +1129,8 @@ function RegisterTable({
   onPhoneMoveGrip: (lineId: string, e: ReactPointerEvent) => void;
 }) {
   const wrapRef = useRef<HTMLDivElement>(null);
+  const colAlignIds = useMemo(() => REGISTER_COLS.map((c) => c.id) as Array<(typeof REGISTER_COLS)[number]["id"]>, []);
+  const colAligns = useColAligns("finance-manager-register-col-aligns", colAlignIds);
   const phone = isPhoneUi();
   const cardMode = phoneLayout === "grid";
   const phoneGrid = phone && cardMode;
@@ -1363,7 +1339,16 @@ function RegisterTable({
         <div className="register-phone-list is-list" data-layout="list">
           {toolbar}
           {moveHint}
-          <div className="list-card list-grid register-phone-table min-w-0">
+          <div
+            ref={kbBindContainer()}
+            tabIndex={0}
+            className="list-card list-grid register-phone-table min-w-0 outline-none"
+            onMouseDown={(e) => {
+              const t = e.target as HTMLElement | null;
+              if (t?.closest("input, textarea, select, button, a, [role='checkbox']")) return;
+              (e.currentTarget as HTMLElement).focus({ preventScroll: true });
+            }}
+          >
             <table style={{ width: "max-content", minWidth: phoneListMinWidth }}>
               <thead>
                 <tr className="border-b border-border text-muted-foreground">
@@ -1423,6 +1408,10 @@ function RegisterTable({
                       data-move-row-date={dragOn && !isOpening ? line.date : undefined}
                       data-dragging={isDragging ? "true" : undefined}
                       data-drop-place={overRow === line.id && dragOn ? overPlace ?? undefined : undefined}
+                      data-focused={activeId === line.id ? "true" : undefined}
+                      data-row-id={isOpening ? undefined : line.id}
+                      aria-current={activeId === line.id ? "true" : undefined}
+                      data-selected={isOn ? "true" : undefined}
                       className={cn(
                         "border-b border-border/70 last:border-0 touch-manipulation",
                         isOn && "bg-primary/15",
@@ -1549,8 +1538,15 @@ function RegisterTable({
 
     return (
       <div
-        className={cn("register-phone-list", !phone && "register-desk-grid")}
+        ref={kbBindContainer()}
+        tabIndex={0}
+        className={cn("register-phone-list outline-none", !phone && "register-desk-grid")}
         data-layout="grid"
+        onMouseDown={(e) => {
+          const t = e.target as HTMLElement | null;
+          if (t?.closest("input, textarea, select, button, a, [role='checkbox']")) return;
+          (e.currentTarget as HTMLElement).focus({ preventScroll: true });
+        }}
       >
         {toolbar}
         {moveHint}
@@ -1579,6 +1575,10 @@ function RegisterTable({
                     data-move-row-date={dragOn && !isOpening ? line.date : undefined}
                     data-dragging={isDragging ? "true" : undefined}
                     data-drop-place={overRow === line.id && dragOn ? overPlace ?? undefined : undefined}
+                    data-focused={activeId === line.id ? "true" : undefined}
+                    data-row-id={isOpening ? undefined : line.id}
+                    aria-current={activeId === line.id ? "true" : undefined}
+                    data-selected={isOn ? "true" : undefined}
                     className={cn(
                       "register-phone-card rounded-2xl border border-border/40 bg-card px-3 py-3 touch-manipulation shadow-none",
                       isOn && "border-primary bg-primary/15 ring-1 ring-primary",
@@ -1801,9 +1801,15 @@ function RegisterTable({
   return (
     <div className="register-card list-card">
       <div
-        ref={wrapRef}
-        className={cn("list-grid register-matrix min-w-0", hidden.map((col) => `hide-${col.id}`))}
+        ref={kbBindContainer(wrapRef)}
+        tabIndex={0}
+        className={cn("list-grid register-matrix min-w-0 outline-none", hidden.map((col) => `hide-${col.id}`))}
         {...Object.fromEntries(hidden.map((col) => [`data-hide-${col.id}`, "true"]))}
+        onMouseDown={(e) => {
+          const t = e.target as HTMLElement | null;
+          if (t?.closest("input, textarea, select, button, a, [role='checkbox']")) return;
+          (e.currentTarget as HTMLElement).focus({ preventScroll: true });
+        }}
       >
         <table style={{ width: "100%", minWidth: tableWidth }}>
           <colgroup>
@@ -1848,15 +1854,21 @@ function RegisterTable({
               <SortHeader
                 label="Date"
                 column="date"
+                align={colAligns.aligns.date ?? "left"}
                 sortKey={sortKey}
                 dir={sortDir}
                 onToggle={requestSort}
                 className={cn("col-date", lastVisible === "date" && "col-fill")}
                 {...resizeProps("date")}
+              
+                onAlign={(a) => colAligns.setAlign("date", a)}
+                visible={cols.date}
               />
               <SortHeader
                 label="Type"
                 column="type"
+                align={colAligns.aligns.type ?? "left"}
+                onAlign={(a) => colAligns.setAlign("type", a)}
                 sortKey={sortKey}
                 dir={sortDir}
                 onToggle={requestSort}
@@ -1866,6 +1878,8 @@ function RegisterTable({
               <SortHeader
                 label="No."
                 column="number"
+                align={colAligns.aligns.number ?? "left"}
+                onAlign={(a) => colAligns.setAlign("number", a)}
                 sortKey={sortKey}
                 dir={sortDir}
                 onToggle={requestSort}
@@ -1875,6 +1889,8 @@ function RegisterTable({
               <SortHeader
                 label="Payee"
                 column="payee"
+                align={colAligns.aligns.payee ?? "left"}
+                onAlign={(a) => colAligns.setAlign("payee", a)}
                 sortKey={sortKey}
                 dir={sortDir}
                 onToggle={requestSort}
@@ -1884,6 +1900,8 @@ function RegisterTable({
               <SortHeader
                 label="Memo"
                 column="memo"
+                align={colAligns.aligns.memo ?? "left"}
+                onAlign={(a) => colAligns.setAlign("memo", a)}
                 sortKey={sortKey}
                 dir={sortDir}
                 onToggle={requestSort}
@@ -1893,6 +1911,8 @@ function RegisterTable({
               <SortHeader
                 label="Bank"
                 column="bank"
+                align={colAligns.aligns.bank ?? "left"}
+                onAlign={(a) => colAligns.setAlign("bank", a)}
                 sortKey={sortKey}
                 dir={sortDir}
                 onToggle={requestSort}
@@ -1902,30 +1922,33 @@ function RegisterTable({
               <SortHeader
                 label="Payment"
                 column="payment"
+                align={colAligns.aligns.payment ?? "right"}
+                onAlign={(a) => colAligns.setAlign("payment", a)}
                 sortKey={sortKey}
                 dir={sortDir}
                 onToggle={requestSort}
-                align="right"
                 className={cn("col-money col-payment", lastVisible === "payment" && "col-fill")}
                 {...resizeProps("payment")}
               />
               <SortHeader
                 label="Deposit"
                 column="deposit"
+                align={colAligns.aligns.deposit ?? "right"}
+                onAlign={(a) => colAligns.setAlign("deposit", a)}
                 sortKey={sortKey}
                 dir={sortDir}
                 onToggle={requestSort}
-                align="right"
                 className={cn("col-money col-deposit", lastVisible === "deposit" && "col-fill")}
                 {...resizeProps("deposit")}
               />
               <SortHeader
                 label="Balance"
                 column="balance"
+                align={colAligns.aligns.balance ?? "right"}
+                onAlign={(a) => colAligns.setAlign("balance", a)}
                 sortKey={sortKey}
                 dir={sortDir}
                 onToggle={requestSort}
-                align="right"
                 className={cn("col-money col-balance", lastVisible === "balance" && "col-fill")}
                 {...resizeProps("balance")}
               />
@@ -2096,6 +2119,9 @@ const RegisterRow = memo(
         data-open={isOpening ? undefined : "true"}
         data-selected={isOn ? "true" : undefined}
         data-active={isActive ? "true" : undefined}
+        data-focused={isActive ? "true" : undefined}
+        data-row-id={isOpening ? undefined : line.id}
+        aria-current={isActive ? "true" : undefined}
         data-dragging={dragging ? "true" : undefined}
         data-drop={over ? "true" : undefined}
         data-drop-place={over && overPlace ? overPlace : undefined}

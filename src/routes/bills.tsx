@@ -19,7 +19,9 @@ import { requestPrint } from "@/components/print-preview";
 import { BillBadge } from "@/components/status-badge";
 import { SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
-import { useListPointer } from "@/components/use-list-pointer";
+import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
+import { useColAligns, alignClass } from "@/components/use-col-aligns";
+import { cn } from "@/lib/utils";
 import { useRowDrag } from "@/components/use-row-drag";
 import { Button } from "@/components/ui/button";
 import {
@@ -131,10 +133,11 @@ function BillsPage() {
   const cols = useColWidths("finance-manager-bills-cols", BILL_COLS);
   const gridRef = useRef<HTMLDivElement>(null);
   const openBill = useCallback((id: string) => openTxn("bill", id), []);
-  const pointer = useListPointer(
-    sort.sorted.map((b) => b.id),
-    openBill,
-  );
+  const colAligns = useColAligns("finance-manager-bills-col-aligns", Object.keys(BILL_COLS) as Array<keyof typeof BILL_COLS>);
+  const pointer = useTableKeyboardFocus({
+    ids: sort.sorted.map((b) => b.id),
+    onOpen: openBill,
+  });
   function fit(id: keyof typeof BILL_COLS, label: string) {
     const table = gridRef.current?.querySelector("table");
     if (!table) return;
@@ -201,7 +204,7 @@ function BillsPage() {
         />
       </ListToolbar>
 
-      <ListCard ref={gridRef} className="doc-list">
+      <ListCard ref={pointer.bindContainer(gridRef)} tabIndex={0} className="doc-list outline-none">
         <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
           <colgroup>
             {dragEnabled ? <col style={{ width: 44 }} /> : null}
@@ -214,13 +217,13 @@ function BillsPage() {
               {dragEnabled ? (
                 <SortHeader label="Order" column="order" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} />
               ) : null}
-              <SortHeader label="Number" column="number" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.number} onWidth={(n) => cols.setWidth("number", n)} onFit={() => fit("number", "Number")} />
-              <SortHeader label="Vendor" column="vendor" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.vendor} onWidth={(n) => cols.setWidth("vendor", n)} onFit={() => fit("vendor", "Vendor")} />
-              <SortHeader label="Date" column="date" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.date} onWidth={(n) => cols.setWidth("date", n)} onFit={() => fit("date", "Date")} />
-              <SortHeader label="Due" column="due" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.due} onWidth={(n) => cols.setWidth("due", n)} onFit={() => fit("due", "Due")} />
+              <SortHeader label="Number" column="number" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.number} onWidth={(n) => cols.setWidth("number", n)} onFit={() => fit("number", "Number")} align={colAligns.aligns.number ?? "left"} onAlign={(a) => colAligns.setAlign("number", a)} />
+              <SortHeader label="Vendor" column="vendor" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.vendor} onWidth={(n) => cols.setWidth("vendor", n)} onFit={() => fit("vendor", "Vendor")} align={colAligns.aligns.vendor ?? "left"} onAlign={(a) => colAligns.setAlign("vendor", a)} />
+              <SortHeader label="Date" column="date" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.date} onWidth={(n) => cols.setWidth("date", n)} onFit={() => fit("date", "Date")} align={colAligns.aligns.date ?? "left"} onAlign={(a) => colAligns.setAlign("date", a)} />
+              <SortHeader label="Due" column="due" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.due} onWidth={(n) => cols.setWidth("due", n)} onFit={() => fit("due", "Due")} align={colAligns.aligns.due ?? "left"} onAlign={(a) => colAligns.setAlign("due", a)} />
               <SortHeader label="Amount" column="amount" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} align="right" width={cols.widths.amount} onWidth={(n) => cols.setWidth("amount", n)} onFit={() => fit("amount", "Amount")} />
               <SortHeader label="Balance" column="balance" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} align="right" width={cols.widths.balance} onWidth={(n) => cols.setWidth("balance", n)} onFit={() => fit("balance", "Balance")} />
-              <SortHeader label="Status" column="status" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.status} onWidth={(n) => cols.setWidth("status", n)} onFit={() => fit("status", "Status")} />
+              <SortHeader label="Status" column="status" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.status} onWidth={(n) => cols.setWidth("status", n)} onFit={() => fit("status", "Status")} align={colAligns.aligns.status ?? "center"} onAlign={(a) => colAligns.setAlign("status", a)} />
               <th className="col-actions relative px-4 py-3">
                 <span className="sr-only">Actions</span>
               </th>
@@ -279,6 +282,9 @@ function BillsPage() {
                       key={bill.id}
                         className="border-b border-border/70 last:border-0"
                         data-active={pointer.activeId === bill.id ? "true" : undefined}
+                        data-focused={pointer.activeId === bill.id ? "true" : undefined}
+                        data-row-id={bill.id}
+                        aria-current={pointer.activeId === bill.id ? "true" : undefined}
                         {...drag.bind(bill.id)}
                         {...openProps("bill", bill.id)}
                         onClick={() => pointer.setActiveId(bill.id)}

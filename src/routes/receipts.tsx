@@ -22,7 +22,9 @@ import { ReceiptStatusControl, type ReceiptStatusAction } from "@/components/rec
 import { ReceiptBadge } from "@/components/status-badge";
 import { SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
-import { useListPointer } from "@/components/use-list-pointer";
+import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
+import { useColAligns, alignClass } from "@/components/use-col-aligns";
+import { cn } from "@/lib/utils";
 import { useRowDrag } from "@/components/use-row-drag";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -130,10 +132,11 @@ function ReceiptsPage() {
   const cols = useColWidths("finance-manager-receipts-cols", RCP_COLS);
   const gridRef = useRef<HTMLDivElement>(null);
   const openReceipt = useCallback((id: string) => openTxn("receipt", id), []);
-  const pointer = useListPointer(
-    sort.sorted.map((r) => r.id),
-    openReceipt,
-  );
+  const colAligns = useColAligns("finance-manager-receipts-col-aligns", Object.keys(RCP_COLS) as Array<keyof typeof RCP_COLS>);
+  const pointer = useTableKeyboardFocus({
+    ids: sort.sorted.map((r) => r.id),
+    onOpen: openReceipt,
+  });
   function fit(id: keyof typeof RCP_COLS, label: string) {
     const table = gridRef.current?.querySelector("table");
     if (!table) return;
@@ -238,7 +241,7 @@ function ReceiptsPage() {
         />
       </ListToolbar>
 
-      <ListCard ref={gridRef} className="doc-list">
+      <ListCard ref={pointer.bindContainer(gridRef)} tabIndex={0} className="doc-list outline-none">
         <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
           <colgroup>
             {dragEnabled ? <col style={{ width: 44 }} /> : null}
@@ -251,12 +254,12 @@ function ReceiptsPage() {
               {dragEnabled ? (
                 <SortHeader label="Order" column="order" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} />
               ) : null}
-              <SortHeader label="Number" column="number" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.number} onWidth={(n) => cols.setWidth("number", n)} onFit={() => fit("number", "Number")} />
-              <SortHeader label="Date" column="date" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.date} onWidth={(n) => cols.setWidth("date", n)} onFit={() => fit("date", "Date")} />
-              <SortHeader label="Received from" column="from" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.from} onWidth={(n) => cols.setWidth("from", n)} onFit={() => fit("from", "Received from")} />
-              <SortHeader label="Kind" column="kind" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.kind} onWidth={(n) => cols.setWidth("kind", n)} onFit={() => fit("kind", "Kind")} />
-              <SortHeader label="Amount" column="amount" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} align="right" width={cols.widths.amount} onWidth={(n) => cols.setWidth("amount", n)} onFit={() => fit("amount", "Amount")} />
-              <SortHeader label="Status" column="status" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.status} onWidth={(n) => cols.setWidth("status", n)} onFit={() => fit("status", "Status")} />
+              <SortHeader label="Number" column="number" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.number} onWidth={(n) => cols.setWidth("number", n)} onFit={() => fit("number", "Number")} align={colAligns.aligns.number ?? "left"} onAlign={(a) => colAligns.setAlign("number", a)} />
+              <SortHeader label="Date" column="date" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.date} onWidth={(n) => cols.setWidth("date", n)} onFit={() => fit("date", "Date")} align={colAligns.aligns.date ?? "left"} onAlign={(a) => colAligns.setAlign("date", a)} />
+              <SortHeader label="Received from" column="from" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.from} onWidth={(n) => cols.setWidth("from", n)} onFit={() => fit("from", "Received from")} align={colAligns.aligns.from ?? "left"} onAlign={(a) => colAligns.setAlign("from", a)} />
+              <SortHeader label="Kind" column="kind" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.kind} onWidth={(n) => cols.setWidth("kind", n)} onFit={() => fit("kind", "Kind")} align={colAligns.aligns.kind ?? "left"} onAlign={(a) => colAligns.setAlign("kind", a)} />
+              <SortHeader label="Amount" column="amount" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.amount} onWidth={(n) => cols.setWidth("amount", n)} onFit={() => fit("amount", "Amount")} align={colAligns.aligns.amount ?? "right"} onAlign={(a) => colAligns.setAlign("amount", a)} />
+              <SortHeader label="Status" column="status" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.status} onWidth={(n) => cols.setWidth("status", n)} onFit={() => fit("status", "Status")} align={colAligns.aligns.status ?? "center"} onAlign={(a) => colAligns.setAlign("status", a)} />
               <th className="col-actions relative px-4 py-3">
                 <span className="sr-only">Actions</span>
               </th>
@@ -298,6 +301,9 @@ function ReceiptsPage() {
                       key={receipt.id}
                         className="border-b border-border/70 last:border-0"
                         data-active={pointer.activeId === receipt.id ? "true" : undefined}
+                        data-focused={pointer.activeId === receipt.id ? "true" : undefined}
+                        data-row-id={receipt.id}
+                        aria-current={pointer.activeId === receipt.id ? "true" : undefined}
                         {...drag.bind(receipt.id)}
                         {...openProps("receipt", receipt.id)}
                         onClick={() => pointer.setActiveId(receipt.id)}

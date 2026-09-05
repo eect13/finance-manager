@@ -11,6 +11,8 @@ import { Money } from "@/components/money";
 import { requestPrint } from "@/components/print-preview";
 import { SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
+import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
+import { useColAligns } from "@/components/use-col-aligns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,7 +20,7 @@ import { ledgerRows } from "@/lib/finance/export";
 import { fitColumnWidth } from "@/lib/finance/fit-column";
 import { formatDate, formatMoney } from "@/lib/finance/format";
 import { accountBalance, trialBalance } from "@/lib/finance/ledger";
-import { openProps } from "@/lib/finance/open-record";
+import { openProps, openTxn } from "@/lib/finance/open-record";
 import { useEntrySort, type EntrySort } from "@/lib/finance/sort";
 import { useFinanceData } from "@/lib/finance/store";
 import type { Account, JournalEntry } from "@/lib/finance/types";
@@ -174,6 +176,12 @@ function JournalTable({
   sort: EntrySort<JournalEntry>;
 }) {
   const cols = useColWidths("finance-manager-journal-cols", JRN_COLS);
+  const colAligns = useColAligns("finance-manager-journal-col-aligns", Object.keys(JRN_COLS) as Array<keyof typeof JRN_COLS>);
+  const pointer = useTableKeyboardFocus({
+    ids: sort.sorted.map((r) => r.id),
+    onOpen: (id) => openTxn("journal", id),
+  });
+  const rows = sort.sorted;
   const gridRef = useRef<HTMLDivElement>(null);
   function fit(id: keyof typeof JRN_COLS, label: string) {
     const table = gridRef.current?.querySelector("table");
@@ -184,7 +192,7 @@ function JournalTable({
     return <p className="px-4 py-8 text-center text-sm text-muted-foreground">No journal entries yet.</p>;
   }
   return (
-    <ListCard ref={gridRef}>
+    <ListCard ref={pointer.bindContainer(gridRef)} tabIndex={0} className="outline-none">
       <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
         <colgroup>
           {(Object.keys(JRN_COLS) as Array<keyof typeof JRN_COLS>).map((id) => (
@@ -193,19 +201,27 @@ function JournalTable({
         </colgroup>
         <thead>
           <tr className="border-b border-border text-muted-foreground">
-            <SortHeader label="Date" column="date" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.date} onWidth={(n) => cols.setWidth("date", n)} onFit={() => fit("date", "Date")} />
-            <SortHeader label="Description" column="description" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.description} onWidth={(n) => cols.setWidth("description", n)} onFit={() => fit("description", "Description")} />
-            <SortHeader label="Source" column="source" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.source} onWidth={(n) => cols.setWidth("source", n)} onFit={() => fit("source", "Source")} />
-            <SortHeader label="Debit" column="debit" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} align="right" width={cols.widths.debit} onWidth={(n) => cols.setWidth("debit", n)} onFit={() => fit("debit", "Debit")} />
-            <SortHeader label="Credit" column="credit" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} align="right" width={cols.widths.credit} onWidth={(n) => cols.setWidth("credit", n)} onFit={() => fit("credit", "Credit")} />
+            <SortHeader label="Date" column="date" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.date} onWidth={(n) => cols.setWidth("date", n)} onFit={() => fit("date", "Date")} align={colAligns.aligns.date ?? "left"} onAlign={(a) => colAligns.setAlign("date", a)} />
+            <SortHeader label="Description" column="description" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.description} onWidth={(n) => cols.setWidth("description", n)} onFit={() => fit("description", "Description")} align={colAligns.aligns.description ?? "left"} onAlign={(a) => colAligns.setAlign("description", a)} />
+            <SortHeader label="Source" column="source" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.source} onWidth={(n) => cols.setWidth("source", n)} onFit={() => fit("source", "Source")} align={colAligns.aligns.source ?? "left"} onAlign={(a) => colAligns.setAlign("source", a)} />
+            <SortHeader label="Debit" column="debit" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.debit} onWidth={(n) => cols.setWidth("debit", n)} onFit={() => fit("debit", "Debit")} align={colAligns.aligns.debit ?? "right"} onAlign={(a) => colAligns.setAlign("debit", a)} />
+            <SortHeader label="Credit" column="credit" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.credit} onWidth={(n) => cols.setWidth("credit", n)} onFit={() => fit("credit", "Credit")} align={colAligns.aligns.credit ?? "right"} onAlign={(a) => colAligns.setAlign("credit", a)} />
           </tr>
         </thead>
         <tbody>
-          {entries.map((entry) => {
+          {rows.map((entry) => {
             const debit = entry.lines.reduce((s, l) => s + l.debit, 0);
             const credit = entry.lines.reduce((s, l) => s + l.credit, 0);
             return (
-              <tr key={entry.id} className="border-b border-border/70 last:border-0" {...openProps("journal", entry.id)}>
+              <tr
+                key={entry.id}
+                className="border-b border-border/70 last:border-0"
+                data-focused={pointer.activeId === entry.id ? "true" : undefined}
+                data-row-id={entry.id}
+                aria-current={pointer.activeId === entry.id ? "true" : undefined}
+                {...openProps("journal", entry.id)}
+                onClick={() => pointer.setActiveId(entry.id)}
+              >
                 <td className="px-4 py-3 whitespace-nowrap" data-col="date">{formatDate(entry.date)}</td>
                 <td className="px-4 py-3 font-medium" data-col="description">{entry.description}</td>
                 <td className="px-4 py-3 capitalize text-muted-foreground" data-col="source">{entry.sourceType}</td>
@@ -237,6 +253,7 @@ function AccountsTable({
   data: ReturnType<typeof useFinanceData>;
 }) {
   const cols = useColWidths("finance-manager-accounts-cols", ACCT_COLS);
+  const colAligns = useColAligns("finance-manager-accounts-col-aligns", Object.keys(ACCT_COLS) as Array<keyof typeof ACCT_COLS>);
   const gridRef = useRef<HTMLDivElement>(null);
   const getters = useMemo(
     () => ({
@@ -248,13 +265,17 @@ function AccountsTable({
     [data],
   );
   const sort = useEntrySort(accounts, "code", getters, "asc");
+  const pointer = useTableKeyboardFocus({
+    ids: sort.sorted.map((a) => a.id),
+    onOpen: () => {},
+  });
   function fit(id: keyof typeof ACCT_COLS, label: string) {
     const table = gridRef.current?.querySelector("table");
     if (!table) return;
     cols.setWidth(id, fitColumnWidth({ table, selector: `td[data-col="${id}"]`, header: label }));
   }
   return (
-    <ListCard ref={gridRef}>
+    <ListCard ref={pointer.bindContainer(gridRef)} tabIndex={0} className="outline-none">
       <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
         <colgroup>
           {(Object.keys(ACCT_COLS) as Array<keyof typeof ACCT_COLS>).map((id) => (
@@ -263,15 +284,22 @@ function AccountsTable({
         </colgroup>
         <thead>
           <tr className="border-b border-border text-muted-foreground">
-            <SortHeader label="Code" column="code" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.code} onWidth={(n) => cols.setWidth("code", n)} onFit={() => fit("code", "Code")} />
-            <SortHeader label="Account" column="name" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.name} onWidth={(n) => cols.setWidth("name", n)} onFit={() => fit("name", "Account")} />
-            <SortHeader label="Type" column="type" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.type} onWidth={(n) => cols.setWidth("type", n)} onFit={() => fit("type", "Type")} />
-            <SortHeader label="Balance" column="balance" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} align="right" width={cols.widths.balance} onWidth={(n) => cols.setWidth("balance", n)} onFit={() => fit("balance", "Balance")} />
+            <SortHeader label="Code" column="code" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.code} onWidth={(n) => cols.setWidth("code", n)} onFit={() => fit("code", "Code")} align={colAligns.aligns.code ?? "left"} onAlign={(a) => colAligns.setAlign("code", a)} />
+            <SortHeader label="Account" column="name" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.name} onWidth={(n) => cols.setWidth("name", n)} onFit={() => fit("name", "Account")} align={colAligns.aligns.name ?? "left"} onAlign={(a) => colAligns.setAlign("name", a)} />
+            <SortHeader label="Type" column="type" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.type} onWidth={(n) => cols.setWidth("type", n)} onFit={() => fit("type", "Type")} align={colAligns.aligns.type ?? "left"} onAlign={(a) => colAligns.setAlign("type", a)} />
+            <SortHeader label="Balance" column="balance" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.balance} onWidth={(n) => cols.setWidth("balance", n)} onFit={() => fit("balance", "Balance")} align={colAligns.aligns.balance ?? "right"} onAlign={(a) => colAligns.setAlign("balance", a)} />
           </tr>
         </thead>
         <tbody>
           {sort.sorted.map((account) => (
-            <tr key={account.id} className="border-b border-border/70 last:border-0">
+            <tr
+              key={account.id}
+              className="border-b border-border/70 last:border-0"
+              data-focused={pointer.activeId === account.id ? "true" : undefined}
+              data-row-id={account.id}
+              aria-current={pointer.activeId === account.id ? "true" : undefined}
+              onClick={() => pointer.setActiveId(account.id)}
+            >
               <td className="px-4 py-3 tabular-nums" data-col="code">{account.code}</td>
               <td className="px-4 py-3" data-col="name">{account.name}</td>
               <td className="px-4 py-3 capitalize text-muted-foreground" data-col="type">{account.type}</td>

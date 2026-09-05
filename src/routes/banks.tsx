@@ -3,6 +3,7 @@ import { DateInput } from "@/components/date-input";
 import { ArrowLeftRight, Plus, Printer } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { AppShell } from "@/components/app-shell";
 import { ConfirmDelete } from "@/components/confirm-delete";
 import { Field } from "@/components/field";
@@ -26,13 +27,15 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
+import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
+import { useColAligns, alignClass } from "@/components/use-col-aligns";
 import { CsvButton } from "@/components/export-menu";
 import { ViewToggle, useListView } from "@/components/view-toggle";
 import { bankRows } from "@/lib/finance/export";
 import { fitColumnWidth } from "@/lib/finance/fit-column";
 import { formatMoney, parseAmountToCents, todayIso } from "@/lib/finance/format";
 import { bookByBankId, pendingByBankId } from "@/lib/finance/ledger";
-import { openProps, stopOpen } from "@/lib/finance/open-record";
+import { openProps, openTxn, stopOpen } from "@/lib/finance/open-record";
 import { useEntrySort } from "@/lib/finance/sort";
 import { useFinanceData, useFinanceStore } from "@/lib/finance/store";
 import type { Bank } from "@/lib/finance/types";
@@ -114,6 +117,11 @@ function BanksPage() {
   const sort = useEntrySort(visible, "nickname", getters, "asc");
   const sorted = sort.sorted;
   const cols = useColWidths("finance-manager-banks-cols", BANK_COLS);
+  const colAligns = useColAligns("finance-manager-banks-col-aligns", Object.keys(BANK_COLS) as Array<keyof typeof BANK_COLS>);
+  const pointer = useTableKeyboardFocus({
+    ids: sorted.map((b) => b.id),
+    onOpen: (id) => openTxn("bank", id),
+  });
   const gridRef = useRef<HTMLDivElement>(null);
   function fit(id: keyof typeof BANK_COLS, label: string) {
     const table = gridRef.current?.querySelector("table");
@@ -214,7 +222,7 @@ function BanksPage() {
           })}
       </div>
       ) : (
-        <ListCard ref={gridRef}>
+        <ListCard ref={pointer.bindContainer(gridRef)} tabIndex={0} className="outline-none">
           <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
             <colgroup>
               {(Object.keys(BANK_COLS) as Array<keyof typeof BANK_COLS>).map((id) => (
@@ -223,12 +231,12 @@ function BanksPage() {
             </colgroup>
             <thead>
               <tr className="border-b border-border text-muted-foreground">
-                <SortHeader label="Nickname" column="nickname" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.nickname} onWidth={(n) => cols.setWidth("nickname", n)} onFit={() => fit("nickname", "Nickname")} />
-                <SortHeader label="Bank" column="name" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.name} onWidth={(n) => cols.setWidth("name", n)} onFit={() => fit("name", "Bank")} />
-                <SortHeader label="Number" column="number" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.number} onWidth={(n) => cols.setWidth("number", n)} onFit={() => fit("number", "Number")} />
-                <SortHeader label="Status" column="status" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.status} onWidth={(n) => cols.setWidth("status", n)} onFit={() => fit("status", "Status")} />
-                <SortHeader label="Book" column="book" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} align="right" width={cols.widths.book} onWidth={(n) => cols.setWidth("book", n)} onFit={() => fit("book", "Book")} />
-                <SortHeader label="Pending" column="pending" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} align="right" width={cols.widths.pending} onWidth={(n) => cols.setWidth("pending", n)} onFit={() => fit("pending", "Pending")} />
+                <SortHeader label="Nickname" column="nickname" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.nickname} onWidth={(n) => cols.setWidth("nickname", n)} onFit={() => fit("nickname", "Nickname")}  align={colAligns.aligns.nickname ?? "left"} onAlign={(a) => colAligns.setAlign("nickname", a)} />
+                <SortHeader label="Bank" column="name" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.name} onWidth={(n) => cols.setWidth("name", n)} onFit={() => fit("name", "Bank")} align={colAligns.aligns.name ?? "left"} onAlign={(a) => colAligns.setAlign("name", a)} />
+                <SortHeader label="Number" column="number" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.number} onWidth={(n) => cols.setWidth("number", n)} onFit={() => fit("number", "Number")} align={colAligns.aligns.number ?? "left"} onAlign={(a) => colAligns.setAlign("number", a)} />
+                <SortHeader label="Status" column="status" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.status} onWidth={(n) => cols.setWidth("status", n)} onFit={() => fit("status", "Status")} align={colAligns.aligns.status ?? "center"} onAlign={(a) => colAligns.setAlign("status", a)} />
+                <SortHeader label="Book" column="book" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.book} onWidth={(n) => cols.setWidth("book", n)} onFit={() => fit("book", "Book")} align={colAligns.aligns.book ?? "right"} onAlign={(a) => colAligns.setAlign("book", a)} />
+                <SortHeader label="Pending" column="pending" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.pending} onWidth={(n) => cols.setWidth("pending", n)} onFit={() => fit("pending", "Pending")} align={colAligns.aligns.pending ?? "right"} onAlign={(a) => colAligns.setAlign("pending", a)} />
                 <th className="col-actions px-4 py-3"><span className="sr-only">Actions</span></th>
               </tr>
             </thead>
@@ -240,15 +248,19 @@ function BanksPage() {
                   <tr
                     key={bank.id}
                     className="border-b border-border/70 last:border-0"
+                    data-focused={pointer.activeId === bank.id ? "true" : undefined}
+                    data-row-id={bank.id}
+                    aria-current={pointer.activeId === bank.id ? "true" : undefined}
                     {...openProps("bank", bank.id)}
+                    onClick={() => pointer.setActiveId(bank.id)}
                     style={bank.archived ? { opacity: 0.55 } : undefined}
                   >
                     <td className="px-4 py-3 font-medium" data-col="nickname">{bank.nickname}</td>
                     <td className="px-4 py-3 text-muted-foreground" data-col="name">{bank.name}</td>
                     <td className="px-4 py-3 text-muted-foreground" data-col="number">{bank.accountNumber}</td>
                     <td className="px-4 py-3 text-muted-foreground" data-col="status">{bank.archived ? "Closed" : "Active"}</td>
-                    <td className="px-4 py-3 text-right" data-col="book"><Money amount={book} currency={settings.currency} /></td>
-                    <td className="px-4 py-3 text-right" data-col="pending"><Money amount={pending} currency={settings.currency} /></td>
+                    <td className={cn("px-4 py-3", alignClass(colAligns.aligns.book ?? "right"))} data-col="book" data-align={colAligns.aligns.book ?? "right"}><Money amount={book} currency={settings.currency} /></td>
+                    <td className={cn("px-4 py-3", alignClass(colAligns.aligns.pending ?? "right"))} data-col="pending" data-align={colAligns.aligns.pending ?? "right"}><Money amount={pending} currency={settings.currency} /></td>
                     <td className="col-actions px-4 py-3 text-right" data-col="actions" onClick={stopOpen} onDoubleClick={stopOpen} onPointerDown={stopOpen}>
                       <RowDeleteButton onDelete={() => setDeletingId(bank.id)} />
                     </td>

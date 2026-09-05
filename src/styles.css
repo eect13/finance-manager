@@ -3860,10 +3860,20 @@ html.tauri-android .app-header-inner {
 }
 
 @media (max-width: 767px), ((hover: none) and (pointer: coarse)) {
+  /* Swipe works on Grid cards and List rows (Register + Reconcile) */
+  .register-phone-list li,
+  .recon-phone-list li {
+    list-style: none;
+  }
   .phone-swipe {
     position: relative;
     overflow: hidden;
     border-radius: 1rem;
+    isolation: isolate;
+  }
+  .register-phone-list.is-list .phone-swipe,
+  .recon-phone-list.is-list .phone-swipe {
+    border-radius: 0.75rem;
   }
   .phone-swipe-actions {
     position: absolute;
@@ -3889,6 +3899,13 @@ html.tauri-android .app-header-inner {
     z-index: 1;
     touch-action: pan-y;
     transition: transform 0.12s ease-out;
+    will-change: transform;
+  }
+  /* Keep card chrome on the sliding face so swipe peeks actions behind */
+  .phone-swipe-front > .register-phone-card,
+  .phone-swipe-front > .recon-phone-card,
+  .phone-swipe-front > .register-phone-row,
+  .phone-swipe-front > .recon-phone-row {
     background: var(--color-card);
   }
   .register-select-bar.phone-safe-bar,

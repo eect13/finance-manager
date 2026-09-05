@@ -30,6 +30,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { cashRegisterRows } from "@/lib/finance/export";
@@ -585,35 +586,49 @@ function RegisterPage() {
           className="register-toolbar-search h-11 min-h-11"
         />
         <div className="register-toolbar-actions">
-          <PhoneFiltersSheet phone={phone} title="Filters">
-          <RegisterFilters
-            typeFilter={typeFilter}
-            direction={direction}
-            datePreset={datePreset}
-            dateFrom={dateFrom}
-            dateTo={dateTo}
-            sortValue={`${sort.key}:${sort.dir}`}
-            onType={setTypeFilter}
-            onDirection={setDirection}
-            onPreset={applyPreset}
-            onDateFrom={(v) => {
-              setDatePreset("custom");
-              setDateFrom(v);
-            }}
-            onDateTo={(v) => {
-              setDatePreset("custom");
-              setDateTo(v);
-            }}
-            onSort={(v) => {
-              const [key, dir] = v.split(":");
-              sort.set(key ?? "date", dir === "desc" ? "desc" : "asc");
-            }}
+          <PhoneFiltersSheet
+            phone={phone}
+            title="Filters"
+            activeCount={
+              (typeFilter !== "all" ? 1 : 0) +
+              (direction !== "all" ? 1 : 0) +
+              (datePreset !== "month" ? 1 : 0)
+            }
             onClear={() => {
               setTypeFilter("all");
               setDirection("all");
               applyPreset("month");
             }}
-          />
+          >
+            <RegisterFilters
+              embedded={phone}
+              typeFilter={typeFilter}
+              direction={direction}
+              datePreset={datePreset}
+              dateFrom={dateFrom}
+              dateTo={dateTo}
+              sortValue={`${sort.key}:${sort.dir}`}
+              onType={setTypeFilter}
+              onDirection={setDirection}
+              onPreset={applyPreset}
+              onDateFrom={(v) => {
+                setDatePreset("custom");
+                setDateFrom(v);
+              }}
+              onDateTo={(v) => {
+                setDatePreset("custom");
+                setDateTo(v);
+              }}
+              onSort={(v) => {
+                const [key, dir] = v.split(":");
+                sort.set(key ?? "date", dir === "desc" ? "desc" : "asc");
+              }}
+              onClear={() => {
+                setTypeFilter("all");
+                setDirection("all");
+                applyPreset("month");
+              }}
+            />
           </PhoneFiltersSheet>
           <ViewOptions
             fontSize={fontSize}
@@ -828,6 +843,7 @@ function RegisterFilters({
   onDateTo,
   onSort,
   onClear,
+  embedded = false,
 }: {
   typeFilter: CashTypeFilter;
   direction: CashDirection;
@@ -842,9 +858,11 @@ function RegisterFilters({
   onDateTo: (v: string) => void;
   onSort: (v: string) => void;
   onClear: () => void;
+  embedded?: boolean;
 }) {
   return (
     <ListFilters
+      embedded={embedded}
       datePreset={datePreset}
       dateFrom={dateFrom}
       dateTo={dateTo}
@@ -897,6 +915,85 @@ function ViewOptions({
   onShowAllCols: () => void;
 }) {
   const phone = isPhoneUi();
+  const [open, setOpen] = useState(false);
+
+  const body = (
+    <>
+      {phone ? (
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <span className="text-sm font-medium">Layout</span>
+          <PhoneLayoutToggle value={phoneLayout} onChange={onPhoneLayout} />
+        </div>
+      ) : null}
+      {phone ? (
+        <div className="mb-3 flex min-h-11 items-center justify-between gap-3 rounded-xl border border-border px-3 py-2">
+          <div className="min-w-0">
+            <Label htmlFor="drag-dates" className="text-sm">
+              Move dates
+            </Label>
+            <p className="text-[0.7rem] text-muted-foreground">Grip a row, then tap a date chip</p>
+          </div>
+          <Switch id="drag-dates" checked={dragOn} onCheckedChange={onDragOn} />
+        </div>
+      ) : null}
+      <ColumnChips cols={cols} onToggle={onToggleCol} onShowAll={onShowAllCols} />
+      <label className="mt-3 mb-3 flex flex-col gap-1.5">
+        <span className="text-xs font-medium text-muted-foreground">Resize type {fontSize}px</span>
+        <input
+          type="range"
+          min={10}
+          max={18}
+          step={1}
+          value={fontSize}
+          aria-label="Register font size"
+          className="w-full accent-primary"
+          onChange={(e) => onFontSize(Number(e.target.value))}
+        />
+      </label>
+      {!phone ? (
+        <div className="flex min-h-10 items-center justify-between gap-3">
+          <Label htmlFor="drag-dates-desk" className="text-sm">
+            Move dates
+          </Label>
+          <Switch id="drag-dates-desk" checked={dragOn} onCheckedChange={onDragOn} />
+        </div>
+      ) : null}
+    </>
+  );
+
+  if (phone) {
+    return (
+      <>
+        <Button
+          type="button"
+          variant="outline"
+          className="h-11 min-h-11 justify-start phone-press"
+          aria-label="View options"
+          onClick={() => setOpen(true)}
+        >
+          <SlidersHorizontal />
+          View
+          {hiddenCount ? (
+            <span className="ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-muted px-1.5 text-[0.65rem] font-medium">
+              {hiddenCount}
+            </span>
+          ) : null}
+        </Button>
+        <Sheet open={open} onOpenChange={setOpen}>
+          <SheetContent side="bottom" className="gap-0 px-4">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <p className="text-base font-semibold">View</p>
+              <Button type="button" size="sm" variant="ghost" onClick={() => setOpen(false)}>
+                Done
+              </Button>
+            </div>
+            <div className="max-h-[min(70dvh,32rem)] overflow-y-auto pb-2">{body}</div>
+          </SheetContent>
+        </Sheet>
+      </>
+    );
+  }
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -911,32 +1008,7 @@ function ViewOptions({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-80" align="end">
-        {phone ? (
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <span className="text-sm font-medium">Layout</span>
-            <PhoneLayoutToggle value={phoneLayout} onChange={onPhoneLayout} />
-          </div>
-        ) : null}
-        <ColumnChips cols={cols} onToggle={onToggleCol} onShowAll={onShowAllCols} />
-        <label className="mt-3 mb-3 flex flex-col gap-1.5">
-          <span className="text-xs font-medium text-muted-foreground">Resize type {fontSize}px</span>
-          <input
-            type="range"
-            min={10}
-            max={18}
-            step={1}
-            value={fontSize}
-            aria-label="Register font size"
-            className="w-full accent-primary"
-            onChange={(e) => onFontSize(Number(e.target.value))}
-          />
-        </label>
-        <div className="flex min-h-10 items-center justify-between gap-3">
-          <Label htmlFor="drag-dates" className="text-sm">
-            Move dates
-          </Label>
-          <Switch id="drag-dates" checked={dragOn} onCheckedChange={onDragOn} />
-        </div>
+        {body}
       </PopoverContent>
     </Popover>
   );

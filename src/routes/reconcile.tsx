@@ -388,30 +388,36 @@ function ReconcilePage() {
         placeholder="Search payee or type"
         label="Search uncleared"
       >
-        <PhoneFiltersSheet phone={phone} title="Filters">
-        <ListFilters
-          selects={[
-            {
-              label: "Direction",
-              value: typeFilter,
-              options: [
-                { value: "all", label: "All" },
-                { value: "in", label: "Deposits" },
-                { value: "out", label: "Payments" },
-              ],
-              onChange: (v) => setTypeFilter(v as typeof typeFilter),
-            },
-          ]}
-          sortValue={`${sort.key}:${sort.dir}`}
-          sortOptions={[
-            { value: "date:desc", label: "Date · newest" },
-            { value: "date:asc", label: "Date · oldest" },
-            { value: "payee:asc", label: "Payee A–Z" },
-            { value: "days:desc", label: "Oldest first" },
-          ]}
-          onSort={(v) => applySortValue(sort.set, v)}
+        <PhoneFiltersSheet
+          phone={phone}
+          title="Filters"
+          activeCount={typeFilter !== "all" ? 1 : 0}
           onClear={() => setTypeFilter("all")}
-        />
+        >
+          <ListFilters
+            embedded={phone}
+            selects={[
+              {
+                label: "Direction",
+                value: typeFilter,
+                options: [
+                  { value: "all", label: "All" },
+                  { value: "in", label: "Deposits" },
+                  { value: "out", label: "Payments" },
+                ],
+                onChange: (v) => setTypeFilter(v as typeof typeFilter),
+              },
+            ]}
+            sortValue={`${sort.key}:${sort.dir}`}
+            sortOptions={[
+              { value: "date:desc", label: "Date · newest" },
+              { value: "date:asc", label: "Date · oldest" },
+              { value: "payee:asc", label: "Payee A–Z" },
+              { value: "days:desc", label: "Oldest first" },
+            ]}
+            onSort={(v) => applySortValue(sort.set, v)}
+            onClear={() => setTypeFilter("all")}
+          />
         </PhoneFiltersSheet>
       </ListToolbar>
 

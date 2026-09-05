@@ -6,6 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { datePresetRange, type DatePreset } from "@/lib/finance/register";
 import type { SortDir } from "@/lib/finance/sort";
+import { cn } from "@/lib/utils";
 
 export type FilterSelect = {
   label: string;
@@ -62,7 +63,22 @@ export function useListPeriod(defaultPreset: DatePreset = "all") {
   return { preset, from, to, applyPreset, setDateFrom, setDateTo, inRange, reset };
 }
 
-export function ListFilters({
+export function listFiltersActiveCount({
+  dateOn,
+  datePreset,
+  defaultPreset,
+  selects,
+}: {
+  dateOn: boolean;
+  datePreset?: DatePreset;
+  defaultPreset: DatePreset;
+  selects: FilterSelect[];
+}) {
+  return (dateOn && datePreset !== defaultPreset ? 1 : 0) + selects.filter((select) => select.value !== "all").length;
+}
+
+/** Filter controls only — used inside a phone bottom sheet or a desktop popover body. */
+export function ListFiltersPanel({
   datePreset,
   dateFrom,
   dateTo,
@@ -76,6 +92,7 @@ export function ListFilters({
   onSort,
   onClear,
   extra,
+  className,
 }: {
   datePreset?: DatePreset;
   dateFrom?: string;
@@ -90,11 +107,174 @@ export function ListFilters({
   onSort?: (value: string) => void;
   onClear?: () => void;
   extra?: ReactNode;
+  className?: string;
 }) {
   const dateOn = Boolean(onPreset);
-  const active =
-    (dateOn && datePreset !== defaultPreset ? 1 : 0) +
-    selects.filter((select) => select.value !== "all").length;
+  const active = listFiltersActiveCount({ dateOn, datePreset, defaultPreset, selects });
+
+  return (
+    <div className={cn("grid gap-3", className)}>
+      {dateOn ? (
+        <div className="grid gap-2">
+          <p className="text-[0.65rem] font-medium uppercase tracking-wider text-muted-foreground">Dates</p>
+          <div className="grid grid-cols-3 gap-1.5" role="group" aria-label="Date range">
+            <Button
+              type="button"
+              size="sm"
+              variant={datePreset === "month" ? "default" : "outline"}
+              className="h-10 min-h-10"
+              aria-pressed={datePreset === "month"}
+              onClick={() => onPreset?.("month")}
+            >
+              This month
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={datePreset === "year" ? "default" : "outline"}
+              className="h-10 min-h-10"
+              aria-pressed={datePreset === "year"}
+              onClick={() => onPreset?.("year")}
+            >
+              This year
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={datePreset === "all" ? "default" : "outline"}
+              className="h-10 min-h-10"
+              aria-pressed={datePreset === "all"}
+              onClick={() => onPreset?.("all")}
+            >
+              All dates
+            </Button>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <label className="grid gap-1">
+              <span className="text-[0.65rem] font-medium text-muted-foreground">Start</span>
+              <Input
+                type="date"
+                value={dateFrom ?? ""}
+                onChange={(e) => onDateFrom?.(e.target.value)}
+                aria-label="From date"
+                className="h-10 min-h-10"
+              />
+            </label>
+            <label className="grid gap-1">
+              <span className="text-[0.65rem] font-medium text-muted-foreground">End</span>
+              <Input
+                type="date"
+                value={dateTo ?? ""}
+                onChange={(e) => onDateTo?.(e.target.value)}
+                aria-label="To date"
+                className="h-10 min-h-10"
+              />
+            </label>
+          </div>
+        </div>
+      ) : null}
+      {selects.map((select) => (
+        <div key={select.label} className="grid gap-1.5">
+          <p className="text-[0.65rem] font-medium uppercase tracking-wider text-muted-foreground">{select.label}</p>
+          <Select value={select.value} onValueChange={select.onChange}>
+            <SelectTrigger className="h-10 min-h-10" aria-label={select.label}>
+              <SelectValue placeholder={select.label} />
+            </SelectTrigger>
+            <SelectContent>
+              {select.options.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      ))}
+      {extra}
+      {sortValue && sortOptions && onSort ? (
+        <div className="grid gap-1.5">
+          <p className="text-[0.65rem] font-medium uppercase tracking-wider text-muted-foreground">Sort</p>
+          <Select value={sortValue} onValueChange={onSort}>
+            <SelectTrigger className="h-10 min-h-10" aria-label="Sort">
+              <SelectValue placeholder="Sort" />
+            </SelectTrigger>
+            <SelectContent>
+              {sortOptions.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      ) : null}
+      {active && onClear ? (
+        <button
+          type="button"
+          className="text-left text-sm font-medium text-muted-foreground phone-press"
+          onClick={onClear}
+        >
+          {dateOn && defaultPreset === "month" ? "Back to this month" : "Clear filters"}
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+export function ListFilters({
+  datePreset,
+  dateFrom,
+  dateTo,
+  onPreset,
+  onDateFrom,
+  onDateTo,
+  defaultPreset = "all",
+  selects = [],
+  sortValue,
+  sortOptions,
+  onSort,
+  onClear,
+  extra,
+  /** When true, render the panel only (for phone bottom sheets). */
+  embedded = false,
+}: {
+  datePreset?: DatePreset;
+  dateFrom?: string;
+  dateTo?: string;
+  onPreset?: (preset: DatePreset) => void;
+  onDateFrom?: (value: string) => void;
+  onDateTo?: (value: string) => void;
+  defaultPreset?: DatePreset;
+  selects?: FilterSelect[];
+  sortValue?: string;
+  sortOptions?: FilterSortOpt[];
+  onSort?: (value: string) => void;
+  onClear?: () => void;
+  extra?: ReactNode;
+  embedded?: boolean;
+}) {
+  const dateOn = Boolean(onPreset);
+  const active = listFiltersActiveCount({ dateOn, datePreset, defaultPreset, selects });
+
+  const panel = (
+    <ListFiltersPanel
+      datePreset={datePreset}
+      dateFrom={dateFrom}
+      dateTo={dateTo}
+      onPreset={onPreset}
+      onDateFrom={onDateFrom}
+      onDateTo={onDateTo}
+      defaultPreset={defaultPreset}
+      selects={selects}
+      sortValue={sortValue}
+      sortOptions={sortOptions}
+      onSort={onSort}
+      onClear={onClear}
+      extra={extra}
+    />
+  );
+
+  if (embedded) return panel;
 
   return (
     <Popover>
@@ -118,61 +298,7 @@ export function ListFilters({
         }}
       >
         <p className="mb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">Filters</p>
-        <div className="grid gap-2">
-          {dateOn ? (
-            <>
-              <div className="grid grid-cols-3 gap-1" role="group" aria-label="Date range">
-                <Button type="button" size="sm" variant={datePreset === "month" ? "default" : "outline"} aria-pressed={datePreset === "month"} onClick={() => onPreset?.("month")}>
-                  Month
-                </Button>
-                <Button type="button" size="sm" variant={datePreset === "year" ? "default" : "outline"} aria-pressed={datePreset === "year"} onClick={() => onPreset?.("year")}>
-                  Year
-                </Button>
-                <Button type="button" size="sm" variant={datePreset === "all" ? "default" : "outline"} aria-pressed={datePreset === "all"} onClick={() => onPreset?.("all")}>
-                  All dates
-                </Button>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <Input type="date" value={dateFrom ?? ""} onChange={(e) => onDateFrom?.(e.target.value)} aria-label="From date" className="h-9 min-h-9" />
-                <Input type="date" value={dateTo ?? ""} onChange={(e) => onDateTo?.(e.target.value)} aria-label="To date" className="h-9 min-h-9" />
-              </div>
-            </>
-          ) : null}
-          {selects.map((select) => (
-            <Select key={select.label} value={select.value} onValueChange={select.onChange}>
-              <SelectTrigger className="h-9 min-h-9" aria-label={select.label}>
-                <SelectValue placeholder={select.label} />
-              </SelectTrigger>
-              <SelectContent>
-                {select.options.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ))}
-          {extra}
-          {sortValue && sortOptions && onSort ? (
-            <Select value={sortValue} onValueChange={onSort}>
-              <SelectTrigger className="h-9 min-h-9" aria-label="Sort">
-                <SelectValue placeholder="Sort" />
-              </SelectTrigger>
-              <SelectContent>
-                {sortOptions.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    Sort · {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : null}
-          {active && onClear ? (
-            <button type="button" className="text-left text-xs font-medium text-muted-foreground" onClick={onClear}>
-              {dateOn && defaultPreset === "month" ? "Back to this month" : "Clear filters"}
-            </button>
-          ) : null}
-        </div>
+        {panel}
       </PopoverContent>
     </Popover>
   );

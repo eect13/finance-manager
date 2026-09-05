@@ -25,6 +25,8 @@ export function ColResize({
       }}
       onPointerDown={(e) => {
         if (e.detail > 1) return;
+        // Phone/tablet: column drag is unusable — CSS hides the handle; skip events too.
+        if (typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches) return;
         e.preventDefault();
         e.stopPropagation();
         const startX = e.clientX;

@@ -431,15 +431,15 @@
    */
   @media (hover: none) and (pointer: coarse) {
     .app-header-bar {
-      padding-top: max(2.5rem, env(safe-area-inset-top, 0px));
+      padding-top: env(safe-area-inset-top, 0px);
     }
 
     .app-sidebar {
-      padding-top: max(2.5rem, env(safe-area-inset-top, 0px));
+      padding-top: env(safe-area-inset-top, 0px);
     }
 
     .sheet-close {
-      top: max(2.85rem, env(safe-area-inset-top, 0px)) !important;
+      top: 0.65rem !important;
     }
 
     .app-sidebar-footer {
@@ -447,7 +447,7 @@
     }
 
     .app-shell-loading {
-      padding-top: max(2.5rem, env(safe-area-inset-top, 0px));
+      padding-top: env(safe-area-inset-top, 0px);
       padding-bottom: max(1.5rem, env(safe-area-inset-bottom, 0px));
     }
   }
@@ -3207,39 +3207,38 @@ body.printing [data-radix-popper-content-wrapper]:has(.print-paper-menu) {
 
 
 
-/* Phone menu sheet portals to body (outside .app-workspace zoom).
-   Use real-pixel safe-area so it clears the status bar like the header. */
+/* Native MainActivity pads the WebView for system bars — do NOT add another
+   large CSS safe-area fallback (that caused a double gap under the status bar). */
 .sheet-panel {
-  /* Native insets should clear the bar; keep a small pad only */
-  padding-top: 0.35rem !important;
+  padding-top: 0.25rem !important;
   box-sizing: border-box;
+  /* Lock sheet to viewport; scroll inside so bg never runs out (dvh/overflow) */
+  top: 0 !important;
+  bottom: 0 !important;
+  height: 100dvh !important;
+  max-height: 100dvh !important;
 }
 .sheet-sat {
-  height: max(0.25rem, env(safe-area-inset-top, 0px));
+  height: 0;
 }
 .sheet-close {
-  top: max(0.5rem, env(safe-area-inset-top, 0px)) !important;
+  top: 0.65rem !important;
+}
+.sheet-nav {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 @media (hover: none) and (pointer: coarse) {
-  .sheet-panel {
-    padding-top: 0.35rem !important;
-  }
-  /* Fallback if native insets failed — still push content below clock */
-  .sheet-sat {
-    height: max(2.75rem, env(safe-area-inset-top, 0px));
-  }
-  .sheet-close {
-    top: max(0.65rem, calc(env(safe-area-inset-top, 0px) + 0.5rem), 2.85rem) !important;
-  }
-  /* Header lives inside zoomed .app-workspace — undo zoom on the inset */
+  /* Header: only env() — native inset already cleared the clock */
   .app-header-bar {
-    padding-top: calc(max(2.75rem, env(safe-area-inset-top, 0px)) / var(--app-ui-zoom, 1));
+    padding-top: env(safe-area-inset-top, 0px);
   }
   .app-sidebar {
-    padding-top: calc(max(2.75rem, env(safe-area-inset-top, 0px)) / var(--app-ui-zoom, 1));
+    padding-top: env(safe-area-inset-top, 0px);
   }
   .app-shell-loading {
-    padding-top: max(2.75rem, env(safe-area-inset-top, 0px));
+    padding-top: env(safe-area-inset-top, 0px);
   }
 }
 
@@ -3268,5 +3267,63 @@ body.printing [data-radix-popper-content-wrapper]:has(.print-paper-menu) {
   }
   .workspace-split {
     gap: 0.75rem;
+  }
+}
+
+
+/* v3.62.15 mobile balance — less top gap, tables scroll without column drag */
+@media (max-width: 767px), ((hover: none) and (pointer: coarse)) {
+  main[data-workspace-scroll] {
+    padding-top: 0.4rem !important;
+    padding-bottom: 0.75rem !important;
+  }
+  .app-page-head {
+    margin-bottom: 0.45rem !important;
+    gap: 0.35rem !important;
+  }
+  .app-page-title {
+    font-size: 1.2rem !important;
+    line-height: 1.2 !important;
+  }
+  .app-page-hint {
+    font-size: 0.75rem !important;
+    margin-top: 0.1rem !important;
+    line-height: 1.35 !important;
+  }
+  .app-header-inner {
+    padding-block: 0.3rem !important;
+  }
+  .app-sidebar-brand {
+    padding-block: 0.45rem !important;
+  }
+  .sheet-nav .app-sidebar-brand {
+    padding-top: 0.35rem !important;
+    padding-bottom: 0.35rem !important;
+  }
+
+  /* Phone tables: hide resize handles; let the row scroll horizontally */
+  .col-resize-handle {
+    display: none !important;
+    pointer-events: none !important;
+  }
+  .page-scroll-x {
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+  .list-grid,
+  .register-matrix {
+    width: max-content;
+    min-width: 100%;
+  }
+  .close-banner {
+    margin-bottom: 0.65rem !important;
+  }
+  .desk-stats {
+    gap: 0.45rem !important;
+  }
+  .workspace-split {
+    gap: 0.65rem !important;
   }
 }

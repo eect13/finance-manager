@@ -598,7 +598,7 @@ function syncAndroidVersionFromPackage() {
  * the phone menu sheet) clears the status bar automatically.
  */
 function patchAndroidSystemBars() {
-  const marker = "finance-manager-system-bars-v2";
+  const marker = "finance-manager-system-bars-v3";
   const appSrc = join(GEN, "app", "src", "main");
   if (!existsSync(appSrc)) {
     console.log("  Skipping system-bars patch (gen/android missing).");
@@ -626,7 +626,7 @@ function patchAndroidSystemBars() {
     return;
   }
 
-  // Full MainActivity: apply insets AFTER super.onCreate (Tauri may re-enable edge-to-edge in super).
+  // Full MainActivity v3: decorFits after super; do NOT also pad (that doubles the status-bar gap).
   const body = `package app.financemanager.desktop
 
 import android.os.Bundle
@@ -650,15 +650,11 @@ class MainActivity : TauriActivity() {
   }
 
   private fun applyFinanceManagerSystemBarInsets() {
+    // v3: WindowCompat.setDecorFitsSystemWindows(true) already clears the status bar.
+    // Extra View padding stacked on top of that and created a double gap under the clock.
     try {
       val content = findViewById<View>(android.R.id.content) ?: return
-      ViewCompat.setOnApplyWindowInsetsListener(content) { v, insets ->
-        val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-        v.setPadding(bars.left, bars.top, bars.right, bars.bottom)
-        insets
-      }
-      ViewCompat.requestApplyInsets(content)
-      // Also pad WebViews directly in case content padding is ignored
+      content.setPadding(0, 0, 0, 0)
       content.post {
         val webViews = ArrayList<WebView>()
         fun collect(v: View) {
@@ -669,13 +665,10 @@ class MainActivity : TauriActivity() {
         }
         collect(content)
         for (wv in webViews) {
-          ViewCompat.setOnApplyWindowInsetsListener(wv) { v, insets ->
-            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(bars.left, bars.top, bars.right, bars.bottom)
-            insets
-          }
-          ViewCompat.requestApplyInsets(wv)
+          wv.setPadding(0, 0, 0, 0)
+          ViewCompat.setOnApplyWindowInsetsListener(wv, null)
         }
+        ViewCompat.setOnApplyWindowInsetsListener(content, null)
       }
     } catch (_: Throwable) {
     }

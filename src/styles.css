@@ -3361,3 +3361,87 @@ body.printing [data-radix-popper-content-wrapper]:has(.print-paper-menu) {
     padding-inline: 0.15rem;
   }
 }
+
+
+/* v3.62.17: no double status-bar gap; phone tables actually scroll; Fold/tablet */
+html.tauri-android .app-header-bar,
+html.tauri-android .app-sidebar,
+html.tauri-android .app-shell-loading {
+  padding-top: 0 !important;
+}
+html.tauri-android .sheet-panel {
+  padding-top: 0.15rem !important;
+}
+html.tauri-android .sheet-close {
+  top: 0.5rem !important;
+}
+
+/* Coarse-pointer white-square fix accidentally disabled sideways scroll — restore it */
+@media (hover: none) and (pointer: coarse) {
+  .page-scroll-x,
+  .register-card,
+  .list-card {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+  .page-scroll-x {
+    overflow-y: visible !important;
+  }
+}
+
+/* Phone + narrow Fold cover: compact register that fits key cols */
+@media (max-width: 767px) {
+  .register-matrix {
+    font-size: 0.74rem !important;
+  }
+  .register-matrix th,
+  .register-matrix td {
+    padding: 0.28rem 0.32rem !important;
+    white-space: nowrap;
+  }
+  .register-matrix .col-date {
+    position: sticky;
+    left: 2.25rem;
+    z-index: 2;
+    background: var(--color-card);
+  }
+  .register-matrix thead .col-date {
+    z-index: 3;
+  }
+  .register-matrix .col-check {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: var(--color-card);
+  }
+  .register-matrix thead .col-check {
+    z-index: 3;
+  }
+  /* Page actions wrap on narrow phones */
+  .page-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  .app-header-bar {
+    padding-top: 0 !important;
+  }
+}
+
+/* Tablet / Fold open (768–1280): denser but keep multi-col table usable */
+@media (min-width: 768px) and (max-width: 1280px) {
+  .app-header-inner {
+    padding-inline: 0.75rem !important;
+    padding-block: 0.4rem !important;
+  }
+  main[data-workspace-scroll] {
+    padding-inline: 0.85rem !important;
+  }
+  .register-matrix {
+    font-size: 0.82rem;
+  }
+  .page-scroll-x {
+    overflow-x: auto !important;
+  }
+}

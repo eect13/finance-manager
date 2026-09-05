@@ -206,7 +206,21 @@ function SidebarBody({
   );
 }
 
+function markTauriAndroid() {
+  try {
+    const ua = navigator.userAgent || "";
+    const tauri = Boolean((window as any).__TAURI_INTERNALS__ || (window as any).__TAURI__ || /Tauri/i.test(ua));
+    const android = /Android/i.test(ua);
+    document.documentElement.classList.toggle("tauri-android", tauri && android);
+  } catch {
+    /* ignore */
+  }
+}
+
 function ThemeSync() {
+  useEffect(() => {
+    markTauriAndroid();
+  }, []);
   const { theme, resolved } = useTheme();
   useLayoutEffect(() => {
     applyTheme(theme);

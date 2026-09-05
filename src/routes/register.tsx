@@ -86,16 +86,30 @@ const DEFAULT_COL_WIDTHS = {
 /** Narrower defaults for phone so Register fits more useful columns before scrolling. */
 const MOBILE_COL_WIDTHS: typeof DEFAULT_COL_WIDTHS = {
   check: 36,
-  date: 78,
-  type: 72,
-  number: 56,
-  payee: 132,
-  memo: 96,
-  bank: 88,
-  payment: 92,
-  deposit: 92,
-  balance: 100,
-  status: 72,
+  date: 64,
+  type: 64,
+  number: 78,
+  payee: 118,
+  memo: 88,
+  bank: 80,
+  payment: 84,
+  deposit: 84,
+  balance: 92,
+  status: 64,
+};
+
+/** Phone / narrow: show money + payee; hide type/memo/bank/status until View toggles them. */
+const MOBILE_REGISTER_COLS: RegisterCols = {
+  date: true,
+  type: false,
+  number: true,
+  payee: true,
+  memo: false,
+  bank: false,
+  payment: true,
+  deposit: true,
+  balance: true,
+  status: false,
 };
 type ColWidths = typeof DEFAULT_COL_WIDTHS;
 
@@ -174,6 +188,26 @@ function RegisterPage() {
   const [editLine, setEditLine] = useState<CashLine | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [colWidths, setColWidths] = useState<ColWidths>(defaultColWidths);
+  // Phone: prefer a compact column set so payee + amounts show without hunting sideways.
+  useEffect(() => {
+    if (!isPhoneUi()) return;
+    const cur = useFinanceStore.getState().data?.settings.registerColumns;
+    if (!cur) return;
+    const looksFullDesktop =
+      cur.type && cur.memo && cur.bank && cur.status && cur.payee && cur.payment && cur.deposit && cur.balance;
+    if (!looksFullDesktop) return;
+    patch(
+      (d) => ({
+        ...d,
+        settings: {
+          ...d.settings,
+          registerColumns: { ...MOBILE_REGISTER_COLS },
+        },
+      }),
+      "phone register columns",
+    );
+  }, [patch]);
+
   const [needFit, setNeedFit] = useState(false);
   const fontSize = data.settings.registerFontSize ?? 12;
   const cols = data.settings.registerColumns ?? DEFAULT_REGISTER_COLS;

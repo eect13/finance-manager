@@ -542,8 +542,16 @@ function RegisterPage() {
     const ids = mode === "all" ? deletable.map((l) => l.id) : selectedIds;
     if (ids.length === 0) return;
     try {
-      removeCashLines(targets(ids));
-      toast.success(ids.length === 1 ? "Entry deleted." : `${ids.length} entries deleted.`);
+      const { deleted, failed } = removeCashLines(targets(ids));
+      if (failed === 0) {
+        toast.success(deleted === 1 ? "Entry deleted." : `${deleted} entries deleted.`);
+      } else {
+        toast.message(
+          deleted === 1
+            ? `1 entry deleted; ${failed} could not be deleted.`
+            : `${deleted} entries deleted; ${failed} could not be deleted.`,
+        );
+      }
       setSelected([]);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not delete.");
@@ -747,7 +755,7 @@ function RegisterPage() {
           cols={cols}
           colWidths={colWidths}
           needFit={needFit}
-          lastBalance={display.at(-1)?.balance ?? ending}
+          lastBalance={ending}
           selected={selectedOn}
           hasSelectable={keepIds.size > 0}
           allOn={allOn}
@@ -800,7 +808,6 @@ function RegisterPage() {
               lines={filtered}
               selectedIds={selectedIds}
               preferFromId={bankId}
-              onSelectIds={setSelected}
               onMoved={() => setSelected([])}
               compact
             />
@@ -1188,7 +1195,7 @@ function RegisterTable({
   const virtualizer = useVirtualizer({
     count: lines.length,
     getScrollElement: () => document.querySelector("[data-workspace-scroll]"),
-    estimateSize: () => 44,
+    estimateSize: () => (isPhoneUi() ? 52 : 44),
     overscan: 12,
     getItemKey: (index) => lines[index]?.id ?? index,
   });
@@ -1388,7 +1395,14 @@ function RegisterTable({
                 </tr>
               </thead>
               <tbody>
-                {lines.map((line) => {
+                {padTop > 0 ? (
+                  <tr aria-hidden>
+                    <td colSpan={1 + (dragOn ? 1 : 0) + visibleCols.length} style={{ height: padTop, padding: 0, border: 0 }} />
+                  </tr>
+                ) : null}
+                {vItems.map((item) => {
+                  const line = lines[item.index];
+                  if (!line) return null;
                   const isOpening = line.kind === "opening";
                   const locked = line.recon === "reconciled";
                   const isOn = selected.has(line.id);
@@ -1397,6 +1411,8 @@ function RegisterTable({
                   return (
                     <tr
                       key={line.id}
+                      ref={virtualizer.measureElement}
+                      data-index={item.index}
                       data-move-row={dragOn && !isOpening ? line.id : undefined}
                       data-move-row-date={dragOn && !isOpening ? line.date : undefined}
                       data-dragging={isDragging ? "true" : undefined}
@@ -1499,6 +1515,11 @@ function RegisterTable({
                     </tr>
                   );
                 })}
+                {padBottom > 0 ? (
+                  <tr aria-hidden>
+                    <td colSpan={1 + (dragOn ? 1 : 0) + visibleCols.length} style={{ height: padBottom, padding: 0, border: 0 }} />
+                  </tr>
+                ) : null}
               </tbody>
             </table>
           </div>

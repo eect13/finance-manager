@@ -827,15 +827,32 @@ export function removeCashLine(data: FinanceData, line): FinanceData {
   if (line.kind === "deposit" || line.kind === "expense" || line.kind === "transfer") return dropJournalsAndReversals(data, [line.sourceId]);
   throw new Error("This line cannot be deleted.");
 }
-export function removeCashLines(data: FinanceData, lines): FinanceData {
+export function removeCashLines(data: FinanceData, lines): {
+  data: FinanceData;
+  deleted: number;
+  failed: number;
+} {
   let next = data;
   let deleted = 0;
-  for (const line of lines) try {
-    next = removeCashLine(next, line);
-    deleted += 1;
-  } catch {}
+  let failed = 0;
+  const done = new Set();
+  for (const line of lines) {
+    const key = `${line.kind}:${line.sourceId}`;
+    // Transfer (and any) dual-side: same source already removed in this batch.
+    if (done.has(key)) {
+      deleted += 1;
+      continue;
+    }
+    try {
+      next = removeCashLine(next, line);
+      done.add(key);
+      deleted += 1;
+    } catch {
+      failed += 1;
+    }
+  }
   if (deleted === 0) throw new Error("Could not delete those entries.");
-  return next;
+  return { data: next, deleted, failed };
 }
 export function reorderBills(data: FinanceData, ids): FinanceData {
   return {

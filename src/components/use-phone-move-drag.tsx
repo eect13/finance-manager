@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { toast } from "sonner";
 
 const THRESHOLD_PX = 10;
 
@@ -186,6 +187,9 @@ export function usePhoneMoveDrag({
             suppressChipRef.current = false;
           }, 450);
           cbs.current.onDrop(s.id, date);
+        } else {
+          // Past threshold (active drag) but released off chip/row — brief hint, not on tiny taps.
+          toast.message("Drop on a date or row.");
         }
       };
 

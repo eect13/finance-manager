@@ -28,7 +28,6 @@ export function RegisterSwap({
   lines: CashLine[];
   selectedIds: string[];
   preferFromId?: string;
-  onSelectIds: (ids: string[]) => void;
   onMoved: () => void;
   /** Inline To + Move only (parent owns count / Clear / Delete). */
   compact?: boolean;

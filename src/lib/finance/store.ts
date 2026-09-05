@@ -233,7 +233,7 @@ export interface FinanceState {
   voidBill: (id: string) => void;
   removeBill: (id: string) => void;
   reorderBills: (ids: string[]) => void;
-  removeCashLines: (lines: Parameters<typeof removeCashLines>[1]) => void;
+  removeCashLines: (lines: Parameters<typeof removeCashLines>[1]) => { deleted: number; failed: number };
   addDeposit: (input: Parameters<typeof addDeposit>[1]) => void;
   addExpense: (input: Parameters<typeof addExpense>[1]) => void;
   transferBanks: (input: Parameters<typeof transferBanks>[1]) => void;
@@ -562,11 +562,20 @@ export const useFinanceStore = create<FinanceState>()(
             return bill ? `delete bill ${bill.number}` : "delete bill";
           }),
         reorderBills: (ids) => apply((d) => reorderBills(d, ids), "reorder bills"),
-        removeCashLines: (lines) =>
+        removeCashLines: (lines) => {
+          let deleted = 0;
+          let failed = 0;
           apply(
-            (d) => removeCashLines(d, lines),
+            (d) => {
+              const result = removeCashLines(d, lines);
+              deleted = result.deleted;
+              failed = result.failed;
+              return result.data;
+            },
             lines.length === 1 ? "delete register line" : `delete ${lines.length} register lines`,
-          ),
+          );
+          return { deleted, failed };
+        },
         addDeposit: (input) => apply((d) => addDeposit(d, input), "post deposit"),
         addExpense: (input) => apply((d) => addExpense(d, input), "post expense"),
         transferBanks: (input) => apply((d) => transferBanks(d, input), "transfer between banks"),

@@ -1,6 +1,15 @@
 # Finance Manager — bugs & improvements (v3.62)
 
-Re-verified in code 2026-09-05 (Asia/Manila). Updated for v3.62.46. UI direction: gestalt / professional ledger — cream paper, navy ink, real chrome — not an overly-minimal white sheet.
+Re-verified in code 2026-09-05 (Asia/Manila). Updated for v3.62.47. UI direction: gestalt / professional ledger — cream paper, navy ink, real chrome — not an overly-minimal white sheet.
+
+## Fixed in v3.62.47
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| 1 | Med (UX) | Register showed Void badge only for receipts; void lived on the record sheet | Shared Pending/Cleared/Void menu (recon + void) on Register, Receipts, payment record |
+| 2 | Med | `voidReceipt` left recon cleared and allowed void on reconciled lines | Block reconciled / finished-statement; force recon pending; normalize heals void+cleared |
+| 3 | Med | Reconcile select-all replaced the whole tick set (filter wiped other ticks) | Merge add/remove against filtered keys; select-all toast |
+| 4 | Low | Desk reconcile tick cell lacked pointer stop; locked ShopTick still fired | `onPointerDown` stop; locked early-return |
 
 ## Fixed in v3.62.46
 

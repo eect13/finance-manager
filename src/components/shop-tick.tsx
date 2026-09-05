@@ -30,6 +30,7 @@ export function ShopTick({
       onMouseDown={stop}
       onClick={(e) => {
         e.stopPropagation();
+        if (locked) return;
         onChange(!checked);
       }}
       onDoubleClick={stop}

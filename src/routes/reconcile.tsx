@@ -182,9 +182,9 @@ function ReconcilePage() {
   const someOn = !allOn && uncleared.some((l) => ticked.has(lineKey(l)));
 
   function toggle(line: CashLine, on?: boolean) {
+    const key = lineKey(line);
     setTicked((prev) => {
       const next = new Set(prev);
-      const key = lineKey(line);
       const should = on ?? !next.has(key);
       if (should) next.add(key);
       else next.delete(key);
@@ -192,8 +192,21 @@ function ReconcilePage() {
     });
   }
 
+  /** Merge with existing ticks so a type/search filter does not wipe or orphan other ticks. */
   function toggleAll(on: boolean) {
-    setTicked(on ? new Set(uncleared.map(lineKey)) : new Set());
+    const keys = uncleared.map(lineKey);
+    setTicked((prev) => {
+      const next = new Set(prev);
+      if (on) {
+        for (const k of keys) next.add(k);
+      } else {
+        for (const k of keys) next.delete(k);
+      }
+      return next;
+    });
+    if (keys.length === 0) return;
+    if (on) toast.success(keys.length === 1 ? "1 ticked." : `${keys.length} ticked.`);
+    else toast.success(keys.length === 1 ? "1 unticked." : `${keys.length} unticked.`);
   }
 
   function fit(id: keyof typeof RECON_COLS, label: string) {
@@ -839,7 +852,12 @@ function ReconcilePage() {
                           : line.sourceId,
                       )}
                     >
-                      <td className="col-check no-print" onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
+                      <td
+                        className="col-check no-print"
+                        onClick={(e) => e.stopPropagation()}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onDoubleClick={(e) => e.stopPropagation()}
+                      >
                         <span className="register-check-cell">
                           <ShopTick checked={on} onChange={(next) => toggle(line, next)} label="Cleared" />
                         </span>

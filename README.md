@@ -1,4 +1,4 @@
-# Finance Manager v3.62.46
+# Finance Manager v3.62.47
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -11,6 +11,12 @@ No accounts, no server setup. Books stay on this computer (IndexedDB). Settings 
 The app mark is a **navy tile with cream pillars** — a full opaque square (Windows 11 already rounds the tile; transparent corners were a white plate). Web uses the SVG favicon. Windows uses a **BMP 32-bit** `.ico` (PNG-in-ICO is a white square on the shortcut and the taskbar). After install, **delete any leftover blank shortcut** and pin the new one — Explorer caches the last icon.
 
 
+
+## What's new in v3.62.47
+
+- **Receipt / payment status** (Register desk + phone Grid/List, Receipts ⋯ + status chip, payment record): Pending / Cleared / Void — same pattern as checks; ledger status stays `posted` | `void`
+- `voidReceipt` blocks reconciled lines, clears recon to pending, and normalize heals legacy void+cleared stubs
+- **Reconcile ticks**: select-all merges with filtered lists (no longer wipes ticks outside the filter); desk tick cell stops pointer events; locked ShopTick ignores clicks; select-all toasts count
 
 ## What's new in v3.62.46
 
@@ -323,9 +329,11 @@ Lists (banks, register, receipts, checks, reports, reconcile) wrap actions and k
 
 ![Banks — accounts and balances](docs/screenshots/banks.png)
 
-![Bank register — check status menu (Pending / Cleared / Bounce / Void)](docs/screenshots/register.png)
+![Bank register — receipt status menu (Pending / Cleared / Void)](docs/screenshots/register.png)
 
 ![Checks — Clear / Bounce / Void from row ⋯](docs/screenshots/checks-status.png)
+
+![Receipts — Pending / Cleared / Void from status chip](docs/screenshots/receipts-status.png)
 
 ![Employees — roster, filters, and Pay](docs/screenshots/employees.png)
 

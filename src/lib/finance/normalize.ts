@@ -43,17 +43,22 @@ export function normalizeBooks(raw: unknown): FinanceData {
     sortOrder: typeof b.sortOrder === "number" ? b.sortOrder : i,
     createdAt: typeof b.createdAt === "number" ? b.createdAt : i,
   }));
-  const receipts = asArray<Receipt>(p.receipts).map((r, i) => ({
-    ...r,
-    lines: Array.isArray(r.lines) ? r.lines : [],
-    receivedFrom: r.receivedFrom ?? "",
-    memo: r.memo ?? "",
-    method: parseMethod(r.method),
-    checkNumber: r.checkNumber ?? "",
-    sortOrder: typeof r.sortOrder === "number" ? r.sortOrder : i,
-    recon: parseRecon(r.recon),
-    createdAt: typeof r.createdAt === "number" ? r.createdAt : i,
-  }));
+  const receipts = asArray<Receipt>(p.receipts).map((r, i) => {
+    let recon = parseRecon(r.recon);
+    // Voided receipts never clear the bank — heal legacy void+cleared stubs.
+    if (r.status === "void" && recon !== "reconciled") recon = "pending";
+    return {
+      ...r,
+      lines: Array.isArray(r.lines) ? r.lines : [],
+      receivedFrom: r.receivedFrom ?? "",
+      memo: r.memo ?? "",
+      method: parseMethod(r.method),
+      checkNumber: r.checkNumber ?? "",
+      sortOrder: typeof r.sortOrder === "number" ? r.sortOrder : i,
+      recon,
+      createdAt: typeof r.createdAt === "number" ? r.createdAt : i,
+    };
+  });
   const checks = asArray<CheckRecord>(p.checks).map((c, i) => {
     let recon = parseRecon(c.recon, c.status === "cleared" ? "cleared" : "pending");
     // Heal legacy Clear-from-Checks that wrote status without recon.

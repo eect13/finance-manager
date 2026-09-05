@@ -605,6 +605,11 @@ export function voidReceipt(data: FinanceData, id, date = todayIso()): FinanceDa
   const receipt = data.receipts.find((r) => r.id === id);
   if (!receipt) throw new Error("Receipt not found");
   if (receipt.status === "void") return data;
+  if (receipt.recon === "reconciled") throw new Error("This line is reconciled. Unlock it first.");
+  const locked = lineOnFinishedRecon(data, receipt.kind === "payment" ? "payment" : "receipt", id);
+  if (locked) {
+    throw new Error(`This line is on the ${locked.statementDate} statement. Undo that rec first.`);
+  }
   const original = data.journals.find((j) => j.id === receipt.journalId);
   if (!original) throw new Error("Original journal missing");
   const reversal = reverseJournal(original, date, `Void ${receipt.number}`);
@@ -633,6 +638,7 @@ export function voidReceipt(data: FinanceData, id, date = todayIso()): FinanceDa
     receipts: data.receipts.map((r) => r.id === id ? {
       ...r,
       status: "void",
+      recon: "pending",
       reversalJournalId: reversal.id
     } : r),
     journals: [...data.journals, reversal]

@@ -6,7 +6,8 @@ import { toast } from "sonner";
 import { ConfirmDelete } from "@/components/confirm-delete";
 import { Field } from "@/components/field";
 import { Money } from "@/components/money";
-import { ReceiptBadge } from "@/components/status-badge";
+import { receiptStatusMenuItems } from "@/components/receipt-status-menu";
+import { ReceiptBadge, ReconBadge } from "@/components/status-badge";
 import { ShopTick } from "@/components/shop-tick";
 import { listColClass } from "@/components/list-table";
 import { SortHeader } from "@/components/sort-header";
@@ -74,6 +75,7 @@ export function CustomerPayment({
   const addCustomer = useFinanceStore((s) => s.addCustomer);
   const voidReceipt = useFinanceStore((s) => s.voidReceipt);
   const removeReceipt = useFinanceStore((s) => s.removeReceipt);
+  const setCashRecon = useFinanceStore((s) => s.setCashRecon);
   const receipt = receiptId ? data.receipts.find((r) => r.id === receiptId) : undefined;
   const seedInvoice = invoiceId ? data.invoices.find((i) => i.id === invoiceId) : undefined;
   const customerRef = useRef<HTMLInputElement>(null);
@@ -193,7 +195,7 @@ export function CustomerPayment({
   const allocCols = useColWidths("finance-manager-receive-alloc-cols", ALLOC_COLS);
   const allocRef = useRef<HTMLDivElement>(null);
 
-  const locked = receipt?.status === "void";
+  const locked = receipt?.status === "void" || receipt?.recon === "reconciled";
   const balance = customerId ? customerOpenBalance(data, customerId) : 0;
   const appliedTotal = Object.values(applied).reduce((sum, raw) => sum + (parseAmountToCents(raw) || 0), 0);
   const payAmount = parseAmountToCents(form.amount) || 0;
@@ -422,7 +424,18 @@ export function CustomerPayment({
         </div>
       </div>
 
-      {receipt ? <ReceiptBadge status={receipt.status} kind={receipt.kind} method={form.method} /> : null}
+      {receipt ? (
+        receipt.status === "void" ? (
+          <ReceiptBadge status="void" kind={receipt.kind} method={form.method} />
+        ) : receipt.recon === "reconciled" ? (
+          <ReconBadge recon="reconciled" />
+        ) : (
+          <ReconBadge recon={receipt.recon ?? "pending"} />
+        )
+      ) : null}
+      {receipt?.recon === "reconciled" ? (
+        <p className="mt-2 text-sm text-muted-foreground">Reconciled — unlock from the register status column to edit.</p>
+      ) : null}
 
       <div className="txn-context mt-4">
         <Field label="Date">
@@ -727,17 +740,35 @@ export function CustomerPayment({
         {locked ? null : (
           <Button onClick={save}>{receipt ? "Save" : "Process payment"}</Button>
         )}
-        {receipt?.status === "posted" ? (
-          <Button
-            variant="ghost"
-            onClick={() => {
-              voidReceipt(receipt.id);
-              toast.success("Payment voided.");
-            }}
-          >
-            Void
-          </Button>
-        ) : null}
+        {receipt?.status === "posted" && receipt.recon !== "reconciled"
+          ? receiptStatusMenuItems(receipt.status, receipt.recon ?? "pending", (next) => {
+              try {
+                if (next === "void") {
+                  voidReceipt(receipt.id);
+                  toast.success("Payment voided.");
+                  return;
+                }
+                const recon = next === "cleared" ? "cleared" : "pending";
+                setCashRecon({
+                  kind: receipt.kind === "payment" ? "payment" : "receipt",
+                  sourceId: receipt.id,
+                  recon,
+                });
+                toast.success(recon === "cleared" ? "Cleared." : "Pending.");
+              } catch (err) {
+                toast.error(err instanceof Error ? err.message : "Could not update status.");
+              }
+            }).map((item) => (
+              <Button
+                key={item.label}
+                variant={item.label === "Cleared" || item.label === "Pending" ? "outline" : "ghost"}
+                className={item.danger ? "text-destructive" : undefined}
+                onClick={item.onSelect}
+              >
+                {item.label === "Cleared" ? "Clear" : item.label}
+              </Button>
+            ))
+          : null}
         {receipt ? (
           <Button variant="ghost" onClick={() => setDeleting(true)}>
             Delete

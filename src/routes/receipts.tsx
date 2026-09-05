@@ -18,6 +18,7 @@ import { Field } from "@/components/field";
 import { ListPrint } from "@/components/list-print";
 import { Money } from "@/components/money";
 import { requestPrint } from "@/components/print-preview";
+import { ReceiptStatusControl, receiptStatusMenuItems, type ReceiptStatusAction } from "@/components/receipt-status-menu";
 import { ReceiptBadge } from "@/components/status-badge";
 import { SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
@@ -71,6 +72,7 @@ function ReceiptsPage() {
   const addCustomer = useFinanceStore((s) => s.addCustomer);
   const voidReceipt = useFinanceStore((s) => s.voidReceipt);
   const removeReceipt = useFinanceStore((s) => s.removeReceipt);
+  const setCashRecon = useFinanceStore((s) => s.setCashRecon);
   const reorderReceipts = useFinanceStore((s) => s.reorderReceipts);
   const dragEnabled = data.settings.dragDropEnabled;
   const today = todayIso();
@@ -270,20 +272,34 @@ function ReceiptsPage() {
             ) : (
               sort.sorted.map((receipt) => {
                 const bank = data.banks.find((b) => b.id === receipt.bankId);
+                const applyStatus = (next: ReceiptStatusAction) => {
+                  try {
+                    if (next === "void") {
+                      voidReceipt(receipt.id);
+                      toast.success("Receipt voided.");
+                      return;
+                    }
+                    const recon = next === "cleared" ? "cleared" : "pending";
+                    setCashRecon({
+                      kind: receipt.kind === "payment" ? "payment" : "receipt",
+                      sourceId: receipt.id,
+                      recon,
+                    });
+                    toast.success(recon === "cleared" ? "Cleared." : "Pending.");
+                  } catch (err) {
+                    toast.error(err instanceof Error ? err.message : "Could not update status.");
+                  }
+                };
                 const rowActions = (
                   <RowActions
                     items={[
-                      ...(receipt.status === "posted"
-                        ? [
-                            {
-                              label: "Void",
-                              onSelect: () => {
-                                voidReceipt(receipt.id);
-                                toast.success("Receipt voided.");
-                              },
-                            },
-                          ]
-                        : []),
+                      ...receiptStatusMenuItems(receipt.status, receipt.recon ?? "pending", applyStatus).map((item) =>
+                        item.label === "Cleared"
+                          ? { ...item, label: "Clear" }
+                          : item.label === "Pending"
+                            ? { ...item, label: "Mark pending" }
+                            : item,
+                      ),
                       { label: "Delete", danger: true, onSelect: () => setDeleting(receipt) },
                     ]}
                   />
@@ -317,7 +333,15 @@ function ReceiptsPage() {
                         <td className="px-4 py-3 text-right" data-col="amount">
                           <Money amount={receipt.amount} currency={data.settings.currency} />
                         </td>
-                        <td className="px-4 py-3 capitalize text-muted-foreground" data-col="status">{receipt.status}</td>
+                        <td className="px-4 py-3" data-col="status" onClick={(e) => e.stopPropagation()} onDoubleClick={stopOpen}>
+                          <ReceiptStatusControl
+                            status={receipt.status}
+                            recon={receipt.recon ?? "pending"}
+                            kind={receipt.kind}
+                            method={receipt.method}
+                            onAction={applyStatus}
+                          />
+                        </td>
                         <td className="col-actions px-4 py-3" onDoubleClick={stopOpen}>
                           {rowActions}
                         </td>

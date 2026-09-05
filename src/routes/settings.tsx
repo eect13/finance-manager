@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { ConfirmDelete } from "@/components/confirm-delete";
-import { NewCompanyDialog } from "@/components/company-switcher";
+import { CompanySwitcher, NewCompanyDialog } from "@/components/company-switcher";
 import { Field } from "@/components/field";
 import { Money } from "@/components/money";
 import { listColClass } from "@/components/list-table";
@@ -83,6 +83,16 @@ function SettingsPage() {
   return (
     <AppShell title="Options" description="Company profile, display, currency and tax, multi-company files, backups, and local storage. Changes apply to the open company unless noted.">
       <div className="workspace-split">
+        <Card>
+          <CardHeader>
+            <CardTitle>Switch company</CardTitle>
+            <CardDescription>Pick which company&apos;s books you are working in. Same control as the top bar.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <CompanySwitcher className="w-full rounded-xl border border-border bg-muted/60 px-2" />
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle>Company profile</CardTitle>

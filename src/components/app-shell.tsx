@@ -309,7 +309,7 @@ export function AppShell({
       </aside>
 
       <div className="app-workspace flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="app-header-bar no-print min-w-0 shrink-0 overflow-x-auto">
+        <header className="app-header-bar no-print min-w-0 shrink-0">
           <div className="app-header-inner flex items-center gap-1 px-3 py-2 sm:gap-3 md:px-8 md:py-3">
             <Sheet open={open} onOpenChange={setOpen}>
               <SheetTrigger asChild>
@@ -325,10 +325,11 @@ export function AppShell({
                 <SidebarBody rail={rail} onNavigate={() => setOpen(false)} onToggleRail={toggleRail} />
               </SheetContent>
             </Sheet>
-            <div className="app-header-company min-w-0 flex-1 overflow-hidden">
+            {/* Desktop/tablet: company sits in the top row. Phone: dedicated full-width row below. */}
+            <div className="app-header-company hidden min-w-0 flex-1 overflow-visible md:block">
               <CompanySwitcher />
             </div>
-            <div className="app-header-actions flex min-w-0 shrink-0 items-center gap-1 sm:gap-2">
+            <div className="app-header-actions ml-auto flex min-w-0 shrink-0 items-center gap-1 overflow-x-auto sm:gap-2">
               <div className="flex">
                 <Button
                   variant="outline"
@@ -364,6 +365,9 @@ export function AppShell({
               <ThemeToggle compact />
               <ExportMenu data={data} />
             </div>
+          </div>
+          <div className="app-header-company-row border-t border-border/60 px-3 py-1.5 md:hidden">
+            <CompanySwitcher className="w-full rounded-xl border border-border bg-muted/60 px-2" />
           </div>
         </header>
 

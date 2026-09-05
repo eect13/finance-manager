@@ -25,7 +25,7 @@ import { useFinanceStore } from "@/lib/finance/store";
 import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
 
-export function CompanySwitcher() {
+export function CompanySwitcher({ className }: { className?: string } = {}) {
   const { order, companies, activeId, switchCompany, addCompany } = useFinanceStore(
     useShallow((s) => ({
       order: s.companyOrder,
@@ -45,10 +45,18 @@ export function CompanySwitcher() {
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className="company-switcher-trigger flex min-h-11 min-w-0 max-w-full items-center gap-2 rounded-md px-1 text-left hover:bg-accent"
+            className={cn(
+              "company-switcher-trigger flex min-h-11 min-w-0 max-w-full items-center gap-2 rounded-md px-2 text-left hover:bg-accent",
+              className,
+            )}
             aria-label="Switch company"
           >
-            <span className="min-w-0 truncate text-sm font-medium">{name}</span>
+            <span className="min-w-0 flex-1 truncate">
+              <span className="block text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                Company
+              </span>
+              <span className="block truncate text-sm font-medium leading-tight">{name}</span>
+            </span>
             <span className="hidden shrink-0 whitespace-nowrap text-xs text-muted-foreground sm:inline">
               {formatDate(todayIso())}
             </span>

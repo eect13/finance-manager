@@ -24,6 +24,8 @@ export function SheetContent({
         )}
         {...props}
       >
+        {/* Guaranteed status-bar clearance when env(safe-area) is 0 on Android WebView */}
+        <div className="sheet-sat shrink-0" aria-hidden />
         {children}
         <SheetPrimitive.Close className="absolute sheet-close right-4 rounded-md p-2 text-muted-foreground hover:bg-accent">
           <X className="size-4" />

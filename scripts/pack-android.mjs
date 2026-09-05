@@ -598,7 +598,7 @@ function syncAndroidVersionFromPackage() {
  * the phone menu sheet) clears the status bar automatically.
  */
 function patchAndroidSystemBars() {
-  const marker = "finance-manager-system-bars";
+  const marker = "finance-manager-system-bars-v2";
   const appSrc = join(GEN, "app", "src", "main");
   if (!existsSync(appSrc)) {
     console.log("  Skipping system-bars patch (gen/android missing).");
@@ -625,33 +625,98 @@ function patchAndroidSystemBars() {
     console.log("  Skipping system-bars patch (MainActivity not found).");
     return;
   }
-  for (const file of files) {
-    let src = readFileSync(file, "utf8");
-    // Drop edge-to-edge underlap
-    const before = src;
-    src = src.replace(/^\s*enableEdgeToEdge\(\)\s*\n/gm, "");
-    src = src.replace(/import\s+androidx\.activity\.enableEdgeToEdge\s*\n/g, "");
-    if (!src.includes(marker)) {
-      if (!/fun onCreate\s*\(/.test(src)) {
-        console.log(`  Could not locate onCreate in ${basename(file)}`);
-        continue;
+
+  // Full MainActivity: apply insets AFTER super.onCreate (Tauri may re-enable edge-to-edge in super).
+  const body = `package app.financemanager.desktop
+
+import android.os.Bundle
+import android.view.View
+import android.view.ViewGroup
+import android.webkit.WebView
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+
+class MainActivity : TauriActivity() {
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    // ${marker}
+    try {
+      WindowCompat.setDecorFitsSystemWindows(window, true)
+    } catch (_: Throwable) {
+    }
+    enableFinanceManagerWebViewZoom()
+    applyFinanceManagerSystemBarInsets()
+  }
+
+  private fun applyFinanceManagerSystemBarInsets() {
+    try {
+      val content = findViewById<View>(android.R.id.content) ?: return
+      ViewCompat.setOnApplyWindowInsetsListener(content) { v, insets ->
+        val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+        v.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+        insets
       }
-      // Insert after onCreate opening (after zoom call if present)
-      src = src.replace(/fun onCreate\s*\(([^)]*)\)\s*\{/, (m) => {
-        return (
-          `${m}\n` +
-          `    // ${marker}\n` +
-          `    try {\n` +
-          `      androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, true)\n` +
-          `    } catch (_: Throwable) {\n` +
-          `    }\n`
-        );
-      });
+      ViewCompat.requestApplyInsets(content)
+      // Also pad WebViews directly in case content padding is ignored
+      content.post {
+        val webViews = ArrayList<WebView>()
+        fun collect(v: View) {
+          if (v is WebView) webViews.add(v)
+          if (v is ViewGroup) {
+            for (i in 0 until v.childCount) collect(v.getChildAt(i))
+          }
+        }
+        collect(content)
+        for (wv in webViews) {
+          ViewCompat.setOnApplyWindowInsetsListener(wv) { v, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+            insets
+          }
+          ViewCompat.requestApplyInsets(wv)
+        }
+      }
+    } catch (_: Throwable) {
     }
-    if (src !== before || src.includes(marker)) {
-      writeFileSync(file, src);
-      console.log(`  System bars: decorFitsSystemWindows + no edge-to-edge → ${basename(file)}`);
+  }
+
+  // finance-manager-webview-zoom
+  private fun enableFinanceManagerWebViewZoom() {
+    try {
+      val webViews = ArrayList<WebView>()
+      fun collect(v: View) {
+        if (v is WebView) webViews.add(v)
+        if (v is ViewGroup) {
+          for (i in 0 until v.childCount) collect(v.getChildAt(i))
+        }
+      }
+      window?.decorView?.let { collect(it) }
+      for (wv in webViews) {
+        wv.settings.setSupportZoom(true)
+        wv.settings.builtInZoomControls = true
+        wv.settings.displayZoomControls = false
+      }
+    } catch (_: Throwable) {
     }
+  }
+}
+`
+
+  for (const file of files) {
+    // Detect package line from existing file in case package differs
+    const existing = readFileSync(file, "utf8");
+    const pkgMatch = existing.match(/^package\s+([\w.]+)/m);
+    let out = body;
+    if (pkgMatch && pkgMatch[1] !== "app.financemanager.desktop") {
+      out = out.replace("package app.financemanager.desktop", `package ${pkgMatch[1]}`);
+    }
+    if (existing.includes(marker) && existing.includes("applyFinanceManagerSystemBarInsets")) {
+      console.log(`  System bars v2 already patched: ${basename(file)}`);
+      continue;
+    }
+    writeFileSync(file, out);
+    console.log(`  System bars v2 (insets after super + WebView pad) → ${basename(file)}`);
   }
 }
 

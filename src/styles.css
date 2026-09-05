@@ -3210,19 +3210,26 @@ body.printing [data-radix-popper-content-wrapper]:has(.print-paper-menu) {
 /* Phone menu sheet portals to body (outside .app-workspace zoom).
    Use real-pixel safe-area so it clears the status bar like the header. */
 .sheet-panel {
-  padding-top: max(2.75rem, env(safe-area-inset-top, 0px)) !important;
+  /* Native insets should clear the bar; keep a small pad only */
+  padding-top: 0.35rem !important;
   box-sizing: border-box;
 }
+.sheet-sat {
+  height: max(0.25rem, env(safe-area-inset-top, 0px));
+}
 .sheet-close {
-  top: max(0.85rem, env(safe-area-inset-top, 0px)) !important;
+  top: max(0.5rem, env(safe-area-inset-top, 0px)) !important;
 }
 @media (hover: none) and (pointer: coarse) {
   .sheet-panel {
-    /* Android WebView often reports 0 for safe-area — match header fallback */
-    padding-top: max(3rem, env(safe-area-inset-top, 0px)) !important;
+    padding-top: 0.35rem !important;
+  }
+  /* Fallback if native insets failed — still push content below clock */
+  .sheet-sat {
+    height: max(2.75rem, env(safe-area-inset-top, 0px));
   }
   .sheet-close {
-    top: max(2.85rem, env(safe-area-inset-top, 0px)) !important;
+    top: max(0.65rem, calc(env(safe-area-inset-top, 0px) + 0.5rem), 2.85rem) !important;
   }
   /* Header lives inside zoomed .app-workspace — undo zoom on the inset */
   .app-header-bar {

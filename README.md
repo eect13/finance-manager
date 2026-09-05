@@ -317,7 +317,7 @@ This is a **Tauri 2 desktop app** — the same stack as Font Manager — plus a 
 | Target | One-click | What you get |
 | --- | --- | --- |
 | **Windows (priority)** | `deploy.bat` | **NSIS setup** (and **MSI** if WiX v3 is installed) under `src-tauri/target/release/bundle/`. Install that on this PC or another. WebView2 is bundled. `desktop-setup.bat` installs Rust once and opens the app. |
-| **Android** | `deploy/android/apk.bat` | Real **Tauri APK** (same WebView app as desktop, not a PWA/TWA). Needs Android Studio SDK+NDK, JDK 17, and Rust. The `.apk` lands in `deploy/android/`. |
+| **Android** | `deploy/android/apk.bat` (or root `apk.bat`) | Real **Tauri APK** (same WebView app as desktop, not a PWA/TWA). One-click forces **Microsoft JDK 17**, sets SDK/NDK, then packs. Versioned `.apk` lands in `deploy/android/` (`finance-manager-v{ver}-arm64-release.apk`). |
 | **Web** | Remix from Grok, **or** `deploy/web/build.bat` | Remix is the live SSR app. The local pack writes `web/index.html` + `web/assets/`. Serve with `deploy/web/serve.bat` (not `file://`). |
 | **iPhone / iPad** | Safari → Share → **Add to Home Screen** | Same web app. |
 

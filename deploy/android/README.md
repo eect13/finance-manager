@@ -81,9 +81,12 @@ custom-protocol is required: without it Tauri treats the build as dev and the AP
 
 ## Where the APK lands
 
+Double-click `deploy/android/apk.bat` (or repo-root `apk.bat`). It forces Microsoft OpenJDK 17, sets ANDROID_HOME/NDK, then runs `pack-android.mjs`.
+
 | Path | Role |
 |------ |----- |
-| deploy/android/finance-manager-arm64-release.apk | Sideloadable (debug-keystore signed) |
+| deploy/android/finance-manager-v{ver}-arm64-release.apk | Versioned sideload APK (preferred) |
+| deploy/android/finance-manager-arm64-release.apk | Same bytes, unversioned name |
 | deploy/android/app-arm64-release.apk | Same bytes |
 | deploy/android/app-arm64-release-unsigned.apk | Raw Gradle unsigned release |
 | src-tauri/gen/android/app/build/outputs/apk/arm64/release/ | Gradle output folder |

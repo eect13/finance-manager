@@ -1,6 +1,7 @@
 import { Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/ui/tooltip";
+import { useListDensity, type ListDensity } from "@/lib/list-density";
 import { UI_ZOOM_MAX, UI_ZOOM_MIN, UI_ZOOM_STEP, useUiZoom } from "@/lib/ui-zoom";
 import { cn } from "@/lib/utils";
 
@@ -95,6 +96,40 @@ export function DisplayZoomSettings() {
         aria-label="Display zoom"
         onChange={(e) => setZoom(Number(e.target.value))}
       />
+    </div>
+  );
+}
+
+
+export function ListDensitySettings() {
+  const { density, setDensity } = useListDensity();
+  const options: { id: ListDensity; label: string; hint: string }[] = [
+    { id: "comfortable", label: "Comfortable", hint: "Default padding — matches Reconcile tick spacing" },
+    { id: "compact", label: "Compact", hint: "Tighter rows when lists feel spacious" },
+  ];
+  return (
+    <div className="grid gap-3 rounded-xl bg-muted/70 px-4 py-3">
+      <div className="min-w-0">
+        <p className="text-sm font-medium">List density</p>
+        <p className="text-xs text-muted-foreground">
+          One spacing rule for every list tab (Register, Reconcile, Invoices, …). Saved on this device.
+        </p>
+      </div>
+      <div className="flex flex-wrap gap-2" role="group" aria-label="List density">
+        {options.map((opt) => (
+          <Button
+            key={opt.id}
+            type="button"
+            size="sm"
+            variant={density === opt.id ? "default" : "outline"}
+            aria-pressed={density === opt.id}
+            title={opt.hint}
+            onClick={() => setDensity(opt.id)}
+          >
+            {opt.label}
+          </Button>
+        ))}
+      </div>
     </div>
   );
 }

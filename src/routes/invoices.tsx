@@ -54,7 +54,7 @@ const INV_COLS = {
   total: 120,
   balance: 120,
   status: 118,
-  actions: 108,
+  actions: 120,
 } as const;
 
 const INV_SORT = [
@@ -227,10 +227,11 @@ function InvoicesPage() {
               const customer = data.customers.find((c) => c.id === inv.customerId);
               const due = invoiceBalance(data, inv.id);
               const overdue = due > 0 && inv.dueDate < today && inv.status !== "void" && inv.status !== "paid";
+              const canCollect = due > 0 && inv.status !== "void";
               const rowActions = (
                 <RowActions
                   primary={
-                    due > 0 && inv.status !== "void" ? (
+                    canCollect ? (
                       <Button size="sm" variant="outline" onClick={() => setPayId(inv.id)}>
                         Collect
                       </Button>
@@ -242,8 +243,17 @@ function InvoicesPage() {
                       </Button>
                     )
                   }
+                  primaryAsItem={
+                    canCollect
+                      ? { label: "Collect", onSelect: () => setPayId(inv.id) }
+                      : {
+                          label: "Print",
+                          onSelect: () =>
+                            navigate({ to: "/print/$invoiceId", params: { invoiceId: inv.id } }),
+                        }
+                  }
                   items={[
-                    ...(due > 0 && inv.status !== "void"
+                    ...(canCollect
                       ? [
                           {
                             label: "Print",
@@ -292,7 +302,7 @@ function InvoicesPage() {
                       <td className="px-4 py-3 text-right" data-col="balance">
                         <Money amount={due} currency={data.settings.currency} />
                       </td>
-                      <td className="px-4 py-3" data-col="status">
+                      <td className="px-4 py-3" data-col="status" data-align={colAligns.aligns.status ?? "center"}>
                         <InvoiceBadge status={inv.status} overdue={overdue} />
                       </td>
                       <td className="col-actions px-4 py-3" onDoubleClick={stopOpen}>

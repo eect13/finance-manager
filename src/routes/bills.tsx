@@ -55,7 +55,7 @@ const BILL_COLS = {
   amount: 120,
   balance: 120,
   status: 118,
-  actions: 108,
+  actions: 120,
 } as const;
 
 const BILL_SORT = [
@@ -241,26 +241,25 @@ function BillsPage() {
                 const vendor = data.vendors.find((v) => v.id === bill.vendorId);
                 const due = billBalance(bill);
                 const overdue = due > 0 && bill.dueDate < today && bill.status !== "void" && bill.status !== "paid";
+                const canPay = due > 0 && bill.status !== "void";
+                const openPay = () => {
+                  setPayId(bill.id);
+                  setPayForm({
+                    amount: String(due / 100),
+                    date: today,
+                    bankId: data.banks[0]?.id ?? "",
+                  });
+                };
                 const rowActions = (
                   <RowActions
                     primary={
-                      due > 0 && bill.status !== "void" ? (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            setPayId(bill.id);
-                            setPayForm({
-                              amount: String(due / 100),
-                              date: today,
-                              bankId: data.banks[0]?.id ?? "",
-                            });
-                          }}
-                        >
+                      canPay ? (
+                        <Button size="sm" variant="outline" onClick={openPay}>
                           Pay
                         </Button>
                       ) : undefined
                     }
+                    primaryAsItem={canPay ? { label: "Pay", onSelect: openPay } : undefined}
                     items={[
                       ...(bill.status !== "void" && bill.status !== "paid"
                         ? [

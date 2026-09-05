@@ -31,6 +31,16 @@
     <script>
       (function () {
         try {
+          var k = "finance-manager-list-density";
+          var v = localStorage.getItem(k);
+          var d = v === "compact" ? "compact" : "comfortable";
+          document.documentElement.setAttribute("data-list-density", d);
+        } catch (e) {}
+      })();
+    </script>
+    <script>
+      (function () {
+        try {
           var k = "finance-manager-ui-zoom";
           var v = localStorage.getItem(k);
           var n = v == null || v === "" ? 1 : Number(v);

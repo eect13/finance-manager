@@ -1,4 +1,4 @@
-# Finance Manager v3.62.56
+# Finance Manager v3.62.57
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -11,6 +11,12 @@ No accounts, no server setup. Books stay on this computer (IndexedDB). Settings 
 The app mark is a **navy tile with cream pillars** — a full opaque square (Windows 11 already rounds the tile; transparent corners were a white plate). Web uses the SVG favicon. Windows uses a **BMP 32-bit** `.ico` (PNG-in-ICO is a white square on the shortcut and the taskbar). After install, **delete any leftover blank shortcut** and pin the new one — Explorer caches the last icon.
 
 
+
+## What's new in v3.62.57
+
+- **Row actions fit**: Delete / danger buttons show when the actions cell is wide enough (~84px); ResizeObserver falls back to ⋯ when narrow or on phone. Collect/Pay fold into ⋯ below ~120px so Status never overlaps Actions
+- **Shared list spacing**: one CSS token set (`--list-cell-px`, `--list-check-col`, …) for Register, Reconcile, Banks, Checks, Receipts, Invoices, Bills, parties, Employees, Ledger — Options → Display → List density (Comfortable / Compact)
+- **Invoices**: Status stays in its column; Collect+⋯ only in Actions (overflow clipped + fit fold)
 
 ## What's new in v3.62.56
 

@@ -2,6 +2,7 @@ import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-r
 import { AuthProvider } from "@/lib/auth/provider";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import { THEME_BOOT } from "@/lib/theme";
+import { LIST_DENSITY_BOOT } from "@/lib/list-density";
 import { UI_ZOOM_BOOT } from "@/lib/ui-zoom";
 import appCss from "../styles.css?url";
 
@@ -56,6 +57,7 @@ export const Route = createRootRoute({
         <head>
           <script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} />
           <script dangerouslySetInnerHTML={{ __html: UI_ZOOM_BOOT }} />
+          <script dangerouslySetInnerHTML={{ __html: LIST_DENSITY_BOOT }} />
           <HeadContent />
         </head>
         <body>

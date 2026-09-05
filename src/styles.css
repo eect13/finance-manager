@@ -49,6 +49,29 @@
 :root {
   color-scheme: light;
   --app-ui-zoom: 1;
+  /* Shared list spacing (all list-grid / register / reconcile tabs) */
+  --list-cell-px: 1rem;
+  --list-cell-py: 0.75rem;
+  --list-check-col: 2.75rem;
+  --list-check-pad-x: 0.25rem;
+  --list-actions-px: 0.5rem;
+  --list-tick-hit: 2.25rem;
+}
+:root[data-list-density="compact"] {
+  --list-cell-px: 0.5rem;
+  --list-cell-py: 0.4rem;
+  --list-check-col: 2.25rem;
+  --list-check-pad-x: 0.15rem;
+  --list-actions-px: 0.35rem;
+  --list-tick-hit: 2rem;
+}
+:root[data-list-density="comfortable"] {
+  --list-cell-px: 1rem;
+  --list-cell-py: 0.75rem;
+  --list-check-col: 2.75rem;
+  --list-check-pad-x: 0.25rem;
+  --list-actions-px: 0.5rem;
+  --list-tick-hit: 2.25rem;
 }
 
 /* Display zoom scales the workspace only — NOT html.
@@ -586,8 +609,8 @@
     white-space: nowrap;
     text-align: right;
     vertical-align: middle;
-    overflow: visible;
-    min-width: max-content;
+    overflow: hidden;
+    min-width: 0;
   }
 
   .list-grid td:not(.col-actions) {
@@ -2301,8 +2324,8 @@
 }
 
 .list-grid td.col-actions {
-  overflow: visible;
-  min-width: max-content;
+  overflow: hidden;
+  min-width: 0;
 }
 
 .list-grid td.col-actions > div {
@@ -4035,7 +4058,7 @@ html.tauri-android .app-header-inner {
   .list-card.list-grid td.col-actions,
   .list-card.list-grid th.col-actions {
     white-space: nowrap !important;
-    overflow: visible !important;
+    overflow: hidden !important;
   }
   /* Memo/payee/description may wrap at word boundaries only, with a floor width */
   .list-card.list-grid td[data-col="payee"],
@@ -4455,3 +4478,81 @@ body.is-phone-move-dragging {
   margin-inline: 0;
   margin-inline-start: 0;
 }
+
+
+/* v3.62.57: shared list spacing tokens — one rule for every list tab */
+.list-grid th,
+.list-grid td,
+.register-matrix th,
+.register-matrix td,
+.recon-table-card th,
+.recon-table-card td,
+.party-dir-table th,
+.party-dir-table td,
+.party-txn-table th,
+.party-txn-table td {
+  padding-left: var(--list-cell-px) !important;
+  padding-right: var(--list-cell-px) !important;
+  padding-top: var(--list-cell-py) !important;
+  padding-bottom: var(--list-cell-py) !important;
+}
+
+.list-grid th.col-actions,
+.list-grid td.col-actions,
+.register-matrix th.col-actions,
+.register-matrix td.col-actions {
+  padding-left: var(--list-actions-px) !important;
+  padding-right: var(--list-actions-px) !important;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.list-grid colgroup col.col-actions {
+  width: 1% !important;
+  min-width: var(--list-tick-hit);
+  max-width: none;
+}
+
+/* Tick / checkbox column — same width + pad on Register, Reconcile, and any .col-check */
+.list-grid .col-check,
+.register-matrix .col-check,
+.recon-table-card .col-check {
+  width: var(--list-check-col) !important;
+  min-width: var(--list-check-col) !important;
+  max-width: var(--list-check-col) !important;
+  padding-left: var(--list-check-pad-x) !important;
+  padding-right: var(--list-check-pad-x) !important;
+  overflow: visible;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.list-grid .register-tick,
+.register-matrix .register-tick,
+.recon-table-card .register-tick,
+.register-phone-card .register-tick,
+.recon-phone-card .register-tick,
+.register-phone-toolbar .register-tick,
+.recon-phone-list .register-tick {
+  min-width: var(--list-tick-hit);
+  min-height: var(--list-tick-hit);
+  width: var(--list-tick-hit);
+  height: var(--list-tick-hit);
+}
+
+.list-grid .register-check-cell,
+.register-matrix .register-check-cell,
+.recon-table-card .register-check-cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  overflow: visible;
+}
+
+/* Status stays in its column — never painted over by actions */
+.list-grid td[data-col="status"] {
+  overflow: hidden;
+}
+
+/* SortHeader stays title-centered (content align is cells only) — unchanged from 3.62.56 */

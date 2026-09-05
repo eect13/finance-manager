@@ -1,12 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Printer, SlidersHorizontal } from "lucide-react";
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type DragEvent, type MutableRefObject } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type DragEvent, type MutableRefObject, type PointerEvent as ReactPointerEvent } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { ColumnChips } from "@/components/column-chips";
 import { ConfirmDelete } from "@/components/confirm-delete";
 import { DragHandle, setCashDragImage } from "@/components/drag-handle";
+import { usePhoneMoveDrag } from "@/components/use-phone-move-drag";
 import { PhoneLayoutToggle } from "@/components/phone-layout-toggle";
 import { PhoneSwipe } from "@/components/phone-swipe";
 import {
@@ -337,6 +338,8 @@ function RegisterPage() {
   const scrollToRow = useRef<(index: number) => void>(() => {});
   const displayRef = useRef(display);
   displayRef.current = display;
+  const filteredRef = useRef(filtered);
+  filteredRef.current = filtered;
   const draggingLine = useMemo(
     () => (dragging ? (display.find((l) => l.id === dragging) ?? filtered.find((l) => l.id === dragging) ?? null) : null),
     [dragging, display, filtered],
@@ -493,12 +496,34 @@ function RegisterPage() {
     return () => window.removeEventListener("keydown", onKey);
   }, [editLine, display, activeId, handleOpen, toggleOne]);
 
+  const resolveLine = useCallback((id: string) => {
+    return displayRef.current.find((l) => l.id === id) ?? filteredRef.current.find((l) => l.id === id) ?? null;
+  }, []);
+
+  const phoneMove = usePhoneMoveDrag({
+    enabled: Boolean(phone && dragOn),
+    onDragId: setDragging,
+    onOverDate: setOverDate,
+    onOverRow: setOverRow,
+    onDrop: (lineId, date) => {
+      const line = resolveLine(lineId);
+      if (line) moveLine(line, date);
+    },
+    captionFor: (id) => {
+      const line = resolveLine(id);
+      return line ? transferDragCaption(line) : "Move";
+    },
+    onTapWithoutDrag: () => toast.message("Drag onto a date chip or another row."),
+  });
+
+  const clearPhoneMove = phoneMove.clear;
   const handleDragStart = useCallback((id: string) => setDragging(id), []);
   const handleDragEnd = useCallback(() => {
     setDragging(null);
     setOverDate(null);
     setOverRow(null);
-  }, []);
+    clearPhoneMove();
+  }, [clearPhoneMove]);
   const handleDropRow = useCallback(
     (target: CashLine, e: DragEvent) => {
       const line = parseDrag(e);
@@ -557,6 +582,7 @@ function RegisterPage() {
         </>
       }
     >
+      {phoneMove.ghost}
       {data.settings.closedThrough ? (
         <p className="no-print mb-3 text-center text-xs text-muted-foreground">
           Closed through {formatDate(data.settings.closedThrough)}. Posting on or before that date is blocked.
@@ -632,6 +658,7 @@ function RegisterPage() {
                 setDragging(null);
                 setOverDate(null);
                 setOverRow(null);
+                phoneMove.clear();
               }
             }}
             onPhoneLayout={(next) => {
@@ -682,14 +709,9 @@ function RegisterPage() {
           overDate={overDate}
           onOverDate={setOverDate}
           draggingId={dragging}
-          onPickDate={(date) => {
-            const line =
-              (dragging ? display.find((l) => l.id === dragging) : null) ??
-              (dragging ? filtered.find((l) => l.id === dragging) : null) ??
-              null;
-            setOverDate(null);
-            setDragging(null);
-            if (line) moveLine(line, date);
+          onChipClick={() => {
+            if (phoneMove.consumeChipClickGuard()) return;
+            toast.message("Drag a grip onto a date chip or another row.");
           }}
           onDropDate={(date, e) => {
             const line = parseDrag(e) ?? (dragging ? filtered.find((l) => l.id === dragging) : null) ?? null;
@@ -765,6 +787,7 @@ function RegisterPage() {
           onDragEnd={handleDragEnd}
           onOverRow={setOverRow}
           onDropRow={handleDropRow}
+          onPhoneMoveGrip={phoneMove.onGripPointerDown}
         />
       </div>
 
@@ -916,7 +939,7 @@ function ViewOptions({
             <Label htmlFor="drag-dates" className="text-sm">
               Move dates
             </Label>
-            <p className="text-[0.7rem] text-muted-foreground">Grip a row, then tap a date chip</p>
+            <p className="text-[0.7rem] text-muted-foreground">Drag a grip onto a date or row</p>
           </div>
           <Switch id="drag-dates" checked={dragOn} onCheckedChange={onDragOn} />
         </div>
@@ -1027,7 +1050,7 @@ function DateChips({
   overDate,
   onOverDate,
   onDropDate,
-  onPickDate,
+  onChipClick,
   draggingId,
   onAddDate,
 }: {
@@ -1035,7 +1058,7 @@ function DateChips({
   overDate: string | null;
   onOverDate: (date: string | null) => void;
   onDropDate: (date: string, e: DragEvent) => void;
-  onPickDate?: (date: string) => void;
+  onChipClick?: () => void;
   draggingId?: string | null;
   onAddDate: (date: string) => void;
 }) {
@@ -1048,9 +1071,9 @@ function DateChips({
         <button
           key={date}
           type="button"
+          data-move-date={date}
           onClick={() => {
-            if (draggingId && onPickDate) onPickDate(date);
-            else toast.message("Select a row grip first, then choose a date.");
+            onChipClick?.();
           }}
           onDragOver={(e) => {
             e.preventDefault();
@@ -1061,7 +1084,7 @@ function DateChips({
             e.preventDefault();
             onDropDate(date, e);
           }}
-          data-drop={overDate === date || (draggingId && overDate === date) ? "true" : undefined}
+          data-drop={overDate === date ? "true" : undefined}
           className={cn(
             "inline-flex h-8 shrink-0 items-center rounded-full bg-card px-3 text-xs elevation",
             draggingId && "ring-1 ring-primary/50",
@@ -1122,6 +1145,7 @@ function RegisterTable({
   onDragEnd,
   onOverRow,
   onDropRow,
+  onPhoneMoveGrip,
 }: {
   lines: BalancedCashLine[];
   currency: string;
@@ -1158,6 +1182,7 @@ function RegisterTable({
   onDragEnd: () => void;
   onOverRow: (id: string | null) => void;
   onDropRow: (line: CashLine, e: DragEvent) => void;
+  onPhoneMoveGrip: (lineId: string, e: ReactPointerEvent) => void;
 }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const virtualizer = useVirtualizer({
@@ -1295,7 +1320,7 @@ function RegisterTable({
     );
     const moveHint = dragOn ? (
       <p className="phone-card-meta mb-2 text-muted-foreground no-print">
-        Move on: tap the grip on a row, then tap a date chip above.
+        Move on: drag a grip onto a date chip above or onto another row.
       </p>
     ) : null;
 
@@ -1368,20 +1393,23 @@ function RegisterTable({
                   const locked = line.recon === "reconciled";
                   const isOn = selected.has(line.id);
                   const canDrag = dragOn && line.reschedulable;
-                  const armed = dragging === line.id;
+                  const isDragging = dragging === line.id || isTransferMate(line, draggingSourceId);
                   return (
                     <tr
                       key={line.id}
+                      data-move-row={dragOn && !isOpening ? line.id : undefined}
+                      data-move-row-date={dragOn && !isOpening ? line.date : undefined}
+                      data-dragging={isDragging ? "true" : undefined}
                       className={cn(
                         "border-b border-border/70 last:border-0 touch-manipulation",
                         isOn && "bg-primary/5",
                         activeId === line.id && "bg-accent/30",
-                        armed && "ring-1 ring-inset ring-primary",
+                        isDragging && "ring-1 ring-inset ring-primary opacity-60",
                         overRow === line.id && dragOn && "bg-accent/50",
                       )}
                       onClick={() => {
                         if (isOpening) return;
-                        if (dragOn && armed) return;
+                        if (dragOn && dragging) return;
                         onActivate(line.id);
                         onOpen(line);
                       }}
@@ -1413,15 +1441,15 @@ function RegisterTable({
                               type="button"
                               className={cn(
                                 "register-phone-grip inline-flex size-8 items-center justify-center rounded-md border border-border text-muted-foreground",
-                                armed && "border-primary bg-primary/10 text-foreground",
+                                isDragging && "border-primary bg-primary/10 text-foreground",
                               )}
-                              aria-label={armed ? "Selected to move — tap a date chip" : "Move to another date"}
-                              aria-pressed={armed}
-                              onClick={(e) => {
+                              aria-label="Drag to another date"
+                              aria-pressed={isDragging}
+                              onPointerDown={(e) => {
                                 e.stopPropagation();
-                                if (armed) onDragEnd();
-                                else onDragStart(line.id);
+                                onPhoneMoveGrip(line.id, e);
                               }}
+                              onClick={(e) => e.stopPropagation()}
                             >
                               <DragHandle enabled className="pointer-events-none" />
                             </button>
@@ -1430,6 +1458,10 @@ function RegisterTable({
                               type="button"
                               className="register-phone-grip inline-flex size-8 items-center justify-center rounded-md border border-border/50 text-muted-foreground/50"
                               aria-label="Date locked — can't move"
+                              onPointerDown={(e) => {
+                                e.stopPropagation();
+                                toast.error("Reconciled or locked lines can't change date.");
+                              }}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 toast.error("Reconciled or locked lines can't change date.");
@@ -1485,7 +1517,7 @@ function RegisterTable({
             const isOn = selected.has(line.id);
             const bank = banks.find((b) => b.id === line.bankId);
             const canDrag = dragOn && line.reschedulable;
-            const armed = dragging === line.id;
+            const isDragging = dragging === line.id || isTransferMate(line, draggingSourceId);
             return (
               <li key={line.id}>
                 <PhoneSwipe
@@ -1514,16 +1546,19 @@ function RegisterTable({
                   <div
                     role="button"
                     tabIndex={isOpening ? undefined : 0}
+                    data-move-row={dragOn && !isOpening ? line.id : undefined}
+                    data-move-row-date={dragOn && !isOpening ? line.date : undefined}
+                    data-dragging={isDragging ? "true" : undefined}
                     className={cn(
                       "register-phone-card rounded-2xl border border-border/40 bg-card px-3 py-3 touch-manipulation shadow-none",
                       isOn && "ring-1 ring-primary/40",
                       activeId === line.id && "bg-accent/30",
-                      armed && "ring-2 ring-primary",
+                      isDragging && "ring-2 ring-primary opacity-60",
                       overRow === line.id && dragOn && "bg-accent/50",
                     )}
                     onClick={() => {
                       if (isOpening) return;
-                      if (dragOn && armed) return;
+                      if (dragOn && dragging) return;
                       onActivate(line.id);
                       onOpen(line);
                     }}
@@ -1556,15 +1591,15 @@ function RegisterTable({
                               type="button"
                               className={cn(
                                 "register-phone-grip inline-flex size-9 items-center justify-center rounded-lg border border-border text-muted-foreground",
-                                armed && "border-primary bg-primary/10 text-foreground",
+                                isDragging && "border-primary bg-primary/10 text-foreground",
                               )}
-                              aria-label={armed ? "Selected to move — tap a date chip" : "Move to another date"}
-                              aria-pressed={armed}
-                              onClick={(e) => {
+                              aria-label="Drag to another date"
+                              aria-pressed={isDragging}
+                              onPointerDown={(e) => {
                                 e.stopPropagation();
-                                if (armed) onDragEnd();
-                                else onDragStart(line.id);
+                                onPhoneMoveGrip(line.id, e);
                               }}
+                              onClick={(e) => e.stopPropagation()}
                             >
                               <DragHandle enabled className="pointer-events-none" />
                             </button>
@@ -1573,6 +1608,10 @@ function RegisterTable({
                               type="button"
                               className="register-phone-grip inline-flex size-9 items-center justify-center rounded-lg border border-border/50 text-muted-foreground/50"
                               aria-label="Date locked — can't move"
+                              onPointerDown={(e) => {
+                                e.stopPropagation();
+                                toast.error("Reconciled or locked lines can't change date.");
+                              }}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 toast.error("Reconciled or locked lines can't change date.");

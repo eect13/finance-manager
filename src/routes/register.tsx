@@ -758,7 +758,8 @@ function RegisterPage() {
 
       {selectedIds.length > 0 ? (
         <div className={cn("register-select-bar no-print mt-3", phone && "phone-safe-bar")}>
-          <div className="mx-auto flex w-full max-w-5xl flex-col gap-2">
+          <div className="register-select-bar-inner mx-auto flex w-full max-w-5xl flex-wrap items-center gap-2">
+            <span className="text-sm font-medium tabular-nums shrink-0">{selectedIds.length} selected</span>
             <RegisterSwap
               banks={data.banks}
               lines={filtered}
@@ -766,16 +767,14 @@ function RegisterPage() {
               preferFromId={bankId}
               onSelectIds={setSelected}
               onMoved={() => setSelected([])}
+              compact
             />
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              <span className="text-sm font-medium">{selectedIds.length} selected</span>
-              <Button size="sm" variant="ghost" onClick={() => setSelected([])}>
-                Clear
-              </Button>
-              <Button size="sm" variant="destructive" onClick={() => setConfirm("selected")}>
-                Delete
-              </Button>
-            </div>
+            <Button size="sm" variant="ghost" className="shrink-0" onClick={() => setSelected([])}>
+              Clear
+            </Button>
+            <Button size="sm" variant="destructive" className="shrink-0" onClick={() => setConfirm("selected")}>
+              Delete
+            </Button>
           </div>
         </div>
       ) : null}
@@ -900,13 +899,7 @@ function ViewOptions({
   const body = (
     <>
       {phone ? (
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <span className="text-sm font-medium">Layout</span>
-          <PhoneLayoutToggle value={phoneLayout} onChange={onPhoneLayout} />
-        </div>
-      ) : null}
-      {phone ? (
-        <div className="mb-3 flex min-h-11 items-center justify-between gap-3 rounded-xl border border-border px-3 py-2">
+        <div className="mb-3 flex min-h-11 items-center justify-between gap-3 rounded-xl border border-border bg-muted/30 px-3 py-2">
           <div className="min-w-0">
             <Label htmlFor="drag-dates" className="text-sm">
               Move dates
@@ -914,6 +907,22 @@ function ViewOptions({
             <p className="text-[0.7rem] text-muted-foreground">Grip a row, then tap a date chip</p>
           </div>
           <Switch id="drag-dates" checked={dragOn} onCheckedChange={onDragOn} />
+        </div>
+      ) : (
+        <div className="mb-3 flex min-h-10 items-center justify-between gap-3">
+          <div className="min-w-0">
+            <Label htmlFor="drag-dates-desk" className="text-sm">
+              Move dates
+            </Label>
+            <p className="text-[0.7rem] text-muted-foreground">Drag a grip onto a date chip</p>
+          </div>
+          <Switch id="drag-dates-desk" checked={dragOn} onCheckedChange={onDragOn} />
+        </div>
+      )}
+      {phone ? (
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <span className="text-sm font-medium">Layout</span>
+          <PhoneLayoutToggle value={phoneLayout} onChange={onPhoneLayout} />
         </div>
       ) : null}
       <ColumnChips cols={cols} onToggle={onToggleCol} onShowAll={onShowAllCols} />
@@ -930,14 +939,6 @@ function ViewOptions({
           onChange={(e) => onFontSize(Number(e.target.value))}
         />
       </label>
-      {!phone ? (
-        <div className="flex min-h-10 items-center justify-between gap-3">
-          <Label htmlFor="drag-dates-desk" className="text-sm">
-            Move dates
-          </Label>
-          <Switch id="drag-dates-desk" checked={dragOn} onCheckedChange={onDragOn} />
-        </div>
-      ) : null}
     </>
   );
 
@@ -1491,7 +1492,7 @@ function RegisterTable({
                     role="button"
                     tabIndex={isOpening ? undefined : 0}
                     className={cn(
-                      "register-phone-card rounded-2xl border border-border bg-card px-3 py-3 touch-manipulation",
+                      "register-phone-card rounded-2xl border border-border/40 bg-card px-3 py-3 touch-manipulation shadow-none",
                       isOn && "ring-1 ring-primary/40",
                       activeId === line.id && "bg-accent/30",
                       armed && "ring-2 ring-primary",

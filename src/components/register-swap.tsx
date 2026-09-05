@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeftRight } from "lucide-react";
 import { toast } from "sonner";
-import { ShopTick } from "@/components/shop-tick";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { CashLine } from "@/lib/finance/register";
@@ -22,8 +21,8 @@ export function RegisterSwap({
   lines,
   selectedIds,
   preferFromId,
-  onSelectIds,
   onMoved,
+  compact: _compact = false,
 }: {
   banks: Bank[];
   lines: CashLine[];
@@ -31,6 +30,8 @@ export function RegisterSwap({
   preferFromId?: string;
   onSelectIds: (ids: string[]) => void;
   onMoved: () => void;
+  /** Inline To + Move only (parent owns count / Clear / Delete). */
+  compact?: boolean;
 }) {
   const reassignCashBanks = useFinanceStore((s) => s.reassignCashBanks);
   const live = useMemo(() => banks.filter((b) => !b.archived), [banks]);
@@ -62,31 +63,13 @@ export function RegisterSwap({
     if (next) setToId(next.id);
   }, [fromId, toId, live]);
 
-  const onFrom = useMemo(
-    () => lines.filter((l) => l.reassignable && l.bankId === fromId && l.bankId !== toId),
-    [lines, fromId, toId],
-  );
   const picked = useMemo(() => {
-    if (selectedIds.length === 0) return onFrom;
     const set = new Set(selectedIds);
     return lines.filter((l) => l.reassignable && set.has(l.id) && l.bankId !== toId);
-  }, [lines, selectedIds, toId, onFrom]);
-  const usingSelection = selectedIds.length > 0;
-  const fromName = live.find((b) => b.id === fromId)?.nickname ?? "bank";
+  }, [lines, selectedIds, toId]);
   const toName = live.find((b) => b.id === toId)?.nickname ?? "bank";
-  const allFromOn = onFrom.length > 0 && onFrom.every((l) => selectedIds.includes(l.id));
-  const someFromOn = onFrom.some((l) => selectedIds.includes(l.id)) && !allFromOn;
   const count = picked.length;
   const ready = Boolean(fromId && toId && fromId !== toId && count > 0);
-
-  function toggleFrom(on: boolean) {
-    const fromSet = new Set(onFrom.map((l) => l.id));
-    if (on) {
-      onSelectIds([...new Set([...selectedIds, ...fromSet])]);
-      return;
-    }
-    onSelectIds(selectedIds.filter((id) => !fromSet.has(id)));
-  }
 
   function run() {
     if (!ready) return;
@@ -110,31 +93,10 @@ export function RegisterSwap({
   if (selectedIds.length === 0) return null;
 
   return (
-    <div className="no-print flex flex-col gap-2 rounded-xl bg-card p-2 elevation sm:flex-row sm:flex-wrap sm:items-center">
-      <ShopTick
-        checked={allFromOn}
-        indeterminate={someFromOn}
-        onChange={toggleFrom}
-        label={`Select all on ${fromName}`}
-      />
-      <p className="px-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">Move</p>
-      <Select value={fromId} onValueChange={setFromId}>
-        <SelectTrigger className="h-9 min-h-9 sm:w-40" aria-label="From bank">
-          <SelectValue placeholder="From bank" />
-        </SelectTrigger>
-        <SelectContent>
-          {live.map((b) => (
-            <SelectItem key={b.id} value={b.id}>
-              {b.nickname}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <span className="hidden px-1 text-muted-foreground sm:inline" aria-hidden>
-        →
-      </span>
+    <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+      <span className="hidden text-xs font-medium text-muted-foreground sm:inline">To</span>
       <Select value={toId} onValueChange={setToId}>
-        <SelectTrigger className="h-9 min-h-9 sm:w-40" aria-label="To bank">
+        <SelectTrigger className="h-9 min-h-9 w-[min(100%,10rem)] sm:w-40" aria-label="To bank">
           <SelectValue placeholder="To bank" />
         </SelectTrigger>
         <SelectContent>
@@ -147,20 +109,9 @@ export function RegisterSwap({
             ))}
         </SelectContent>
       </Select>
-      <p className="text-xs text-muted-foreground">
-        {usingSelection
-          ? `${selectedIds.length} selected`
-          : count === 0
-            ? `None on ${fromName}`
-            : `All ${count} on ${fromName}`}
-      </p>
-      <Button className="w-fit shrink-0 sm:ml-auto" size="sm" disabled={!ready} onClick={run}>
+      <Button className="w-fit shrink-0" size="sm" disabled={!ready} onClick={run}>
         <ArrowLeftRight />
-        {count === 0
-          ? `Nothing to move`
-          : usingSelection
-            ? `Move ${count} to ${toName}`
-            : `Move all ${count} to ${toName}`}
+        Move
       </Button>
     </div>
   );

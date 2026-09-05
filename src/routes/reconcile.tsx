@@ -582,7 +582,7 @@ function ReconcilePage() {
                     >
                       <div
                         className={cn(
-                          "recon-phone-card flex items-start gap-2 rounded-2xl border border-border bg-card px-3 py-3 touch-manipulation",
+                          "recon-phone-card flex items-start gap-2 rounded-2xl border border-border/40 bg-card px-3 py-3 touch-manipulation shadow-none",
                           on && "ring-1 ring-primary/40",
                         )}
                         {...openProps(openKindFor(line), openId, { click: true })}

@@ -3698,3 +3698,77 @@ html.tauri-android .app-header-inner {
     display: none;
   }
 }
+
+/* Options page — phone polish (v3.62.24) */
+.options-jump {
+  display: none;
+}
+.options-switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-radius: 0.75rem;
+  background: color-mix(in oklab, var(--color-muted) 70%, transparent);
+  padding: 0.75rem 1rem;
+}
+.options-recurring-phone {
+  display: none;
+}
+.options-recurring-desk {
+  display: block;
+}
+@media (max-width: 767px), ((hover: none) and (pointer: coarse)) {
+  .options-jump {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.4rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 0.15rem 0 0.55rem;
+    margin-bottom: 0.15rem;
+    scrollbar-width: none;
+  }
+  .options-jump::-webkit-scrollbar {
+    display: none;
+  }
+  .options-jump-chip {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.25rem;
+    padding: 0 0.85rem;
+    border-radius: 999px;
+    border: 1px solid var(--color-border);
+    background: var(--color-card);
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--color-foreground);
+    text-decoration: none;
+    white-space: nowrap;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .options-jump-chip:active {
+    background: var(--color-accent);
+  }
+  .options-desktop-only {
+    display: none !important;
+  }
+  .options-switch-row {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0.65rem 1rem;
+  }
+  .options-switch-control {
+    margin-left: auto;
+  }
+  .options-recurring-phone {
+    display: flex;
+  }
+  .options-recurring-desk {
+    display: none !important;
+  }
+  .options-recurring-card {
+    box-shadow: var(--shadow-elevation);
+  }
+}

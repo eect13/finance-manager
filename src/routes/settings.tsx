@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { DateInput } from "@/components/date-input";
 import { FilterPills } from "@/components/filter-pills";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { ConfirmDelete } from "@/components/confirm-delete";
@@ -30,6 +30,49 @@ import { AppearancePicker } from "@/components/theme-toggle";
 import { DisplayZoomSettings } from "@/components/ui-zoom-controls";
 
 export const Route = createFileRoute("/settings")({ component: SettingsPage });
+
+const OPTIONS_JUMP: Array<{ id: string; label: string }> = [
+  { id: "opt-profile", label: "Profile" },
+  { id: "opt-display", label: "Display" },
+  { id: "opt-companies", label: "Companies" },
+  { id: "opt-tax", label: "Tax" },
+  { id: "opt-backup", label: "Backup" },
+  { id: "opt-recurring", label: "Recurring" },
+  { id: "opt-storage", label: "Storage" },
+];
+
+function OptionsJump() {
+  return (
+    <nav className="options-jump no-print" aria-label="Jump to section">
+      {OPTIONS_JUMP.map((s) => (
+        <a key={s.id} href={`#${s.id}`} className="options-jump-chip">
+          {s.label}
+        </a>
+      ))}
+    </nav>
+  );
+}
+
+function OptionsSwitchRow({
+  title,
+  hint,
+  children,
+}: {
+  title: string;
+  hint: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <div className="options-switch-row">
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium">{title}</p>
+        <p className="text-xs text-muted-foreground">{hint}</p>
+      </div>
+      <div className="options-switch-control shrink-0">{children}</div>
+    </div>
+  );
+}
+
 
 function SettingsPage() {
   const data = useFinanceData();
@@ -60,8 +103,8 @@ function SettingsPage() {
 
   useEffect(() => {
     function scrollToHash() {
-      if (window.location.hash !== "#storage") return;
-      document.getElementById("storage")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (window.location.hash !== "#opt-storage" && window.location.hash !== "#storage") return;
+      document.getElementById("opt-storage")?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
     scrollToHash();
     window.addEventListener("hashchange", scrollToHash);
@@ -82,8 +125,9 @@ function SettingsPage() {
 
   return (
     <AppShell title="Options" description="Company profile, display, currency and tax, multi-company files, backups, and local storage. Changes apply to the open company unless noted.">
+      <OptionsJump />
       <div className="workspace-split">
-        <Card>
+        <Card className="options-desktop-only">
           <CardHeader>
             <CardTitle>Switch company</CardTitle>
             <CardDescription>Pick which company&apos;s books you are working in. Same control as the top bar.</CardDescription>
@@ -93,7 +137,7 @@ function SettingsPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card id="opt-profile" className="scroll-mt-16">
           <CardHeader>
             <CardTitle>Company profile</CardTitle>
             <CardDescription>Printed on invoices and the register for the company you are in.</CardDescription>
@@ -116,7 +160,7 @@ function SettingsPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card id="opt-display" className="scroll-mt-16">
           <CardHeader>
             <CardTitle>Display / Formatting</CardTitle>
             <CardDescription>
@@ -127,18 +171,15 @@ function SettingsPage() {
           <CardContent className="grid gap-4">
             <AppearancePicker />
             <DisplayZoomSettings />
-            <div className="flex items-center justify-between gap-4 rounded-xl bg-muted/70 px-4 py-3">
-              <div>
-                <p className="text-sm font-medium">Use thousand separators</p>
-                <p className="text-xs text-muted-foreground">
-                  Show amounts like 9,825,076.00 instead of 9825076.00 — including when currency is blank.
-                </p>
-              </div>
+            <OptionsSwitchRow
+              title="Use thousand separators"
+              hint="Show amounts like 9,825,076.00 instead of 9825076.00 — including when currency is blank."
+            >
               <Switch
                 checked={settings.useThousandSeparators !== false}
                 onCheckedChange={(v) => updateSettings({ useThousandSeparators: v })}
               />
-            </div>
+            </OptionsSwitchRow>
             <Field label="Decimal places">
               <Select
                 value={String(settings.decimalPlaces ?? 2)}
@@ -159,7 +200,7 @@ function SettingsPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card id="opt-companies" className="scroll-mt-16">
           <CardHeader>
             <CardTitle>Company files</CardTitle>
             <CardDescription>
@@ -195,7 +236,7 @@ function SettingsPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card id="opt-tax" className="scroll-mt-16">
           <CardHeader>
             <CardTitle>Currency and tax</CardTitle>
             <CardDescription>
@@ -252,21 +293,20 @@ function SettingsPage() {
                   return (
                     <>
                       <p className="text-xs text-muted-foreground">{pack.note}</p>
-                      <div className="flex items-center justify-between gap-4">
-                        <div>
-                          <p className="text-sm font-medium">Also update home currency</p>
-                          <p className="text-xs text-muted-foreground">
-                            {canChangeCurrency
-                              ? `When on, sets currency to ${pack.currency}. Turn off to keep ${settings.currency} and only apply tax defaults.`
-                              : "This pack never changes currency."}
-                          </p>
-                        </div>
+                      <OptionsSwitchRow
+                        title="Also update home currency"
+                        hint={
+                          canChangeCurrency
+                            ? `When on, sets currency to ${pack.currency}. Turn off to keep ${settings.currency} and only apply tax defaults.`
+                            : "This pack never changes currency."
+                        }
+                      >
                         <Switch
                           checked={canChangeCurrency && updateCurrencyWithPack}
                           disabled={!canChangeCurrency}
                           onCheckedChange={setUpdateCurrencyWithPack}
                         />
-                      </div>
+                      </OptionsSwitchRow>
                       <Button
                         type="button"
                         variant="secondary"
@@ -294,15 +334,12 @@ function SettingsPage() {
                 })()}
               </div>
             ) : null}
-            <div className="flex items-center justify-between gap-4 rounded-xl bg-muted/70 px-4 py-3">
-              <div>
-                <p className="text-sm font-medium">Sales tax on invoices</p>
-                <p className="text-xs text-muted-foreground">
-                  Adds a tax line using the default rate below. Pick a country pack for a common starting rate.
-                </p>
-              </div>
+            <OptionsSwitchRow
+              title="Sales tax on invoices"
+              hint="Adds a tax line using the default rate below. Pick a country pack for a common starting rate."
+            >
               <Switch checked={settings.taxEnabled} onCheckedChange={(v) => updateSettings({ taxEnabled: v })} />
-            </div>
+            </OptionsSwitchRow>
             {settings.taxEnabled ? (
               <Field label="Default tax %">
                 <Input
@@ -315,7 +352,7 @@ function SettingsPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card id="opt-lists" className="scroll-mt-16">
           <CardHeader>
             <CardTitle>Entry lists</CardTitle>
             <CardDescription>
@@ -323,23 +360,19 @@ function SettingsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-between gap-4 rounded-xl bg-muted/70 px-4 py-3">
-              <div>
-                <p className="text-sm font-medium">Allow drag-and-drop reordering</p>
-                <p className="text-xs text-muted-foreground">
-                  Grab the handle on customers, vendors, bills, receipts, and invoice lines. The bank register has its
-                  own Drag rows toggle.
-                </p>
-              </div>
+            <OptionsSwitchRow
+              title="Allow drag-and-drop reordering"
+              hint="Grab the handle on customers, vendors, bills, receipts, and invoice lines. The bank register has its own Move dates toggle."
+            >
               <Switch
                 checked={settings.dragDropEnabled}
                 onCheckedChange={(v) => updateSettings({ dragDropEnabled: v })}
               />
-            </div>
+            </OptionsSwitchRow>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card id="opt-backup" className="scroll-mt-16">
           <CardHeader>
             <CardTitle>Backup and restore</CardTitle>
             <CardDescription>
@@ -399,7 +432,7 @@ function SettingsPage() {
         <CloseBooksCard />
         <RecurringCard />
 
-        <Card className="lg:col-span-2 scroll-mt-6" id="storage">
+        <Card className="lg:col-span-2 scroll-mt-16" id="opt-storage">
           <CardHeader>
             <CardTitle>Storage</CardTitle>
             <CardDescription>
@@ -508,7 +541,7 @@ function CloseBooksCard() {
   const [reopening, setReopening] = useState(false);
 
   return (
-    <Card className="lg:col-span-2">
+    <Card id="opt-close" className="lg:col-span-2 scroll-mt-16">
       <CardHeader>
         <CardTitle>Close the month</CardTitle>
         <CardDescription>
@@ -574,7 +607,7 @@ function RecurringCard() {
   }
 
   return (
-    <Card className="lg:col-span-2">
+    <Card id="opt-recurring" className="lg:col-span-2 scroll-mt-16">
       <CardHeader>
         <CardTitle>Recurring</CardTitle>
         <CardDescription>
@@ -598,41 +631,32 @@ function RecurringCard() {
                 ]}
               />
             </div>
-            <div ref={gridRef} className="list-grid overflow-x-auto rounded-2xl bg-card elevation">
-              <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
-                <colgroup>
-                  {(Object.keys(REC_COLS) as Array<keyof typeof REC_COLS>).map((id) => (
-                    <col key={id} className={listColClass(id)} style={{ width: cols.widths[id] }} />
-                  ))}
-                  <col className="col-actions" style={{ width: 88 }} />
-                </colgroup>
-                <thead>
-                  <tr className="border-b border-border text-muted-foreground">
-                    <SortHeader label="Name" column="name" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.name} onWidth={(n) => cols.setWidth("name", n)} onFit={() => fit("name", "Name")} />
-                    <SortHeader label="Next" column="next" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.next} onWidth={(n) => cols.setWidth("next", n)} onFit={() => fit("next", "Next")} />
-                    <SortHeader label="Amount" column="amount" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} align="right" width={cols.widths.amount} onWidth={(n) => cols.setWidth("amount", n)} onFit={() => fit("amount", "Amount")} />
-                    <th className="col-actions px-4 py-3" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {sort.sorted.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="px-4 py-6 text-center text-muted-foreground">
-                        Nothing due.
-                      </td>
-                    </tr>
-                  ) : (
-                    sort.sorted.map((item) => (
-                      <tr key={item.id} className="border-b border-border/70 last:border-0">
-                        <td className="px-4 py-2" data-col="name">{item.name}</td>
-                        <td className="px-4 py-2" data-col="next">{formatDate(item.nextDate)}</td>
-                        <td className="px-4 py-2 text-right" data-col="amount">
-                          <Money amount={item.amount} currency={data.settings.currency} />
-                        </td>
-                        <td className="col-actions px-4 py-2 text-right">
+            {sort.sorted.length === 0 ? (
+              <p className="rounded-2xl border border-border px-4 py-8 text-center text-sm text-muted-foreground">
+                Nothing due.
+              </p>
+            ) : (
+              <>
+                <ul className="options-recurring-phone flex flex-col gap-2">
+                  {sort.sorted.map((item) => {
+                    const dueNow = item.nextDate <= todayIso();
+                    return (
+                      <li key={item.id}>
+                        <div className="options-recurring-card flex items-start justify-between gap-3 rounded-2xl border border-border bg-card px-3 py-2.5">
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium">{item.name}</p>
+                            <p className="mt-0.5 text-xs text-muted-foreground tabular-nums">
+                              Next {formatDate(item.nextDate)}
+                              {dueNow ? " · due" : ""}
+                            </p>
+                            <p className="mt-1 text-sm tabular-nums">
+                              <Money amount={item.amount} currency={data.settings.currency} />
+                            </p>
+                          </div>
                           <Button
                             size="sm"
-                            variant={item.nextDate <= todayIso() ? "default" : "ghost"}
+                            className="shrink-0"
+                            variant={dueNow ? "default" : "outline"}
                             onClick={() => {
                               try {
                                 postRecurring(item.id);
@@ -644,13 +668,58 @@ function RecurringCard() {
                           >
                             Post
                           </Button>
-                        </td>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+                <div ref={gridRef} className="options-recurring-desk list-grid overflow-x-auto rounded-2xl bg-card elevation">
+                  <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
+                    <colgroup>
+                      {(Object.keys(REC_COLS) as Array<keyof typeof REC_COLS>).map((id) => (
+                        <col key={id} className={listColClass(id)} style={{ width: cols.widths[id] }} />
+                      ))}
+                      <col className="col-actions" style={{ width: 88 }} />
+                    </colgroup>
+                    <thead>
+                      <tr className="border-b border-border text-muted-foreground">
+                        <SortHeader label="Name" column="name" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.name} onWidth={(n) => cols.setWidth("name", n)} onFit={() => fit("name", "Name")} />
+                        <SortHeader label="Next" column="next" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.next} onWidth={(n) => cols.setWidth("next", n)} onFit={() => fit("next", "Next")} />
+                        <SortHeader label="Amount" column="amount" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} align="right" width={cols.widths.amount} onWidth={(n) => cols.setWidth("amount", n)} onFit={() => fit("amount", "Amount")} />
+                        <th className="col-actions px-4 py-3" />
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+                    </thead>
+                    <tbody>
+                      {sort.sorted.map((item) => (
+                        <tr key={item.id} className="border-b border-border/70 last:border-0">
+                          <td className="px-4 py-2" data-col="name">{item.name}</td>
+                          <td className="px-4 py-2" data-col="next">{formatDate(item.nextDate)}</td>
+                          <td className="px-4 py-2 text-right" data-col="amount">
+                            <Money amount={item.amount} currency={data.settings.currency} />
+                          </td>
+                          <td className="col-actions px-4 py-2 text-right">
+                            <Button
+                              size="sm"
+                              variant={item.nextDate <= todayIso() ? "default" : "ghost"}
+                              onClick={() => {
+                                try {
+                                  postRecurring(item.id);
+                                  toast.success(`Posted ${item.name}.`);
+                                } catch (err) {
+                                  toast.error(err instanceof Error ? err.message : "Could not post.");
+                                }
+                              }}
+                            >
+                              Post
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
           </>
         )}
         {due.length > 0 ? (

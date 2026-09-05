@@ -7,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { datePresetRange, type DatePreset } from "@/lib/finance/register";
 import type { SortDir } from "@/lib/finance/sort";
 import { cn } from "@/lib/utils";
+import { usePhoneUi } from "@/lib/phone-layout";
+import { PhoneFiltersSheet } from "@/components/phone-filters-sheet";
 
 export type FilterSelect = {
   label: string;
@@ -253,6 +255,7 @@ export function ListFilters({
   extra?: ReactNode;
   embedded?: boolean;
 }) {
+  const phone = usePhoneUi();
   const dateOn = Boolean(onPreset);
   const active = listFiltersActiveCount({ dateOn, datePreset, defaultPreset, selects });
 
@@ -269,12 +272,21 @@ export function ListFilters({
       sortValue={sortValue}
       sortOptions={sortOptions}
       onSort={onSort}
-      onClear={onClear}
+      onClear={phone && !embedded ? undefined : onClear}
       extra={extra}
     />
   );
 
   if (embedded) return panel;
+
+  // Phone: bottom sheet with real controls. Desktop: popover.
+  if (phone) {
+    return (
+      <PhoneFiltersSheet phone title="Filters" activeCount={active} onClear={onClear}>
+        {panel}
+      </PhoneFiltersSheet>
+    );
+  }
 
   return (
     <Popover>

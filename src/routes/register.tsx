@@ -8,7 +8,6 @@ import { ColumnChips } from "@/components/column-chips";
 import { ConfirmDelete } from "@/components/confirm-delete";
 import { DragHandle, setCashDragImage } from "@/components/drag-handle";
 import { PhoneLayoutToggle } from "@/components/phone-layout-toggle";
-import { PhoneFiltersSheet } from "@/components/phone-filters-sheet";
 import { PhoneSwipe } from "@/components/phone-swipe";
 import {
   REGISTER_PHONE_LAYOUT_KEY,
@@ -586,50 +585,34 @@ function RegisterPage() {
           className="register-toolbar-search h-11 min-h-11"
         />
         <div className="register-toolbar-actions">
-          <PhoneFiltersSheet
-            phone={phone}
-            title="Filters"
-            activeCount={
-              (typeFilter !== "all" ? 1 : 0) +
-              (direction !== "all" ? 1 : 0) +
-              (datePreset !== "month" ? 1 : 0)
-            }
+          <RegisterFilters
+            typeFilter={typeFilter}
+            direction={direction}
+            datePreset={datePreset}
+            dateFrom={dateFrom}
+            dateTo={dateTo}
+            sortValue={`${sort.key}:${sort.dir}`}
+            onType={setTypeFilter}
+            onDirection={setDirection}
+            onPreset={applyPreset}
+            onDateFrom={(v) => {
+              setDatePreset("custom");
+              setDateFrom(v);
+            }}
+            onDateTo={(v) => {
+              setDatePreset("custom");
+              setDateTo(v);
+            }}
+            onSort={(v) => {
+              const [key, dir] = v.split(":");
+              sort.set(key ?? "date", dir === "desc" ? "desc" : "asc");
+            }}
             onClear={() => {
               setTypeFilter("all");
               setDirection("all");
               applyPreset("month");
             }}
-          >
-            <RegisterFilters
-              embedded={phone}
-              typeFilter={typeFilter}
-              direction={direction}
-              datePreset={datePreset}
-              dateFrom={dateFrom}
-              dateTo={dateTo}
-              sortValue={`${sort.key}:${sort.dir}`}
-              onType={setTypeFilter}
-              onDirection={setDirection}
-              onPreset={applyPreset}
-              onDateFrom={(v) => {
-                setDatePreset("custom");
-                setDateFrom(v);
-              }}
-              onDateTo={(v) => {
-                setDatePreset("custom");
-                setDateTo(v);
-              }}
-              onSort={(v) => {
-                const [key, dir] = v.split(":");
-                sort.set(key ?? "date", dir === "desc" ? "desc" : "asc");
-              }}
-              onClear={() => {
-                setTypeFilter("all");
-                setDirection("all");
-                applyPreset("month");
-              }}
-            />
-          </PhoneFiltersSheet>
+          />
           <ViewOptions
             fontSize={fontSize}
             dragOn={dragOn}
@@ -843,7 +826,6 @@ function RegisterFilters({
   onDateTo,
   onSort,
   onClear,
-  embedded = false,
 }: {
   typeFilter: CashTypeFilter;
   direction: CashDirection;
@@ -858,11 +840,9 @@ function RegisterFilters({
   onDateTo: (v: string) => void;
   onSort: (v: string) => void;
   onClear: () => void;
-  embedded?: boolean;
 }) {
   return (
     <ListFilters
-      embedded={embedded}
       datePreset={datePreset}
       dateFrom={dateFrom}
       dateTo={dateTo}
@@ -1274,11 +1254,8 @@ function RegisterTable({
           />
           <span className="text-xs text-muted-foreground">Select</span>
         </span>
-        <span className="inline-flex items-center gap-2">
-          <PhoneLayoutToggle value={phoneLayout} onChange={onPhoneLayout} />
-          <span className="text-xs text-muted-foreground tabular-nums">
-            Bal <Money amount={lastBalance} currency={currency} className="inline font-medium text-foreground" />
-          </span>
+        <span className="text-xs text-muted-foreground tabular-nums">
+          Bal <Money amount={lastBalance} currency={currency} className="inline font-medium text-foreground" />
         </span>
       </div>
     );

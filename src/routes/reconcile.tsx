@@ -14,7 +14,6 @@ import { ReconPrint } from "@/components/period-print";
 import { requestPrint } from "@/components/print-preview";
 import { ShopTick } from "@/components/shop-tick";
 import { PhoneLayoutToggle } from "@/components/phone-layout-toggle";
-import { PhoneFiltersSheet } from "@/components/phone-filters-sheet";
 import { PhoneSwipe } from "@/components/phone-swipe";
 import {
   RECONCILE_PHONE_LAYOUT_KEY,
@@ -388,37 +387,29 @@ function ReconcilePage() {
         placeholder="Search payee or type"
         label="Search uncleared"
       >
-        <PhoneFiltersSheet
-          phone={phone}
-          title="Filters"
-          activeCount={typeFilter !== "all" ? 1 : 0}
+        <ListFilters
+          selects={[
+            {
+              label: "Direction",
+              value: typeFilter,
+              options: [
+                { value: "all", label: "All" },
+                { value: "in", label: "Deposits" },
+                { value: "out", label: "Payments" },
+              ],
+              onChange: (v) => setTypeFilter(v as typeof typeFilter),
+            },
+          ]}
+          sortValue={`${sort.key}:${sort.dir}`}
+          sortOptions={[
+            { value: "date:desc", label: "Date · newest" },
+            { value: "date:asc", label: "Date · oldest" },
+            { value: "payee:asc", label: "Payee A–Z" },
+            { value: "days:desc", label: "Oldest first" },
+          ]}
+          onSort={(v) => applySortValue(sort.set, v)}
           onClear={() => setTypeFilter("all")}
-        >
-          <ListFilters
-            embedded={phone}
-            selects={[
-              {
-                label: "Direction",
-                value: typeFilter,
-                options: [
-                  { value: "all", label: "All" },
-                  { value: "in", label: "Deposits" },
-                  { value: "out", label: "Payments" },
-                ],
-                onChange: (v) => setTypeFilter(v as typeof typeFilter),
-              },
-            ]}
-            sortValue={`${sort.key}:${sort.dir}`}
-            sortOptions={[
-              { value: "date:desc", label: "Date · newest" },
-              { value: "date:asc", label: "Date · oldest" },
-              { value: "payee:asc", label: "Payee A–Z" },
-              { value: "days:desc", label: "Oldest first" },
-            ]}
-            onSort={(v) => applySortValue(sort.set, v)}
-            onClear={() => setTypeFilter("all")}
-          />
-        </PhoneFiltersSheet>
+        />
       </ListToolbar>
 
             {isPhoneUi() ? (
@@ -491,6 +482,7 @@ function ReconcilePage() {
                           <p className="truncate text-xs text-muted-foreground">
                             {KIND_LABEL[line.kind]}
                             {line.number ? ` · ${line.number}` : ""}
+                            {line.memo?.trim() ? ` · ${line.memo}` : ""}
                           </p>
                         </td>
                         <td className="whitespace-nowrap px-2 py-2.5 text-right tabular-nums">
@@ -558,6 +550,12 @@ function ReconcilePage() {
                               <span className={cn(" · ", days > 90 && "text-debit")}>{days}d outstanding</span>
                             ) : null}
                           </p>
+                          <div className="phone-card-memo mt-1">
+                            <p className="phone-card-label text-muted-foreground">Memo</p>
+                            <p className="break-words text-muted-foreground/90">
+                              {line.memo?.trim() ? line.memo : "—"}
+                            </p>
+                          </div>
                           <div className="phone-card-money mt-1.5 grid grid-cols-2 gap-2 tabular-nums">
                             <div>
                               <p className="phone-card-label text-muted-foreground">Payment</p>

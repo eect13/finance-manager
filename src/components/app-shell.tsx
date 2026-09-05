@@ -473,7 +473,17 @@ export function AppShell({
           <div className="page-scroll-x min-w-0 max-w-full">{children}</div>
         </main>
       </div>
-      <Toaster className="no-print" position="bottom-center" theme={resolved} richColors={false} closeButton />
+      <Toaster
+        className="no-print app-toaster"
+        position="bottom-center"
+        theme={resolved}
+        richColors={false}
+        closeButton
+        offset={{ bottom: "1rem" }}
+        mobileOffset={{ bottom: "1.1rem" }}
+        visibleToasts={3}
+        toastOptions={{ duration: 3200 }}
+      />
       <RecordSheet />
       <PrintStage />
       <FindTransaction open={findOpen} onClose={() => setFindOpen(false)} />

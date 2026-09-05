@@ -3036,9 +3036,17 @@ body.printing [data-radix-popper-content-wrapper]:has(.print-paper-menu) {
 }
 @media (hover: none) and (pointer: coarse) {
   [data-sonner-toaster] {
-    /* Prefer top so it never competes with the content scroll corner. */
-    top: max(0.75rem, env(safe-area-inset-top, 0px)) !important;
-    bottom: auto !important;
+    /* Bottom: Post/undo toasts must not cover the phone header / company / More. */
+    top: auto !important;
+    bottom: max(0.85rem, env(safe-area-inset-bottom, 0px)) !important;
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+    width: min(24rem, calc(100vw - 1.25rem)) !important;
+  }
+  [data-sonner-toaster][data-y-position="top"] {
+    top: auto !important;
+    bottom: max(0.85rem, env(safe-area-inset-bottom, 0px)) !important;
   }
 }
 
@@ -3500,5 +3508,14 @@ html.tauri-android .app-header-inner {
   }
   .desk-stats {
     gap: 0.55rem;
+  }
+}
+
+
+/* v3.62.19 toasts bottom — reinforce for all phones */
+@media (max-width: 767px) {
+  [data-sonner-toaster] {
+    top: auto !important;
+    bottom: max(0.85rem, env(safe-area-inset-bottom, 0px)) !important;
   }
 }

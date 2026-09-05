@@ -3597,3 +3597,57 @@ html.tauri-android .app-header-inner {
     margin-top: 0.15rem;
   }
 }
+
+
+/* v3.62.21 phone UX — cards + compact chrome (desktop table unchanged) */
+@media (max-width: 767px), ((hover: none) and (pointer: coarse)) {
+  .app-page-hint {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: 0.72rem !important;
+    line-height: 1.35 !important;
+  }
+  .app-page-title {
+    font-size: 1.15rem !important;
+  }
+  .app-page-head {
+    margin-bottom: 0.4rem !important;
+  }
+  .page-actions {
+    gap: 0.35rem !important;
+  }
+  .page-actions .button,
+  .page-actions button {
+    min-height: 2.4rem;
+  }
+  .register-toolbar {
+    display: grid !important;
+    grid-template-columns: 1fr;
+    gap: 0.45rem;
+  }
+  .register-toolbar-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  .register-toolbar-actions > * {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .register-phone-card,
+  .recon-phone-card {
+    box-shadow: var(--shadow-elevation);
+  }
+  .register-phone-toolbar .register-tick,
+  .recon-phone-list .register-tick {
+    min-height: 2.5rem;
+    min-width: 2.5rem;
+  }
+  /* Hide desktop-only View column noise on phone register — cards replace matrix */
+  .register-phone-list + .register-card,
+  .register-card:has(+ .register-phone-list) {
+    display: none;
+  }
+}

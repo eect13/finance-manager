@@ -648,12 +648,13 @@ function RegisterPage() {
       </div>
       </div>
 
-      <p className="mb-3 text-center text-xs text-muted-foreground no-print">
+      <p className="mb-2 text-center text-xs text-muted-foreground no-print register-count-hint">
         {dataRows.length} {dataRows.length === 1 ? "entry" : "entries"}
-        {searching ? " match these filters" : ""}
-        {selectedIds.length
-          ? ` · ${selectedIds.length} selected`
-          : " · tick to delete or reassign bank — finished statements stay locked"}
+        {searching ? " match" : ""}
+        {selectedIds.length ? ` · ${selectedIds.length} selected` : ""}
+        <span className="hidden sm:inline">
+          {selectedIds.length ? "" : " · tick to delete or reassign bank — finished statements stay locked"}
+        </span>
       </p>
 
       <div className="register-bank-tabs no-print mb-3 min-w-0" role="tablist" aria-label="Bank">
@@ -1128,6 +1129,110 @@ function RegisterTable({
         }),
       );
     };
+  }
+
+  // Phone: card list so date, payee, and money are all visible without sideways scroll.
+  if (isPhoneUi()) {
+    return (
+      <div className="register-phone-list">
+        <div className="register-phone-toolbar no-print mb-2 flex items-center justify-between gap-2">
+          <span className="inline-flex items-center gap-1">
+            <ShopTick
+              checked={allOn}
+              indeterminate={someOn}
+              locked={!hasSelectable}
+              onChange={(on) => {
+                if (!hasSelectable) return;
+                onToggleAll(on);
+              }}
+              label="Select all"
+            />
+            <span className="text-xs text-muted-foreground">Select</span>
+          </span>
+          <span className="text-xs text-muted-foreground tabular-nums">
+            Bal <Money amount={lastBalance} currency={currency} className="inline font-medium text-foreground" />
+          </span>
+        </div>
+        <ul className="flex flex-col gap-2">
+          {lines.map((line) => {
+            const isOpening = line.kind === "opening";
+            const locked = Boolean(line.locked);
+            const isOn = selected.has(line.id);
+            const bank = banks.find((b) => b.id === line.bankId);
+            return (
+              <li key={line.id}>
+                <div
+                  role="button"
+                  tabIndex={0}
+                  className={cn(
+                    "register-phone-card rounded-2xl border border-border bg-card px-3 py-2.5 touch-manipulation",
+                    isOn && "ring-1 ring-primary/40",
+                    activeId === line.id && "bg-accent/40",
+                  )}
+                  onClick={() => {
+                    onActivate(line.id);
+                    onOpen(line);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      onActivate(line.id);
+                      onOpen(line);
+                    }
+                  }}
+                >
+                  <div className="flex items-start gap-2">
+                    <div
+                      className="shrink-0 pt-0.5"
+                      onClick={(e) => e.stopPropagation()}
+                      onPointerDown={(e) => e.stopPropagation()}
+                    >
+                      {isOpening ? (
+                        <span className="inline-block size-10" />
+                      ) : (
+                        <ShopTick
+                          checked={isOn}
+                          locked={locked}
+                          onChange={() => onToggle(line.id)}
+                          label={`Select ${line.party}`}
+                        />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <p className="truncate text-sm font-medium">{line.party || (isOpening ? "Opening" : "—")}</p>
+                        <p className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                          {isOpening && !line.date ? "Opening" : formatRegisterDate(line.date)}
+                        </p>
+                      </div>
+                      <p className="mt-0.5 truncate text-[0.7rem] text-muted-foreground">
+                        {KIND_LABEL[line.kind]}
+                        {line.number ? ` · ${line.number}` : ""}
+                        {bank ? ` · ${bank.nickname}` : ""}
+                      </p>
+                      <div className="mt-1.5 flex items-center justify-between gap-2 text-xs tabular-nums">
+                        <span className="min-w-0">
+                          {line.payment ? (
+                            <Money amount={line.payment} currency={currency} className="text-debit" />
+                          ) : line.deposit ? (
+                            <Money amount={line.deposit} currency={currency} className="text-credit" />
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </span>
+                        <span className="shrink-0 text-muted-foreground">
+                          Bal{" "}
+                          <Money amount={line.balance} currency={currency} className="inline font-medium text-foreground" />
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    );
   }
 
   return (

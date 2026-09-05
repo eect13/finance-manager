@@ -46,6 +46,11 @@ function reconDefaultCols() {
   return { ...RECON_COLS };
 }
 
+function isPhoneUi() {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(max-width: 767px), ((hover: none) and (pointer: coarse))").matches;
+}
+
 function lineKey(line: CashLine) {
   return `${line.kind}:${line.sourceId}`;
 }
@@ -394,6 +399,75 @@ function ReconcilePage() {
         />
       </ListToolbar>
 
+            {isPhoneUi() ? (
+        <div className="recon-phone-list">
+          <div className="mb-2 flex items-center justify-between gap-2 no-print">
+            <span className="inline-flex items-center gap-1">
+              <ShopTick checked={allOn} indeterminate={someOn} onChange={toggleAll} label="Select all" />
+              <span className="text-xs text-muted-foreground">Clear all visible</span>
+            </span>
+            <span className="text-xs text-muted-foreground">{sort.sorted.length} uncleared</span>
+          </div>
+          {sort.sorted.length === 0 ? (
+            <p className="rounded-2xl border border-border px-4 py-8 text-center text-sm text-muted-foreground">
+              Nothing uncleared on or before this date.
+            </p>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {sort.sorted.map((line) => {
+                const on = ticked.has(lineKey(line));
+                const days = daysOutstanding(line.date, statementDate);
+                return (
+                  <li key={line.id}>
+                    <div
+                      className={cn(
+                        "recon-phone-card flex items-start gap-2 rounded-2xl border border-border bg-card px-3 py-2.5 touch-manipulation",
+                        on && "ring-1 ring-primary/40",
+                      )}
+                      {...openProps(
+                        openKindFor(line),
+                        line.kind === "bill-payment"
+                          ? (data.bills.find((b) => b.payments.some((p) => p.id === line.sourceId))?.id ?? line.sourceId)
+                          : line.sourceId,
+                        { click: true },
+                      )}
+                    >
+                      <div
+                        className="shrink-0 pt-0.5"
+                        onClick={(e) => e.stopPropagation()}
+                        onPointerDown={(e) => e.stopPropagation()}
+                      >
+                        <ShopTick checked={on} onChange={(next) => toggle(line, next)} label="Cleared" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-baseline justify-between gap-2">
+                          <p className="truncate text-sm font-medium">{line.party}</p>
+                          <p className="shrink-0 text-xs text-muted-foreground tabular-nums">{formatDate(line.date)}</p>
+                        </div>
+                        <p className="mt-0.5 text-[0.7rem] text-muted-foreground">
+                          {KIND_LABEL[line.kind]}
+                          {days ? (
+                            <span className={cn(days > 90 && "text-debit")}> · {days}d</span>
+                          ) : null}
+                        </p>
+                        <div className="mt-1.5 text-xs tabular-nums">
+                          {line.payment ? (
+                            <Money amount={line.payment} currency={data.settings.currency} className="text-debit" />
+                          ) : line.deposit ? (
+                            <Money amount={line.deposit} currency={data.settings.currency} className="text-credit" />
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      ) : (
       <ListCard ref={gridRef} className="recon-table-card">
         <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
           <colgroup>
@@ -523,6 +597,7 @@ function ReconcilePage() {
           </tbody>
         </table>
       </ListCard>
+      )}
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <div className="flex flex-wrap items-end gap-2">

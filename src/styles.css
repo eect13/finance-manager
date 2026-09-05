@@ -4013,6 +4013,20 @@ html.tauri-android .app-header-inner {
   }
 }
 
+/* v3.62.34: table column titles stay one line on phone */
+@media (max-width: 767px), ((hover: none) and (pointer: coarse)) {
+  .list-card.list-grid thead th,
+  .list-card.list-grid thead th button,
+  .register-phone-table thead th,
+  .recon-phone-list table thead th,
+  .register-matrix thead th,
+  .register-matrix thead th button {
+    white-space: nowrap !important;
+    overflow-wrap: normal !important;
+    word-break: normal !important;
+  }
+}
+
 /* v3.62.33: phone list tables — nowrap + horizontal scroll (no letter crush) */
 @media (max-width: 767px), ((hover: none) and (pointer: coarse)) {
   /* Keep natural/min column widths; card scrolls sideways when columns exceed viewport */

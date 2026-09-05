@@ -105,8 +105,8 @@ export function SortHeader({
         type="button"
         onClick={() => onToggle(column)}
         className={cn(
-          "inline-flex w-full items-center justify-center gap-1 text-center font-medium",
-          compact ? "min-h-8 whitespace-nowrap text-xs tracking-wide uppercase" : "min-h-11 text-sm",
+          "inline-flex w-full items-center justify-center gap-1 whitespace-nowrap text-center font-medium",
+          compact ? "min-h-8 text-xs tracking-wide uppercase" : "min-h-11 text-sm",
           active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
         )}
       >

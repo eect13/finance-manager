@@ -1337,7 +1337,7 @@ function RegisterTable({
                     <th
                       key={col.id}
                       className={cn(
-                        "px-2 py-2.5 font-medium",
+                        "whitespace-nowrap px-2 py-2.5 font-medium",
                         (col.id === "payment" || col.id === "deposit" || col.id === "balance") && "text-right",
                         col.id === "status" && "text-center",
                         col.id !== "payment" && col.id !== "deposit" && col.id !== "balance" && col.id !== "status" && "text-left",

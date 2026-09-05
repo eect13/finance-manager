@@ -16,6 +16,7 @@ The app mark is a **navy tile with cream pillars** — a full opaque square (Win
 
 - **Recon fee/interest scale**: ledger already stored cents correctly (`parseAmountToCents` once). Audit was showing raw cents (`Service charge 10000` for ₱100) — finish/undo/recon-adj audit now uses `formatMoney`
 - Amount-integrity tests: pesos string → cents → `addExpense` / recon adj → display
+- **apk.bat** rock-solid self-deploy: `pushd` to repo root (paths with spaces), verify `package.json` + packer, force Microsoft JDK 17 via full `java.exe` path + `findstr /C:"17."`, ANDROID_HOME/NDK, clear SUCCESS listing of versioned APK, open Explorer; Desktop launcher → absolute `deploy\android\apk.bat`
 
 ## What's new in v3.62.48
 

@@ -1,11 +1,33 @@
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
-cd /d "%~dp0\..\.."
+
+REM Always run from repo root (this file lives in deploy\android\).
+REM pushd handles paths with spaces; fail loudly if layout is wrong.
+pushd "%~dp0..\.." || (
+  echo ERROR: could not cd to repo root from "%~dp0"
+  pause
+  exit /b 1
+)
+if not exist "package.json" (
+  echo ERROR: package.json not found in %CD%
+  echo Expected Finance Manager repo root. Desktop launcher must point at:
+  echo   C:\Users\Eric\finance-manager-v362\deploy\android\apk.bat
+  popd
+  pause
+  exit /b 1
+)
+if not exist "scripts\pack-android.mjs" (
+  echo ERROR: scripts\pack-android.mjs missing under %CD%
+  popd
+  pause
+  exit /b 1
+)
 
 where node >nul 2>nul
 if errorlevel 1 (
   echo Node.js 22+ is required.
   start https://nodejs.org
+  popd
   pause
   exit /b 1
 )
@@ -43,24 +65,29 @@ if not defined JAVA_HOME (
   echo   - Android Studio SDK + NDK
   echo   - Run desktop-setup.bat once for Rust
   echo See deploy\android\README.md
+  popd
   pause
   exit /b 1
 )
 
 if not exist "%JAVA_HOME%\bin\java.exe" (
   echo ERROR: java.exe missing under JAVA_HOME=%JAVA_HOME%
+  popd
   pause
   exit /b 1
 )
 
+REM Put Microsoft JDK first on PATH, but always invoke via full path for the check
+REM so Oracle javapath / Studio JBR cannot sneak in.
 set "PATH=%JAVA_HOME%\bin;%PATH%"
+set "JAVA_EXE=%JAVA_HOME%\bin\java.exe"
 echo JAVA_HOME=%JAVA_HOME%
-java -version 2>&1
+"%JAVA_EXE%" -version 2>&1
 echo.
 
-REM Simple sanity: PATH java should report a 17.x line (Microsoft prints openjdk version "17.0.20.1")
-REM Avoid brittle for/f + findstr /r quote parsing — %%~V strips quotes and older regex falsely failed.
-java -version 2>&1 | findstr /C:"17." >nul
+REM Simple sanity: Microsoft prints openjdk version "17.0.20.1"
+REM findstr /C:"17." avoids brittle for/f + regex quote stripping.
+"%JAVA_EXE%" -version 2>&1 | findstr /C:"17." >nul
 if errorlevel 1 (
   echo ERROR: java is not JDK 17 after forcing JAVA_HOME.
   echo Got output above. This bat refuses Studio JBR / JDK 25.
@@ -70,6 +97,7 @@ if errorlevel 1 (
   echo   - Android Studio SDK + NDK
   echo   - Run desktop-setup.bat once for Rust
   echo See deploy\android\README.md
+  popd
   pause
   exit /b 1
 )
@@ -82,14 +110,14 @@ if exist "%LOCALAPPDATA%\Android\Sdk" (
   set "ANDROID_SDK_ROOT=%LOCALAPPDATA%\Android\Sdk"
   echo ANDROID_HOME=%ANDROID_HOME%
 ) else (
-  echo WARNING: %LOCALAPPDATA%\Android\Sdk not found — packer may still locate SDK.
+  echo WARNING: %LOCALAPPDATA%\Android\Sdk not found - packer may still locate SDK.
 )
 
 if exist "%LOCALAPPDATA%\Android\Sdk\ndk\30.0.16138531" (
   set "NDK_HOME=%LOCALAPPDATA%\Android\Sdk\ndk\30.0.16138531"
   echo NDK_HOME=%NDK_HOME%
 ) else (
-  echo NDK 30.0.16138531 not at default path — leaving NDK_HOME unset ^(packer will search^).
+  echo NDK 30.0.16138531 not at default path - leaving NDK_HOME unset ^(packer will search^).
 )
 echo.
 
@@ -102,22 +130,32 @@ if errorlevel 1 (
   echo   - Android Studio SDK + NDK
   echo   - Run desktop-setup.bat once for Rust
   echo See deploy\android\README.md
+  popd
   pause
   exit /b 1
 )
 
 echo.
-echo APK copied to deploy\android\
-if exist "deploy\android\finance-manager-arm64-release.apk" (
-  echo   deploy\android\finance-manager-arm64-release.apk
-  for %%F in ("deploy\android\finance-manager-arm64-release.apk") do echo     size %%~zF bytes
-)
+echo === SUCCESS ===
+echo APK folder: %CD%\deploy\android\
+set "FOUND_VERSIONED=0"
 for %%F in ("deploy\android\finance-manager-v*-arm64-release.apk") do (
   if exist "%%~F" (
-    echo   %%~nxF
-    echo     size %%~zF bytes
+    set "FOUND_VERSIONED=1"
+    echo   Versioned: %%~nxF
+    echo     full:    %%~fF
+    echo     size:    %%~zF bytes
   )
 )
-start "" explorer deploy\android
+if "!FOUND_VERSIONED!"=="0" (
+  echo   WARNING: no finance-manager-v*-arm64-release.apk found
+)
+if exist "deploy\android\finance-manager-arm64-release.apk" (
+  echo   Friendly:  finance-manager-arm64-release.apk
+  for %%F in ("deploy\android\finance-manager-arm64-release.apk") do echo     size:    %%~zF bytes
+)
+echo.
+start "" explorer "%CD%\deploy\android"
+popd
 pause
 exit /b 0

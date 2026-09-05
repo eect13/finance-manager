@@ -81,7 +81,7 @@ custom-protocol is required: without it Tauri treats the build as dev and the AP
 
 ## Where the APK lands
 
-Double-click `deploy/android/apk.bat` (or repo-root `apk.bat`). It forces Microsoft OpenJDK 17, sets ANDROID_HOME/NDK, then runs `pack-android.mjs`.
+Double-click `deploy/android/apk.bat` (or repo-root `apk.bat`). It pushds to the repo root, forces Microsoft OpenJDK 17 via full java.exe + findstr /C:"17.", sets ANDROID_HOME/NDK, runs pack-android.mjs, then lists the versioned APK and opens Explorer. Desktop shortcut should call the absolute path under finance-manager-v362\deploy\android\apk.bat.
 
 | Path | Role |
 |------ |----- |

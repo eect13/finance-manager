@@ -16,7 +16,7 @@ The app mark is a **navy tile with cream pillars** — a full opaque square (Win
 
 - Phone doc lists (Invoices, Checks, Bills, Receipts): **swipe** a row for Void/Delete — Pay/Collect and ⋯ stay on the face
 - Reconcile **View** sheet: Layout (Grid/List) + Resize type (same font size as Register)
-- README + phone screenshots refreshed for Grid/List, Filters sheet, and doc swipe
+- README + phone screenshots refreshed (device shots: Desk, Employees, Ledger, Aging, Close; plus Register Grid/List / Invoices / Reconcile View)
 
 ## What's new in v3.62.29
 
@@ -238,9 +238,11 @@ Lists (banks, register, receipts, checks, reports, reconcile) wrap actions and k
 
 ![Labeled undo toast — Undid: update options](docs/screenshots/undo-toast.png)
 
-Phone:
+Phone (device shots in dark theme; Register/Invoices/Reconcile also have light studio shots above the fold in git history):
 
 ![Desk on a phone](docs/screenshots/desk-phone.png)
+
+![Employees on a phone](docs/screenshots/employees-phone.png)
 
 ![Register on a phone — Grid cards with Memo](docs/screenshots/register-phone-grid.png)
 
@@ -248,7 +250,15 @@ Phone:
 
 ![Invoices on a phone](docs/screenshots/invoices-phone.png)
 
+![General ledger on a phone](docs/screenshots/ledger-phone.png)
+
+![Reports — Receivables aging on a phone](docs/screenshots/reports-receivables-phone.png)
+
+![Reports — Payables aging on a phone](docs/screenshots/reports-payables-phone.png)
+
 ![Reconcile on a phone — View sheet Layout + type size](docs/screenshots/reconcile-phone.png)
+
+![Close on a phone](docs/screenshots/close-phone.png)
 
 ![Customers on a phone — horizontal scroll / display zoom](docs/screenshots/customers-phone.png)
 

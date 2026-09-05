@@ -65,7 +65,7 @@ export function ColumnChips({
       </div>
       {compact ? null : (
         <p className="mt-1 text-xs text-muted-foreground">
-          Hide columns to fit more of the book on screen. Last balance stays in the totals row.
+          Toggle columns for the book — including Status. On phone, Grid and List both honor these chips.
         </p>
       )}
     </div>

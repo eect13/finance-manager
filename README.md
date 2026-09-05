@@ -1,4 +1,4 @@
-# Finance Manager v3.62.31
+# Finance Manager v3.62.32
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -11,6 +11,13 @@ No accounts, no server setup. Books stay on this computer (IndexedDB). Settings 
 The app mark is a **navy tile with cream pillars** — a full opaque square (Windows 11 already rounds the tile; transparent corners were a white plate). Web uses the SVG favicon. Windows uses a **BMP 32-bit** `.ico` (PNG-in-ICO is a white square on the shortcut and the taskbar). After install, **delete any leftover blank shortcut** and pin the new one — Explorer caches the last icon.
 
 
+
+## What's new in v3.62.32
+
+- Register phone **View** column chips (Date, Type, No., Payee, Memo, Bank, Payment, Deposit, Balance, **Status**) apply to **Grid and List** — not desktop-only
+- Phone Filters sheets: Select menus stay usable (period/type/sort actually apply on Register, Reconcile, and other list tabs)
+- Phone List keeps full desktop-like columns with wrap + scroll (readable type, no compacting); Grid outlines aligned (no double borders)
+- Reconcile phone List/Grid: full payee/memo visible; Resize type honored on List
 
 ## What's new in v3.62.31
 

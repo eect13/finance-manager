@@ -308,6 +308,14 @@ export function ListFilters({
           const el = event.target as HTMLElement | null;
           if (el?.closest("[data-radix-select-content]")) event.preventDefault();
         }}
+        onInteractOutside={(event) => {
+          const el = event.target as HTMLElement | null;
+          if (el?.closest("[data-radix-select-content]")) event.preventDefault();
+        }}
+        onFocusOutside={(event) => {
+          const el = event.target as HTMLElement | null;
+          if (el?.closest("[data-radix-select-content]")) event.preventDefault();
+        }}
       >
         <p className="mb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">Filters</p>
         {panel}

@@ -442,7 +442,22 @@ function ReconcilePage() {
             <span className="text-xs text-muted-foreground">{sort.sorted.length} uncleared</span>
           </div>
           <Sheet open={viewOpen} onOpenChange={setViewOpen}>
-            <SheetContent side="bottom" className="gap-0 px-4">
+            <SheetContent
+              side="bottom"
+              className="gap-0 px-4"
+              onPointerDownOutside={(event) => {
+                const el = event.target as HTMLElement | null;
+                if (el?.closest("[data-radix-select-content]")) event.preventDefault();
+              }}
+              onInteractOutside={(event) => {
+                const el = event.target as HTMLElement | null;
+                if (el?.closest("[data-radix-select-content]")) event.preventDefault();
+              }}
+              onFocusOutside={(event) => {
+                const el = event.target as HTMLElement | null;
+                if (el?.closest("[data-radix-select-content]")) event.preventDefault();
+              }}
+            >
               <div className="mb-3 flex items-center justify-between gap-2">
                 <p className="text-base font-semibold">View</p>
                 <Button type="button" size="sm" variant="ghost" onClick={() => setViewOpen(false)}>
@@ -481,7 +496,7 @@ function ReconcilePage() {
             </p>
           ) : phoneLayout === "list" ? (
             <div className="list-card list-grid register-phone-table min-w-0">
-              <table className="text-sm" style={{ width: "100%" }}>
+              <table style={{ width: "100%" }}>
                 <thead>
                   <tr className="border-b border-border text-muted-foreground">
                     <th className="w-10 px-2 py-2 no-print" aria-label="Cleared" />
@@ -518,9 +533,9 @@ function ReconcilePage() {
                         <td className="whitespace-nowrap px-2 py-2.5 text-muted-foreground tabular-nums">
                           {formatDate(line.date)}
                         </td>
-                        <td className="min-w-0 px-2 py-2.5">
-                          <p className="truncate font-medium">{line.party}</p>
-                          <p className="truncate text-xs text-muted-foreground">
+                        <td className="min-w-0 px-2 py-3">
+                          <p className="break-words font-medium">{line.party}</p>
+                          <p className="mt-0.5 break-words text-muted-foreground">
                             {KIND_LABEL[line.kind]}
                             {line.number ? ` · ${line.number}` : ""}
                             {line.memo?.trim() ? ` · ${line.memo}` : ""}
@@ -567,7 +582,7 @@ function ReconcilePage() {
                     >
                       <div
                         className={cn(
-                          "recon-phone-card flex items-start gap-2 rounded-2xl border border-border bg-card px-3 py-2.5 touch-manipulation",
+                          "recon-phone-card flex items-start gap-2 rounded-2xl border border-border bg-card px-3 py-3 touch-manipulation",
                           on && "ring-1 ring-primary/40",
                         )}
                         {...openProps(openKindFor(line), openId, { click: true })}
@@ -581,7 +596,7 @@ function ReconcilePage() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-baseline justify-between gap-2">
-                            <p className="phone-card-party min-w-0 truncate">{line.party}</p>
+                            <p className="phone-card-party min-w-0 break-words font-medium">{line.party}</p>
                             <p className="phone-card-date shrink-0 text-muted-foreground tabular-nums">{formatDate(line.date)}</p>
                           </div>
                           <p className="phone-card-meta mt-0.5 text-muted-foreground">

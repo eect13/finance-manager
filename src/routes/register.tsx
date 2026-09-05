@@ -960,14 +960,29 @@ function ViewOptions({
           ) : null}
         </Button>
         <Sheet open={open} onOpenChange={setOpen}>
-          <SheetContent side="bottom" className="gap-0 px-4">
+          <SheetContent
+            side="bottom"
+            className="gap-0 px-4"
+            onPointerDownOutside={(event) => {
+              const el = event.target as HTMLElement | null;
+              if (el?.closest("[data-radix-select-content]")) event.preventDefault();
+            }}
+            onInteractOutside={(event) => {
+              const el = event.target as HTMLElement | null;
+              if (el?.closest("[data-radix-select-content]")) event.preventDefault();
+            }}
+            onFocusOutside={(event) => {
+              const el = event.target as HTMLElement | null;
+              if (el?.closest("[data-radix-select-content]")) event.preventDefault();
+            }}
+          >
             <div className="mb-3 flex items-center justify-between gap-2">
               <p className="text-base font-semibold">View</p>
               <Button type="button" size="sm" variant="ghost" onClick={() => setOpen(false)}>
                 Done
               </Button>
             </div>
-            <div className="max-h-[min(70dvh,32rem)] overflow-y-auto pb-2">{body}</div>
+            <div className="max-h-[min(75dvh,36rem)] overflow-y-auto pb-2">{body}</div>
           </SheetContent>
         </Sheet>
       </>
@@ -1233,9 +1248,10 @@ function RegisterTable({
     };
   }
 
-  // Phone: Grid = full cards (with memo); List = Invoices-style table.
+  // Phone: Grid + List both honor View column chips (incl. Status) and --register-font.
   if (isPhoneUi()) {
     const listMode = phoneLayout === "list";
+    const visibleCols = REGISTER_COLS.filter((col) => cols[col.id]);
     const toolbar = (
       <div className="register-phone-toolbar no-print mb-2 flex flex-wrap items-center justify-between gap-2">
         <span className="inline-flex items-center gap-1">
@@ -1265,21 +1281,67 @@ function RegisterTable({
       </p>
     ) : null;
 
+    function phoneCell(line: BalancedCashLine, id: RegisterColId) {
+      const isOpening = line.kind === "opening";
+      const bank = banks.find((b) => b.id === line.bankId);
+      switch (id) {
+        case "date":
+          return isOpening && !line.date ? "Opening" : formatRegisterDate(line.date);
+        case "type":
+          return KIND_LABEL[line.kind];
+        case "number":
+          return line.number || "—";
+        case "payee":
+          return line.party || (isOpening ? "Opening balance" : "—");
+        case "memo":
+          return line.memo?.trim() ? line.memo : "—";
+        case "bank":
+          return bank?.nickname || "—";
+        case "payment":
+          return line.payment ? (
+            <Money amount={line.payment} currency={currency} className="text-debit" />
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          );
+        case "deposit":
+          return line.deposit ? (
+            <Money amount={line.deposit} currency={currency} className="text-credit" />
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          );
+        case "balance":
+          return <Money amount={line.balance} currency={currency} className="font-medium" />;
+        case "status":
+          return isOpening ? <span className="text-muted-foreground">—</span> : <LineStatus line={line} />;
+        default:
+          return null;
+      }
+    }
+
     if (listMode) {
       return (
         <div className="register-phone-list is-list" data-layout="list">
           {toolbar}
           {moveHint}
           <div className="list-card list-grid register-phone-table min-w-0">
-            <table className="text-sm" style={{ width: "100%" }}>
+            <table style={{ width: "100%" }}>
               <thead>
                 <tr className="border-b border-border text-muted-foreground">
-                  <th className="w-10 px-2 py-2 no-print" aria-label="Select" />
-                  {dragOn ? <th className="w-9 px-1 py-2 no-print" aria-label="Move" /> : null}
-                  <th className="px-2 py-2 text-left font-medium">Date</th>
-                  <th className="px-2 py-2 text-left font-medium">Payee</th>
-                  <th className="px-2 py-2 text-right font-medium">Amount</th>
-                  <th className="px-2 py-2 text-right font-medium">Bal</th>
+                  <th className="w-10 px-2 py-2.5 no-print" aria-label="Select" />
+                  {dragOn ? <th className="w-9 px-1 py-2.5 no-print" aria-label="Move" /> : null}
+                  {visibleCols.map((col) => (
+                    <th
+                      key={col.id}
+                      className={cn(
+                        "px-2 py-2.5 font-medium",
+                        (col.id === "payment" || col.id === "deposit" || col.id === "balance") && "text-right",
+                        col.id === "status" && "text-center",
+                        col.id !== "payment" && col.id !== "deposit" && col.id !== "balance" && col.id !== "status" && "text-left",
+                      )}
+                    >
+                      {COL_LABELS[col.id]}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
@@ -1307,7 +1369,7 @@ function RegisterTable({
                       }}
                     >
                       <td
-                        className="px-2 py-2.5 no-print"
+                        className="px-2 py-3 no-print"
                         onClick={(e) => e.stopPropagation()}
                         onPointerDown={(e) => e.stopPropagation()}
                       >
@@ -1324,7 +1386,7 @@ function RegisterTable({
                       </td>
                       {dragOn ? (
                         <td
-                          className="px-1 py-2.5 no-print"
+                          className="px-1 py-3 no-print"
                           onClick={(e) => e.stopPropagation()}
                           onPointerDown={(e) => e.stopPropagation()}
                         >
@@ -1350,31 +1412,29 @@ function RegisterTable({
                           )}
                         </td>
                       ) : null}
-                      <td className="whitespace-nowrap px-2 py-2.5 text-muted-foreground tabular-nums">
-                        {isOpening && !line.date ? "Opening" : formatRegisterDate(line.date)}
-                      </td>
-                      <td className="min-w-0 px-2 py-2.5">
-                        <p className="truncate font-medium">
-                          {line.party || (isOpening ? "Opening balance" : "—")}
-                        </p>
-                        <p className="truncate text-xs text-muted-foreground">
-                          {KIND_LABEL[line.kind]}
-                          {line.number ? ` · ${line.number}` : ""}
-                          {line.memo ? ` · ${line.memo}` : ""}
-                        </p>
-                      </td>
-                      <td className="whitespace-nowrap px-2 py-2.5 text-right tabular-nums">
-                        {line.payment ? (
-                          <Money amount={line.payment} currency={currency} className="text-debit" />
-                        ) : line.deposit ? (
-                          <Money amount={line.deposit} currency={currency} className="text-credit" />
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </td>
-                      <td className="whitespace-nowrap px-2 py-2.5 text-right tabular-nums font-medium">
-                        <Money amount={line.balance} currency={currency} />
-                      </td>
+                      {visibleCols.map((col) => {
+                        const money = col.id === "payment" || col.id === "deposit" || col.id === "balance";
+                        const status = col.id === "status";
+                        return (
+                          <td
+                            key={col.id}
+                            className={cn(
+                              "px-2 py-3 align-top",
+                              money && "text-right tabular-nums whitespace-nowrap",
+                              status && "text-center",
+                              (col.id === "date" || col.id === "number" || col.id === "type") && "tabular-nums",
+                              (col.id === "payee" || col.id === "memo" || col.id === "bank") && "min-w-0 break-words",
+                              col.id === "date" && "text-muted-foreground whitespace-nowrap",
+                            )}
+                          >
+                            {col.id === "payee" ? (
+                              <p className="break-words font-medium">{phoneCell(line, col.id)}</p>
+                            ) : (
+                              phoneCell(line, col.id)
+                            )}
+                          </td>
+                        );
+                      })}
                     </tr>
                   );
                 })}
@@ -1426,7 +1486,7 @@ function RegisterTable({
                     role="button"
                     tabIndex={isOpening ? undefined : 0}
                     className={cn(
-                      "register-phone-card rounded-2xl border border-border bg-card px-3 py-2.5 touch-manipulation",
+                      "register-phone-card rounded-2xl border border-border bg-card px-3 py-3 touch-manipulation",
                       isOn && "ring-1 ring-primary/40",
                       activeId === line.id && "bg-accent/30",
                       armed && "ring-2 ring-primary",
@@ -1482,66 +1542,105 @@ function RegisterTable({
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-baseline justify-between gap-2">
-                          <p className="phone-card-party min-w-0 truncate">
-                            {line.party || (isOpening ? "Opening balance" : "—")}
-                          </p>
-                          <p className="phone-card-date shrink-0 text-muted-foreground tabular-nums">
-                            {isOpening && !line.date ? "Opening" : formatRegisterDate(line.date)}
-                          </p>
+                          {cols.payee ? (
+                            <p className="phone-card-party min-w-0 break-words font-medium">
+                              {line.party || (isOpening ? "Opening balance" : "—")}
+                            </p>
+                          ) : (
+                            <span />
+                          )}
+                          {cols.date ? (
+                            <p className="phone-card-date shrink-0 text-muted-foreground tabular-nums">
+                              {isOpening && !line.date ? "Opening" : formatRegisterDate(line.date)}
+                            </p>
+                          ) : null}
                         </div>
-                        <p className="phone-card-meta mt-0.5 text-muted-foreground">
-                          <span>{KIND_LABEL[line.kind]}</span>
-                          {line.number ? <span> · {line.number}</span> : null}
-                          {bank ? <span> · {bank.nickname}</span> : null}
-                        </p>
-                        <div className="phone-card-memo mt-1">
-                          <p className="phone-card-label text-muted-foreground">Memo</p>
-                          <p className="break-words text-muted-foreground/90">
-                            {line.memo?.trim() ? line.memo : "—"}
+                        {(cols.type || cols.number || cols.bank) ? (
+                          <p className="phone-card-meta mt-1 break-words text-muted-foreground">
+                            {cols.type ? <span>{KIND_LABEL[line.kind]}</span> : null}
+                            {cols.number && line.number ? (
+                              <span>
+                                {cols.type ? " · " : ""}
+                                {line.number}
+                              </span>
+                            ) : null}
+                            {cols.bank && bank ? (
+                              <span>
+                                {cols.type || (cols.number && line.number) ? " · " : ""}
+                                {bank.nickname}
+                              </span>
+                            ) : null}
                           </p>
-                        </div>
-                        <div className="phone-card-money mt-1.5 grid grid-cols-3 gap-2 tabular-nums">
-                          <div>
-                            <p className="phone-card-label text-muted-foreground">Out</p>
-                            {line.payment ? (
-                              <Money amount={line.payment} currency={currency} className="text-debit" />
-                            ) : (
-                              <span className="text-muted-foreground">—</span>
-                            )}
+                        ) : null}
+                        {cols.memo ? (
+                          <div className="phone-card-memo mt-1.5">
+                            <p className="phone-card-label text-muted-foreground">Memo</p>
+                            <p className="break-words text-muted-foreground/90">
+                              {line.memo?.trim() ? line.memo : "—"}
+                            </p>
                           </div>
-                          <div>
-                            <p className="phone-card-label text-muted-foreground">In</p>
-                            {line.deposit ? (
-                              <Money amount={line.deposit} currency={currency} className="text-credit" />
-                            ) : (
-                              <span className="text-muted-foreground">—</span>
-                            )}
-                          </div>
-                          <div className="text-right">
-                            <p className="phone-card-label text-muted-foreground">Bal</p>
-                            <Money amount={line.balance} currency={currency} className="font-medium" />
-                          </div>
-                        </div>
-                        {!isOpening ? (
+                        ) : null}
+                        {(cols.payment || cols.deposit || cols.balance) ? (
                           <div
-                            className="mt-1.5 flex flex-wrap items-center gap-2"
+                            className={cn(
+                              "phone-card-money mt-2 grid gap-2 tabular-nums",
+                              [cols.payment, cols.deposit, cols.balance].filter(Boolean).length === 1
+                                ? "grid-cols-1"
+                                : [cols.payment, cols.deposit, cols.balance].filter(Boolean).length === 2
+                                  ? "grid-cols-2"
+                                  : "grid-cols-3",
+                            )}
+                          >
+                            {cols.payment ? (
+                              <div>
+                                <p className="phone-card-label text-muted-foreground">Out</p>
+                                {line.payment ? (
+                                  <Money amount={line.payment} currency={currency} className="text-debit" />
+                                ) : (
+                                  <span className="text-muted-foreground">—</span>
+                                )}
+                              </div>
+                            ) : null}
+                            {cols.deposit ? (
+                              <div>
+                                <p className="phone-card-label text-muted-foreground">In</p>
+                                {line.deposit ? (
+                                  <Money amount={line.deposit} currency={currency} className="text-credit" />
+                                ) : (
+                                  <span className="text-muted-foreground">—</span>
+                                )}
+                              </div>
+                            ) : null}
+                            {cols.balance ? (
+                              <div className="text-right">
+                                <p className="phone-card-label text-muted-foreground">Bal</p>
+                                <Money amount={line.balance} currency={currency} className="font-medium" />
+                              </div>
+                            ) : null}
+                          </div>
+                        ) : null}
+                        {!isOpening && (cols.status || line.reassignable) ? (
+                          <div
+                            className="mt-2 flex flex-wrap items-center gap-2"
                             onClick={(e) => e.stopPropagation()}
                             onPointerDown={(e) => e.stopPropagation()}
                           >
-                            <button
-                              type="button"
-                              className="phone-card-chip inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1"
-                              onClick={() => onCycleRecon(line)}
-                            >
-                              <LineStatus line={line} />
-                              <span className="text-muted-foreground">
-                                {line.recon === "reconciled"
-                                  ? "Reconciled"
-                                  : line.recon === "cleared"
-                                    ? "Cleared"
-                                    : "Pending"}
-                              </span>
-                            </button>
+                            {cols.status ? (
+                              <button
+                                type="button"
+                                className="phone-card-chip inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1"
+                                onClick={() => onCycleRecon(line)}
+                              >
+                                <LineStatus line={line} />
+                                <span className="text-muted-foreground">
+                                  {line.recon === "reconciled"
+                                    ? "Reconciled"
+                                    : line.recon === "cleared"
+                                      ? "Cleared"
+                                      : "Pending"}
+                                </span>
+                              </button>
+                            ) : null}
                             {line.reassignable ? (
                               <Select value={line.bankId} onValueChange={(v) => onSwap(line, v)}>
                                 <SelectTrigger
@@ -1574,6 +1673,7 @@ function RegisterTable({
       </div>
     );
   }
+
 
 
   return (

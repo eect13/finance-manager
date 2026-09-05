@@ -3873,12 +3873,41 @@ html.tauri-android .app-header-inner {
     overflow: hidden;
     border-radius: 1rem;
     isolation: isolate;
-    /* Clip action colors fully inside the card radius — no edge bleed when closed */
+    /* One outline on the wrapper — inner card has no second border */
+    border: 1px solid var(--color-border);
     background: var(--color-card);
+    box-sizing: border-box;
   }
   .register-phone-list.is-list .phone-swipe,
   .recon-phone-list.is-list .phone-swipe {
     border-radius: 0.75rem;
+  }
+  /* Avoid double borders: card chrome lives on .phone-swipe when swipe is on */
+  .phone-swipe-front > .register-phone-card,
+  .phone-swipe-front > .recon-phone-card {
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: transparent;
+  }
+  /* Grid cards not wrapped in active swipe keep their own 1px outline */
+  .register-phone-list:not(.is-list) > ul > li > .register-phone-card,
+  .recon-phone-list:not(.is-list) > ul > li > .recon-phone-card,
+  .register-phone-list:not(.is-list) > ul > li > div > .register-phone-card,
+  .recon-phone-list:not(.is-list) > ul > li > div > .recon-phone-card {
+    border: 1px solid var(--color-border);
+    border-radius: 1rem;
+    box-sizing: border-box;
+  }
+  .register-phone-list:not(.is-list) ul,
+  .recon-phone-list:not(.is-list) ul {
+    gap: 0.5rem;
+    padding: 0;
+    margin: 0;
+  }
+  .register-phone-list:not(.is-list) li,
+  .recon-phone-list:not(.is-list) li {
+    margin: 0;
   }
   .phone-swipe-actions {
     position: absolute;
@@ -3970,14 +3999,23 @@ html.tauri-android .app-header-inner {
   .register-phone-table table {
     width: 100%;
     border-collapse: collapse;
+    font-size: inherit; /* honor --register-font from View → Resize type */
   }
   .register-phone-table thead th {
-    font-size: 0.7rem;
-    letter-spacing: 0.02em;
+    font-size: 0.92em;
+    letter-spacing: 0.01em;
     text-transform: none;
+    font-weight: 600;
   }
   .register-phone-table tbody td {
     vertical-align: top;
+    font-size: inherit;
+    line-height: 1.4;
+  }
+  .register-phone-table td .truncate {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
   }
 }
 
@@ -4039,5 +4077,24 @@ html.tauri-android .app-header-inner {
     overflow: visible;
     text-overflow: clip;
     white-space: normal;
+  }
+}
+
+/* v3.62.32: Register/Reconcile phone — readable type, aligned grid outlines, View cols apply */
+@media (max-width: 767px), ((hover: none) and (pointer: coarse)) {
+  .register-phone-list,
+  .recon-phone-list {
+    font-size: var(--register-font, 12px);
+    line-height: 1.4;
+  }
+  .register-phone-table.list-card.list-grid td[data-col="payment"],
+  .register-phone-table.list-card.list-grid td[data-col="deposit"],
+  .register-phone-table.list-card.list-grid td[data-col="balance"],
+  .register-phone-table.list-card.list-grid td.tabular-nums {
+    font-size: inherit !important;
+  }
+  .register-phone-card,
+  .recon-phone-card {
+    box-shadow: none; /* outline only — matches swipe wrapper 1px border */
   }
 }

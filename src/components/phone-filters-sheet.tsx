@@ -3,6 +3,11 @@ import { Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 
+function keepSelectPortal(event: { target: EventTarget | null; preventDefault: () => void }) {
+  const node = event.target;
+  if (node instanceof Element && node.closest("[data-radix-select-content]")) event.preventDefault();
+}
+
 /**
  * Phone-only: toolbar Filters button opens a bottom sheet with the *panel* content.
  * Pass `embedded` ListFilters (or ListFiltersPanel) as children — never the popover trigger.
@@ -44,10 +49,9 @@ export function PhoneFiltersSheet({
         <SheetContent
           side="bottom"
           className="gap-0 px-4"
-          onPointerDownOutside={(event) => {
-            const el = event.target as HTMLElement | null;
-            if (el?.closest("[data-radix-select-content]")) event.preventDefault();
-          }}
+          onPointerDownOutside={keepSelectPortal}
+          onInteractOutside={keepSelectPortal}
+          onFocusOutside={keepSelectPortal}
         >
           <div className="mb-3 flex items-center justify-between gap-2">
             <p className="text-base font-semibold">{title}</p>

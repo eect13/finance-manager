@@ -14,11 +14,14 @@ import { ReconPrint } from "@/components/period-print";
 import { requestPrint } from "@/components/print-preview";
 import { ShopTick } from "@/components/shop-tick";
 import { PhoneLayoutToggle } from "@/components/phone-layout-toggle";
+import { PhoneFiltersSheet } from "@/components/phone-filters-sheet";
+import { PhoneSwipe } from "@/components/phone-swipe";
 import {
   RECONCILE_PHONE_LAYOUT_KEY,
   readPhoneLayout,
   writePhoneLayout,
   type PhoneLayout,
+  usePhoneUi,
 } from "@/lib/phone-layout";
 import { SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
@@ -84,6 +87,7 @@ function ReconcilePage() {
   const [phoneLayout, setPhoneLayout] = useState<PhoneLayout>(() =>
     readPhoneLayout(RECONCILE_PHONE_LAYOUT_KEY, "grid"),
   );
+  const phone = usePhoneUi();
   const [fee, setFee] = useState("");
   const [interest, setInterest] = useState("");
   const [undoing, setUndoing] = useState(false);
@@ -354,7 +358,7 @@ function ReconcilePage() {
           {ages.lateCount} uncleared {ages.lateCount === 1 ? "item is" : "items are"} 90+ days old.
         </p>
       ) : null}
-      <div className="recon-aging mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="recon-aging is-sticky mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
         {[
           { label: "1–30", amount: ages.d30 },
           { label: "31–60", amount: ages.d60 },
@@ -384,6 +388,7 @@ function ReconcilePage() {
         placeholder="Search payee or type"
         label="Search uncleared"
       >
+        <PhoneFiltersSheet phone={phone} title="Filters">
         <ListFilters
           selects={[
             {
@@ -407,6 +412,7 @@ function ReconcilePage() {
           onSort={(v) => applySortValue(sort.set, v)}
           onClear={() => setTypeFilter("all")}
         />
+        </PhoneFiltersSheet>
       </ListToolbar>
 
             {isPhoneUi() ? (
@@ -432,7 +438,7 @@ function ReconcilePage() {
             </span>
           </div>
           {sort.sorted.length === 0 ? (
-            <p className="rounded-2xl border border-border px-4 py-8 text-center text-sm text-muted-foreground">
+            <p className="phone-empty text-sm text-muted-foreground">
               Nothing uncleared on or before this date.
             </p>
           ) : (
@@ -447,6 +453,16 @@ function ReconcilePage() {
                 if (phoneLayout === "list") {
                   return (
                     <li key={line.id}>
+                      <PhoneSwipe
+                        enabled={phone}
+                        actions={[
+                          {
+                            label: on ? "Untick" : "Clear",
+                            tone: on ? "default" : "success",
+                            onAction: () => toggle(line, !on),
+                          },
+                        ]}
+                      >
                       <div
                         className={cn(
                           "recon-phone-row flex items-center gap-2 rounded-xl border border-border bg-card px-2 py-1.5 touch-manipulation",
@@ -488,11 +504,22 @@ function ReconcilePage() {
                           </div>
                         </div>
                       </div>
+                      </PhoneSwipe>
                     </li>
                   );
                 }
                 return (
                   <li key={line.id}>
+                    <PhoneSwipe
+                      enabled={phone}
+                      actions={[
+                        {
+                          label: on ? "Untick" : "Clear",
+                          tone: on ? "default" : "success",
+                          onAction: () => toggle(line, !on),
+                        },
+                      ]}
+                    >
                     <div
                       className={cn(
                         "recon-phone-card flex items-start gap-2 rounded-2xl border border-border bg-card px-3 py-2.5 touch-manipulation",
@@ -539,6 +566,7 @@ function ReconcilePage() {
                         </div>
                       </div>
                     </div>
+                    </PhoneSwipe>
                   </li>
                 );
               })}
@@ -696,8 +724,8 @@ function ReconcilePage() {
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        <Button onClick={finish} disabled={!canFinish}>
+      <div className={cn("mt-4 flex flex-wrap items-center gap-2 recon-finish-bar", phone && "phone-safe-bar")}>
+        <Button onClick={finish} disabled={!canFinish} className="phone-press">
           Finish statement
         </Button>
         <Button variant="outline" onClick={() => setUndoing(true)} disabled={!last}>

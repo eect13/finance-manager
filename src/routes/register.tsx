@@ -8,11 +8,14 @@ import { ColumnChips } from "@/components/column-chips";
 import { ConfirmDelete } from "@/components/confirm-delete";
 import { DragHandle, setCashDragImage } from "@/components/drag-handle";
 import { PhoneLayoutToggle } from "@/components/phone-layout-toggle";
+import { PhoneFiltersSheet } from "@/components/phone-filters-sheet";
+import { PhoneSwipe } from "@/components/phone-swipe";
 import {
   REGISTER_PHONE_LAYOUT_KEY,
   readPhoneLayout,
   writePhoneLayout,
   type PhoneLayout,
+  usePhoneUi,
 } from "@/lib/phone-layout";
 import { CsvButton } from "@/components/export-menu";
 import { ListFilters } from "@/components/list-filters";
@@ -177,6 +180,7 @@ function RegisterPage() {
   const [phoneLayout, setPhoneLayout] = useState<PhoneLayout>(() =>
     readPhoneLayout(REGISTER_PHONE_LAYOUT_KEY, "grid"),
   );
+  const phone = usePhoneUi();
   const [extraDates, setExtraDates] = useState<string[]>([]);
   const [dragging, setDragging] = useState<string | null>(null);
   const [overDate, setOverDate] = useState<string | null>(null);
@@ -571,6 +575,7 @@ function RegisterPage() {
         ) : null}
       </section>
 
+      <div className="register-sticky-chrome">
       <div className="register-toolbar">
         <Input
           value={nameFilter}
@@ -580,6 +585,7 @@ function RegisterPage() {
           className="register-toolbar-search h-11 min-h-11"
         />
         <div className="register-toolbar-actions">
+          <PhoneFiltersSheet phone={phone} title="Filters">
           <RegisterFilters
             typeFilter={typeFilter}
             direction={direction}
@@ -608,6 +614,7 @@ function RegisterPage() {
               applyPreset("month");
             }}
           />
+          </PhoneFiltersSheet>
           <ViewOptions
             fontSize={fontSize}
             dragOn={dragOn}
@@ -624,7 +631,6 @@ function RegisterPage() {
             onShowAllCols={() => setRegisterCols(() => ({ ...DEFAULT_REGISTER_COLS }))}
           />
         </div>
-      </div>
       </div>
 
       <p className="mb-2 text-center text-xs text-muted-foreground no-print register-count-hint">
@@ -659,6 +665,8 @@ function RegisterPage() {
           </button>
         ))}
       </div>
+      </div>
+      </div>
 
       {dragOn ? (
         <DateChips
@@ -686,6 +694,20 @@ function RegisterPage() {
       ) : null}
 
       <div style={{ ["--register-font" as string]: `${fontSize}px` }}>
+        {display.length === 0 ? (
+          <div className="phone-empty no-print mb-3">
+            <p className="text-sm font-medium">No register lines in this view</p>
+            <p className="mt-1 text-xs text-muted-foreground">Widen the date range, clear filters, or post a check.</p>
+            <div className="mt-3 flex flex-wrap justify-center gap-2">
+              <Button asChild size="sm">
+                <Link to="/checks">Issue check</Link>
+              </Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => applyPreset("all")}>
+                Show all dates
+              </Button>
+            </div>
+          </div>
+        ) : null}
         <RegisterTable
           lines={display}
           currency={data.settings.currency}
@@ -724,6 +746,10 @@ function RegisterPage() {
           onOpen={handleOpen}
           onActivate={setActiveId}
           onCycleRecon={cycleRecon}
+          onAskDelete={(id) => {
+            setSelected([id]);
+            setConfirm("selected");
+          }}
           onSwap={swapBank}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
@@ -733,7 +759,7 @@ function RegisterPage() {
       </div>
 
       {selectedIds.length > 0 ? (
-        <div className="register-select-bar no-print mt-3">
+        <div className={cn("register-select-bar no-print mt-3", phone && "phone-safe-bar")}>
           <div className="mx-auto flex w-full max-w-5xl flex-col gap-2">
             <RegisterSwap
               banks={data.banks}
@@ -1009,6 +1035,7 @@ function RegisterTable({
   onOpen,
   onActivate,
   onCycleRecon,
+  onAskDelete,
   onSwap,
   onDragStart,
   onDragEnd,
@@ -1044,6 +1071,7 @@ function RegisterTable({
   onOpen: (line: CashLine) => void;
   onActivate: (id: string) => void;
   onCycleRecon: (line: CashLine) => void;
+  onAskDelete: (id: string) => void;
   onSwap: (line: CashLine, bankId: string) => void;
   onDragStart: (id: string) => void;
   onDragEnd: () => void;
@@ -1107,7 +1135,7 @@ function RegisterTable({
 
   if (lines.length === 0) {
     return (
-      <div className="register-card list-card px-4 py-6 text-center text-sm text-muted-foreground">
+      <div className="phone-empty text-sm text-muted-foreground">
         No activity matches these filters.
       </div>
     );
@@ -1196,8 +1224,27 @@ function RegisterTable({
             const canDrag = dragOn && line.reschedulable;
             const armed = dragging === line.id;
             if (listMode) {
+              const swipeActions = !isOpening && !dragOn
+                ? [
+                    {
+                      label: line.recon === "cleared" ? "Pending" : "Clear",
+                      tone: "success" as const,
+                      onAction: () => onCycleRecon(line),
+                    },
+                    ...(locked
+                      ? []
+                      : [
+                          {
+                            label: "Delete",
+                            tone: "danger" as const,
+                            onAction: () => onAskDelete(line.id),
+                          },
+                        ]),
+                  ]
+                : [];
               return (
                 <li key={line.id}>
+                  <PhoneSwipe enabled={swipeActions.length > 0} actions={swipeActions}>
                   <div
                     role="button"
                     tabIndex={isOpening ? undefined : 0}
@@ -1282,11 +1329,35 @@ function RegisterTable({
                       </div>
                     </div>
                   </div>
+                  </PhoneSwipe>
                 </li>
               );
             }
             return (
               <li key={line.id}>
+                <PhoneSwipe
+                  enabled={!isOpening && !dragOn}
+                  actions={[
+                    ...(!isOpening && !dragOn
+                      ? [
+                          {
+                            label: line.recon === "cleared" ? "Pending" : "Clear",
+                            tone: "success" as const,
+                            onAction: () => onCycleRecon(line),
+                          },
+                          ...(locked
+                            ? []
+                            : [
+                                {
+                                  label: "Delete",
+                                  tone: "danger" as const,
+                                  onAction: () => onAskDelete(line.id),
+                                },
+                              ]),
+                        ]
+                      : []),
+                  ]}
+                >
                 <div
                   role="button"
                   tabIndex={isOpening ? undefined : 0}
@@ -1430,6 +1501,7 @@ function RegisterTable({
                     </div>
                   </div>
                 </div>
+                </PhoneSwipe>
               </li>
             );
           })}

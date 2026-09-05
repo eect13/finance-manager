@@ -3781,3 +3781,120 @@ html.tauri-android .app-header-inner {
 .phone-layout-toggle button {
   -webkit-tap-highlight-color: transparent;
 }
+
+/* v3.62.26 phone polish */
+@media (max-width: 767px), ((hover: none) and (pointer: coarse)) {
+  .register-sticky-chrome {
+    position: sticky;
+    top: 0;
+    z-index: 15;
+    background: color-mix(in oklab, var(--color-background) 92%, transparent);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding-bottom: 0.35rem;
+    margin-bottom: 0.35rem;
+  }
+  .register-sticky-chrome .register-bank-tabs {
+    margin-bottom: 0.35rem;
+  }
+  .recon-aging.is-sticky {
+    position: sticky;
+    top: 0;
+    z-index: 14;
+    background: color-mix(in oklab, var(--color-background) 92%, transparent);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding-block: 0.35rem;
+    margin-bottom: 0.5rem;
+  }
+  .phone-press:active,
+  .register-phone-grip:active,
+  .register-tick:active,
+  .options-jump-chip:active,
+  .phone-layout-toggle button:active {
+    transform: scale(0.97);
+    opacity: 0.92;
+  }
+  .phone-safe-bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 16;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+    padding: 0.65rem 0.75rem max(0.65rem, env(safe-area-inset-bottom, 0px));
+    background: color-mix(in oklab, var(--color-background) 94%, transparent);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-top: 1px solid var(--color-border);
+  }
+  .sheet-bottom-panel {
+    box-shadow: 0 -8px 28px rgb(0 0 0 / 0.18);
+  }
+  .sheet-bottom-panel .sheet-sat {
+    display: none;
+  }
+  .card-desc-more summary {
+    cursor: pointer;
+    list-style: none;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-muted-foreground);
+    margin-top: 0.35rem;
+  }
+  .card-desc-more summary::-webkit-details-marker {
+    display: none;
+  }
+  .phone-empty {
+    border-radius: 1rem;
+    border: 1px dashed var(--color-border);
+    padding: 1.5rem 1rem;
+    text-align: center;
+  }
+}
+@media (min-width: 768px) and (hover: hover) {
+  .phone-safe-bar {
+    display: none;
+  }
+}
+
+@media (max-width: 767px), ((hover: none) and (pointer: coarse)) {
+  .phone-swipe {
+    position: relative;
+    overflow: hidden;
+    border-radius: 1rem;
+  }
+  .phone-swipe-actions {
+    position: absolute;
+    inset: 0 0 0 auto;
+    display: flex;
+    align-items: stretch;
+    justify-content: flex-end;
+    z-index: 0;
+  }
+  .phone-swipe-btn {
+    min-width: 4.5rem;
+    padding: 0 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #fff;
+    background: var(--color-primary);
+    border: 0;
+  }
+  .phone-swipe-btn.is-danger { background: var(--color-debit, #b91c1c); }
+  .phone-swipe-btn.is-success { background: var(--color-credit, #15803d); }
+  .phone-swipe-front {
+    position: relative;
+    z-index: 1;
+    touch-action: pan-y;
+    transition: transform 0.12s ease-out;
+    background: var(--color-card);
+  }
+  .register-select-bar.phone-safe-bar,
+  .recon-finish-bar.phone-safe-bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 16;
+  }
+}

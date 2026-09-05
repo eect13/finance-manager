@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { usePhoneUi } from "@/lib/phone-layout";
 import { Check, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import {
   Dialog,
   DialogContent,
@@ -24,21 +26,6 @@ import { formatDate, todayIso } from "@/lib/finance/format";
 import { useFinanceStore } from "@/lib/finance/store";
 import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
-
-function usePhoneUi() {
-  const [phone, setPhone] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return window.matchMedia("(max-width: 767px), ((hover: none) and (pointer: coarse))").matches;
-  });
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 767px), ((hover: none) and (pointer: coarse))");
-    const apply = () => setPhone(mq.matches);
-    apply();
-    mq.addEventListener("change", apply);
-    return () => mq.removeEventListener("change", apply);
-  }, []);
-  return phone;
-}
 
 export function CompanySwitcher({ className }: { className?: string } = {}) {
   const { order, companies, activeId, switchCompany, addCompany } = useFinanceStore(
@@ -123,15 +110,15 @@ export function CompanySwitcher({ className }: { className?: string } = {}) {
       {phone ? (
         <>
           {trigger}
-          <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>
-            <DialogContent className="max-w-sm">
-              <DialogHeader>
-                <DialogTitle>Switch company</DialogTitle>
-                <DialogDescription>Pick which company&apos;s books to open.</DialogDescription>
-              </DialogHeader>
+          <Sheet open={pickerOpen} onOpenChange={setPickerOpen}>
+            <SheetContent side="bottom" className="px-4">
+              <div className="mb-3">
+                <p className="text-base font-semibold">Switch company</p>
+                <p className="text-xs text-muted-foreground">Pick which company&apos;s books to open.</p>
+              </div>
               {list}
-            </DialogContent>
-          </Dialog>
+            </SheetContent>
+          </Sheet>
         </>
       ) : (
         <DropdownMenu>

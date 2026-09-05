@@ -12,14 +12,18 @@ export function SheetContent({
   children,
   side = "left",
   ...props
-}: React.ComponentProps<typeof SheetPrimitive.Content> & { side?: "left" | "right" }) {
+}: React.ComponentProps<typeof SheetPrimitive.Content> & { side?: "left" | "right" | "bottom" }) {
   return (
     <SheetPrimitive.Portal>
       <SheetPrimitive.Overlay className="fixed inset-0 z-50 bg-foreground/40" />
       <SheetPrimitive.Content
         className={cn(
-          "fixed z-50 flex h-dvh max-h-dvh w-[min(18rem,100%)] min-h-0 flex-col overflow-hidden bg-sidebar text-sidebar-foreground overscroll-contain sheet-panel pb-[max(1.25rem,env(safe-area-inset-bottom,0px))]",
-          side === "left" ? "inset-y-0 left-0" : "inset-y-0 right-0",
+          "fixed z-50 flex min-h-0 flex-col overflow-hidden overscroll-contain",
+          side === "bottom"
+            ? "inset-x-0 bottom-0 max-h-[min(85dvh,40rem)] w-full rounded-t-2xl bg-card text-card-foreground sheet-bottom-panel pb-[max(1rem,env(safe-area-inset-bottom,0px))] pt-3"
+            : "h-dvh max-h-dvh w-[min(18rem,100%)] bg-sidebar text-sidebar-foreground sheet-panel pb-[max(1.25rem,env(safe-area-inset-bottom,0px))]",
+          side === "left" && "inset-y-0 left-0",
+          side === "right" && "inset-y-0 right-0",
           className,
         )}
         {...props}

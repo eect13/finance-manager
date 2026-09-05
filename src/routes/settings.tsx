@@ -12,7 +12,8 @@ import { listColClass } from "@/components/list-table";
 import { SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { OptionsDescMore } from "@/components/options-desc-more";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
@@ -130,7 +131,7 @@ function SettingsPage() {
         <Card className="options-desktop-only">
           <CardHeader>
             <CardTitle>Switch company</CardTitle>
-            <CardDescription>Pick which company&apos;s books you are working in. Same control as the top bar.</CardDescription>
+            <OptionsDescMore>Pick which company&apos;s books you are working in. Same control as the top bar.</OptionsDescMore>
           </CardHeader>
           <CardContent>
             <CompanySwitcher className="w-full rounded-xl border border-border bg-muted/60 px-2" />
@@ -140,7 +141,7 @@ function SettingsPage() {
         <Card id="opt-profile" className="scroll-mt-16">
           <CardHeader>
             <CardTitle>Company profile</CardTitle>
-            <CardDescription>Printed on invoices and the register for the company you are in.</CardDescription>
+            <OptionsDescMore>Printed on invoices and the register for the company you are in.</OptionsDescMore>
           </CardHeader>
           <CardContent className="grid gap-4">
             <Field label="Name">
@@ -163,10 +164,10 @@ function SettingsPage() {
         <Card id="opt-display" className="scroll-mt-16">
           <CardHeader>
             <CardTitle>Display / Formatting</CardTitle>
-            <CardDescription>
+            <OptionsDescMore>
               Appearance and display zoom are saved on this device. Thousand separators and decimal places are stored with the company
               file.
-            </CardDescription>
+            </OptionsDescMore>
           </CardHeader>
           <CardContent className="grid gap-4">
             <AppearancePicker />
@@ -203,9 +204,9 @@ function SettingsPage() {
         <Card id="opt-companies" className="scroll-mt-16">
           <CardHeader>
             <CardTitle>Company files</CardTitle>
-            <CardDescription>
+            <OptionsDescMore>
               Each company has its own banks and books. The Pacific Harbor sample can be removed — Reload sample brings it back.
-            </CardDescription>
+            </OptionsDescMore>
           </CardHeader>
           <CardContent className="grid gap-2">
             {order.map((id) => {
@@ -239,10 +240,10 @@ function SettingsPage() {
         <Card id="opt-tax" className="scroll-mt-16">
           <CardHeader>
             <CardTitle>Currency and tax</CardTitle>
-            <CardDescription>
+            <OptionsDescMore>
               One home currency for now. Country packs fill a common default tax rate — they are starting points, not
               legal advice. Confirm current rates with your accountant or tax authority.
-            </CardDescription>
+            </OptionsDescMore>
           </CardHeader>
           <CardContent className="grid gap-4">
             <Field label="Currency">
@@ -355,9 +356,9 @@ function SettingsPage() {
         <Card id="opt-lists" className="scroll-mt-16">
           <CardHeader>
             <CardTitle>Entry lists</CardTitle>
-            <CardDescription>
+            <OptionsDescMore>
               Sort by clicking column headers on every register. Drag-and-drop is optional and off by default.
-            </CardDescription>
+            </OptionsDescMore>
           </CardHeader>
           <CardContent>
             <OptionsSwitchRow
@@ -375,13 +376,13 @@ function SettingsPage() {
         <Card id="opt-backup" className="scroll-mt-16">
           <CardHeader>
             <CardTitle>Backup and restore</CardTitle>
-            <CardDescription>
+            <OptionsDescMore>
               This JSON is this company — banks, invoices, receipts, recon, close, and audit. There is no cloud; the
               file in this browser is the books. Save writes a copy on this device where the browser allows it;
               otherwise it downloads. Open replaces this company, or adds it if it is a different file. After every
               save this browser also keeps a local copy, so you can restore the company you are in without leaving the
               app.
-            </CardDescription>
+            </OptionsDescMore>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-2">
             <Button
@@ -435,11 +436,11 @@ function SettingsPage() {
         <Card className="lg:col-span-2 scroll-mt-16" id="opt-storage">
           <CardHeader>
             <CardTitle>Storage</CardTitle>
-            <CardDescription>
+            <OptionsDescMore>
               Books live in this browser as IndexedDB (with a localStorage fallback). That is the right place — entries
               are unlimited. This browser is asked to keep them when disk is tight. Watch usage here. When it fills,
               download a backup, purge closed years, or start a new company. There is no cloud sync.
-            </CardDescription>
+            </OptionsDescMore>
           </CardHeader>
           <CardContent>
             <StoragePanel />
@@ -449,11 +450,11 @@ function SettingsPage() {
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Sample data</CardTitle>
-            <CardDescription>
+            <OptionsDescMore>
               Pacific Harbor Trading is the default sample. Reload it anytime. Remove sample deletes that file from this
               browser — a blank company takes its place if it was the only one. Restore last local copy brings the last
               automatic snapshot back without Reload sample. Start blank clears the company you are in, not the others.
-            </CardDescription>
+            </OptionsDescMore>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-2">
             <Button
@@ -544,9 +545,9 @@ function CloseBooksCard() {
     <Card id="opt-close" className="lg:col-span-2 scroll-mt-16">
       <CardHeader>
         <CardTitle>Close the month</CardTitle>
-        <CardDescription>
+        <OptionsDescMore>
           Rec every bank, post recurring, print the period pack, then lock — on Close. Reopen is a dated event.
-        </CardDescription>
+        </OptionsDescMore>
       </CardHeader>
       <CardContent className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
         <Button asChild>
@@ -610,10 +611,10 @@ function RecurringCard() {
     <Card id="opt-recurring" className="lg:col-span-2 scroll-mt-16">
       <CardHeader>
         <CardTitle>Recurring</CardTitle>
-        <CardDescription>
+        <OptionsDescMore>
           Rent and payroll as documents you post, not seed rows. Post due writes a check (or bill) and rolls the next
           date forward one month.
-        </CardDescription>
+        </OptionsDescMore>
       </CardHeader>
       <CardContent>
         {items.length === 0 ? (

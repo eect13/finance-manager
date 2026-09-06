@@ -4281,7 +4281,7 @@ body.is-phone-move-dragging {
 .party-txn-table tbody tr[data-focused="true"] td,
 .recon-table-card tbody tr[data-focused="true"] td,
 .recon-table-card tbody tr[aria-current="true"] td {
-  background: color-mix(in oklab, var(--color-primary) 9%, var(--color-card));
+  background: color-mix(in oklab, var(--color-primary) 11%, var(--color-card));
   box-shadow: none;
   outline: none;
   border-color: transparent;
@@ -4294,7 +4294,7 @@ body.is-phone-move-dragging {
 .dark .party-txn-table tbody tr[data-focused="true"] td,
 .dark .recon-table-card tbody tr[data-focused="true"] td,
 .dark .recon-table-card tbody tr[aria-current="true"] td {
-  background: color-mix(in oklab, var(--color-primary) 16%, var(--color-card));
+  background: color-mix(in oklab, var(--color-primary) 20%, var(--color-card));
   box-shadow: none;
 }
 .list-grid tbody tr[data-selected="true"] td,
@@ -4306,7 +4306,7 @@ body.is-phone-move-dragging {
 .list-grid tbody tr[data-focused="true"][data-selected="true"] td,
 .register-matrix tbody tr[data-focused="true"][data-selected="true"] td,
 .recon-table-card tbody tr[data-focused="true"][data-selected="true"] td {
-  background: color-mix(in oklab, var(--color-primary) 18%, var(--color-card));
+  background: color-mix(in oklab, var(--color-primary) 20%, var(--color-card));
   box-shadow: none !important;
 }
 .register-phone-card[data-focused="true"],

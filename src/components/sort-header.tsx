@@ -89,8 +89,6 @@ export function SortHeader({
   onToggle,
   align = "center",
   onAlign,
-  visible,
-  onVisible,
   compact = false,
   sortable = true,
   className,
@@ -107,8 +105,6 @@ export function SortHeader({
   onToggle: (column: string) => void;
   align?: ColAlign;
   onAlign?: (align: ColAlign) => void;
-  visible?: boolean;
-  onVisible?: (on: boolean) => void;
   /** Sheet-style uppercase chrome (record lines). List density spacing is CSS --list-* tokens. */
   compact?: boolean;
   /** When false, title is not a sort control (Status on Register). ↑/↓ still show when active. */
@@ -122,7 +118,7 @@ export function SortHeader({
   const active = sortable && sortKey === column;
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuAt, setMenuAt] = useState({ x: 0, y: 0 });
-  const hasMenu = Boolean(onAlign || onVisible);
+  const hasMenu = Boolean(onAlign);
   const absorb =
     fill || Boolean(className && /\bcol-(?:flex|fill)\b/.test(className));
   const titleTone = active ? "text-foreground" : "text-muted-foreground hover:text-foreground";
@@ -209,8 +205,8 @@ export function SortHeader({
       title={
         hasMenu
           ? sortable
-            ? "Click to sort · right-click or long-press for align / column options"
-            : "Right-click or long-press for align / column options"
+            ? "Click to sort · right-click or long-press for align"
+            : "Right-click or long-press for align"
           : sortable
             ? "Click to sort"
             : undefined
@@ -275,14 +271,6 @@ export function SortHeader({
                     {align === id ? <Check className="ml-auto size-3.5" /> : null}
                   </DropdownMenuItem>
                 ))}
-              </>
-            ) : null}
-            {onVisible ? (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => onVisible(!(visible ?? true))}>
-                  {visible === false ? "Show column" : "Hide column"}
-                </DropdownMenuItem>
               </>
             ) : null}
           </DropdownMenuContent>

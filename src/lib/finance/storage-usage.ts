@@ -58,7 +58,7 @@ export async function browserStorage(): Promise<{
   } catch {
     /* ignore */
   }
-  let persisted: boolean | null = null;
+  let persisted: boolean | null;
   try {
     persisted = (await navigator.storage?.persisted?.()) ?? null;
   } catch {

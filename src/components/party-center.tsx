@@ -545,8 +545,6 @@ type PartyDirRow = {
   phone?: string;
 };
 
-type PartyView = "list" | "grid";
-
 const DIR_COLS = {
   name: 180,
   contact: 140,

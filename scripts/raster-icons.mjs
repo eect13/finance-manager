@@ -10,13 +10,12 @@
  * often returns a black buffer for alpha:false canvases).
  */
 import { copyFileSync, mkdirSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 import { platform } from "node:os";
 import { spawnSync } from "node:child_process";
 import { chromium } from "playwright";
 
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
+const ROOT = join(import.meta.dirname, "..");
 const ICONS = join(ROOT, "src-tauri", "icons");
 const WIN = platform() === "win32";
 const NAVY = "#243542";

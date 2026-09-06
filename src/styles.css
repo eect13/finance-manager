@@ -710,23 +710,27 @@
     cursor: col-resize;
     touch-action: none;
     user-select: none;
-  }
 
-  .col-resize-handle::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    right: 0;
-    width: 2px;
-    pointer-events: none;
-    background: transparent;
-  }
+    &::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      right: 0;
+      width: 2px;
+      pointer-events: none;
+      background: transparent;
+    }
 
-  .col-resize-handle:hover::after,
-  .col-resize-handle:focus-visible::after,
-  .col-resize-handle[data-dragging="true"]::after {
-    background: color-mix(in oklab, var(--color-ring) 70%, transparent);
+    &:hover::after,
+    &:focus-visible::after,
+    &[data-dragging="true"]::after {
+      background: color-mix(in oklab, var(--color-ring) 70%, transparent);
+    }
+
+    @media (pointer: coarse) {
+      width: 20px;
+    }
   }
 
   /* Only actions never resizes. Last data col (Status/Balance) keeps a handle. */
@@ -741,12 +745,6 @@
   .register-matrix.hide-status .col-balance,
   .register-matrix[data-hide-status] .col-balance {
     box-shadow: none;
-  }
-
-  @media (pointer: coarse) {
-    .col-resize-handle {
-      width: 20px;
-    }
   }
 
   .hide-check col.col-check,

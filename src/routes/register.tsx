@@ -23,7 +23,7 @@ import { RegisterPrint, requestPrint } from "@/components/print-preview";
 import { RegisterPost } from "@/components/register-post";
 import { RegisterSwap } from "@/components/register-swap";
 import { ShopTick } from "@/components/shop-tick";
-import { ColResize, SortHeader } from "@/components/sort-header";
+import { SortHeader } from "@/components/sort-header";
 import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
 import { useColAligns } from "@/components/use-col-aligns";
 import { CheckStatusControl } from "@/components/check-status-menu";
@@ -210,7 +210,7 @@ function RegisterPage() {
   banksRef.current = data.banks;
 
   useLayoutEffect(() => {
-    let forceContent = false;
+    let forceContent: boolean;
     try {
       forceContent = localStorage.getItem(FIT_MARK) !== FIT_VERSION;
       if (forceContent) localStorage.setItem(FIT_MARK, FIT_VERSION);
@@ -1072,7 +1072,7 @@ function RegisterTable({
   someOn,
   dragOn,
   phoneLayout,
-  onPhoneLayout,
+  onPhoneLayout: _onPhoneLayout,
   dragging,
   draggingSourceId,
   overRow,
@@ -1092,7 +1092,7 @@ function RegisterTable({
   onCycleRecon,
   onSetCheckStatus,
   onReceiptAction,
-  onAskDelete,
+  onAskDelete: _onAskDelete,
   onSwap,
   onPhoneMoveGrip,
 }: {
@@ -1138,7 +1138,6 @@ function RegisterTable({
   const colAligns = useColAligns("finance-manager-register-col-aligns", colAlignIds);
   const phone = isPhoneUi();
   const cardMode = phoneLayout === "grid";
-  const phoneGrid = phone && cardMode;
   function requestSort(column: string) {
     if (dragOn) {
       toast.message("Passbook order while Move dates is on.");

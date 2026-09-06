@@ -6,9 +6,8 @@
  */
 import { copyFileSync, existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 
-const root = dirname(dirname(fileURLToPath(import.meta.url)));
+const root = dirname(import.meta.dirname);
 const staticDir = join(root, ".vercel", "output", "static");
 const indexPath = join(staticDir, "index.html");
 const desktopPath = join(staticDir, "desktop.html");

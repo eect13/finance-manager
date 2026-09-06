@@ -888,7 +888,7 @@ function ReconcilePage() {
                       data-focused={pointer.activeId === line.id ? "true" : undefined}
                       data-row-id={line.id}
                       aria-current={pointer.activeId === line.id ? "true" : undefined}
-                      onClick={(e) => {
+                      onClick={() => {
                         pointer.setActiveId(line.id);
                       }}
                       {...openProps(

@@ -86,7 +86,6 @@ describe("transfer per-leg recon", () => {
       bankId: "bank-op",
       recon: "cleared",
     });
-    const opBook = cashBook(data, "bank-op");
     // opening may be 0; finish needs difference 0 — use statement ending = beginning + cleared net
     // For a single credit transfer of 100 on Operating: payment 100
     // beginning with no prior history = opening + already-R = 0

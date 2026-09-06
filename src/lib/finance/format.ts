@@ -6,7 +6,7 @@ export type MoneyFormatPrefs = {
   decimalPlaces: number;
 };
 
-let moneyFormatPrefs: MoneyFormatPrefs = {
+const moneyFormatPrefs: MoneyFormatPrefs = {
   useThousandSeparators: true,
   decimalPlaces: 2,
 };

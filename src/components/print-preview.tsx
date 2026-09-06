@@ -46,7 +46,6 @@ const VIEW_ZOOM_KEY = "finance-manager-print-view-zoom";
 const ZOOM_STEPS = [0.5, 0.75, 1, 1.25, 1.5, 2];
 const TYPE_MIN = 40;
 const TYPE_MAX = 150;
-const TYPE_DEFAULT = 80;
 const MARGIN = { top: 0.5, right: 0.5, bottom: 0.65, left: 0.5 };
 const RANGE_ALL: PageRange = { from: 1, to: Number.MAX_SAFE_INTEGER };
 
@@ -118,17 +117,6 @@ function parseTypeInput(raw: string): number | null {
   return clampType(n);
 }
 
-function readLastType(): number {
-  try {
-    const v = localStorage.getItem(SCALE_LAST_KEY);
-    if (v == null || v === "") return TYPE_DEFAULT;
-    const n = Number(v);
-    if (Number.isFinite(n) && n > 0) return clampType(n);
-  } catch {
-    /* ignore */
-  }
-  return TYPE_DEFAULT;
-}
 
 function readScale(): PrintScale {
   try {
@@ -160,9 +148,6 @@ function readLayout(): PrintLayout {
 
 let rangeState: PageRange = { ...RANGE_ALL };
 
-function readRange(): PageRange {
-  return rangeState;
-}
 
 export function pageBox(orient: PrintOrient, paper: PrintPaper) {
   const spec = PAPER_SPEC[paper];

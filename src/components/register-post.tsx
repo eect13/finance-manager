@@ -452,7 +452,6 @@ function PostDialog({
         finishPost();
         return;
       }
-      const name = payee.trim();
       if (kind === "check") {
         if (!vendorId) {
           setPartyError(true);

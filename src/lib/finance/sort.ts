@@ -23,8 +23,7 @@ export function sortEntries<T>(
 ): T[] {
   const get = getters[key];
   if (!get) return items;
-  const copy = [...items];
-  copy.sort((a, b) => {
+  return items.toSorted((a, b) => {
     const cmp = compareValues(get(a), get(b));
     if (cmp !== 0) return dir === "asc" ? cmp : -cmp;
     const aAt = (a as { createdAt?: number }).createdAt;
@@ -32,7 +31,6 @@ export function sortEntries<T>(
     if (typeof aAt === "number" && typeof bAt === "number" && aAt !== bAt) return aAt - bAt;
     return 0;
   });
-  return copy;
 }
 
 export function useEntrySort<T>(

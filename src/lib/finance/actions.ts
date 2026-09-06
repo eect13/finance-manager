@@ -12,18 +12,7 @@ import {
   invoiceSubtotal,
 } from "./ledger";
 import type {
-  Bank,
-  Bill,
-  BillStatus,
-  BudgetItem,
-  CheckStatus,
-  Customer,
   FinanceData,
-  InvoiceLine,
-  Receipt,
-  ReceiptMethod,
-  Settings,
-  Vendor,
   RecurringItem,
 } from "./types";
 import { applyRegisterOrderPlacement, cashBook, pruneRegisterOrder, type ArrangePlace, type CashLineKind } from "./register";

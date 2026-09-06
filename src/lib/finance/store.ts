@@ -73,7 +73,6 @@ import { booksStorage, createDebouncedPersistStorage } from "./storage";
 import { watchPersistentStorage } from "./storage-usage";
 import type {
   Bank,
-  Bill,
   BudgetItem,
   CheckStatus,
   Customer,
@@ -81,7 +80,6 @@ import type {
   InvoiceLine,
   OpenKind,
   OpenTarget,
-  Receipt,
   RecurringItem,
   Settings,
   Vendor,

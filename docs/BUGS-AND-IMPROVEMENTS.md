@@ -1,6 +1,14 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-07. Updated for v3.63.3.
+Re-verified in code 2026-09-07. Updated for v3.63.4.
+
+## Fixed in v3.63.4
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| 1 | Med | Posting banks/accounts were closed Selects — could not Quick Add a new bank like QuickBooks | `BankCombo` / `AccountCombo` (type-ahead + Quick Add) on Register Post, Receipts, Checks, Bills, Employees, Banks Record/Transfer, record sheet, party sheets |
+| 2 | Med | Cash sale disabled when the company had no banks | Button enabled; type the bank name and Quick Add |
+| 4 | Med | Quick Add list sat under the Post footer (Tailwind z-[200] lost to unlayered `.dialog-sheet`) | Unlayered `[data-party-list] { z-index: 90 }` |
 
 ## Fixed in v3.63.3
 

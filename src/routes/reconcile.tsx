@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Printer, SlidersHorizontal } from "lucide-react";
+import { Printer } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { ConfirmDelete } from "@/components/confirm-delete";
@@ -14,21 +14,19 @@ import { Money } from "@/components/money";
 import { ReconPrint } from "@/components/period-print";
 import { requestPrint } from "@/components/print-preview";
 import { ShopTick } from "@/components/shop-tick";
-import { PhoneLayoutToggle } from "@/components/phone-layout-toggle";
+import { ListViewMenu } from "@/components/list-view-menu";
 import {
   RECONCILE_PHONE_LAYOUT_KEY,
   readPhoneLayout,
   writePhoneLayout,
   type PhoneLayout,
   isPhoneUi,
-  usePhoneUi,
 } from "@/lib/phone-layout";
 import { SortHeader, ColResize } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
 import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { fitColumnWidth } from "@/lib/finance/fit-column";
 import { formatDate, parseAmountToCents, todayIso } from "@/lib/finance/format";
@@ -76,7 +74,6 @@ function ReconcilePage() {
   const finishRecon = useFinanceStore((s) => s.finishRecon);
   const undoLastRecon = useFinanceStore((s) => s.undoLastRecon);
   const postReconAdjustment = useFinanceStore((s) => s.postReconAdjustment);
-  const updateSettings = useFinanceStore((s) => s.updateSettings);
   const live = data.banks.filter((b) => !b.archived);
   const [bankId, setBankId] = useState(live[0]?.id ?? "");
   const [statementDate, setStatementDate] = useState(todayIso());
@@ -87,8 +84,6 @@ function ReconcilePage() {
   const [phoneLayout, setPhoneLayout] = useState<PhoneLayout>(() =>
     readPhoneLayout(RECONCILE_PHONE_LAYOUT_KEY, "grid"),
   );
-  const phone = usePhoneUi();
-  const [viewOpen, setViewOpen] = useState(false);
   const fontSize = data.settings.registerFontSize ?? 12;
   const [fee, setFee] = useState("");
   const [interest, setInterest] = useState("");
@@ -133,7 +128,7 @@ function ReconcilePage() {
     [statementDate],
   );
   const sort = useEntrySort(uncleared, "date", getters, "asc", true);
-  const phoneGrid = isPhoneUi() && phoneLayout === "grid";
+  const phoneGrid = phoneLayout === "grid";
   const phoneVirt = useVirtualizer({
     count: sort.sorted.length,
     getScrollElement: () => getWorkspaceScrollElement(),
@@ -492,21 +487,16 @@ function ReconcilePage() {
           onSort={(v) => applySortValue(sort.set, v)}
           onClear={() => setTypeFilter("all")}
         />
-        {phone ? (
-          <Button
-            type="button"
-            variant="outline"
-            className="h-11 min-h-11 justify-start phone-press"
-            aria-label="View options"
-            onClick={() => setViewOpen(true)}
-          >
-            <SlidersHorizontal />
-            View
-          </Button>
-        ) : null}
+        <ListViewMenu
+          layout={phoneLayout}
+          onLayout={(next) => {
+            setPhoneLayout(next);
+            writePhoneLayout(RECONCILE_PHONE_LAYOUT_KEY, next);
+          }}
+        />
       </ListToolbar>
 
-      {isPhoneUi() ? (
+      {isPhoneUi() || phoneLayout === "grid" ? (
         <div
           className={cn("recon-phone-list", phoneLayout === "list" && "is-list")}
           data-layout={phoneLayout}
@@ -519,55 +509,6 @@ function ReconcilePage() {
             </span>
             <span className="text-xs text-muted-foreground">{sort.sorted.length} uncleared</span>
           </div>
-          <Sheet open={viewOpen} onOpenChange={setViewOpen}>
-            <SheetContent
-              side="bottom"
-              className="gap-0 px-4"
-              onPointerDownOutside={(event) => {
-                const el = event.target as HTMLElement | null;
-                if (el?.closest("[data-radix-select-content]")) event.preventDefault();
-              }}
-              onInteractOutside={(event) => {
-                const el = event.target as HTMLElement | null;
-                if (el?.closest("[data-radix-select-content]")) event.preventDefault();
-              }}
-              onFocusOutside={(event) => {
-                const el = event.target as HTMLElement | null;
-                if (el?.closest("[data-radix-select-content]")) event.preventDefault();
-              }}
-            >
-              <div className="mb-3 flex items-center justify-between gap-2">
-                <p className="text-base font-semibold">View</p>
-                <Button type="button" size="sm" variant="ghost" onClick={() => setViewOpen(false)}>
-                  Done
-                </Button>
-              </div>
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <span className="text-sm font-medium">Layout</span>
-                <PhoneLayoutToggle
-                  value={phoneLayout}
-                  onChange={(next) => {
-                    setPhoneLayout(next);
-                    writePhoneLayout(RECONCILE_PHONE_LAYOUT_KEY, next);
-                  }}
-                />
-              </div>
-              <label className="mb-2 flex flex-col gap-1.5">
-                <span className="text-xs font-medium text-muted-foreground">Type size {fontSize}px</span>
-                <input
-                  type="range"
-                  min={10}
-                  max={18}
-                  step={1}
-                  value={fontSize}
-                  aria-label="List type size"
-                  className="w-full accent-primary"
-                  onChange={(e) => updateSettings({ registerFontSize: Number(e.target.value) })}
-                />
-              </label>
-              <p className="text-xs text-muted-foreground">Same type size as every list (Options → Display).</p>
-            </SheetContent>
-          </Sheet>
           {sort.sorted.length === 0 ? (
             <p className="phone-empty text-sm text-muted-foreground">
               Nothing uncleared on or before this date.
@@ -1000,7 +941,7 @@ function ReconcilePage() {
         </div>
       </div>
 
-      <div className={cn("mt-4 flex flex-wrap items-center gap-2 recon-finish-bar", phone && "phone-safe-bar")}>
+      <div className={cn("mt-4 flex flex-wrap items-center gap-2 recon-finish-bar", isPhoneUi() && "phone-safe-bar")}>
         <Button onClick={finish} disabled={!canFinish} className="phone-press">
           Finish statement
         </Button>

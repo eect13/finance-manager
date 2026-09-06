@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { LayoutGrid, List } from "lucide-react";
-import { isPhoneUi } from "@/lib/phone-layout";
+import { isPhoneUi, type PhoneLayout } from "@/lib/phone-layout";
 import { cn } from "@/lib/utils";
 
-export type ListView = "list" | "grid";
+export type ListView = PhoneLayout;
 
 export function useListView(key: string): [ListView, (next: ListView) => void] {
   const storageKey = `finance-manager-${key}-view-v82`;

@@ -5,6 +5,8 @@ import { CustomerPayment } from "@/components/customer-payment";
 import { DateInput } from "@/components/date-input";
 import { Field } from "@/components/field";
 import { PartyCombo } from "@/components/party-combo";
+import { BankCombo } from "@/components/bank-combo";
+import { AccountCombo } from "@/components/account-combo";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -422,7 +424,7 @@ function PostDialog({
       if (kind === "expense") {
         if (!vendorId) {
           setPartyError(true);
-          toast.error("Payee must be a registered vendor. Click + Add to create.");
+          toast.error("Type a vendor, then Quick Add.");
           payeeRef.current?.focus();
           return;
         }
@@ -442,7 +444,7 @@ function PostDialog({
       if (kind === "vendor-pay") {
         if (!vendorId) {
           setPartyError(true);
-          toast.error("Payee must be a registered vendor. Click + Add to create.");
+          toast.error("Type a vendor, then Quick Add.");
           payeeRef.current?.focus();
           return;
         }
@@ -455,7 +457,7 @@ function PostDialog({
       if (kind === "check") {
         if (!vendorId) {
           setPartyError(true);
-          toast.error("Payee must be a registered vendor. Click + Add to create.");
+          toast.error("Type a vendor, then Quick Add.");
           payeeRef.current?.focus();
           return;
         }
@@ -463,7 +465,7 @@ function PostDialog({
         const vendor = data.vendors.find((v) => v.id === vendorId);
         if (!vendor) {
           setPartyError(true);
-          toast.error("Payee must be a registered vendor. Click + Add to create.");
+          toast.error("Type a vendor, then Quick Add.");
           payeeRef.current?.focus();
           return;
         }
@@ -483,7 +485,7 @@ function PostDialog({
         const customer = data.customers.find((c) => c.id === customerId);
         if (!customer) {
           setPartyError(true);
-          toast.error("Payee must be a registered customer. Click + Add to create.");
+          toast.error("Type a customer, then Quick Add.");
           payeeRef.current?.focus();
           return;
         }
@@ -652,7 +654,7 @@ function PostDialog({
                     inputRef={payeeRef}
                     invalid={partyError && (kind === "cash-sale" ? !customerId : !vendorId)}
                     label={kind === "check" || kind === "expense" ? "Payee" : "Received from"}
-                    placeholder="Pick from the list"
+                    placeholder="Type a name"
                     onChoose={(id, name) => {
                       setPayee(name);
                       setPartyError(false);
@@ -681,18 +683,12 @@ function PostDialog({
               )}
               {kind === "expense" ? (
                 <Field label="Account">
-                  <Select value={accountId} onValueChange={setAccountId}>
-                    <SelectTrigger aria-label="Expense account">
-                      <SelectValue placeholder="Account" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {expenseAccounts.map((a) => (
-                        <SelectItem key={a.id} value={a.id}>
-                          {a.code} · {a.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <AccountCombo
+                    valueId={accountId}
+                    onChoose={(id) => setAccountId(id)}
+                    type="expense"
+                    label="Expense account"
+                  />
                 </Field>
               ) : null}
               <Field label="Amount">
@@ -718,35 +714,23 @@ function PostDialog({
                 </Field>
               )}
               <Field label={kind === "transfer" ? "From bank" : "Bank"}>
-                <Select value={fromId} onValueChange={chooseFrom} disabled={locked}>
-                  <SelectTrigger aria-label={kind === "transfer" ? "From bank" : "Bank"}>
-                    <SelectValue placeholder={kind === "transfer" ? "From" : "Bank"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {banks.map((b) => (
-                      <SelectItem key={b.id} value={b.id}>
-                        {b.nickname}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <BankCombo
+                  valueId={fromId}
+                  onChoose={(id) => chooseFrom(id)}
+                  disabled={locked}
+                  label={kind === "transfer" ? "From bank" : "Bank"}
+                  placeholder={kind === "transfer" ? "From bank" : "Type a bank"}
+                />
               </Field>
               {kind === "transfer" ? (
                 <Field label="To bank">
-                  <Select value={toId} onValueChange={setToBankId}>
-                    <SelectTrigger aria-label="To bank">
-                      <SelectValue placeholder="To" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {banks
-                        .filter((b) => b.id !== fromId)
-                        .map((b) => (
-                          <SelectItem key={b.id} value={b.id}>
-                            {b.nickname}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
+                  <BankCombo
+                    valueId={toId}
+                    onChoose={(id) => setToBankId(id)}
+                    label="To bank"
+                    placeholder="To bank"
+                    excludeId={fromId}
+                  />
                 </Field>
               ) : null}
             </div>

@@ -1,14 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { Printer, SlidersHorizontal } from "lucide-react";
+import { Printer } from "lucide-react";
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type MutableRefObject, type Ref, type PointerEvent as ReactPointerEvent } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { ColumnChips } from "@/components/column-chips";
+import { ListViewMenu } from "@/components/list-view-menu";
 import { ConfirmDelete } from "@/components/confirm-delete";
 import { DragHandle } from "@/components/drag-handle";
 import { usePhoneMoveDrag } from "@/components/use-phone-move-drag";
-import { PhoneLayoutToggle } from "@/components/phone-layout-toggle";
 import {
   REGISTER_PHONE_LAYOUT_KEY,
   isPhoneUi,
@@ -33,8 +33,6 @@ import { CheckBadge, ReceiptBadge, ReconBadge } from "@/components/status-badge"
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { cashRegisterRows } from "@/lib/finance/export";
@@ -170,7 +168,6 @@ function RegisterPage() {
   const setCashRecon = useFinanceStore((s) => s.setCashRecon);
   const setCheckStatus = useFinanceStore((s) => s.setCheckStatus);
   const voidReceipt = useFinanceStore((s) => s.voidReceipt);
-  const updateSettings = useFinanceStore((s) => s.updateSettings);
   const patch = useFinanceStore((s) => s.patch);
   const [bankFilter, setBankFilter] = useState("all");
   const [direction, setDirection] = useState<CashDirection>("all");
@@ -653,29 +650,53 @@ function RegisterPage() {
               applyPreset("month");
             }}
           />
-          <ViewOptions
-            fontSize={fontSize}
-            dragOn={dragOn}
-            phoneLayout={phoneLayout}
-            cols={cols}
-            hiddenCount={REGISTER_COLS.filter((col) => !cols[col.id]).length}
-            onFontSize={(n) => updateSettings({ registerFontSize: n })}
-            onDragOn={(on) => {
-              setDragOn(on);
-              if (on) sort.set("passbook", "asc");
-              if (!on) {
-                setDragging(null);
-                setOverPlace(null);
-                setOverRow(null);
-                phoneMove.clear();
-              }
-            }}
-            onPhoneLayout={(next) => {
+          <ListViewMenu
+            layout={phoneLayout}
+            onLayout={(next) => {
               setPhoneLayout(next);
               writePhoneLayout(REGISTER_PHONE_LAYOUT_KEY, next);
             }}
-            onToggleCol={(id) => setRegisterCols((current) => toggleRegisterCol(current, id))}
-            onShowAllCols={() => setRegisterCols(() => ({ ...DEFAULT_REGISTER_COLS }))}
+            hiddenCount={REGISTER_COLS.filter((col) => !cols[col.id]).length}
+            lead={
+              <div className="mb-3 flex min-h-10 items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <Label htmlFor="drag-dates" className="text-sm">
+                    Move dates
+                  </Label>
+                  <p className="text-[0.7rem] text-muted-foreground">
+                    {isPhoneUi()
+                      ? "Drag above/below a row (same-day order or new date)"
+                      : "Drag above/below a row — passbook order + date"}
+                  </p>
+                </div>
+                <Switch
+                  id="drag-dates"
+                  checked={dragOn}
+                  onCheckedChange={(on) => {
+                    setDragOn(on);
+                    if (on) sort.set("passbook", "asc");
+                    if (!on) {
+                      setDragging(null);
+                      setOverPlace(null);
+                      setOverRow(null);
+                      phoneMove.clear();
+                    }
+                  }}
+                />
+              </div>
+            }
+            extra={
+              <>
+                <ColumnChips
+                  cols={cols}
+                  onToggle={(id) => setRegisterCols((current) => toggleRegisterCol(current, id))}
+                  onShowAll={() => setRegisterCols(() => ({ ...DEFAULT_REGISTER_COLS }))}
+                />
+                <p className="mt-2 text-[0.7rem] text-muted-foreground">
+                  Right-click or long-press a column header: align left / center / right. Columns default center; prefs persist.
+                </p>
+              </>
+            }
           />
         </div>
       </div>
@@ -893,158 +914,6 @@ function RegisterFilters({
     />
   );
 }
-
-function ViewOptions({
-  fontSize,
-  dragOn,
-  phoneLayout,
-  cols,
-  hiddenCount,
-  onFontSize,
-  onDragOn,
-  onPhoneLayout,
-  onToggleCol,
-  onShowAllCols,
-}: {
-  fontSize: number;
-  dragOn: boolean;
-  phoneLayout: PhoneLayout;
-  cols: RegisterCols;
-  hiddenCount: number;
-  onFontSize: (n: number) => void;
-  onDragOn: (on: boolean) => void;
-  onPhoneLayout: (next: PhoneLayout) => void;
-  onToggleCol: (id: RegisterColId) => void;
-  onShowAllCols: () => void;
-}) {
-  const phone = isPhoneUi();
-  const [open, setOpen] = useState(false);
-
-  const body = (
-    <>
-      {phone ? (
-        <div className="mb-3 flex min-h-11 items-center justify-between gap-3 rounded-xl border border-border bg-muted/30 px-3 py-2">
-          <div className="min-w-0">
-            <Label htmlFor="drag-dates" className="text-sm">
-              Move dates
-            </Label>
-            <p className="text-[0.7rem] text-muted-foreground">Drag above/below a row (same-day order or new date)</p>
-          </div>
-          <Switch id="drag-dates" checked={dragOn} onCheckedChange={onDragOn} />
-        </div>
-      ) : (
-        <div className="mb-3 flex min-h-10 items-center justify-between gap-3">
-          <div className="min-w-0">
-            <Label htmlFor="drag-dates-desk" className="text-sm">
-              Move dates
-            </Label>
-            <p className="text-[0.7rem] text-muted-foreground">Drag above/below a row — passbook order + date</p>
-          </div>
-          <Switch id="drag-dates-desk" checked={dragOn} onCheckedChange={onDragOn} />
-        </div>
-      )}
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <span className="text-sm font-medium">Layout</span>
-          <p className="text-[0.7rem] text-muted-foreground">
-            {phone ? "Cards or compact rows" : "Cards grid or table rows"}
-          </p>
-        </div>
-        <PhoneLayoutToggle value={phoneLayout} onChange={onPhoneLayout} />
-      </div>
-      <ColumnChips cols={cols} onToggle={onToggleCol} onShowAll={onShowAllCols} />
-      <p className="mt-2 text-[0.7rem] text-muted-foreground">
-        Right-click or long-press a column header: align left / center / right. Columns default center; prefs persist.
-      </p>
-      <label className="mt-3 mb-3 flex flex-col gap-1.5">
-        <span className="text-xs font-medium text-muted-foreground">Type size {fontSize}px</span>
-        <input
-          type="range"
-          min={10}
-          max={18}
-          step={1}
-          value={fontSize}
-          aria-label="List type size"
-          className="w-full accent-primary"
-          onChange={(e) => onFontSize(Number(e.target.value))}
-        />
-      </label>
-    </>
-  );
-
-  if (phone) {
-    return (
-      <>
-        <Button
-          type="button"
-          variant="outline"
-          className="h-11 min-h-11 justify-start phone-press"
-          aria-label="View options"
-          onClick={() => setOpen(true)}
-        >
-          <SlidersHorizontal />
-          View
-          {hiddenCount ? (
-            <span className="ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-muted px-1.5 text-[0.65rem] font-medium">
-              {hiddenCount}
-            </span>
-          ) : null}
-        </Button>
-        <Sheet open={open} onOpenChange={setOpen}>
-          <SheetContent
-            side="bottom"
-            className="gap-0 px-4"
-            onPointerDownOutside={(event) => {
-              const el = event.target as HTMLElement | null;
-              if (el?.closest("[data-radix-select-content]")) event.preventDefault();
-            }}
-            onInteractOutside={(event) => {
-              const el = event.target as HTMLElement | null;
-              if (el?.closest("[data-radix-select-content]")) event.preventDefault();
-            }}
-            onFocusOutside={(event) => {
-              const el = event.target as HTMLElement | null;
-              if (el?.closest("[data-radix-select-content]")) event.preventDefault();
-            }}
-          >
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <p className="text-base font-semibold">View</p>
-              <Button type="button" size="sm" variant="ghost" onClick={() => setOpen(false)}>
-                Done
-              </Button>
-            </div>
-            <div className="max-h-[min(75dvh,36rem)] overflow-y-auto pb-2">{body}</div>
-          </SheetContent>
-        </Sheet>
-      </>
-    );
-  }
-
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          className="h-11 min-h-11 justify-start"
-          aria-label="View options"
-          title="View — columns, layout, Move dates"
-        >
-          <SlidersHorizontal />
-          View
-          {hiddenCount ? (
-            <span className="ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-muted px-1.5 text-[0.65rem] font-medium">
-              {hiddenCount}
-            </span>
-          ) : null}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-80" align="end">
-        {body}
-      </PopoverContent>
-    </Popover>
-  );
-}
-
 
 type BankLite = { id: string; nickname: string; archived?: boolean };
 

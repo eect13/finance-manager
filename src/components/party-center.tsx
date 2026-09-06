@@ -52,7 +52,8 @@ import { useColAligns, alignClass } from "@/components/use-col-aligns";
 import { ListToolbar } from "@/components/filter-pills";
 import { ListFilters, applySortValue, useListPeriod, type FilterSelect } from "@/components/list-filters";
 import { ListCard, listColClass, listColWidthStyle, listTableStyle } from "@/components/list-table";
-import { ViewToggle, useListView } from "@/components/view-toggle";
+import { ListViewMenu } from "@/components/list-view-menu";
+import { useListView } from "@/components/view-toggle";
 
 const TXN_COLS = {
   date: 108,
@@ -807,7 +808,7 @@ function PartySplit({
           ]}
           onClear={() => setBalFilter("all")}
         />
-        <ViewToggle value={view} onChange={setView} />
+        <ListViewMenu layout={view} onLayout={setView} />
         {selectedId ? (
           <Button variant="outline" className="no-print w-fit" onClick={hideDetail}>
             <PanelRightClose />

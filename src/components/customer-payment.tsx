@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react"
 import { DateInput } from "@/components/date-input";
 import { FilterPills } from "@/components/filter-pills";
 import { PartyCombo } from "@/components/party-combo";
+import { BankCombo } from "@/components/bank-combo";
 import { toast } from "sonner";
 import { ConfirmDelete } from "@/components/confirm-delete";
 import { Field } from "@/components/field";
@@ -16,7 +17,6 @@ import { useColAligns, alignClass } from "@/components/use-col-aligns";
 import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { fitColumnWidth } from "@/lib/finance/fit-column";
 import { formatDate, parseAmountToCents, todayIso } from "@/lib/finance/format";
 import { newId } from "@/lib/finance/ids";
@@ -267,7 +267,7 @@ export function CustomerPayment({
     if (locked) return;
     try {
       if (!form.customerId) {
-        toast.error("Payee must be a registered customer. Click + Add to create.");
+        toast.error("Type a customer, then Quick Add.");
         customerRef.current?.focus();
         return;
       }
@@ -449,20 +449,13 @@ export function CustomerPayment({
           />
         </Field>
         <Field label="Deposit to">
-          <Select value={form.bankId} onValueChange={(v) => setForm((prev) => ({ ...prev, bankId: v }))} disabled={locked}>
-            <SelectTrigger tabIndex={-1}>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {data.banks
-                .filter((b) => !b.archived)
-                .map((b) => (
-                  <SelectItem key={b.id} value={b.id}>
-                    {b.nickname}
-                  </SelectItem>
-                ))}
-            </SelectContent>
-          </Select>
+          <BankCombo
+            valueId={form.bankId}
+            onChoose={(id) => setForm((prev) => ({ ...prev, bankId: id }))}
+            disabled={locked}
+            label="Deposit to"
+            placeholder="Type a bank"
+          />
         </Field>
       </div>
 
@@ -475,7 +468,7 @@ export function CustomerPayment({
             disabled={locked}
             inputRef={customerRef}
             label="Customer"
-            placeholder="Pick a customer"
+            placeholder="Type a customer"
             invalid={!form.customerId && Boolean(form.receivedFrom)}
             onChoose={chooseCustomer}
             onName={(receivedFrom) => setForm((prev) => ({ ...prev, receivedFrom, customerId: "" }))}

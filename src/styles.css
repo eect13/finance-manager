@@ -6268,6 +6268,12 @@ thead button.sort-header-label:hover {
   z-index: 80;
 }
 
+/* Type-ahead Quick Add is portaled; Tailwind z-[200] loses to unlayered .dialog-sheet. */
+[data-party-list] {
+  z-index: 90;
+  pointer-events: auto;
+}
+
 
 
 

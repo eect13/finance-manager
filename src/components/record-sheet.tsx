@@ -6,6 +6,8 @@ import { ConfirmDelete } from "@/components/confirm-delete";
 import { CustomerPayment } from "@/components/customer-payment";
 import { EntryLines, type DraftLine } from "@/components/entry-lines";
 import { Field } from "@/components/field";
+import { BankCombo } from "@/components/bank-combo";
+import { AccountCombo } from "@/components/account-combo";
 import { Money } from "@/components/money";
 import { PartyFields } from "@/components/party-form";
 import { PartyTxnTable } from "@/components/party-center";
@@ -25,7 +27,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { parseAmountToCents, todayIso, formatDate } from "@/lib/finance/format";
 import { useEntrySort } from "@/lib/finance/sort";
 import { fitColumnWidth } from "@/lib/finance/fit-column";
@@ -338,20 +339,11 @@ function BillBody({ id, onClose }: { id: string; onClose: () => void }) {
       {paying ? (
         <div className="grid gap-3 rounded-xl bg-muted/70 p-4 sm:grid-cols-2">
           <Field label="Bank">
-            <Select value={payForm.bankId} onValueChange={(v) => setPayForm({ ...payForm, bankId: v })}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {data.banks
-                  .filter((b) => !b.archived)
-                  .map((b) => (
-                    <SelectItem key={b.id} value={b.id}>
-                      {b.nickname}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
+            <BankCombo
+              valueId={payForm.bankId}
+              onChoose={(id) => setPayForm({ ...payForm, bankId: id })}
+              placeholder="Type a bank"
+            />
           </Field>
           <Field label="Amount">
             <Input
@@ -486,7 +478,6 @@ function CheckBody({ id, onClose }: { id: string; onClose: () => void }) {
 
   const bank = data.banks.find((b) => b.id === check.bankId);
   const locked = check.status === "voided" || check.status === "bounced" || check.recon === "reconciled";
-  const expenseAccounts = data.accounts.filter((a) => a.type === "expense");
 
   return (
     <>
@@ -505,18 +496,12 @@ function CheckBody({ id, onClose }: { id: string; onClose: () => void }) {
           <DateInput value={form.issueDate} disabled={locked} tabIndex={-1} onChange={(issueDate) => setForm({ ...form, issueDate, postDate: issueDate })} />
         </Field>
         <Field label="Bank">
-          <Select value={form.bankId} onValueChange={(v) => setForm({ ...form, bankId: v })} disabled={locked}>
-            <SelectTrigger tabIndex={-1}>
-              <SelectValue placeholder="Select bank" />
-            </SelectTrigger>
-            <SelectContent>
-              {data.banks.filter((b) => !b.archived).map((b) => (
-                <SelectItem key={b.id} value={b.id}>
-                  {b.nickname}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <BankCombo
+            valueId={form.bankId}
+            onChoose={(id) => setForm({ ...form, bankId: id })}
+            disabled={locked}
+            placeholder="Type a bank"
+          />
         </Field>
       </div>
       <div className="grid gap-3">
@@ -534,18 +519,13 @@ function CheckBody({ id, onClose }: { id: string; onClose: () => void }) {
             <Input value={form.checkNumber} disabled={locked} tabIndex={-1} onChange={(e) => setForm({ ...form, checkNumber: e.target.value })} />
           </Field>
           <Field label="Expense account">
-            <Select value={form.accountId} onValueChange={(v) => setForm({ ...form, accountId: v })} disabled={locked}>
-              <SelectTrigger tabIndex={-1}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {expenseAccounts.map((a) => (
-                  <SelectItem key={a.id} value={a.id}>
-                    {a.code} {a.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <AccountCombo
+              valueId={form.accountId}
+              onChoose={(id) => setForm({ ...form, accountId: id })}
+              disabled={locked}
+              type="expense"
+              label="Expense account"
+            />
           </Field>
         </div>
       </div>

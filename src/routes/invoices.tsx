@@ -2,6 +2,9 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { CustomerPayment } from "@/components/customer-payment";
 import { DateInput } from "@/components/date-input";
 import { PartyCombo } from "@/components/party-combo";
+import { DocCards } from "@/components/doc-cards";
+import { ListViewMenu } from "@/components/list-view-menu";
+import { useListView } from "@/components/view-toggle";
 import { Plus, Printer } from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -80,6 +83,7 @@ function InvoicesPage() {
   const [payId, setPayId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<Invoice | null>(null);
   const [query, setQuery] = useState("");
+  const [view, setView] = useListView("invoices");
   const [statusFilter, setStatusFilter] = useState<"all" | "open" | "paid" | "void">("all");
   const period = useListPeriod("all");
   const [form, setForm] = useState({
@@ -192,8 +196,27 @@ function InvoicesPage() {
             period.reset();
           }}
         />
+        <ListViewMenu layout={view} onLayout={setView} />
       </ListToolbar>
 
+      {view === "grid" ? (
+        <DocCards
+          empty={data.invoices.length === 0 ? "No invoices yet." : "No invoices match this search or filter."}
+          rows={sort.sorted.map((inv) => {
+            const due = invoiceBalance(data, inv.id);
+            const overdue = due > 0 && inv.dueDate < today && inv.status !== "void" && inv.status !== "paid";
+            return {
+              id: inv.id,
+              title: `${inv.number} · ${data.customers.find((c) => c.id === inv.customerId)?.name ?? "—"}`,
+              meta: formatDate(inv.date),
+              amount: invoiceTotal(data, inv.id),
+              currency: data.settings.currency,
+              status: <InvoiceBadge status={inv.status} overdue={overdue} />,
+              onOpen: () => openTxn("invoice", inv.id),
+            };
+          })}
+        />
+      ) : (
       <ListCard ref={pointer.bindContainer(gridRef)} tabIndex={0} className="doc-list outline-none">
         <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
           <colgroup>
@@ -321,6 +344,7 @@ function InvoicesPage() {
           </tbody>
         </table>
       </ListCard>
+      )}
       <ListPrint
         title="Invoices"
         columns={[
@@ -392,7 +416,7 @@ function InvoicesPage() {
               onClick={() => {
                 try {
                   if (!form.customerId) {
-                    toast.error("Payee must be a registered customer. Click + Add to create.");
+                    toast.error("Type a customer, then Quick Add.");
                     return;
                   }
                   createInvoice({

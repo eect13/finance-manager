@@ -30,7 +30,7 @@ export function DialogContent({ className, overlayClassName, children, onPointer
 
   function keepDateCal(event: { target: EventTarget | null; preventDefault: () => void }) {
     const node = event.target;
-    if (node instanceof Element && node.closest("[data-date-cal]")) event.preventDefault();
+    if (node instanceof Element && node.closest("[data-date-cal], [data-party-list]")) event.preventDefault();
   }
 
   function startDrag(event: React.PointerEvent<HTMLDivElement>) {

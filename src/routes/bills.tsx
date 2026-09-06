@@ -1,6 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DateInput } from "@/components/date-input";
 import { PartyCombo } from "@/components/party-combo";
+import { BankCombo } from "@/components/bank-combo";
+import { AccountCombo } from "@/components/account-combo";
+import { DocCards } from "@/components/doc-cards";
+import { ListViewMenu } from "@/components/list-view-menu";
+import { useListView } from "@/components/view-toggle";
 import { Plus, Printer } from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -34,7 +39,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { billRows } from "@/lib/finance/export";
 import { fitColumnWidth } from "@/lib/finance/fit-column";
@@ -84,6 +88,7 @@ function BillsPage() {
   const [payId, setPayId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<Bill | null>(null);
   const [query, setQuery] = useState("");
+  const [view, setView] = useListView("bills");
   const [statusFilter, setStatusFilter] = useState<"all" | "open" | "paid" | "void">("all");
   const period = useListPeriod("all");
   const [payForm, setPayForm] = useState({ amount: "", date: today, bankId: "" });
@@ -205,8 +210,27 @@ function BillsPage() {
             period.reset();
           }}
         />
+        <ListViewMenu layout={view} onLayout={setView} />
       </ListToolbar>
 
+      {view === "grid" ? (
+        <DocCards
+          empty={data.bills.length === 0 ? "No bills yet." : "No bills match this search or filter."}
+          rows={sort.sorted.map((bill) => {
+            const due = billBalance(bill);
+            const overdue = due > 0 && bill.dueDate < today && bill.status !== "void" && bill.status !== "paid";
+            return {
+              id: bill.id,
+              title: `${bill.number} · ${data.vendors.find((v) => v.id === bill.vendorId)?.name ?? "—"}`,
+              meta: formatDate(bill.date),
+              amount: bill.amount,
+              currency: data.settings.currency,
+              status: <BillBadge status={bill.status} overdue={overdue} />,
+              onOpen: () => openTxn("bill", bill.id),
+            };
+          })}
+        />
+      ) : (
       <ListCard ref={pointer.bindContainer(gridRef)} tabIndex={0} className="doc-list outline-none">
         <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
           <colgroup>
@@ -323,6 +347,7 @@ function BillsPage() {
           </tbody>
         </table>
       </ListCard>
+      )}
       <ListPrint
         title="Bills"
         columns={[
@@ -384,18 +409,12 @@ function BillsPage() {
               </Field>
             ) : null}
             <Field label="Charge to">
-              <Select value={form.accountId} onValueChange={(v) => setForm({ ...form, accountId: v })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {expenseAccounts.map((a) => (
-                    <SelectItem key={a.id} value={a.id}>
-                      {a.code} {a.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <AccountCombo
+                valueId={form.accountId}
+                onChoose={(id) => setForm({ ...form, accountId: id })}
+                type="expense"
+                label="Charge to"
+              />
             </Field>
             <Field label="Reference">
               <Input value={form.reference} onChange={(e) => setForm({ ...form, reference: e.target.value })} />
@@ -409,7 +428,7 @@ function BillsPage() {
               onClick={() => {
                 try {
                   if (!form.vendorId) {
-                    toast.error("Payee must be a registered vendor. Click + Add to create.");
+                    toast.error("Type a vendor, then Quick Add.");
                     return;
                   }
                   createBill({
@@ -450,20 +469,11 @@ function BillsPage() {
           </DialogHeader>
           <div className="grid gap-4">
             <Field label="Bank">
-              <Select value={payForm.bankId} onValueChange={(v) => setPayForm({ ...payForm, bankId: v })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {data.banks
-                    .filter((b) => !b.archived)
-                    .map((b) => (
-                      <SelectItem key={b.id} value={b.id}>
-                        {b.nickname}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+              <BankCombo
+                valueId={payForm.bankId}
+                onChoose={(id) => setPayForm({ ...payForm, bankId: id })}
+                placeholder="Type a bank"
+              />
             </Field>
             <Field label="Date">
               <DateInput value={payForm.date} onChange={(date) => setPayForm({ ...payForm, date })} />

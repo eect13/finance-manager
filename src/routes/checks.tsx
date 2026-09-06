@@ -1,6 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DateInput } from "@/components/date-input";
 import { PartyCombo } from "@/components/party-combo";
+import { BankCombo } from "@/components/bank-combo";
+import { AccountCombo } from "@/components/account-combo";
+import { DocCards } from "@/components/doc-cards";
+import { ListViewMenu } from "@/components/list-view-menu";
+import { useListView } from "@/components/view-toggle";
+import { CheckBadge } from "@/components/status-badge";
 import { Plus, Printer } from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -32,7 +38,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { checkRegisterRows } from "@/lib/finance/export";
 import { fitColumnWidth } from "@/lib/finance/fit-column";
 import { formatDate, formatMoney, parseAmountToCents, todayIso } from "@/lib/finance/format";
@@ -76,6 +81,7 @@ function ChecksPage() {
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "cleared" | "voided" | "bounced">("all");
   const period = useListPeriod("all");
   const [query, setQuery] = useState("");
+  const [view, setView] = useListView("checks");
   const [deleting, setDeleting] = useState<CheckRecord | null>(null);
   const [form, setForm] = useState({
     bankId: "",
@@ -193,8 +199,25 @@ function ChecksPage() {
             period.reset();
           }}
         />
+        <ListViewMenu layout={view} onLayout={setView} />
       </ListToolbar>
 
+      {view === "grid" ? (
+        <DocCards
+          empty={data.checks.length === 0 ? "No checks yet." : "No checks match this search or filter."}
+          rows={sort.sorted.map((check) => ({
+            id: check.id,
+            title: `#${check.checkNumber} · ${check.payee}`,
+            meta: [formatDate(check.issueDate), data.banks.find((b) => b.id === check.bankId)?.nickname]
+              .filter(Boolean)
+              .join(" · "),
+            amount: check.amount,
+            currency: data.settings.currency,
+            status: <CheckBadge status={check.status} />,
+            onOpen: () => openTxn("check", check.id),
+          }))}
+        />
+      ) : (
       <ListCard ref={pointer.bindContainer(gridRef)} tabIndex={0} className="outline-none">
         <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
           <colgroup>
@@ -282,6 +305,7 @@ function ChecksPage() {
           </tbody>
         </table>
       </ListCard>
+      )}
       <ListPrint
         title="Check register"
         columns={[
@@ -310,20 +334,11 @@ function ChecksPage() {
           </DialogHeader>
           <div className="grid gap-4">
             <Field label="Bank">
-              <Select value={form.bankId} onValueChange={(v) => setForm({ ...form, bankId: v })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose bank" />
-                </SelectTrigger>
-                <SelectContent>
-                  {data.banks
-                    .filter((b) => !b.archived)
-                    .map((b) => (
-                      <SelectItem key={b.id} value={b.id}>
-                        {b.nickname}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+              <BankCombo
+                valueId={form.bankId}
+                onChoose={(id) => setForm({ ...form, bankId: id })}
+                placeholder="Type a bank"
+              />
             </Field>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Check number">
@@ -343,7 +358,7 @@ function ChecksPage() {
                 valueId={form.vendorId}
                 valueName={data.vendors.find((v) => v.id === form.vendorId)?.name ?? ""}
                 label="Vendor"
-                placeholder="Pick a vendor"
+                placeholder="Type a vendor"
                 invalid={!form.vendorId}
                 onChoose={(id, name) => setForm({ ...form, vendorId: id, payee: name })}
                 onCreate={(name) => {
@@ -362,18 +377,12 @@ function ChecksPage() {
               </Field>
             </div>
             <Field label="Charge to">
-              <Select value={form.accountId} onValueChange={(v) => setForm({ ...form, accountId: v })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {expenseAccounts.map((a) => (
-                    <SelectItem key={a.id} value={a.id}>
-                      {a.code} {a.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <AccountCombo
+                valueId={form.accountId}
+                onChoose={(id) => setForm({ ...form, accountId: id })}
+                type="expense"
+                label="Charge to"
+              />
             </Field>
             <Field label="Memo">
               <Input value={form.memo} onChange={(e) => setForm({ ...form, memo: e.target.value })} />
@@ -384,7 +393,7 @@ function ChecksPage() {
               onClick={() => {
                 try {
                   if (!form.vendorId) {
-                    toast.error("Payee must be a registered vendor. Click + Add to create.");
+                    toast.error("Type a vendor, then Quick Add.");
                     return;
                   }
                   issueCheck({

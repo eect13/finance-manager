@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import {
   addBank,
+  addAccount,
   addCustomer,
   addEmployee,
   addDeposit,
@@ -199,6 +200,7 @@ export interface FinanceState {
   switchCompany: (id: string) => void;
   removeCompany: (id: string) => void;
   addBank: (input: Parameters<typeof addBank>[1]) => void;
+  addAccount: (input: { id?: string; name: string; type: "asset" | "liability" | "equity" | "income" | "expense" }) => void;
   updateBank: (id: string, patch: Partial<Pick<Bank, "name" | "nickname" | "accountNumber" | "archived">>) => void;
   removeBank: (id: string) => void;
   addCustomer: (input: Omit<Customer, "id"> & { id?: string }) => void;
@@ -442,6 +444,8 @@ export const useFinanceStore = create<FinanceState>()(
         },
         addBank: (input) =>
           apply((d) => addBank(d, input), `add bank ${input.nickname || input.name || ""}`.trim()),
+        addAccount: (input) =>
+          apply((d) => addAccount(d, input), `add account ${input.name || ""}`.trim()),
         updateBank: (id, patch) =>
           apply((d) => updateBank(d, id, patch), (before) => {
             const b = before.banks.find((x) => x.id === id);

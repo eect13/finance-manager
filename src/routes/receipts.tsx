@@ -2,6 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { CustomerPayment } from "@/components/customer-payment";
 import { DateInput } from "@/components/date-input";
 import { PartyCombo } from "@/components/party-combo";
+import { BankCombo } from "@/components/bank-combo";
+import { DocCards } from "@/components/doc-cards";
+import { ListViewMenu } from "@/components/list-view-menu";
+import { useListView } from "@/components/view-toggle";
 import { Plus, Printer } from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -84,6 +88,7 @@ function ReceiptsPage() {
   const [kind, setKind] = useState<"cash-sale" | "payment">("cash-sale");
   const [deleting, setDeleting] = useState<Receipt | null>(null);
   const [query, setQuery] = useState("");
+  const [view, setView] = useListView("receipts");
   const [kindFilter, setKindFilter] = useState<"all" | "cash-sale" | "payment" | "void">("all");
   const period = useListPeriod("all");
   const [form, setForm] = useState({
@@ -193,7 +198,7 @@ function ReceiptsPage() {
           >
             Check payment
           </Button>
-          <Button onClick={() => openCreate("cash-sale")} disabled={data.banks.length === 0}>
+          <Button onClick={() => openCreate("cash-sale")}>
             <Plus />
             Cash sale
           </Button>
@@ -241,8 +246,26 @@ function ReceiptsPage() {
             period.reset();
           }}
         />
+        <ListViewMenu layout={view} onLayout={setView} />
       </ListToolbar>
 
+      {view === "grid" ? (
+        <DocCards
+          empty={data.receipts.length === 0 ? "No receipts yet." : "No receipts match this search or filter."}
+          rows={sort.sorted.map((r) => {
+            const bank = data.banks.find((b) => b.id === r.bankId);
+            return {
+              id: r.id,
+              title: `${r.number} · ${r.receivedFrom}`,
+              meta: [formatDate(r.date), bank?.nickname].filter(Boolean).join(" · "),
+              amount: r.amount,
+              currency: data.settings.currency,
+              status: <ReceiptBadge status={r.status} kind={r.kind} method={r.method} />,
+              onOpen: () => openTxn("receipt", r.id),
+            };
+          })}
+        />
+      ) : (
       <ListCard ref={pointer.bindContainer(gridRef)} tabIndex={0} className="doc-list outline-none">
         <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
           <colgroup>
@@ -353,6 +376,7 @@ function ReceiptsPage() {
           </tbody>
         </table>
       </ListCard>
+      )}
       <ListPrint
         title="Receipts"
         columns={[
@@ -396,20 +420,12 @@ function ReceiptsPage() {
                 <DateInput value={form.date} onChange={(date) => setForm({ ...form, date })} />
               </Field>
               <Field label="Deposit to">
-                <Select value={form.bankId} onValueChange={(v) => setForm({ ...form, bankId: v })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Bank" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {data.banks
-                      .filter((b) => !b.archived)
-                      .map((b) => (
-                        <SelectItem key={b.id} value={b.id}>
-                          {b.nickname}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
+                <BankCombo
+                  valueId={form.bankId}
+                  onChoose={(id) => setForm({ ...form, bankId: id })}
+                  label="Deposit to"
+                  placeholder="Type a bank"
+                />
               </Field>
             </div>
             <Field label="Customer">
@@ -418,7 +434,7 @@ function ReceiptsPage() {
                 valueId={form.customerId}
                 valueName={data.customers.find((c) => c.id === form.customerId)?.name ?? ""}
                 label="Customer"
-                placeholder="Customer on file — type Add to save a new name"
+                placeholder="Type a customer"
                 onChoose={(id, name) => setForm({ ...form, customerId: id, receivedFrom: name, invoiceId: "" })}
                 onName={(name) => setForm({ ...form, receivedFrom: name, customerId: form.customerId })}
                 onCreate={(name) => {

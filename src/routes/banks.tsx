@@ -7,6 +7,9 @@ import { cn } from "@/lib/utils";
 import { AppShell } from "@/components/app-shell";
 import { ConfirmDelete } from "@/components/confirm-delete";
 import { Field } from "@/components/field";
+import { BankCombo } from "@/components/bank-combo";
+import { AccountCombo } from "@/components/account-combo";
+import { ListViewMenu } from "@/components/list-view-menu";
 import { ListToolbar } from "@/components/filter-pills";
 import { ListFilters, applySortValue } from "@/components/list-filters";
 import { ListCard, listColClass, listColWidthStyle, listTableStyle} from "@/components/list-table";
@@ -30,7 +33,7 @@ import { useColWidths } from "@/components/use-col-widths";
 import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
 import { CsvButton } from "@/components/export-menu";
-import { ViewToggle, useListView } from "@/components/view-toggle";
+import { useListView } from "@/components/view-toggle";
 import { bankRows } from "@/lib/finance/export";
 import { fitColumnWidth } from "@/lib/finance/fit-column";
 import { formatMoney, parseAmountToCents, todayIso } from "@/lib/finance/format";
@@ -61,7 +64,7 @@ const BANK_SORT = [
 
 function BanksPage() {
   const data = useFinanceData();
-  const { settings, banks, accounts } = data;
+  const { settings, banks } = data;
   const addBank = useFinanceStore((s) => s.addBank);
   const addDeposit = useFinanceStore((s) => s.addDeposit);
   const addExpense = useFinanceStore((s) => s.addExpense);
@@ -90,8 +93,6 @@ function BanksPage() {
     memo: "",
   });
 
-  const expenseAccounts = accounts.filter((a) => a.type === "expense");
-  const incomeAccounts = accounts.filter((a) => a.type === "income");
   const books = useMemo(() => bookByBankId(data), [data]);
   const pendingMap = useMemo(() => pendingByBankId(data), [data]);
   const visible = useMemo(() => {
@@ -190,7 +191,7 @@ function BanksPage() {
           onSort={(v) => applySortValue(sort.set, v)}
           onClear={() => setStatusFilter("all")}
         />
-        <ViewToggle value={view} onChange={setView} />
+        <ListViewMenu layout={view} onLayout={setView} />
       </ListToolbar>
       {view === "grid" ? (
       <div className="item-cards">
@@ -333,18 +334,11 @@ function BanksPage() {
           </DialogHeader>
           <div className="grid gap-4">
             <Field label="Bank">
-              <Select value={moneyForm.bankId} onValueChange={(v) => setMoneyForm({ ...moneyForm, bankId: v })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose bank" />
-                </SelectTrigger>
-                <SelectContent>
-                  {banks.filter((b) => !b.archived).map((b) => (
-                    <SelectItem key={b.id} value={b.id}>
-                      {b.nickname}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <BankCombo
+                valueId={moneyForm.bankId}
+                onChoose={(id) => setMoneyForm({ ...moneyForm, bankId: id })}
+                placeholder="Type a bank"
+              />
             </Field>
             <Field label="Type">
               <Select value={moneyForm.kind} onValueChange={(v) => setMoneyForm({ ...moneyForm, kind: v as "deposit" | "expense" })}>
@@ -364,18 +358,13 @@ function BanksPage() {
               <Input value={moneyForm.amount} onChange={(e) => setMoneyForm({ ...moneyForm, amount: e.target.value })} inputMode="decimal" />
             </Field>
             <Field label="Account">
-              <Select value={moneyForm.accountId} onValueChange={(v) => setMoneyForm({ ...moneyForm, accountId: v })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose account" />
-                </SelectTrigger>
-                <SelectContent>
-                  {(moneyForm.kind === "deposit" ? incomeAccounts : expenseAccounts).map((a) => (
-                    <SelectItem key={a.id} value={a.id}>
-                      {a.code} {a.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <AccountCombo
+                valueId={moneyForm.accountId}
+                onChoose={(id) => setMoneyForm({ ...moneyForm, accountId: id })}
+                type={moneyForm.kind === "deposit" ? "income" : "expense"}
+                label="Account"
+                placeholder="Type an account"
+              />
             </Field>
             <Field label="Memo">
               <Input value={moneyForm.memo} onChange={(e) => setMoneyForm({ ...moneyForm, memo: e.target.value })} />
@@ -426,32 +415,22 @@ function BanksPage() {
           </DialogHeader>
           <div className="grid gap-4">
             <Field label="From">
-              <Select value={transferForm.fromId} onValueChange={(v) => setTransferForm({ ...transferForm, fromId: v })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Source bank" />
-                </SelectTrigger>
-                <SelectContent>
-                  {banks.map((b) => (
-                    <SelectItem key={b.id} value={b.id}>
-                      {b.nickname}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <BankCombo
+                valueId={transferForm.fromId}
+                onChoose={(id) => setTransferForm({ ...transferForm, fromId: id })}
+                label="From"
+                placeholder="Type a bank"
+                excludeId={transferForm.toId}
+              />
             </Field>
             <Field label="To">
-              <Select value={transferForm.toId} onValueChange={(v) => setTransferForm({ ...transferForm, toId: v })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Destination bank" />
-                </SelectTrigger>
-                <SelectContent>
-                  {banks.map((b) => (
-                    <SelectItem key={b.id} value={b.id}>
-                      {b.nickname}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <BankCombo
+                valueId={transferForm.toId}
+                onChoose={(id) => setTransferForm({ ...transferForm, toId: id })}
+                label="To"
+                placeholder="Type a bank"
+                excludeId={transferForm.fromId}
+              />
             </Field>
             <Field label="Date">
               <DateInput value={transferForm.date} onChange={(date) => setTransferForm({ ...transferForm, date })} />

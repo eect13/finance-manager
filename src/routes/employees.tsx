@@ -6,6 +6,10 @@ import { AppShell } from "@/components/app-shell";
 import { ConfirmDelete } from "@/components/confirm-delete";
 import { DateInput } from "@/components/date-input";
 import { Field } from "@/components/field";
+import { BankCombo } from "@/components/bank-combo";
+import { DocCards } from "@/components/doc-cards";
+import { ListViewMenu } from "@/components/list-view-menu";
+import { useListView } from "@/components/view-toggle";
 import { FilterPills, ListToolbar } from "@/components/filter-pills";
 import { ListFilters, applySortValue } from "@/components/list-filters";
 import { ListCard, listColClass, listColWidthStyle, listTableStyle} from "@/components/list-table";
@@ -100,6 +104,7 @@ function EmployeesPage() {
   const banks = data.banks.filter((b) => !b.archived);
 
   const [query, setQuery] = useState("");
+  const [view, setView] = useListView("employees");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
   const [payTypeFilter, setPayTypeFilter] = useState<"all" | PayType>("all");
 
@@ -300,8 +305,28 @@ function EmployeesPage() {
             sort.set("name", "asc");
           }}
         />
+        <ListViewMenu layout={view} onLayout={setView} />
       </ListToolbar>
 
+      {view === "grid" ? (
+        <DocCards
+          empty={
+            (data.employees ?? []).length === 0
+              ? "No employees yet. Add someone to start payroll checks."
+              : "No employees match this search or filter."
+          }
+          rows={sort.sorted.map((e) => ({
+            id: e.id,
+            title: e.name,
+            meta: [e.title, e.payType === "hourly" ? "Hourly" : "Salary", e.active ? "Active" : "Inactive"]
+              .filter(Boolean)
+              .join(" · "),
+            amount: e.rate,
+            currency: data.settings.currency,
+            onOpen: () => openEdit(e),
+          }))}
+        />
+      ) : (
       <ListCard ref={pointer.bindContainer(gridRef)} tabIndex={0} className="outline-none">
         <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
           <colgroup>
@@ -389,6 +414,7 @@ function EmployeesPage() {
           </tbody>
         </table>
       </ListCard>
+      )}
 
       <Dialog open={dialogOpen} onOpenChange={(on) => (!on ? closeDialog() : undefined)}>
         <DialogContent className="max-w-lg">
@@ -426,18 +452,12 @@ function EmployeesPage() {
               <Input inputMode="decimal" value={form.rate} onChange={(e) => setForm({ ...form, rate: e.target.value })} />
             </Field>
             <Field label="Default pay bank">
-              <Select value={form.bankId} onValueChange={(v) => setForm({ ...form, bankId: v })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Bank" />
-                </SelectTrigger>
-                <SelectContent>
-                  {banks.map((b) => (
-                    <SelectItem key={b.id} value={b.id}>
-                      {b.nickname}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <BankCombo
+                valueId={form.bankId}
+                onChoose={(id) => setForm({ ...form, bankId: id })}
+                label="Default pay bank"
+                placeholder="Type a bank"
+              />
             </Field>
             <Field label="Hire date">
               <DateInput value={form.hireDate} onChange={(iso) => setForm({ ...form, hireDate: iso })} />
@@ -479,18 +499,7 @@ function EmployeesPage() {
               <DateInput value={payDate} onChange={setPayDate} />
             </Field>
             <Field label="Bank">
-              <Select value={payBankId} onValueChange={setPayBankId}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {banks.map((b) => (
-                    <SelectItem key={b.id} value={b.id}>
-                      {b.nickname}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <BankCombo valueId={payBankId} onChoose={(id) => setPayBankId(id)} placeholder="Type a bank" />
             </Field>
             {payingEmp?.payType === "hourly" ? (
               <Field label="Hours">

@@ -49,7 +49,7 @@ function assertOpenPeriod(data: FinanceData, date: string) {
 }
 
 export function addBank(data: FinanceData, input): FinanceData {
-  const bankId = newId();
+  const bankId = input.id || newId();
   const accountId = newId();
   const codeBase = 1e3 + data.banks.length * 10;
   const bank = {
@@ -98,6 +98,23 @@ export function addBank(data: FinanceData, input): FinanceData {
         [bankId]: 1
       }
     }
+  };
+}
+export function addAccount(data: FinanceData, input): FinanceData {
+  const name = String(input.name || "").trim();
+  if (!name) throw new Error("Name the account.");
+  const type = input.type || "expense";
+  const id = input.id || newId();
+  const prefix = type === "income" ? 4000 : type === "asset" ? 1000 : type === "liability" ? 2000 : type === "equity" ? 3000 : 5000;
+  const used = new Set(data.accounts.map((a) => a.code));
+  let n = prefix + 10;
+  while (used.has(String(n))) n += 10;
+  return {
+    ...data,
+    accounts: [
+      ...data.accounts,
+      { id, code: String(n), name, type, system: false },
+    ],
   };
 }
 export function updateBank(data: FinanceData, id, patch): FinanceData {
@@ -223,7 +240,7 @@ export function issueCheck(data: FinanceData, input): FinanceData {
   const bank = data.banks.find((b) => b.id === input.bankId);
   if (!bank) throw new Error("Bank not found");
   if (!input.vendorId || !data.vendors.some((v) => v.id === input.vendorId)) {
-    throw new Error("Payee must be a registered vendor. Click + Add to create.");
+    throw new Error("Payee must be a registered vendor. Type a name, then Quick Add.");
   }
   if (input.amount <= 0) throw new Error("Amount must be greater than zero");
   const next = data.nextNumbers.check[bank.id] ?? 1;

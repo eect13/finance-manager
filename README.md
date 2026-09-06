@@ -1,4 +1,4 @@
-# Finance Manager v3.63.3
+# Finance Manager v3.63.4
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -26,6 +26,11 @@ Unzip the repo (a second unzip named `finance-manager-main (1)` is fine) so `dep
 Vite is installed with the packages — no global `vite` command. `.npmrc` has `legacy-peer-deps=true`.
 
 After the Windows installer: **delete the leftover white shortcut** and pin the new one — shortcut and taskbar both use the navy pillars tile.
+
+## What's new in v3.63.4
+
+- **Quick Add** on posting: type a bank, payee, or expense account and choose Quick Add — same as QuickBooks. Cash sale works with no banks yet. Register, Receipts, Checks, Bills, Employees, Banks Record/Transfer, and the party sheets all type-ahead now.
+- **View on every list**: Invoices, Bills, Receipts, Checks, Employees, Ledger, Banks, Customers, Vendors, and Reconcile share Register’s View (Layout Grid|List + type size). The old standalone List/Grid pair is gone; type size is the same slider as Options → Display.
 
 ## What's new in v3.63.3
 

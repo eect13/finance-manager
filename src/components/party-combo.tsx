@@ -147,8 +147,8 @@ export function PartyCombo({
         ? createPortal(
             <ul
               data-party-list
-              className="fixed z-[200] max-h-40 overflow-y-auto rounded-xl bg-popover p-1 elevation sm:max-h-56"
-              style={{ top: box.top, left: box.left, width: box.width }}
+              className="fixed max-h-40 overflow-y-auto rounded-xl bg-popover p-1 elevation sm:max-h-56"
+              style={{ top: box.top, left: box.left, width: box.width, zIndex: 90, pointerEvents: "auto" }}
             >
               {matches.map((item, i) => (
                 <li key={item.id}>
@@ -178,7 +178,7 @@ export function PartyCombo({
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={addNew}
                   >
-                    + Add “{q}”
+                    Quick Add “{q}”
                   </button>
                 </li>
               ) : null}

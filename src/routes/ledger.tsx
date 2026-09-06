@@ -5,6 +5,9 @@ import { cn } from "@/lib/utils";
 import { AppShell } from "@/components/app-shell";
 import { CsvButton } from "@/components/export-menu";
 import { ListToolbar } from "@/components/filter-pills";
+import { DocCards } from "@/components/doc-cards";
+import { ListViewMenu } from "@/components/list-view-menu";
+import { useListView } from "@/components/view-toggle";
 import { ListFilters, applySortValue, useListPeriod } from "@/components/list-filters";
 import { ListCard, listColClass, listColWidthStyle, listTableStyle} from "@/components/list-table";
 import { ListPrint } from "@/components/list-print";
@@ -33,6 +36,7 @@ function LedgerPage() {
   const { settings, accounts, journals } = data;
   const tb = trialBalance(data);
   const [query, setQuery] = useState("");
+  const [view, setView] = useListView("ledger");
   const [source, setSource] = useState<"all" | JournalEntry["sourceType"]>("all");
   const period = useListPeriod("all");
 
@@ -134,8 +138,23 @@ function LedgerPage() {
                 period.reset();
               }}
             />
+            <ListViewMenu layout={view} onLayout={setView} />
           </ListToolbar>
-          <JournalTable entries={sort.sorted} currency={settings.currency} sort={sort} />
+          {view === "grid" ? (
+            <DocCards
+              empty="No journal entries yet."
+              rows={sort.sorted.map((e) => ({
+                id: e.id,
+                title: e.description,
+                meta: `${formatDate(e.date)} · ${e.sourceType}`,
+                amount: e.lines.reduce((s, l) => s + l.debit, 0),
+                currency: settings.currency,
+                onOpen: () => openTxn("journal", e.id),
+              }))}
+            />
+          ) : (
+            <JournalTable entries={sort.sorted} currency={settings.currency} sort={sort} />
+          )}
         </TabsContent>
         <TabsContent value="accounts">
           <AccountsTable accounts={accounts} currency={settings.currency} data={data} />

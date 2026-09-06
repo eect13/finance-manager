@@ -4,6 +4,8 @@ import { toast } from "sonner";
 import { CustomerPayment } from "@/components/customer-payment";
 import { EntryLines, type DraftLine } from "@/components/entry-lines";
 import { Field } from "@/components/field";
+import { BankCombo } from "@/components/bank-combo";
+import { AccountCombo } from "@/components/account-combo";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -205,20 +207,12 @@ function PartyCashSaleDialog({
               <DateInput value={form.date} onChange={(date) => setForm({ ...form, date })} />
             </Field>
             <Field label="Deposit to">
-              <Select value={form.bankId} onValueChange={(v) => setForm({ ...form, bankId: v })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Bank" />
-                </SelectTrigger>
-                <SelectContent>
-                  {data.banks
-                    .filter((b) => !b.archived)
-                    .map((b) => (
-                      <SelectItem key={b.id} value={b.id}>
-                        {b.nickname}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+              <BankCombo
+                valueId={form.bankId}
+                onChoose={(id) => setForm({ ...form, bankId: id })}
+                label="Deposit to"
+                placeholder="Type a bank"
+              />
             </Field>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -352,18 +346,12 @@ function PartyBillDialog({
             </Field>
           ) : null}
           <Field label="Charge to">
-            <Select value={form.accountId} onValueChange={(v) => setForm({ ...form, accountId: v })}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {expenseAccounts.map((a) => (
-                  <SelectItem key={a.id} value={a.id}>
-                    {a.code} {a.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <AccountCombo
+              valueId={form.accountId}
+              onChoose={(id) => setForm({ ...form, accountId: id })}
+              type="expense"
+              label="Charge to"
+            />
           </Field>
           <Field label="Reference">
             <Input value={form.reference} onChange={(e) => setForm({ ...form, reference: e.target.value })} />
@@ -448,20 +436,11 @@ function PartyCheckDialog({
         </DialogHeader>
         <div className="grid gap-4">
           <Field label="Bank">
-            <Select value={form.bankId} onValueChange={(v) => setForm({ ...form, bankId: v })}>
-              <SelectTrigger>
-                <SelectValue placeholder="Choose bank" />
-              </SelectTrigger>
-              <SelectContent>
-                {data.banks
-                  .filter((b) => !b.archived)
-                  .map((b) => (
-                    <SelectItem key={b.id} value={b.id}>
-                      {b.nickname}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
+            <BankCombo
+              valueId={form.bankId}
+              onChoose={(id) => setForm({ ...form, bankId: id })}
+              placeholder="Type a bank"
+            />
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Check number">
@@ -484,18 +463,12 @@ function PartyCheckDialog({
             </Field>
           </div>
           <Field label="Charge to">
-            <Select value={form.accountId} onValueChange={(v) => setForm({ ...form, accountId: v })}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {expenseAccounts.map((a) => (
-                  <SelectItem key={a.id} value={a.id}>
-                    {a.code} {a.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <AccountCombo
+              valueId={form.accountId}
+              onChoose={(id) => setForm({ ...form, accountId: id })}
+              type="expense"
+              label="Charge to"
+            />
           </Field>
           <Field label="Memo">
             <Input value={form.memo} onChange={(e) => setForm({ ...form, memo: e.target.value })} />

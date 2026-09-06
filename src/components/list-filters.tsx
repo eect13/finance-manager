@@ -194,7 +194,7 @@ export function ListFiltersPanel({
       ))}
       {extra}
       {sortValue && sortOptions && onSort ? (
-        <div className="grid gap-1.5">
+        <div className="grid gap-1.5 md:hidden">
           <p className="text-[0.65rem] font-medium uppercase tracking-wider text-muted-foreground">Sort</p>
           <Select value={sortValue} onValueChange={onSort}>
             <SelectTrigger className="h-10 min-h-10" aria-label="Sort">
@@ -295,7 +295,7 @@ export function ListFilters({
           variant="outline"
           className="h-11 min-h-11 justify-start"
           aria-label="Filters"
-          title="Filters — date range, type, sort"
+          title="Filters — date range, type (sort via column headers on desk)"
         >
           <Filter />
           Filters

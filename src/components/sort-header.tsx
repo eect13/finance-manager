@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { AlignCenter, AlignLeft, AlignRight, ArrowDown, ArrowUp, Check } from "lucide-react";
 import type { SortDir } from "@/lib/finance/sort";
 import { cn } from "@/lib/utils";
@@ -140,6 +140,16 @@ export function SortHeader({
     setMenuOpen(true);
   }
 
+  function onColumnMenuKey(e: ReactKeyboardEvent, anchor: HTMLElement | null) {
+    if (!hasMenu) return;
+    const contextKey = e.key === "ContextMenu" || (e.key === "F10" && e.shiftKey);
+    if (!contextKey) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const rect = anchor?.getBoundingClientRect();
+    openColumnMenu(rect ? rect.left + rect.width / 2 : 0, rect ? rect.bottom : 0);
+  }
+
   useEffect(() => () => clearLongPress(), []);
 
   const titleInner = <span className="sort-header-title">{label}</span>;
@@ -155,6 +165,7 @@ export function SortHeader({
       style={width && !absorb ? { minWidth: width, width } : undefined}
       data-align={align}
       data-col={column}
+      aria-sort={active ? (dir === "asc" ? "ascending" : "descending") : sortable ? "none" : undefined}
       onContextMenu={
         hasMenu
           ? (e) => {
@@ -202,11 +213,12 @@ export function SortHeader({
       onPointerUp={hasMenu ? () => clearLongPress() : undefined}
       onPointerCancel={hasMenu ? () => clearLongPress() : undefined}
       onPointerLeave={hasMenu ? () => clearLongPress() : undefined}
+      onKeyDown={hasMenu ? (e) => onColumnMenuKey(e, e.currentTarget) : undefined}
       title={
         hasMenu
           ? sortable
-            ? "Click to sort · right-click or long-press for align"
-            : "Right-click or long-press for align"
+            ? "Click to sort · right-click, long-press, or Shift+F10 for align"
+            : "Right-click, long-press, or Shift+F10 for align"
           : sortable
             ? "Click to sort"
             : undefined
@@ -224,6 +236,7 @@ export function SortHeader({
                 }
                 onToggle(column);
               }}
+              onKeyDown={(e) => onColumnMenuKey(e, e.currentTarget)}
               className={cn("sort-header-main", titleSize, titleTone)}
             >
               {titleInner}

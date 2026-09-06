@@ -920,11 +920,7 @@ function ReconcilePage() {
                       key={line.id}
                       ref={deskVirt.measureElement}
                       data-index={item.index}
-                      className={cn(
-                        "border-b border-border/70 last:border-0",
-                        on && "bg-primary/15",
-                      )}
-                      data-active={on ? "true" : undefined}
+                      className="border-b border-border/70 last:border-0"
                       data-selected={on ? "true" : undefined}
                       data-focused={pointer.activeId === line.id ? "true" : undefined}
                       data-row-id={line.id}

@@ -196,7 +196,6 @@ export function PartyTxnTable({
                   <tr
                     key={key}
                     className="cursor-pointer"
-                    data-active={pointer.activeId === key ? "true" : undefined}
                     data-focused={pointer.activeId === key ? "true" : undefined}
                     data-row-id={key}
                     aria-current={pointer.activeId === key ? "true" : undefined}
@@ -630,12 +629,8 @@ function PartyDirectoryTable({
             sort.sorted.map((row) => (
               <tr
                 key={row.id}
-                className={cn(
-                  "cursor-pointer border-b border-border/70 last:border-0",
-                  selectedId === row.id && "bg-primary/10",
-                )}
+                className="cursor-pointer border-b border-border/70 last:border-0"
                 data-selected={selectedId === row.id ? "true" : undefined}
-                data-active={pointer.activeId === row.id ? "true" : undefined}
                 data-focused={pointer.activeId === row.id ? "true" : undefined}
                 data-row-id={row.id}
                 aria-current={pointer.activeId === row.id ? "true" : undefined}
@@ -698,7 +693,7 @@ function PartyDirectoryCards({
               type="button"
               className={cn(
                 "party-card-row min-h-11 rounded-2xl border border-border bg-card p-4 text-left",
-                on && "border-primary/40 bg-primary/10",
+                on && "bg-primary/10",
               )}
               onClick={() => onSelect(item.id)}
               onDoubleClick={(e) => {

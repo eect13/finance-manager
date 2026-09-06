@@ -5175,6 +5175,241 @@ body.is-phone-move-dragging {
   text-align: center;
 }
 
+/* =============================================================================
+   v3.62.83 — nav groups, edge-to-edge last col, sticky ticks, close, party pane
+   ============================================================================= */
+
+/* Close: a 6-row checklist must not inherit list-card max-height + its scrollbar.
+   overflow:auto !important lives in @layer utilities — unlayered !important loses. */
+@layer utilities {
+  .close-page .list-card.list-grid {
+    max-height: none !important;
+    overflow: visible !important;
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+  }
+
+  .register-matrix .col-check,
+  .recon-table-card .col-check,
+  .register-matrix .register-check-cell,
+  .recon-table-card .register-check-cell {
+    overflow: hidden !important;
+  }
+}
+
+/* Last col flush — 1.5rem pad was a blank strip next to Status / Open / Deposit */
+.list-card.list-grid thead th:last-child,
+.list-card.list-grid tbody td:last-child,
+.list-card.list-grid tfoot td:last-child,
+.register-card thead th:last-child,
+.register-card tbody td:last-child,
+.register-matrix thead th:last-child,
+.register-matrix tbody td:last-child,
+.register-matrix tfoot td:last-child,
+.party-pane-list thead th:last-child,
+.party-pane-list tbody td:last-child,
+.list-grid thead th:last-child,
+.list-grid tbody td:last-child,
+.list-grid tfoot td:last-child {
+  padding-right: 0.75rem !important;
+  overflow: visible;
+  z-index: 2;
+}
+
+.list-grid thead th:last-child,
+.register-matrix thead th:last-child,
+.register-card thead th:last-child,
+.party-dir-table thead th:last-child,
+.recon-table-card thead th:last-child {
+  z-index: 4;
+  min-width: 5.25rem;
+  overflow: visible;
+}
+
+.register-matrix th.col-status,
+.register-matrix td.col-status,
+.list-grid th[data-col="status"],
+.list-grid td[data-col="status"] {
+  overflow: visible !important;
+  min-width: 5.25rem;
+  z-index: 3;
+  isolation: isolate;
+}
+
+.list-grid thead th:last-child .sort-header-title,
+.register-matrix thead th:last-child .sort-header-title,
+.party-dir-table thead th:last-child .sort-header-title,
+.recon-table-card thead th:last-child .sort-header-title {
+  overflow: visible;
+  text-overflow: clip;
+}
+
+/* Overlay bars — no reserved gutter beside Status */
+.list-card.list-grid,
+.register-matrix,
+.register-card,
+.recon-table-card,
+.party-dir-table,
+.party-pane-list {
+  scrollbar-gutter: auto;
+}
+
+.list-card.list-grid::-webkit-scrollbar,
+.register-matrix::-webkit-scrollbar,
+.register-card::-webkit-scrollbar,
+.recon-table-card::-webkit-scrollbar,
+.party-dir-table::-webkit-scrollbar,
+.party-pane-list::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+  background: transparent;
+}
+
+.list-card.list-grid::-webkit-scrollbar-thumb,
+.register-matrix::-webkit-scrollbar-thumb,
+.register-card::-webkit-scrollbar-thumb,
+.recon-table-card::-webkit-scrollbar-thumb,
+.party-dir-table::-webkit-scrollbar-thumb,
+.party-pane-list::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 99px;
+}
+
+.list-card.list-grid:hover::-webkit-scrollbar-thumb,
+.list-card.list-grid:focus-within::-webkit-scrollbar-thumb,
+.register-matrix:hover::-webkit-scrollbar-thumb,
+.register-matrix:focus-within::-webkit-scrollbar-thumb,
+.register-card:hover::-webkit-scrollbar-thumb,
+.recon-table-card:hover::-webkit-scrollbar-thumb,
+.party-dir-table:hover::-webkit-scrollbar-thumb,
+.party-pane-list:hover::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, var(--color-foreground) 28%, transparent);
+}
+
+.list-card.list-grid::-webkit-scrollbar-corner,
+.register-matrix::-webkit-scrollbar-corner,
+.register-card::-webkit-scrollbar-corner,
+.recon-table-card::-webkit-scrollbar-corner,
+.party-dir-table::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Sticky check on Register + Reconcile at every viewport: opaque, Date cannot slide under */
+.register-matrix .col-check,
+.recon-table-card .col-check {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  overflow: hidden !important;
+  background-color: var(--color-card);
+  background-clip: padding-box;
+  box-shadow: 1px 0 0 color-mix(in oklab, var(--color-border) 80%, transparent);
+}
+
+.register-matrix thead .col-check,
+.recon-table-card thead .col-check {
+  z-index: 5;
+  background-color: var(--color-card);
+}
+
+.register-matrix tbody td.col-check,
+.recon-table-card tbody td.col-check {
+  z-index: 4;
+  isolation: isolate;
+  transform: translateZ(0);
+  box-shadow:
+    1px 0 0 color-mix(in oklab, var(--color-border) 80%, transparent),
+    8px 0 0 0 var(--color-card);
+}
+
+.register-matrix tbody td.col-date,
+.recon-table-card tbody td[data-col="date"],
+.recon-table-card tbody th[data-col="date"] {
+  z-index: 0;
+  position: relative;
+}
+
+.register-matrix .register-check-cell,
+.recon-table-card .register-check-cell {
+  overflow: hidden !important;
+}
+
+.register-matrix .col-date,
+.recon-table-card th[data-col="date"],
+.recon-table-card td[data-col="date"] {
+  position: static !important;
+  left: auto !important;
+}
+
+.register-matrix tbody tr[data-selected="true"] td.col-check,
+.recon-table-card tbody tr[data-selected="true"] td.col-check {
+  background-color: color-mix(in oklab, var(--color-primary) 15%, var(--color-card));
+  box-shadow:
+    1px 0 0 color-mix(in oklab, var(--color-border) 80%, transparent),
+    8px 0 0 0 color-mix(in oklab, var(--color-primary) 15%, var(--color-card));
+}
+
+.register-matrix tbody tr[data-focused="true"] td.col-check,
+.recon-table-card tbody tr[data-focused="true"] td.col-check {
+  background-color: color-mix(in oklab, var(--color-primary) 11%, var(--color-card));
+  box-shadow:
+    1px 0 0 color-mix(in oklab, var(--color-border) 80%, transparent),
+    8px 0 0 0 color-mix(in oklab, var(--color-primary) 11%, var(--color-card));
+}
+
+.register-matrix tbody tr[data-selected="true"][data-focused="true"] td.col-check,
+.recon-table-card tbody tr[data-selected="true"][data-focused="true"] td.col-check {
+  background-color: color-mix(in oklab, var(--color-primary) 15%, var(--color-card));
+  box-shadow:
+    1px 0 0 color-mix(in oklab, var(--color-border) 80%, transparent),
+    8px 0 0 0 color-mix(in oklab, var(--color-primary) 15%, var(--color-card));
+}
+
+.dark .register-matrix tbody tr[data-selected="true"] td.col-check,
+.dark .recon-table-card tbody tr[data-selected="true"] td.col-check,
+.dark .register-matrix tbody tr[data-selected="true"][data-focused="true"] td.col-check,
+.dark .recon-table-card tbody tr[data-selected="true"][data-focused="true"] td.col-check {
+  background-color: color-mix(in oklab, var(--color-primary) 22%, var(--color-card));
+  box-shadow:
+    1px 0 0 color-mix(in oklab, var(--color-border) 80%, transparent),
+    8px 0 0 0 color-mix(in oklab, var(--color-primary) 22%, var(--color-card));
+}
+
+.dark .register-matrix tbody tr[data-focused="true"]:not([data-selected]) td.col-check,
+.dark .recon-table-card tbody tr[data-focused="true"]:not([data-selected]) td.col-check {
+  background-color: color-mix(in oklab, var(--color-primary) 20%, var(--color-card));
+}
+
+/* Customers / Vendors: nobody picked → one first-tab shade on the directory pane */
+.party-center[data-has-selection="false"] .party-pane-list {
+  background: color-mix(in oklab, var(--color-primary) 14%, var(--color-card));
+}
+
+.party-center[data-has-selection="false"] .party-dir-table,
+.party-center[data-has-selection="false"] .party-dir-table thead th,
+.party-center[data-has-selection="false"] .party-dir-table tbody td {
+  background: transparent;
+  background-color: transparent;
+}
+
+.party-center[data-has-selection="true"] .party-pane-list {
+  background: var(--color-card);
+}
+
+/* Selected / focused name is one tint — not accent + primary + sticky-name */
+.party-dir-table tbody tr[data-selected="true"] td,
+.party-dir-table tbody tr[data-selected="true"] td[data-col="name"],
+.party-dir-table tbody tr[data-selected="true"][data-focused="true"] td,
+.party-dir-table tbody tr[data-selected="true"][data-focused="true"] td[data-col="name"] {
+  background: color-mix(in oklab, var(--color-primary) 10%, var(--color-card));
+}
+
+.party-dir-table tbody tr[data-focused="true"]:not([data-selected]) td,
+.party-dir-table tbody tr[data-focused="true"]:not([data-selected]) td[data-col="name"] {
+  background: color-mix(in oklab, var(--color-primary) 10%, var(--color-card));
+}
+
+
 
 
 

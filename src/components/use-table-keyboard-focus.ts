@@ -52,7 +52,7 @@ export function useTableKeyboardFocus({
 
   useEffect(() => {
     if (focusedId && ids.includes(focusedId)) return;
-    setFocusedIdState(ids[0] ?? null);
+    setFocusedIdState(null);
   }, [ids, focusedId]);
 
   const focusContainer = useCallback(() => {

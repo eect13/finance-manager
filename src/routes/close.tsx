@@ -72,6 +72,7 @@ function ClosePage() {
         </>
       }
     >
+      <div className="close-page">
       <PeriodPackPrint data={data} through={through} snapshot={snapshot} />
 
       <div className="close-sticky mb-4">
@@ -214,6 +215,7 @@ function ClosePage() {
           setReopening(false);
         }}
       />
+    </div>
     </AppShell>
   );
 }
@@ -294,7 +296,6 @@ function ChecklistTable({
               <tr
                 key={item.id}
                 className="border-b border-border/70 last:border-0"
-                data-active={item.ok ? undefined : "true"}
                 data-focused={pointer.activeId === item.id ? "true" : undefined}
                 data-row-id={item.id}
                 aria-current={pointer.activeId === item.id ? "true" : undefined}

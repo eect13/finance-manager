@@ -79,7 +79,7 @@ const NAV = [
     ],
   },
   {
-    label: "Employees",
+    label: "People",
     items: [{ to: "/employees", label: "Employees", icon: IdCard }],
   },
   {
@@ -120,7 +120,7 @@ function NavLinks({
     <nav className={cn("flex flex-col gap-6 py-4", embedded ? "sidebar-scroll min-h-0 flex-1" : "shrink-0", rail ? "px-2" : "px-3")}>
       {NAV.map((group) => (
         <div key={group.label} className="flex flex-col gap-1">
-          {rail || group.items.length <= 1 ? null : (
+          {rail ? null : (
             <p className="px-3 pb-1 text-xs font-medium tracking-widest text-muted-foreground uppercase">{group.label}</p>
           )}
           {group.items.map((item) => {

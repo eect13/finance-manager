@@ -127,7 +127,7 @@ export function SortHeader({
   const hasMenu = Boolean(onAlign);
   const absorb =
     fill || Boolean(className && /\bcol-(?:flex|fill)\b/.test(className));
-  const titleTone = active ? "text-foreground" : "text-muted-foreground hover:text-foreground";
+  const titleTone = "sort-header-label";
   const titleSize = compact ? "min-h-8 text-xs tracking-wide uppercase" : "min-h-11 text-sm";
   const longPressTimer = useRef<number | null>(null);
   const longPressOrigin = useRef<{ x: number; y: number } | null>(null);
@@ -248,7 +248,7 @@ export function SortHeader({
               {titleInner}
             </button>
           ) : (
-            <span className={cn("sort-header-main", titleSize, "text-muted-foreground")}>{titleInner}</span>
+            <span className={cn("sort-header-main sort-header-label", titleSize)}>{titleInner}</span>
           )}
           {active ? (
             <span className="sort-header-controls" aria-hidden="false">
@@ -330,6 +330,7 @@ export function ActionsHeader({
       className={cn("col-actions relative align-middle px-4 py-3 font-medium text-center", className)}
       style={{ minWidth: width, width }}
       data-col="actions"
+      data-sortable="false"
       title="Drag to resize · double-click, right-click, or long-press to auto-fit"
       onContextMenu={
         onFit
@@ -378,7 +379,7 @@ export function ActionsHeader({
     >
       <div className="sort-header-row h-full">
         <div className="sort-header-cluster">
-          <span className={cn("sort-header-main", "min-h-11 text-sm", "text-muted-foreground")}>
+          <span className="sort-header-main sort-header-label min-h-11 text-sm">
             <span className="sort-header-title">Actions</span>
           </span>
         </div>

@@ -6096,6 +6096,156 @@ body.is-phone-move-dragging {
   background-color: transparent !important;
 }
 
+/* =============================================================================
+   v3.62.88 — table theme tokens; Date title matches; Actions never sorts;
+   Customers / Vendors idle pane is paper, not a reversed selected tint
+   ============================================================================= */
+
+:root {
+  --color-table: #ffffff;
+  --color-table-header: var(--color-table);
+  --color-table-title: var(--color-muted-foreground);
+  --color-table-select: color-mix(in oklab, var(--color-primary) 12%, var(--color-table));
+  --color-table-hover: color-mix(in oklab, var(--color-foreground) 4%, var(--color-table));
+  --color-table-divider: color-mix(in oklab, var(--color-border) 80%, transparent);
+  --color-party-pane: var(--color-table);
+}
+.dark {
+  --color-table: #252420;
+  --color-table-header: var(--color-table);
+  --color-table-title: var(--color-muted-foreground);
+  --color-table-select: color-mix(in oklab, var(--color-primary) 16%, var(--color-table));
+  --color-table-hover: color-mix(in oklab, var(--color-foreground) 6%, var(--color-table));
+  --color-table-divider: color-mix(in oklab, var(--color-border) 80%, transparent);
+  --color-party-pane: var(--color-table);
+}
+
+/* Every list header is one paper field — Date must not keep the old 7% mix */
+.list-grid thead th,
+.register-matrix thead th,
+.recon-table-card thead th,
+.party-dir-table thead th,
+.party-txn-table thead th,
+.register-matrix thead th.col-date,
+.register-matrix thead th.col-check,
+.register-matrix thead th.col-status,
+.recon-table-card thead th[data-col="date"],
+.recon-table-card thead th.col-check,
+.list-grid thead th[data-col="date"],
+.list-grid thead th.col-actions,
+.list-grid thead th[data-col="actions"] {
+  background: var(--color-table-header) !important;
+  background-color: var(--color-table-header) !important;
+  color: var(--color-table-title) !important;
+}
+
+/* All column titles one ink — sorted Date is not a second color */
+.list-grid thead .sort-header-main,
+.list-grid thead .sort-header-title,
+.list-grid thead .sort-header-label,
+.register-matrix thead .sort-header-main,
+.register-matrix thead .sort-header-title,
+.register-matrix thead .sort-header-label,
+.recon-table-card thead .sort-header-main,
+.recon-table-card thead .sort-header-title,
+.recon-table-card thead .sort-header-label,
+.party-dir-table thead .sort-header-main,
+.party-dir-table thead .sort-header-title,
+.party-dir-table thead .sort-header-label,
+.party-txn-table thead .sort-header-main,
+.party-txn-table thead .sort-header-title,
+.list-grid thead th[data-col="actions"],
+.list-grid thead th.col-actions,
+.list-grid thead th.col-actions .sort-header-title,
+.list-grid thead th.col-actions .sort-header-label,
+.register-matrix thead th.col-date .sort-header-title,
+.register-matrix thead th.col-date .sort-header-label,
+.recon-table-card thead th[data-col="date"] .sort-header-title,
+.list-grid thead th[data-col="date"] .sort-header-title,
+.list-grid thead th[data-col="date"] .sort-header-label {
+  color: var(--color-table-title) !important;
+}
+
+thead button.sort-header-main:hover .sort-header-title,
+thead button.sort-header-label:hover {
+  color: var(--color-foreground) !important;
+}
+
+/* Actions: label only — no sort, no filter, no align menu, no hover-as-control */
+.list-grid thead th.col-actions,
+.list-grid thead th[data-col="actions"],
+.list-grid thead th[data-sortable="false"] {
+  cursor: default;
+}
+.list-grid thead th.col-actions .sort-header-main,
+.list-grid thead th[data-col="actions"] .sort-header-main,
+.list-grid thead th.col-actions .sort-header-label {
+  pointer-events: none;
+  cursor: default;
+}
+.list-grid thead th.col-actions .sort-header-dir,
+.list-grid thead th[data-col="actions"] .sort-header-dir,
+.list-grid thead th.col-actions button.sort-header-main {
+  display: none !important;
+}
+
+.list-grid tbody tr:hover:not([aria-hidden]):not([data-selected]):not([data-focused]):not([data-opening]) td,
+.register-matrix tbody tr:hover:not([aria-hidden]):not([data-selected]):not([data-focused]):not([data-opening]) td,
+.recon-table-card tbody tr:hover:not([aria-hidden]):not([data-selected]):not([data-focused]) td,
+.party-dir-table tbody tr:hover:not([aria-hidden]):not([data-selected]):not([data-focused]) td {
+  background: var(--color-table-hover) !important;
+  background-color: var(--color-table-hover) !important;
+}
+
+.register-matrix tbody td.col-check,
+.recon-table-card tbody td.col-check,
+.list-grid tbody td.col-check,
+.register-matrix tbody tr[data-selected="true"] td.col-check,
+.recon-table-card tbody tr[data-selected="true"] td.col-check,
+.register-matrix tbody tr[data-focused="true"] td.col-check,
+.recon-table-card tbody tr[data-focused="true"] td.col-check {
+  box-shadow: 1px 0 0 var(--color-table-divider) !important;
+}
+
+/* Customers / Vendors: directory is the same paper as other lists (idle is not a selected tint) */
+.party-pane-list,
+.party-center[data-has-selection="false"] .party-pane-list,
+.party-center[data-has-selection="true"] .party-pane-list,
+.party-pane-detail,
+.party-center[data-has-selection="true"] .party-pane-detail {
+  background: var(--color-party-pane) !important;
+  background-color: var(--color-party-pane) !important;
+}
+
+.party-center[data-has-selection="false"] .party-dir-table,
+.party-center[data-has-selection="false"] .party-dir-table thead th,
+.party-center[data-has-selection="false"] .party-dir-table tbody tr:not([data-selected]):not([data-focused]) td,
+.party-center[data-has-selection="true"] .party-dir-table,
+.party-center[data-has-selection="true"] .party-dir-table thead th,
+.party-center[data-has-selection="true"] .party-dir-table tbody tr:not([data-selected]):not([data-focused]) td {
+  background: var(--color-table) !important;
+  background-color: var(--color-table) !important;
+}
+
+.party-center .party-dir-table tbody tr[data-selected="true"] td,
+.party-center .party-dir-table tbody tr[data-focused="true"] td,
+.party-center .party-dir-table tbody tr[data-selected="true"][data-focused="true"] td,
+.party-center .party-dir-table tbody tr[data-selected="true"] td[data-col="name"],
+.party-center .party-dir-table tbody tr[data-focused="true"] td[data-col="name"] {
+  background: var(--color-table-select) !important;
+  background-color: var(--color-table-select) !important;
+}
+
+@media (max-width: 767px) {
+  .register-matrix .col-date,
+  .register-matrix thead .col-date,
+  .register-matrix tbody td.col-date {
+    background: var(--color-table) !important;
+    background-color: var(--color-table) !important;
+  }
+}
+
+
 
 
 

@@ -1,4 +1,4 @@
-# Finance Manager v3.62.87
+# Finance Manager v3.62.88
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -11,6 +11,13 @@ No accounts, no server setup. Books stay on this computer (IndexedDB). Settings 
 The app mark is a **navy tile with cream pillars** — a full opaque square (Windows 11 already rounds the tile; transparent corners were a white plate). Web uses the SVG favicon. Windows uses a **BMP 32-bit** `.ico` (PNG-in-ICO is a white square on the shortcut and the taskbar). After install, **delete any leftover blank shortcut** and pin the new one — Explorer caches the last icon.
 
 
+
+## What's new in v3.62.88
+
+- **Date titles**: Register Date is the same paper and ink as Type / Payee (it had kept the old navy wash). Same on Reconcile, Receipts, and every other list — a sorted Date is not a second color.
+- **Actions**: Receipts (and Banks, Checks, Invoices, Bills, Employees) Actions is a label only — no sort, no filter, no align menu.
+- **Customers / Vendors**: the idle directory is the same white/dark paper as other lists. Picking a name highlights that row; the empty pane is no longer the stronger tint.
+- **Theme**: table paper, header, title ink, row select, and party panes are CSS variables so light/dark cannot drift apart.
 
 ## What's new in v3.62.87
 

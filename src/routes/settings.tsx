@@ -11,6 +11,8 @@ import { Money } from "@/components/money";
 import { listColClass, listColWidthStyle } from "@/components/list-table";
 import { SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
+import { useColAligns, alignClass } from "@/components/use-col-aligns";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { OptionsDescMore } from "@/components/options-desc-more";
@@ -696,6 +698,7 @@ function RecurringCard() {
   );
   const sort = useEntrySort(visible, "next", getters, "asc");
   const cols = useColWidths("finance-manager-recurring-cols", REC_COLS);
+  const colAligns = useColAligns("finance-manager-recurring-col-aligns", Object.keys(REC_COLS) as Array<keyof typeof REC_COLS>);
   const gridRef = useRef<HTMLDivElement>(null);
   function fit(id: keyof typeof REC_COLS, label: string) {
     const table = gridRef.current?.querySelector("table");
@@ -780,18 +783,18 @@ function RecurringCard() {
                     </colgroup>
                     <thead>
                       <tr className="border-b border-border text-muted-foreground">
-                        <SortHeader label="Name" column="name" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.name} onWidth={(n) => cols.setWidth("name", n)} onFit={() => fit("name", "Name")} />
-                        <SortHeader label="Next" column="next" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.next} onWidth={(n) => cols.setWidth("next", n)} onFit={() => fit("next", "Next")} />
-                        <SortHeader label="Amount" column="amount" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} align="center" width={cols.widths.amount} onWidth={(n) => cols.setWidth("amount", n)} onFit={() => fit("amount", "Amount")} />
+                        <SortHeader label="Name" column="name" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.name} onWidth={(n) => cols.setWidth("name", n)} onFit={() => fit("name", "Name")} align={colAligns.aligns.name ?? "center"} onAlign={(a) => colAligns.setAlign("name", a)} />
+                        <SortHeader label="Next" column="next" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.next} onWidth={(n) => cols.setWidth("next", n)} onFit={() => fit("next", "Next")} align={colAligns.aligns.next ?? "center"} onAlign={(a) => colAligns.setAlign("next", a)} />
+                        <SortHeader label="Amount" column="amount" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.amount} onWidth={(n) => cols.setWidth("amount", n)} onFit={() => fit("amount", "Amount")} align={colAligns.aligns.amount ?? "center"} onAlign={(a) => colAligns.setAlign("amount", a)} />
                         <th className="col-actions px-4 py-3" />
                       </tr>
                     </thead>
                     <tbody>
                       {sort.sorted.map((item) => (
                         <tr key={item.id} className="border-b border-border/70 last:border-0">
-                          <td className="px-4 py-2" data-col="name">{item.name}</td>
-                          <td className="px-4 py-2" data-col="next">{formatDate(item.nextDate)}</td>
-                          <td className="px-4 py-2 text-right" data-col="amount">
+                          <td className={cn("px-4 py-2", alignClass(colAligns.aligns.name ?? "center"))} data-col="name" data-align={colAligns.aligns.name ?? "center"}>{item.name}</td>
+                          <td className={cn("px-4 py-2", alignClass(colAligns.aligns.next ?? "center"))} data-col="next" data-align={colAligns.aligns.next ?? "center"}>{formatDate(item.nextDate)}</td>
+                          <td className={cn("px-4 py-2", alignClass(colAligns.aligns.amount ?? "center"))} data-col="amount" data-align={colAligns.aligns.amount ?? "center"}>
                             <Money amount={item.amount} currency={data.settings.currency} />
                           </td>
                           <td className="col-actions px-4 py-2 text-right">

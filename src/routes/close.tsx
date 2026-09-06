@@ -12,6 +12,7 @@ import { requestPrint } from "@/components/print-preview";
 import { SortHeader } from "@/components/sort-header";
 import { listColClass, listColWidthStyle } from "@/components/list-table";
 import { useColWidths } from "@/components/use-col-widths";
+import { useColAligns, alignClass } from "@/components/use-col-aligns";
 import { Button } from "@/components/ui/button";
 import { closeChecklist, closeTotals, monthEndIso, type CloseCheck } from "@/lib/finance/close";
 import { fitColumnWidth } from "@/lib/finance/fit-column";
@@ -228,6 +229,7 @@ function ChecklistTable({
   dueLabel?: string;
 }) {
   const cols = useColWidths("finance-manager-close-check-cols", CHECK_COLS, { min: 120 });
+  const colAligns = useColAligns("finance-manager-close-check-col-aligns", Object.keys(CHECK_COLS) as Array<keyof typeof CHECK_COLS>);
   const gridRef = useRef<HTMLDivElement>(null);
   const getters = useMemo(
     () => ({
@@ -253,9 +255,9 @@ function ChecklistTable({
         </colgroup>
         <thead>
           <tr className="border-b border-border text-muted-foreground">
-            <SortHeader label="Check" column="check" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.check} onWidth={(n) => cols.setWidth("check", n)} onFit={() => fit("check", "Check")} />
-            <SortHeader label="Status" column="status" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.status} onWidth={(n) => cols.setWidth("status", n)} onFit={() => fit("status", "Status")} className="whitespace-nowrap" />
-            <SortHeader label="Detail" column="detail" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.detail} onWidth={(n) => cols.setWidth("detail", n)} onFit={() => fit("detail", "Detail")} fill />
+            <SortHeader label="Check" column="check" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.check} onWidth={(n) => cols.setWidth("check", n)} onFit={() => fit("check", "Check")} align={colAligns.aligns.check ?? "center"} onAlign={(a) => colAligns.setAlign("check", a)} />
+            <SortHeader label="Status" column="status" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.status} onWidth={(n) => cols.setWidth("status", n)} onFit={() => fit("status", "Status")} className="whitespace-nowrap" align={colAligns.aligns.status ?? "center"} onAlign={(a) => colAligns.setAlign("status", a)} />
+            <SortHeader label="Detail" column="detail" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.detail} onWidth={(n) => cols.setWidth("detail", n)} onFit={() => fit("detail", "Detail")} align={colAligns.aligns.detail ?? "center"} onAlign={(a) => colAligns.setAlign("detail", a)} fill />
           </tr>
         </thead>
         <tbody>
@@ -268,11 +270,11 @@ function ChecklistTable({
           ) : (
             sort.sorted.map((item) => (
               <tr key={item.id} className="border-b border-border/70 last:border-0" data-active={item.ok ? undefined : "true"}>
-                <td className="px-4 py-3 font-medium" data-col="check">{item.label}</td>
-                <td className="px-4 py-3" data-col="status">{item.ok ? "Clear" : "Blocked"}</td>
-                <td className="px-4 py-3 col-fill" data-col="detail" data-align="left">
+                <td className={cn("px-4 py-3 font-medium", alignClass(colAligns.aligns.check ?? "center"))} data-col="check" data-align={colAligns.aligns.check ?? "center"}>{item.label}</td>
+                <td className={cn("px-4 py-3", alignClass(colAligns.aligns.status ?? "center"))} data-col="status" data-align={colAligns.aligns.status ?? "center"}>{item.ok ? "Clear" : "Blocked"}</td>
+                <td className={cn("px-4 py-3 col-fill", alignClass(colAligns.aligns.detail ?? "center"))} data-col="detail" data-align={colAligns.aligns.detail ?? "center"}>
                   <div className="flex w-full min-w-0 flex-wrap items-center gap-2">
-                    <span className="min-w-0 flex-1 text-left">
+                    <span className="min-w-0 flex-1">
                       {item.href ? (
                         <Link to={item.href} className="underline-offset-2 hover:underline">
                           {item.detail}
@@ -307,6 +309,7 @@ function SnapshotTable({
   currency: string;
 }) {
   const cols = useColWidths("finance-manager-close-snap-cols", SNAP_COLS);
+  const colAligns = useColAligns("finance-manager-close-snap-col-aligns", Object.keys(SNAP_COLS) as Array<keyof typeof SNAP_COLS>);
   const gridRef = useRef<HTMLDivElement>(null);
   const getters = useMemo(
     () => ({
@@ -332,19 +335,19 @@ function SnapshotTable({
         </colgroup>
         <thead>
           <tr className="border-b border-border text-muted-foreground">
-            <SortHeader label="Bank" column="bank" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.bank} onWidth={(n) => cols.setWidth("bank", n)} onFit={() => fit("bank", "Bank")} />
-            <SortHeader label="Balance" column="balance" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} align="center" width={cols.widths.balance} onWidth={(n) => cols.setWidth("balance", n)} onFit={() => fit("balance", "Balance")} />
-            <SortHeader label="Statement" column="statement" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.statement} onWidth={(n) => cols.setWidth("statement", n)} onFit={() => fit("statement", "Statement")} />
+            <SortHeader label="Bank" column="bank" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.bank} onWidth={(n) => cols.setWidth("bank", n)} onFit={() => fit("bank", "Bank")} align={colAligns.aligns.bank ?? "center"} onAlign={(a) => colAligns.setAlign("bank", a)} />
+            <SortHeader label="Balance" column="balance" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.balance} onWidth={(n) => cols.setWidth("balance", n)} onFit={() => fit("balance", "Balance")} align={colAligns.aligns.balance ?? "center"} onAlign={(a) => colAligns.setAlign("balance", a)} />
+            <SortHeader label="Statement" column="statement" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.statement} onWidth={(n) => cols.setWidth("statement", n)} onFit={() => fit("statement", "Statement")} align={colAligns.aligns.statement ?? "center"} onAlign={(a) => colAligns.setAlign("statement", a)} />
           </tr>
         </thead>
         <tbody>
           {sort.sorted.map((b) => (
             <tr key={b.bankId} className="border-b border-border/70 last:border-0">
-              <td className="px-4 py-3" data-col="bank">{b.nickname}</td>
-              <td className="px-4 py-3 text-right" data-col="balance">
+              <td className={cn("px-4 py-3", alignClass(colAligns.aligns.bank ?? "center"))} data-col="bank" data-align={colAligns.aligns.bank ?? "center"}>{b.nickname}</td>
+              <td className={cn("px-4 py-3", alignClass(colAligns.aligns.balance ?? "center"))} data-col="balance" data-align={colAligns.aligns.balance ?? "center"}>
                 <Money amount={b.balance} currency={currency} />
               </td>
-              <td className="px-4 py-3" data-col="statement">{b.lastStatementDate ? formatDate(b.lastStatementDate) : "—"}</td>
+              <td className={cn("px-4 py-3", alignClass(colAligns.aligns.statement ?? "center"))} data-col="statement" data-align={colAligns.aligns.statement ?? "center"}>{b.lastStatementDate ? formatDate(b.lastStatementDate) : "—"}</td>
             </tr>
           ))}
         </tbody>
@@ -390,6 +393,7 @@ function AuditTable({ rows }: { rows: AuditEvent[] }) {
   );
   const sort = useEntrySort(filtered, "when", getters, "desc");
   const cols = useColWidths("finance-manager-audit-cols", AUDIT_COLS);
+  const colAligns = useColAligns("finance-manager-audit-col-aligns", Object.keys(AUDIT_COLS) as Array<keyof typeof AUDIT_COLS>);
   const gridRef = useRef<HTMLDivElement>(null);
   function fit(id: keyof typeof AUDIT_COLS, label: string) {
     const table = gridRef.current?.querySelector("table");
@@ -415,12 +419,12 @@ function AuditTable({ rows }: { rows: AuditEvent[] }) {
           </colgroup>
           <thead>
             <tr className="border-b border-border text-muted-foreground">
-              <SortHeader label="When" column="when" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.when} onWidth={(n) => cols.setWidth("when", n)} onFit={() => fit("when", "When")} />
-              <SortHeader label="Who" column="who" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.who} onWidth={(n) => cols.setWidth("who", n)} onFit={() => fit("who", "Who")} />
-              <SortHeader label="Action" column="action" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.action} onWidth={(n) => cols.setWidth("action", n)} onFit={() => fit("action", "Action")} />
-              <SortHeader label="Detail" column="detail" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.detail} onWidth={(n) => cols.setWidth("detail", n)} onFit={() => fit("detail", "Detail")} fill />
-              <SortHeader label="Old" column="old" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.old} onWidth={(n) => cols.setWidth("old", n)} onFit={() => fit("old", "Old")} />
-              <SortHeader label="New" column="next" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.next} onWidth={(n) => cols.setWidth("next", n)} onFit={() => fit("next", "New")} />
+              <SortHeader label="When" column="when" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.when} onWidth={(n) => cols.setWidth("when", n)} onFit={() => fit("when", "When")} align={colAligns.aligns.when ?? "center"} onAlign={(a) => colAligns.setAlign("when", a)} />
+              <SortHeader label="Who" column="who" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.who} onWidth={(n) => cols.setWidth("who", n)} onFit={() => fit("who", "Who")} align={colAligns.aligns.who ?? "center"} onAlign={(a) => colAligns.setAlign("who", a)} />
+              <SortHeader label="Action" column="action" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.action} onWidth={(n) => cols.setWidth("action", n)} onFit={() => fit("action", "Action")} align={colAligns.aligns.action ?? "center"} onAlign={(a) => colAligns.setAlign("action", a)} />
+              <SortHeader label="Detail" column="detail" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.detail} onWidth={(n) => cols.setWidth("detail", n)} onFit={() => fit("detail", "Detail")} align={colAligns.aligns.detail ?? "center"} onAlign={(a) => colAligns.setAlign("detail", a)} fill />
+              <SortHeader label="Old" column="old" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.old} onWidth={(n) => cols.setWidth("old", n)} onFit={() => fit("old", "Old")} align={colAligns.aligns.old ?? "center"} onAlign={(a) => colAligns.setAlign("old", a)} />
+              <SortHeader label="New" column="next" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.next} onWidth={(n) => cols.setWidth("next", n)} onFit={() => fit("next", "New")} align={colAligns.aligns.next ?? "center"} onAlign={(a) => colAligns.setAlign("next", a)} />
             </tr>
           </thead>
           <tbody>
@@ -433,12 +437,12 @@ function AuditTable({ rows }: { rows: AuditEvent[] }) {
             ) : (
               sort.sorted.map((ev) => (
                 <tr key={ev.id} className="border-b border-border/70 last:border-0">
-                  <td className="px-4 py-3 whitespace-nowrap" data-col="when">{new Date(ev.at).toLocaleString()}</td>
-                  <td className="px-4 py-3" data-col="who">{ev.who || "this browser"}</td>
-                  <td className="px-4 py-3" data-col="action">{ev.action}</td>
-                  <td className="px-4 py-3" data-col="detail">{ev.detail}</td>
-                  <td className="px-4 py-3" data-col="old">{ev.old}</td>
-                  <td className="px-4 py-3" data-col="next">{ev.new}</td>
+                  <td className={cn("px-4 py-3 whitespace-nowrap", alignClass(colAligns.aligns.when ?? "center"))} data-col="when" data-align={colAligns.aligns.when ?? "center"}>{new Date(ev.at).toLocaleString()}</td>
+                  <td className={cn("px-4 py-3", alignClass(colAligns.aligns.who ?? "center"))} data-col="who" data-align={colAligns.aligns.who ?? "center"}>{ev.who || "this browser"}</td>
+                  <td className={cn("px-4 py-3", alignClass(colAligns.aligns.action ?? "center"))} data-col="action" data-align={colAligns.aligns.action ?? "center"}>{ev.action}</td>
+                  <td className={cn("px-4 py-3", alignClass(colAligns.aligns.detail ?? "center"))} data-col="detail" data-align={colAligns.aligns.detail ?? "center"}>{ev.detail}</td>
+                  <td className={cn("px-4 py-3", alignClass(colAligns.aligns.old ?? "center"))} data-col="old" data-align={colAligns.aligns.old ?? "center"}>{ev.old}</td>
+                  <td className={cn("px-4 py-3", alignClass(colAligns.aligns.next ?? "center"))} data-col="next" data-align={colAligns.aligns.next ?? "center"}>{ev.new}</td>
                 </tr>
               ))
             )}

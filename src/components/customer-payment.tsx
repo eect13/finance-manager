@@ -12,6 +12,7 @@ import { ShopTick } from "@/components/shop-tick";
 import { listColClass, listColWidthStyle } from "@/components/list-table";
 import { SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
+import { useColAligns, alignClass } from "@/components/use-col-aligns";
 import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -193,6 +194,7 @@ export function CustomerPayment({
   );
   const invSort = useEntrySort(visibleInvoices, "date", invGetters, "asc");
   const allocCols = useColWidths("finance-manager-receive-alloc-cols", ALLOC_COLS);
+  const allocAligns = useColAligns("finance-manager-receive-alloc-col-aligns", Object.keys(ALLOC_COLS) as Array<keyof typeof ALLOC_COLS>);
   const allocRef = useRef<HTMLDivElement>(null);
 
   const locked = receipt?.status === "void" || receipt?.recon === "reconciled";
@@ -597,6 +599,8 @@ export function CustomerPayment({
                         if (!table) return;
                         allocCols.setWidth("date", fitColumnWidth({ table, selector: `td[data-col="date"]`, header: "Date" }));
                       }}
+                      align={allocAligns.aligns.date ?? "center"}
+                      onAlign={(a) => allocAligns.setAlign("date", a)}
                     />
                     <SortHeader
                       compact
@@ -612,6 +616,8 @@ export function CustomerPayment({
                         if (!table) return;
                         allocCols.setWidth("number", fitColumnWidth({ table, selector: `td[data-col="number"]`, header: "Invoice no." }));
                       }}
+                      align={allocAligns.aligns.number ?? "center"}
+                      onAlign={(a) => allocAligns.setAlign("number", a)}
                     />
                     <SortHeader
                       compact
@@ -620,7 +626,8 @@ export function CustomerPayment({
                       sortKey={invSort.key}
                       dir={invSort.dir}
                       onToggle={invSort.toggle}
-                      align="center"
+                      align={allocAligns.aligns.orig ?? "center"}
+                      onAlign={(a) => allocAligns.setAlign("orig", a)}
                       width={allocCols.widths.orig}
                       onWidth={(n) => allocCols.setWidth("orig", n)}
                       onFit={() => {
@@ -636,7 +643,8 @@ export function CustomerPayment({
                       sortKey={invSort.key}
                       dir={invSort.dir}
                       onToggle={invSort.toggle}
-                      align="center"
+                      align={allocAligns.aligns.due ?? "center"}
+                      onAlign={(a) => allocAligns.setAlign("due", a)}
                       width={allocCols.widths.due}
                       onWidth={(n) => allocCols.setWidth("due", n)}
                       onFit={() => {
@@ -652,7 +660,8 @@ export function CustomerPayment({
                       sortKey={invSort.key}
                       dir={invSort.dir}
                       onToggle={invSort.toggle}
-                      align="center"
+                      align={allocAligns.aligns.payment ?? "center"}
+                      onAlign={(a) => allocAligns.setAlign("payment", a)}
                       width={allocCols.widths.payment}
                       onWidth={(n) => allocCols.setWidth("payment", n)}
                       onFit={() => {
@@ -682,15 +691,15 @@ export function CustomerPayment({
                               label={`Apply ${inv.number}`}
                             />
                           </td>
-                          <td className="whitespace-nowrap" data-col="date">{formatDate(inv.date)}</td>
-                          <td className="font-medium" data-col="number">{inv.number}</td>
-                          <td className="text-right" data-col="orig">
+                          <td className={cn("whitespace-nowrap", alignClass(allocAligns.aligns.date ?? "center"))} data-col="date" data-align={allocAligns.aligns.date ?? "center"}>{formatDate(inv.date)}</td>
+                          <td className={cn("font-medium", alignClass(allocAligns.aligns.number ?? "center"))} data-col="number" data-align={allocAligns.aligns.number ?? "center"}>{inv.number}</td>
+                          <td className={cn(alignClass(allocAligns.aligns.orig ?? "center"))} data-col="orig" data-align={allocAligns.aligns.orig ?? "center"}>
                             <Money amount={inv.orig} currency={data.settings.currency} />
                           </td>
-                          <td className="text-right" data-col="due">
+                          <td className={cn(alignClass(allocAligns.aligns.due ?? "center"))} data-col="due" data-align={allocAligns.aligns.due ?? "center"}>
                             <Money amount={inv.due} currency={data.settings.currency} />
                           </td>
-                          <td className="text-right col-actions" data-col="payment">
+                          <td className={cn("col-actions", alignClass(allocAligns.aligns.payment ?? "center"))} data-col="payment" data-align={allocAligns.aligns.payment ?? "center"}>
                             <Input
                               className="ml-auto h-9 min-h-9 w-28 text-right"
                               value={applied[inv.id] ?? ""}

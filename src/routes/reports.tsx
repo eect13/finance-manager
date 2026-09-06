@@ -11,6 +11,8 @@ import { requestPrint } from "@/components/print-preview";
 import { SortHeader } from "@/components/sort-header";
 import { listColClass, listColWidthStyle } from "@/components/list-table";
 import { useColWidths } from "@/components/use-col-widths";
+import { useColAligns, alignClass } from "@/components/use-col-aligns";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AGE_LABEL, AGE_ORDER, agingTotals, apAging, arAging, type AgingRow } from "@/lib/finance/aging";
@@ -138,6 +140,7 @@ function AgingTable({
     amount: 176,
   } as const;
   const cols = useColWidths(`finance-manager-aging-${kind}-cols`, AGE_COLS);
+  const colAligns = useColAligns(`finance-manager-aging-${kind}-col-aligns`, Object.keys(AGE_COLS) as Array<keyof typeof AGE_COLS>);
   const gridRef = useRef<HTMLDivElement>(null);
   function fit(id: keyof typeof AGE_COLS, label: string) {
     const table = gridRef.current?.querySelector("table");
@@ -163,11 +166,11 @@ function AgingTable({
           </colgroup>
           <thead>
             <tr className="border-b border-border text-muted-foreground">
-              <SortHeader label="Party" column="party" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.party} onWidth={(n) => cols.setWidth("party", n)} onFit={() => fit("party", "Party")} fill />
-              <SortHeader label="No." column="number" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.number} onWidth={(n) => cols.setWidth("number", n)} onFit={() => fit("number", "No.")} />
-              <SortHeader label="Due" column="due" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.due} onWidth={(n) => cols.setWidth("due", n)} onFit={() => fit("due", "Due")} />
-              <SortHeader label="Age" column="age" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.age} onWidth={(n) => cols.setWidth("age", n)} onFit={() => fit("age", "Age")} />
-              <SortHeader label="Open" column="amount" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} align="center" width={cols.widths.amount} onWidth={(n) => cols.setWidth("amount", n)} onFit={() => fit("amount", "Open")} />
+              <SortHeader label="Party" column="party" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.party} onWidth={(n) => cols.setWidth("party", n)} onFit={() => fit("party", "Party")} align={colAligns.aligns.party ?? "center"} onAlign={(a) => colAligns.setAlign("party", a)} fill />
+              <SortHeader label="No." column="number" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.number} onWidth={(n) => cols.setWidth("number", n)} onFit={() => fit("number", "No.")} align={colAligns.aligns.number ?? "center"} onAlign={(a) => colAligns.setAlign("number", a)} />
+              <SortHeader label="Due" column="due" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.due} onWidth={(n) => cols.setWidth("due", n)} onFit={() => fit("due", "Due")} align={colAligns.aligns.due ?? "center"} onAlign={(a) => colAligns.setAlign("due", a)} />
+              <SortHeader label="Age" column="age" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.age} onWidth={(n) => cols.setWidth("age", n)} onFit={() => fit("age", "Age")} align={colAligns.aligns.age ?? "center"} onAlign={(a) => colAligns.setAlign("age", a)} />
+              <SortHeader label="Open" column="amount" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.amount} onWidth={(n) => cols.setWidth("amount", n)} onFit={() => fit("amount", "Open")} align={colAligns.aligns.amount ?? "center"} onAlign={(a) => colAligns.setAlign("amount", a)} />
             </tr>
           </thead>
           <tbody>
@@ -180,11 +183,11 @@ function AgingTable({
             ) : (
               sort.sorted.map((row) => (
                 <tr key={row.id} className="border-b border-border/70 last:border-0" {...openProps(kind, row.id)}>
-                  <td className="px-3 py-2" data-col="party">{row.party}</td>
-                  <td className="px-3 py-2 whitespace-nowrap" data-col="number">{row.number}</td>
-                  <td className="px-3 py-2 whitespace-nowrap" data-col="due">{formatDate(row.dueDate)}</td>
-                  <td className="px-3 py-2 whitespace-nowrap" data-col="age">{AGE_LABEL[row.bucket]}</td>
-                  <td className="px-3 py-2 text-right whitespace-nowrap" data-col="amount">
+                  <td className={cn("px-3 py-2", alignClass(colAligns.aligns.party ?? "center"))} data-col="party" data-align={colAligns.aligns.party ?? "center"}>{row.party}</td>
+                  <td className={cn("px-3 py-2 whitespace-nowrap", alignClass(colAligns.aligns.number ?? "center"))} data-col="number" data-align={colAligns.aligns.number ?? "center"}>{row.number}</td>
+                  <td className={cn("px-3 py-2 whitespace-nowrap", alignClass(colAligns.aligns.due ?? "center"))} data-col="due" data-align={colAligns.aligns.due ?? "center"}>{formatDate(row.dueDate)}</td>
+                  <td className={cn("px-3 py-2 whitespace-nowrap", alignClass(colAligns.aligns.age ?? "center"))} data-col="age" data-align={colAligns.aligns.age ?? "center"}>{AGE_LABEL[row.bucket]}</td>
+                  <td className={cn("px-3 py-2 whitespace-nowrap", alignClass(colAligns.aligns.amount ?? "center"))} data-col="amount" data-align={colAligns.aligns.amount ?? "center"}>
                     <Money amount={row.amount} currency={currency} />
                   </td>
                 </tr>
@@ -194,7 +197,7 @@ function AgingTable({
               <td className="px-3 py-2 font-medium" colSpan={4}>
                 Total
               </td>
-              <td className="px-3 py-2 text-right font-medium whitespace-nowrap" data-col="amount">
+              <td className={cn("px-3 py-2 font-medium whitespace-nowrap", alignClass(colAligns.aligns.amount ?? "center"))} data-col="amount" data-align={colAligns.aligns.amount ?? "center"}>
                 <Money amount={grand} currency={currency} />
               </td>
             </tr>
@@ -216,6 +219,7 @@ const TB_COLS = {
 
 function TrialTable({ rows, currency }: { rows: TbRow[]; currency: string }) {
   const cols = useColWidths("finance-manager-tb-cols", TB_COLS);
+  const colAligns = useColAligns("finance-manager-tb-col-aligns", Object.keys(TB_COLS) as Array<keyof typeof TB_COLS>);
   const gridRef = useRef<HTMLDivElement>(null);
   const getters = useMemo(
     () => ({
@@ -241,21 +245,21 @@ function TrialTable({ rows, currency }: { rows: TbRow[]; currency: string }) {
         </colgroup>
         <thead>
           <tr className="border-b border-border text-muted-foreground">
-            <SortHeader label="Account" column="account" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.account} onWidth={(n) => cols.setWidth("account", n)} onFit={() => fit("account", "Account")} />
-            <SortHeader label="Debit" column="debit" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} align="center" width={cols.widths.debit} onWidth={(n) => cols.setWidth("debit", n)} onFit={() => fit("debit", "Debit")} />
-            <SortHeader label="Credit" column="credit" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} align="center" width={cols.widths.credit} onWidth={(n) => cols.setWidth("credit", n)} onFit={() => fit("credit", "Credit")} />
+            <SortHeader label="Account" column="account" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.account} onWidth={(n) => cols.setWidth("account", n)} onFit={() => fit("account", "Account")} align={colAligns.aligns.account ?? "center"} onAlign={(a) => colAligns.setAlign("account", a)} />
+            <SortHeader label="Debit" column="debit" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.debit} onWidth={(n) => cols.setWidth("debit", n)} onFit={() => fit("debit", "Debit")} align={colAligns.aligns.debit ?? "center"} onAlign={(a) => colAligns.setAlign("debit", a)} />
+            <SortHeader label="Credit" column="credit" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.credit} onWidth={(n) => cols.setWidth("credit", n)} onFit={() => fit("credit", "Credit")} align={colAligns.aligns.credit ?? "center"} onAlign={(a) => colAligns.setAlign("credit", a)} />
           </tr>
         </thead>
         <tbody>
           {sort.sorted.map((row) => (
             <tr key={row.account.id} className="border-b border-border/70 last:border-0">
-              <td className="px-4 py-2" data-col="account">
+              <td className={cn("px-4 py-2", alignClass(colAligns.aligns.account ?? "center"))} data-col="account" data-align={colAligns.aligns.account ?? "center"}>
                 <span className="text-muted-foreground">{row.account.code}</span> {row.account.name}
               </td>
-              <td className="px-4 py-2 text-right whitespace-nowrap" data-col="debit">
+              <td className={cn("px-4 py-2 whitespace-nowrap", alignClass(colAligns.aligns.debit ?? "center"))} data-col="debit" data-align={colAligns.aligns.debit ?? "center"}>
                 {row.debit ? <Money amount={row.debit} currency={currency} /> : ""}
               </td>
-              <td className="px-4 py-2 text-right whitespace-nowrap" data-col="credit">
+              <td className={cn("px-4 py-2 whitespace-nowrap", alignClass(colAligns.aligns.credit ?? "center"))} data-col="credit" data-align={colAligns.aligns.credit ?? "center"}>
                 {row.credit ? <Money amount={row.credit} currency={currency} /> : ""}
               </td>
             </tr>
@@ -273,6 +277,7 @@ const PL_COLS = {
 
 function PlTable({ rows, net, currency }: { rows: PlRow[]; net: number; currency: string }) {
   const cols = useColWidths("finance-manager-pl-cols", PL_COLS);
+  const colAligns = useColAligns("finance-manager-pl-col-aligns", Object.keys(PL_COLS) as Array<keyof typeof PL_COLS>);
   const gridRef = useRef<HTMLDivElement>(null);
   const getters = useMemo(
     () => ({
@@ -297,17 +302,17 @@ function PlTable({ rows, net, currency }: { rows: PlRow[]; net: number; currency
         </colgroup>
         <thead>
           <tr className="border-b border-border text-muted-foreground">
-            <SortHeader label="Account" column="account" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.account} onWidth={(n) => cols.setWidth("account", n)} onFit={() => fit("account", "Account")} />
-            <SortHeader label="Amount" column="amount" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} align="center" width={cols.widths.amount} onWidth={(n) => cols.setWidth("amount", n)} onFit={() => fit("amount", "Amount")} />
+            <SortHeader label="Account" column="account" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.account} onWidth={(n) => cols.setWidth("account", n)} onFit={() => fit("account", "Account")} align={colAligns.aligns.account ?? "center"} onAlign={(a) => colAligns.setAlign("account", a)} />
+            <SortHeader label="Amount" column="amount" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.amount} onWidth={(n) => cols.setWidth("amount", n)} onFit={() => fit("amount", "Amount")} align={colAligns.aligns.amount ?? "center"} onAlign={(a) => colAligns.setAlign("amount", a)} />
           </tr>
         </thead>
         <tbody>
           {sort.sorted.map((row) => (
             <tr key={row.account.id} className="border-b border-border/70 last:border-0">
-              <td className="px-4 py-2" data-col="account">
+              <td className={cn("px-4 py-2", alignClass(colAligns.aligns.account ?? "center"))} data-col="account" data-align={colAligns.aligns.account ?? "center"}>
                 <span className="text-muted-foreground">{row.account.code}</span> {row.account.name}
               </td>
-              <td className="px-4 py-2 text-right whitespace-nowrap" data-col="amount">
+              <td className={cn("px-4 py-2 whitespace-nowrap", alignClass(colAligns.aligns.amount ?? "center"))} data-col="amount" data-align={colAligns.aligns.amount ?? "center"}>
                 <Money
                   amount={row.account.type === "expense" ? -row.amount : row.amount}
                   currency={currency}
@@ -318,7 +323,7 @@ function PlTable({ rows, net, currency }: { rows: PlRow[]; net: number; currency
           ))}
           <tr>
             <td className="px-4 py-3 font-medium">Net income</td>
-            <td className="px-4 py-3 text-right font-medium whitespace-nowrap" data-col="amount">
+            <td className={cn("px-4 py-3 font-medium whitespace-nowrap", alignClass(colAligns.aligns.amount ?? "center"))} data-col="amount" data-align={colAligns.aligns.amount ?? "center"}>
               <Money amount={net} currency={currency} signed />
             </td>
           </tr>

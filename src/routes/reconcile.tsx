@@ -572,10 +572,51 @@ function ReconcilePage() {
                 <thead>
                   <tr className="border-b border-border text-muted-foreground">
                     <th className="w-10 px-2 py-2 no-print whitespace-nowrap" aria-label="Cleared" />
-                    <th className="px-2 py-2 text-left font-medium whitespace-nowrap">Date</th>
-                    <th className="min-w-[10rem] px-2 py-2 text-left font-medium whitespace-nowrap">Payee</th>
-                    <th className="px-2 py-2 text-right font-medium whitespace-nowrap">Amount</th>
-                    <th className="px-2 py-2 text-right font-medium whitespace-nowrap">Days</th>
+                    <SortHeader
+                      compact
+                      label="Date"
+                      column="date"
+                      sortKey={sort.key}
+                      dir={sort.dir}
+                      onToggle={sort.toggle}
+                      align={colAligns.aligns.date ?? "center"}
+                      onAlign={(a) => colAligns.setAlign("date", a)}
+                      className="whitespace-nowrap px-2"
+                    />
+                    <SortHeader
+                      compact
+                      label="Payee"
+                      column="payee"
+                      sortKey={sort.key}
+                      dir={sort.dir}
+                      onToggle={sort.toggle}
+                      align={colAligns.aligns.payee ?? "center"}
+                      onAlign={(a) => colAligns.setAlign("payee", a)}
+                      className="min-w-[10rem] whitespace-nowrap px-2"
+                    />
+                    <SortHeader
+                      compact
+                      label="Amount"
+                      column="payment"
+                      sortable={false}
+                      sortKey={sort.key}
+                      dir={sort.dir}
+                      onToggle={sort.toggle}
+                      align={colAligns.aligns.payment ?? "center"}
+                      onAlign={(a) => colAligns.setAlign("payment", a)}
+                      className="whitespace-nowrap px-2"
+                    />
+                    <SortHeader
+                      compact
+                      label="Days"
+                      column="days"
+                      sortKey={sort.key}
+                      dir={sort.dir}
+                      onToggle={sort.toggle}
+                      align={colAligns.aligns.days ?? "center"}
+                      onAlign={(a) => colAligns.setAlign("days", a)}
+                      className="whitespace-nowrap px-2"
+                    />
                   </tr>
                 </thead>
                 <tbody>
@@ -612,10 +653,10 @@ function ReconcilePage() {
                         >
                           <ShopTick checked={on} onChange={(next) => toggle(line, next)} label="Cleared" />
                         </td>
-                        <td className="whitespace-nowrap px-2 py-2.5 text-muted-foreground tabular-nums">
+                        <td className={cn("whitespace-nowrap px-2 py-2.5 text-muted-foreground tabular-nums", alignClass(colAligns.aligns.date ?? "center"))} data-col="date" data-align={colAligns.aligns.date ?? "center"}>
                           {formatDate(line.date)}
                         </td>
-                        <td className="min-w-[10rem] whitespace-normal px-2 py-3">
+                        <td className={cn("min-w-[10rem] whitespace-normal px-2 py-3", alignClass(colAligns.aligns.payee ?? "center"))} data-col="payee" data-align={colAligns.aligns.payee ?? "center"}>
                           <p className="font-medium break-words">{line.party}</p>
                           <p className="mt-0.5 break-words text-muted-foreground">
                             {KIND_LABEL[line.kind]}
@@ -623,7 +664,7 @@ function ReconcilePage() {
                             {line.memo?.trim() ? ` · ${line.memo}` : ""}
                           </p>
                         </td>
-                        <td className="whitespace-nowrap px-2 py-2.5 text-right tabular-nums">
+                        <td className={cn("whitespace-nowrap px-2 py-2.5 tabular-nums", alignClass(colAligns.aligns.payment ?? "center"))} data-col="payment" data-align={colAligns.aligns.payment ?? "center"}>
                           {line.payment ? (
                             <Money amount={line.payment} currency={data.settings.currency} className="text-debit" />
                           ) : line.deposit ? (
@@ -634,9 +675,12 @@ function ReconcilePage() {
                         </td>
                         <td
                           className={cn(
-                            "whitespace-nowrap px-2 py-2.5 text-right tabular-nums",
+                            "whitespace-nowrap px-2 py-2.5 tabular-nums",
+                            alignClass(colAligns.aligns.days ?? "center"),
                             days > 90 && "text-debit",
                           )}
+                          data-col="days"
+                          data-align={colAligns.aligns.days ?? "center"}
                         >
                           {days ? `${days}d` : "—"}
                         </td>

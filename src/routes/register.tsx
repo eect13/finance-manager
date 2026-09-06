@@ -25,7 +25,7 @@ import { RegisterSwap } from "@/components/register-swap";
 import { ShopTick } from "@/components/shop-tick";
 import { SortHeader } from "@/components/sort-header";
 import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
-import { useColAligns } from "@/components/use-col-aligns";
+import { useColAligns, alignClass } from "@/components/use-col-aligns";
 import { CheckStatusControl } from "@/components/check-status-menu";
 import { ReceiptStatusControl, type ReceiptStatusAction } from "@/components/receipt-status-menu";
 import { CheckBadge, ReceiptBadge, ReconBadge } from "@/components/status-badge";
@@ -1363,32 +1363,23 @@ function RegisterTable({
                 <tr className="border-b border-border text-muted-foreground">
                   <th className="w-10 px-2 py-2.5 no-print whitespace-nowrap" aria-label="Select" />
                   {dragOn ? <th className="w-9 px-1 py-2.5 no-print whitespace-nowrap" aria-label="Move" /> : null}
-                  {visibleCols.map((col) => {
-                    const sortable = col.id !== "status";
-                    const active = sortable && sortKey === col.id;
-                    return (
-                      <th
-                        key={col.id}
-                        className={cn(
-                          "whitespace-nowrap px-2 py-2.5 font-medium text-center",
-                          active ? "text-foreground" : "text-muted-foreground",
-                        )}
-                      >
-                        {sortable ? (
-                          <button
-                            type="button"
-                            className="inline-flex min-h-8 w-full items-center justify-center gap-0.5 whitespace-nowrap font-medium"
-                            onClick={() => requestSort(col.id)}
-                          >
-                            {COL_LABELS[col.id]}
-                            {active ? (sortDir === "asc" ? " ↑" : " ↓") : null}
-                          </button>
-                        ) : (
-                          COL_LABELS[col.id]
-                        )}
-                      </th>
-                    );
-                  })}
+                  {visibleCols.map((col) => (
+                    <SortHeader
+                      key={col.id}
+                      compact
+                      label={COL_LABELS[col.id]}
+                      column={col.id}
+                      sortable={col.id !== "status"}
+                      sortKey={sortKey}
+                      dir={sortDir}
+                      onToggle={requestSort}
+                      align={colAligns.aligns[col.id] ?? "center"}
+                      onAlign={(a) => colAligns.setAlign(col.id, a)}
+                      width={colWidths[col.id]}
+                      onWidth={(n) => onColWidth(col.id, n)}
+                      className="whitespace-nowrap px-2"
+                    />
+                  ))}
                 </tr>
               </thead>
               <tbody>
@@ -1504,20 +1495,20 @@ function RegisterTable({
                         </td>
                       ) : null}
                       {visibleCols.map((col) => {
-                        const money = col.id === "payment" || col.id === "deposit" || col.id === "balance";
-                        const status = col.id === "status";
+                        const a = colAligns.aligns[col.id] ?? "center";
                         return (
                           <td
                             key={col.id}
                             className={cn(
                               "px-2 py-3 align-middle whitespace-nowrap",
-                              money && "text-right tabular-nums",
-                              status && "text-center",
-                              (col.id === "date" || col.id === "number" || col.id === "type") && "tabular-nums",
+                              alignClass(a),
+                              (col.id === "date" || col.id === "number" || col.id === "type" || col.id === "payment" || col.id === "deposit" || col.id === "balance") && "tabular-nums",
                               (col.id === "payee" || col.id === "memo" || col.id === "bank") &&
                                 "min-w-[10rem] whitespace-normal break-words",
                               col.id === "date" && "text-muted-foreground",
                             )}
+                            data-col={col.id}
+                            data-align={a}
                           >
                             {col.id === "payee" ? (
                               <p className="font-medium break-words">{phoneCell(line, col.id)}</p>

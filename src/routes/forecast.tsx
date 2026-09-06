@@ -10,6 +10,8 @@ import { Sparkline } from "@/components/sparkline";
 import { listColClass, listColWidthStyle } from "@/components/list-table";
 import { SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
+import { useColAligns, alignClass } from "@/components/use-col-aligns";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -74,6 +76,7 @@ function ForecastPage() {
   );
   const budgetSort = useEntrySort(budgetVisible, "name", budgetGetters, "asc");
   const budgetCols = useColWidths("finance-manager-budget-cols", BUDGET_COLS);
+  const budgetAligns = useColAligns("finance-manager-budget-col-aligns", Object.keys(BUDGET_COLS) as Array<keyof typeof BUDGET_COLS>);
   const budgetRef = useRef<HTMLDivElement>(null);
 
   return (
@@ -154,32 +157,32 @@ function ForecastPage() {
                         const table = budgetRef.current?.querySelector("table");
                         if (!table) return;
                         budgetCols.setWidth("name", fitColumnWidth({ table, selector: `td[data-col="name"]`, header: "Name" }));
-                      }}  fill/>
+                      }} align={budgetAligns.aligns.name ?? "center"} onAlign={(a) => budgetAligns.setAlign("name", a)} fill />
                       <SortHeader label="Kind" column="kind" sortKey={budgetSort.key} dir={budgetSort.dir} onToggle={budgetSort.toggle} width={budgetCols.widths.kind} onWidth={(n) => budgetCols.setWidth("kind", n)} onFit={() => {
                         const table = budgetRef.current?.querySelector("table");
                         if (!table) return;
                         budgetCols.setWidth("kind", fitColumnWidth({ table, selector: `td[data-col="kind"]`, header: "Kind" }));
-                      }} />
+                      }} align={budgetAligns.aligns.kind ?? "center"} onAlign={(a) => budgetAligns.setAlign("kind", a)} />
                       <SortHeader label="From" column="start" sortKey={budgetSort.key} dir={budgetSort.dir} onToggle={budgetSort.toggle} width={budgetCols.widths.start} onWidth={(n) => budgetCols.setWidth("start", n)} onFit={() => {
                         const table = budgetRef.current?.querySelector("table");
                         if (!table) return;
                         budgetCols.setWidth("start", fitColumnWidth({ table, selector: `td[data-col="start"]`, header: "From" }));
-                      }} />
-                      <SortHeader label="Amount" column="amount" sortKey={budgetSort.key} dir={budgetSort.dir} onToggle={budgetSort.toggle} align="center" width={budgetCols.widths.amount} onWidth={(n) => budgetCols.setWidth("amount", n)} onFit={() => {
+                      }} align={budgetAligns.aligns.start ?? "center"} onAlign={(a) => budgetAligns.setAlign("start", a)} />
+                      <SortHeader label="Amount" column="amount" sortKey={budgetSort.key} dir={budgetSort.dir} onToggle={budgetSort.toggle} width={budgetCols.widths.amount} onWidth={(n) => budgetCols.setWidth("amount", n)} onFit={() => {
                         const table = budgetRef.current?.querySelector("table");
                         if (!table) return;
                         budgetCols.setWidth("amount", fitColumnWidth({ table, selector: `td[data-col="amount"]`, header: "Amount" }));
-                      }} />
+                      }} align={budgetAligns.aligns.amount ?? "center"} onAlign={(a) => budgetAligns.setAlign("amount", a)} />
                       <th className="col-actions px-4 py-3" />
                     </tr>
                   </thead>
                   <tbody>
                     {budgetSort.sorted.map((item) => (
                       <tr key={item.id} className="border-b border-border/70 last:border-0">
-                        <td className="px-4 py-2" data-col="name">{item.name}</td>
-                        <td className="px-4 py-2" data-col="kind">{item.kind === "inflow" ? "Inflow" : "Outflow"}</td>
-                        <td className="px-4 py-2" data-col="start">{item.startMonth}</td>
-                        <td className="px-4 py-2 text-right" data-col="amount">
+                        <td className={cn("px-4 py-2", alignClass(budgetAligns.aligns.name ?? "center"))} data-col="name" data-align={budgetAligns.aligns.name ?? "center"}>{item.name}</td>
+                        <td className={cn("px-4 py-2", alignClass(budgetAligns.aligns.kind ?? "center"))} data-col="kind" data-align={budgetAligns.aligns.kind ?? "center"}>{item.kind === "inflow" ? "Inflow" : "Outflow"}</td>
+                        <td className={cn("px-4 py-2", alignClass(budgetAligns.aligns.start ?? "center"))} data-col="start" data-align={budgetAligns.aligns.start ?? "center"}>{item.startMonth}</td>
+                        <td className={cn("px-4 py-2", alignClass(budgetAligns.aligns.amount ?? "center"))} data-col="amount" data-align={budgetAligns.aligns.amount ?? "center"}>
                           <Money
                             amount={item.kind === "outflow" ? -item.amount : item.amount}
                             currency={settings.currency}

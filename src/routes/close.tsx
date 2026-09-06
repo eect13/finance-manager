@@ -1,5 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { Printer } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
@@ -13,6 +13,7 @@ import { SortHeader } from "@/components/sort-header";
 import { listColClass, listColWidthStyle } from "@/components/list-table";
 import { useColWidths } from "@/components/use-col-widths";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
+import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
 import { Button } from "@/components/ui/button";
 import { closeChecklist, closeTotals, monthEndIso, type CloseCheck } from "@/lib/finance/close";
 import { fitColumnWidth } from "@/lib/finance/fit-column";
@@ -240,13 +241,34 @@ function ChecklistTable({
     [],
   );
   const sort = useEntrySort(items, "status", getters, "asc");
+  const navigate = useNavigate();
+  const openCheck = useCallback(
+    (id: string) => {
+      const item = items.find((i) => i.id === id);
+      if (item?.href) navigate({ to: item.href });
+    },
+    [items, navigate],
+  );
+  const pointer = useTableKeyboardFocus({
+    ids: sort.sorted.map((i) => i.id),
+    onOpen: openCheck,
+  });
   function fit(id: keyof typeof CHECK_COLS, label: string) {
     const table = gridRef.current?.querySelector("table");
     if (!table) return;
     cols.setWidth(id, fitColumnWidth({ table, selector: `td[data-col="${id}"]`, header: label }));
   }
   return (
-    <div ref={gridRef} className="list-grid overflow-x-auto rounded-2xl bg-card elevation">
+    <div
+      ref={pointer.bindContainer(gridRef)}
+      tabIndex={0}
+      className="list-grid overflow-x-auto rounded-2xl bg-card elevation outline-none"
+      onMouseDown={(e) => {
+        const t = e.target as HTMLElement | null;
+        if (t?.closest("input, textarea, select, button, a, [role='checkbox']")) return;
+        (e.currentTarget as HTMLElement).focus({ preventScroll: true });
+      }}
+    >
       <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
         <colgroup>
           {(Object.keys(CHECK_COLS) as Array<keyof typeof CHECK_COLS>).map((id) => (
@@ -269,7 +291,15 @@ function ChecklistTable({
             </tr>
           ) : (
             sort.sorted.map((item) => (
-              <tr key={item.id} className="border-b border-border/70 last:border-0" data-active={item.ok ? undefined : "true"}>
+              <tr
+                key={item.id}
+                className="border-b border-border/70 last:border-0"
+                data-active={item.ok ? undefined : "true"}
+                data-focused={pointer.activeId === item.id ? "true" : undefined}
+                data-row-id={item.id}
+                aria-current={pointer.activeId === item.id ? "true" : undefined}
+                onClick={() => pointer.setActiveId(item.id)}
+              >
                 <td className={cn("px-4 py-3 font-medium", alignClass(colAligns.aligns.check ?? "center"))} data-col="check" data-align={colAligns.aligns.check ?? "center"}>{item.label}</td>
                 <td className={cn("px-4 py-3", alignClass(colAligns.aligns.status ?? "center"))} data-col="status" data-align={colAligns.aligns.status ?? "center"}>{item.ok ? "Clear" : "Blocked"}</td>
                 <td className={cn("px-4 py-3 col-fill", alignClass(colAligns.aligns.detail ?? "center"))} data-col="detail" data-align={colAligns.aligns.detail ?? "center"}>
@@ -320,13 +350,25 @@ function SnapshotTable({
     [],
   );
   const sort = useEntrySort(banks, "bank", getters, "asc");
+  const pointer = useTableKeyboardFocus({
+    ids: sort.sorted.map((b) => b.bankId),
+  });
   function fit(id: keyof typeof SNAP_COLS, label: string) {
     const table = gridRef.current?.querySelector("table");
     if (!table) return;
     cols.setWidth(id, fitColumnWidth({ table, selector: `td[data-col="${id}"]`, header: label }));
   }
   return (
-    <div ref={gridRef} className="list-grid overflow-x-auto rounded-2xl bg-card elevation">
+    <div
+      ref={pointer.bindContainer(gridRef)}
+      tabIndex={0}
+      className="list-grid overflow-x-auto rounded-2xl bg-card elevation outline-none"
+      onMouseDown={(e) => {
+        const t = e.target as HTMLElement | null;
+        if (t?.closest("input, textarea, select, button, a, [role='checkbox']")) return;
+        (e.currentTarget as HTMLElement).focus({ preventScroll: true });
+      }}
+    >
       <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
         <colgroup>
           {(Object.keys(SNAP_COLS) as Array<keyof typeof SNAP_COLS>).map((id) => (
@@ -342,7 +384,14 @@ function SnapshotTable({
         </thead>
         <tbody>
           {sort.sorted.map((b) => (
-            <tr key={b.bankId} className="border-b border-border/70 last:border-0">
+            <tr
+              key={b.bankId}
+              className="border-b border-border/70 last:border-0"
+              data-focused={pointer.activeId === b.bankId ? "true" : undefined}
+              data-row-id={b.bankId}
+              aria-current={pointer.activeId === b.bankId ? "true" : undefined}
+              onClick={() => pointer.setActiveId(b.bankId)}
+            >
               <td className={cn("px-4 py-3", alignClass(colAligns.aligns.bank ?? "center"))} data-col="bank" data-align={colAligns.aligns.bank ?? "center"}>{b.nickname}</td>
               <td className={cn("px-4 py-3", alignClass(colAligns.aligns.balance ?? "center"))} data-col="balance" data-align={colAligns.aligns.balance ?? "center"}>
                 <Money amount={b.balance} currency={currency} />
@@ -395,6 +444,9 @@ function AuditTable({ rows }: { rows: AuditEvent[] }) {
   const cols = useColWidths("finance-manager-audit-cols", AUDIT_COLS);
   const colAligns = useColAligns("finance-manager-audit-col-aligns", Object.keys(AUDIT_COLS) as Array<keyof typeof AUDIT_COLS>);
   const gridRef = useRef<HTMLDivElement>(null);
+  const pointer = useTableKeyboardFocus({
+    ids: sort.sorted.map((e) => e.id),
+  });
   function fit(id: keyof typeof AUDIT_COLS, label: string) {
     const table = gridRef.current?.querySelector("table");
     if (!table) return;
@@ -410,7 +462,16 @@ function AuditTable({ rows }: { rows: AuditEvent[] }) {
           options={actions.map((id) => ({ id, label: id === "all" ? "All" : id }))}
         />
       </ListToolbar>
-      <div ref={gridRef} className="list-grid overflow-x-auto rounded-2xl bg-card elevation">
+      <div
+        ref={pointer.bindContainer(gridRef)}
+        tabIndex={0}
+        className="list-grid overflow-x-auto rounded-2xl bg-card elevation outline-none"
+        onMouseDown={(e) => {
+          const t = e.target as HTMLElement | null;
+          if (t?.closest("input, textarea, select, button, a, [role='checkbox']")) return;
+          (e.currentTarget as HTMLElement).focus({ preventScroll: true });
+        }}
+      >
         <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
           <colgroup>
             {(Object.keys(AUDIT_COLS) as Array<keyof typeof AUDIT_COLS>).map((id) => (
@@ -436,7 +497,14 @@ function AuditTable({ rows }: { rows: AuditEvent[] }) {
               </tr>
             ) : (
               sort.sorted.map((ev) => (
-                <tr key={ev.id} className="border-b border-border/70 last:border-0">
+                <tr
+                  key={ev.id}
+                  className="border-b border-border/70 last:border-0"
+                  data-focused={pointer.activeId === ev.id ? "true" : undefined}
+                  data-row-id={ev.id}
+                  aria-current={pointer.activeId === ev.id ? "true" : undefined}
+                  onClick={() => pointer.setActiveId(ev.id)}
+                >
                   <td className={cn("px-4 py-3 whitespace-nowrap", alignClass(colAligns.aligns.when ?? "center"))} data-col="when" data-align={colAligns.aligns.when ?? "center"}>{new Date(ev.at).toLocaleString()}</td>
                   <td className={cn("px-4 py-3", alignClass(colAligns.aligns.who ?? "center"))} data-col="who" data-align={colAligns.aligns.who ?? "center"}>{ev.who || "this browser"}</td>
                   <td className={cn("px-4 py-3", alignClass(colAligns.aligns.action ?? "center"))} data-col="action" data-align={colAligns.aligns.action ?? "center"}>{ev.action}</td>

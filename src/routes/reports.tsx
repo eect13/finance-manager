@@ -12,6 +12,7 @@ import { SortHeader } from "@/components/sort-header";
 import { listColClass, listColWidthStyle } from "@/components/list-table";
 import { useColWidths } from "@/components/use-col-widths";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
+import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -21,7 +22,7 @@ import { fitColumnWidth } from "@/lib/finance/fit-column";
 import { formatDate, todayIso } from "@/lib/finance/format";
 import { incomeStatement, trialBalance } from "@/lib/finance/ledger";
 import type { Account } from "@/lib/finance/types";
-import { openProps } from "@/lib/finance/open-record";
+import { openProps, openTxn } from "@/lib/finance/open-record";
 import { useEntrySort } from "@/lib/finance/sort";
 import { useFinanceData } from "@/lib/finance/store";
 
@@ -142,6 +143,10 @@ function AgingTable({
   const cols = useColWidths(`finance-manager-aging-${kind}-cols`, AGE_COLS);
   const colAligns = useColAligns(`finance-manager-aging-${kind}-col-aligns`, Object.keys(AGE_COLS) as Array<keyof typeof AGE_COLS>);
   const gridRef = useRef<HTMLDivElement>(null);
+  const pointer = useTableKeyboardFocus({
+    ids: sort.sorted.map((r) => r.id),
+    onOpen: (id) => openTxn(kind, id),
+  });
   function fit(id: keyof typeof AGE_COLS, label: string) {
     const table = gridRef.current?.querySelector("table");
     if (!table) return;
@@ -157,7 +162,16 @@ function AgingTable({
           </span>
         ))}
       </p>
-      <div ref={gridRef} className="list-grid list-scroll overflow-auto rounded-2xl bg-card elevation">
+      <div
+        ref={pointer.bindContainer(gridRef)}
+        tabIndex={0}
+        className="list-grid list-scroll overflow-auto rounded-2xl bg-card elevation outline-none"
+        onMouseDown={(e) => {
+          const t = e.target as HTMLElement | null;
+          if (t?.closest("input, textarea, select, button, a, [role='checkbox']")) return;
+          (e.currentTarget as HTMLElement).focus({ preventScroll: true });
+        }}
+      >
         <table ref={cols.tableRef} className="text-sm" style={{ width: "100%", minWidth: cols.tableWidth }}>
           <colgroup>
             {(Object.keys(AGE_COLS) as Array<keyof typeof AGE_COLS>).map((id) => (
@@ -182,7 +196,15 @@ function AgingTable({
               </tr>
             ) : (
               sort.sorted.map((row) => (
-                <tr key={row.id} className="border-b border-border/70 last:border-0" {...openProps(kind, row.id)}>
+                <tr
+                  key={row.id}
+                  className="border-b border-border/70 last:border-0"
+                  data-focused={pointer.activeId === row.id ? "true" : undefined}
+                  data-row-id={row.id}
+                  aria-current={pointer.activeId === row.id ? "true" : undefined}
+                  {...openProps(kind, row.id)}
+                  onClick={() => pointer.setActiveId(row.id)}
+                >
                   <td className={cn("px-3 py-2", alignClass(colAligns.aligns.party ?? "center"))} data-col="party" data-align={colAligns.aligns.party ?? "center"}>{row.party}</td>
                   <td className={cn("px-3 py-2 whitespace-nowrap", alignClass(colAligns.aligns.number ?? "center"))} data-col="number" data-align={colAligns.aligns.number ?? "center"}>{row.number}</td>
                   <td className={cn("px-3 py-2 whitespace-nowrap", alignClass(colAligns.aligns.due ?? "center"))} data-col="due" data-align={colAligns.aligns.due ?? "center"}>{formatDate(row.dueDate)}</td>
@@ -230,13 +252,25 @@ function TrialTable({ rows, currency }: { rows: TbRow[]; currency: string }) {
     [],
   );
   const sort = useEntrySort(rows, "account", getters, "asc");
+  const pointer = useTableKeyboardFocus({
+    ids: sort.sorted.map((r) => r.account.id),
+  });
   function fit(id: keyof typeof TB_COLS, label: string) {
     const table = gridRef.current?.querySelector("table");
     if (!table) return;
     cols.setWidth(id, fitColumnWidth({ table, selector: `td[data-col="${id}"]`, header: label }));
   }
   return (
-    <div ref={gridRef} className="list-grid list-scroll overflow-auto rounded-2xl bg-card elevation">
+    <div
+      ref={pointer.bindContainer(gridRef)}
+      tabIndex={0}
+      className="list-grid list-scroll overflow-auto rounded-2xl bg-card elevation outline-none"
+      onMouseDown={(e) => {
+        const t = e.target as HTMLElement | null;
+        if (t?.closest("input, textarea, select, button, a, [role='checkbox']")) return;
+        (e.currentTarget as HTMLElement).focus({ preventScroll: true });
+      }}
+    >
       <table ref={cols.tableRef} className="text-sm" style={{ width: "100%", minWidth: cols.tableWidth }}>
         <colgroup>
           {(Object.keys(TB_COLS) as Array<keyof typeof TB_COLS>).map((id) => (
@@ -252,7 +286,14 @@ function TrialTable({ rows, currency }: { rows: TbRow[]; currency: string }) {
         </thead>
         <tbody>
           {sort.sorted.map((row) => (
-            <tr key={row.account.id} className="border-b border-border/70 last:border-0">
+            <tr
+              key={row.account.id}
+              className="border-b border-border/70 last:border-0"
+              data-focused={pointer.activeId === row.account.id ? "true" : undefined}
+              data-row-id={row.account.id}
+              aria-current={pointer.activeId === row.account.id ? "true" : undefined}
+              onClick={() => pointer.setActiveId(row.account.id)}
+            >
               <td className={cn("px-4 py-2", alignClass(colAligns.aligns.account ?? "center"))} data-col="account" data-align={colAligns.aligns.account ?? "center"}>
                 <span className="text-muted-foreground">{row.account.code}</span> {row.account.name}
               </td>
@@ -287,13 +328,25 @@ function PlTable({ rows, net, currency }: { rows: PlRow[]; net: number; currency
     [],
   );
   const sort = useEntrySort(rows, "account", getters, "asc");
+  const pointer = useTableKeyboardFocus({
+    ids: sort.sorted.map((r) => r.account.id),
+  });
   function fit(id: keyof typeof PL_COLS, label: string) {
     const table = gridRef.current?.querySelector("table");
     if (!table) return;
     cols.setWidth(id, fitColumnWidth({ table, selector: `td[data-col="${id}"]`, header: label }));
   }
   return (
-    <div ref={gridRef} className="list-grid list-scroll overflow-auto rounded-2xl bg-card elevation">
+    <div
+      ref={pointer.bindContainer(gridRef)}
+      tabIndex={0}
+      className="list-grid list-scroll overflow-auto rounded-2xl bg-card elevation outline-none"
+      onMouseDown={(e) => {
+        const t = e.target as HTMLElement | null;
+        if (t?.closest("input, textarea, select, button, a, [role='checkbox']")) return;
+        (e.currentTarget as HTMLElement).focus({ preventScroll: true });
+      }}
+    >
       <table ref={cols.tableRef} className="text-sm" style={{ width: "100%", minWidth: cols.tableWidth }}>
         <colgroup>
           {(Object.keys(PL_COLS) as Array<keyof typeof PL_COLS>).map((id) => (
@@ -308,7 +361,14 @@ function PlTable({ rows, net, currency }: { rows: PlRow[]; net: number; currency
         </thead>
         <tbody>
           {sort.sorted.map((row) => (
-            <tr key={row.account.id} className="border-b border-border/70 last:border-0">
+            <tr
+              key={row.account.id}
+              className="border-b border-border/70 last:border-0"
+              data-focused={pointer.activeId === row.account.id ? "true" : undefined}
+              data-row-id={row.account.id}
+              aria-current={pointer.activeId === row.account.id ? "true" : undefined}
+              onClick={() => pointer.setActiveId(row.account.id)}
+            >
               <td className={cn("px-4 py-2", alignClass(colAligns.aligns.account ?? "center"))} data-col="account" data-align={colAligns.aligns.account ?? "center"}>
                 <span className="text-muted-foreground">{row.account.code}</span> {row.account.name}
               </td>

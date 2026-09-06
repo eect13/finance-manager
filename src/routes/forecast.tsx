@@ -11,6 +11,7 @@ import { listColClass, listColWidthStyle } from "@/components/list-table";
 import { SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
+import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -78,6 +79,9 @@ function ForecastPage() {
   const budgetCols = useColWidths("finance-manager-budget-cols", BUDGET_COLS);
   const budgetAligns = useColAligns("finance-manager-budget-col-aligns", Object.keys(BUDGET_COLS) as Array<keyof typeof BUDGET_COLS>);
   const budgetRef = useRef<HTMLDivElement>(null);
+  const pointer = useTableKeyboardFocus({
+    ids: budgetSort.sorted.map((i) => i.id),
+  });
 
   return (
     <AppShell
@@ -143,7 +147,16 @@ function ForecastPage() {
                   ]}
                 />
               </div>
-              <div ref={budgetRef} className="list-grid overflow-x-auto rounded-2xl bg-card elevation">
+              <div
+                ref={pointer.bindContainer(budgetRef)}
+                tabIndex={0}
+                className="list-grid overflow-x-auto rounded-2xl bg-card elevation outline-none"
+                onMouseDown={(e) => {
+                  const t = e.target as HTMLElement | null;
+                  if (t?.closest("input, textarea, select, button, a, [role='checkbox']")) return;
+                  (e.currentTarget as HTMLElement).focus({ preventScroll: true });
+                }}
+              >
                 <table ref={budgetCols.tableRef} className="text-sm" style={{ width: "100%" }}>
                   <colgroup>
                     {(Object.keys(BUDGET_COLS) as Array<keyof typeof BUDGET_COLS>).map((id) => (
@@ -178,7 +191,14 @@ function ForecastPage() {
                   </thead>
                   <tbody>
                     {budgetSort.sorted.map((item) => (
-                      <tr key={item.id} className="border-b border-border/70 last:border-0">
+                      <tr
+                        key={item.id}
+                        className="border-b border-border/70 last:border-0"
+                        data-focused={pointer.activeId === item.id ? "true" : undefined}
+                        data-row-id={item.id}
+                        aria-current={pointer.activeId === item.id ? "true" : undefined}
+                        onClick={() => pointer.setActiveId(item.id)}
+                      >
                         <td className={cn("px-4 py-2", alignClass(budgetAligns.aligns.name ?? "center"))} data-col="name" data-align={budgetAligns.aligns.name ?? "center"}>{item.name}</td>
                         <td className={cn("px-4 py-2", alignClass(budgetAligns.aligns.kind ?? "center"))} data-col="kind" data-align={budgetAligns.aligns.kind ?? "center"}>{item.kind === "inflow" ? "Inflow" : "Outflow"}</td>
                         <td className={cn("px-4 py-2", alignClass(budgetAligns.aligns.start ?? "center"))} data-col="start" data-align={budgetAligns.aligns.start ?? "center"}>{item.startMonth}</td>

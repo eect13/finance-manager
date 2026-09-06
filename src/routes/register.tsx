@@ -1349,7 +1349,7 @@ function RegisterTable({
           {toolbar}
           {moveHint}
           <div
-            ref={kbBindContainer()}
+            ref={kbBindContainer(wrapRef)}
             tabIndex={0}
             className="list-card list-grid register-phone-table min-w-0 outline-none"
             onMouseDown={(e) => {
@@ -1375,8 +1375,7 @@ function RegisterTable({
                       onToggle={requestSort}
                       align={colAligns.aligns[col.id] ?? "center"}
                       onAlign={(a) => colAligns.setAlign(col.id, a)}
-                      width={colWidths[col.id]}
-                      onWidth={(n) => onColWidth(col.id, n)}
+                      {...resizeProps(col.id)}
                       className="whitespace-nowrap px-2"
                     />
                   ))}
@@ -1500,6 +1499,7 @@ function RegisterTable({
                           <td
                             key={col.id}
                             className={cn(
+                              REGISTER_COL_CLASS[col.id],
                               "px-2 py-3 align-middle whitespace-nowrap",
                               alignClass(a),
                               (col.id === "date" || col.id === "number" || col.id === "type" || col.id === "payment" || col.id === "deposit" || col.id === "balance") && "tabular-nums",

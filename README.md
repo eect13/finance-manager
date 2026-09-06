@@ -1,4 +1,4 @@
-# Finance Manager v3.62.64
+# Finance Manager v3.62.65
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -11,6 +11,12 @@ No accounts, no server setup. Books stay on this computer (IndexedDB). Settings 
 The app mark is a **navy tile with cream pillars** — a full opaque square (Windows 11 already rounds the tile; transparent corners were a white plate). Web uses the SVG favicon. Windows uses a **BMP 32-bit** `.ico` (PNG-in-ICO is a white square on the shortcut and the taskbar). After install, **delete any leftover blank shortcut** and pin the new one — Explorer caches the last icon.
 
 
+
+## What's new in v3.62.65
+
+- **Keyboard row focus leftovers**: Close (checklist / snapshot / audit), Forecast budget, Reports (aging / TB / P&L), Settings Recurring desk — click table → Up/Down highlight (bg-only); Enter opens where applicable (aging docs, checklist links)
+- **Phone Register list autofit**: bind `wrapRef` on list table; wire SortHeader `onFit`; phone `<td>`s get `REGISTER_COL_CLASS` so fit selectors match desk
+- Desk phone cards / phone Recurring cards unchanged; no APK
 
 ## What's new in v3.62.64
 

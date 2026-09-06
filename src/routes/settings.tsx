@@ -12,6 +12,7 @@ import { listColClass, listColWidthStyle } from "@/components/list-table";
 import { SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
+import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -700,6 +701,9 @@ function RecurringCard() {
   const cols = useColWidths("finance-manager-recurring-cols", REC_COLS);
   const colAligns = useColAligns("finance-manager-recurring-col-aligns", Object.keys(REC_COLS) as Array<keyof typeof REC_COLS>);
   const gridRef = useRef<HTMLDivElement>(null);
+  const pointer = useTableKeyboardFocus({
+    ids: sort.sorted.map((r) => r.id),
+  });
   function fit(id: keyof typeof REC_COLS, label: string) {
     const table = gridRef.current?.querySelector("table");
     if (!table) return;
@@ -773,7 +777,16 @@ function RecurringCard() {
                     );
                   })}
                 </ul>
-                <div ref={gridRef} className="options-recurring-desk list-grid overflow-x-auto rounded-2xl bg-card elevation">
+                <div
+                  ref={pointer.bindContainer(gridRef)}
+                  tabIndex={0}
+                  className="options-recurring-desk list-grid overflow-x-auto rounded-2xl bg-card elevation outline-none"
+                  onMouseDown={(e) => {
+                    const t = e.target as HTMLElement | null;
+                    if (t?.closest("input, textarea, select, button, a, [role='checkbox']")) return;
+                    (e.currentTarget as HTMLElement).focus({ preventScroll: true });
+                  }}
+                >
                   <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
                     <colgroup>
                       {(Object.keys(REC_COLS) as Array<keyof typeof REC_COLS>).map((id) => (
@@ -791,7 +804,14 @@ function RecurringCard() {
                     </thead>
                     <tbody>
                       {sort.sorted.map((item) => (
-                        <tr key={item.id} className="border-b border-border/70 last:border-0">
+                        <tr
+                          key={item.id}
+                          className="border-b border-border/70 last:border-0"
+                          data-focused={pointer.activeId === item.id ? "true" : undefined}
+                          data-row-id={item.id}
+                          aria-current={pointer.activeId === item.id ? "true" : undefined}
+                          onClick={() => pointer.setActiveId(item.id)}
+                        >
                           <td className={cn("px-4 py-2", alignClass(colAligns.aligns.name ?? "center"))} data-col="name" data-align={colAligns.aligns.name ?? "center"}>{item.name}</td>
                           <td className={cn("px-4 py-2", alignClass(colAligns.aligns.next ?? "center"))} data-col="next" data-align={colAligns.aligns.next ?? "center"}>{formatDate(item.nextDate)}</td>
                           <td className={cn("px-4 py-2", alignClass(colAligns.aligns.amount ?? "center"))} data-col="amount" data-align={colAligns.aligns.amount ?? "center"}>

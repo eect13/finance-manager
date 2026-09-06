@@ -1,6 +1,6 @@
 {
   "name": "finance-manager",
-  "version": "3.62.61",
+  "version": "3.62.62",
   "description": "Finance Manager — Peachtree-style ledger in a desktop window.",
   "private": true,
   "sideEffects": false,

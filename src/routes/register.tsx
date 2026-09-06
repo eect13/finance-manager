@@ -82,7 +82,7 @@ export const Route = createFileRoute("/register")({ component: RegisterPage });
 
 const UI_KEY = "finance-manager-register-ui";
 const FIT_MARK = "finance-manager-colfit";
-const FIT_VERSION = "content-6";
+const FIT_VERSION = "content-9";
 const MONTH_RANGE = datePresetRange("month");
 const CHECK_COL = 44;
 const COL_MIN = 56;
@@ -964,7 +964,7 @@ function ViewOptions({
       </div>
       <ColumnChips cols={cols} onToggle={onToggleCol} onShowAll={onShowAllCols} />
       <p className="mt-2 text-[0.7rem] text-muted-foreground">
-        Column ⋮ menu (or right-click a header): align left / center / right. Money defaults right; status center.
+        Column ⋮ menu (or right-click a header): align left / center / right. Default center; prefs persist.
       </p>
       <label className="mt-3 mb-3 flex flex-col gap-1.5">
         <span className="text-xs font-medium text-muted-foreground">Resize type {fontSize}px</span>
@@ -1370,10 +1370,7 @@ function RegisterTable({
                       <th
                         key={col.id}
                         className={cn(
-                          "whitespace-nowrap px-2 py-2.5 font-medium",
-                          (col.id === "payment" || col.id === "deposit" || col.id === "balance") && "text-right",
-                          col.id === "status" && "text-center",
-                          col.id !== "payment" && col.id !== "deposit" && col.id !== "balance" && col.id !== "status" && "text-left",
+                          "whitespace-nowrap px-2 py-2.5 font-medium text-center",
                           active ? "text-foreground" : "text-muted-foreground",
                         )}
                       >
@@ -1823,6 +1820,7 @@ function RegisterTable({
           ["--reg-align-payment" as string]: colAligns.aligns.payment ?? "center",
           ["--reg-align-deposit" as string]: colAligns.aligns.deposit ?? "center",
           ["--reg-align-balance" as string]: colAligns.aligns.balance ?? "center",
+          ["--reg-align-status" as string]: colAligns.aligns.status ?? "center",
         }}
         {...Object.fromEntries(hidden.map((col) => [`data-hide-${col.id}`, "true"]))}
         onMouseDown={(e) => {
@@ -1982,15 +1980,19 @@ function RegisterTable({
                 fill={flexColId === "balance"}
                 {...resizeProps("balance")}
               />
-              <th
-                className={cn(
-                  "col-status relative px-4 py-3 text-center font-medium text-muted-foreground",
-                  lastVisible === "status" && "col-fill",
-                )}
-                data-col="status"
-              >
-                Status
-              </th>
+              <SortHeader
+                label="Status"
+                column="status"
+                sortable={false}
+                align={colAligns.aligns.status ?? "center"}
+                onAlign={(a) => colAligns.setAlign("status", a)}
+                sortKey={sortKey}
+                dir={sortDir}
+                onToggle={requestSort}
+                className={cn("col-status", lastVisible === "status" && "col-fill")}
+                fill={flexColId === "status"}
+                {...resizeProps("status")}
+              />
             </tr>
           </thead>
           <tbody>

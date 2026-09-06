@@ -1,4 +1,4 @@
-# Finance Manager v3.62.61
+# Finance Manager v3.62.62
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -11,6 +11,13 @@ No accounts, no server setup. Books stay on this computer (IndexedDB). Settings 
 The app mark is a **navy tile with cream pillars** — a full opaque square (Windows 11 already rounds the tile; transparent corners were a white plate). Web uses the SVG favicon. Windows uses a **BMP 32-bit** `.ico` (PNG-in-ICO is a white square on the shortcut and the taskbar). After install, **delete any leftover blank shortcut** and pin the new one — Explorer caches the last icon.
 
 
+
+## What's new in v3.62.62
+
+- **SortHeader cluster**: titles stay readable on narrow cols — `[ Title ↑/↓ ⋮ ]` as one centered group (no far-right ⋮ eating width; "Bank"/"Payment" no longer clip to "B…"/"Pay…")
+- **Register Status**: same header chrome as other cols (SortHeader + ⋮ align); no detached/floating Status cell
+- **Column align**: Register ⋮ left/center/right now sticks on body cells (CSS vars beat default-center / money rules); Status align included
+- **List density**: Comfortable/Compact change `--list-*` padding/hit targets on every list tab (Register, Reconcile, …); SortHeader height follows via CSS
 
 ## What's new in v3.62.61
 

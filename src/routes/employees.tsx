@@ -8,7 +8,7 @@ import { DateInput } from "@/components/date-input";
 import { Field } from "@/components/field";
 import { FilterPills, ListToolbar } from "@/components/filter-pills";
 import { ListFilters, applySortValue } from "@/components/list-filters";
-import { ListCard, listColClass, listColWidthStyle } from "@/components/list-table";
+import { ListCard, listColClass, listColWidthStyle, listTableStyle} from "@/components/list-table";
 import { Money } from "@/components/money";
 import { SortHeader } from "@/components/sort-header";
 import { RowActions } from "@/components/row-actions";
@@ -294,7 +294,7 @@ function EmployeesPage() {
       </ListToolbar>
 
       <ListCard ref={pointer.bindContainer(gridRef)} tabIndex={0} className="outline-none">
-        <table ref={cols.tableRef} className="text-sm">
+        <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
           <colgroup>
             {(Object.keys(EMP_COLS) as Array<keyof typeof EMP_COLS>).map((id) => (
               <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id])} />

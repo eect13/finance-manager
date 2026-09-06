@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AlignCenter, AlignLeft, AlignRight, ArrowDown, ArrowUp, Check, MoreVertical } from "lucide-react";
+import { AlignCenter, AlignLeft, AlignRight, ArrowDown, ArrowUp, Check } from "lucide-react";
 import type { SortDir } from "@/lib/finance/sort";
 import { cn } from "@/lib/utils";
 import type { ColAlign } from "@/components/use-col-aligns";
@@ -102,7 +102,7 @@ export function SortHeader({
   onVisible?: (on: boolean) => void;
   /** Sheet-style uppercase chrome (record lines). List density spacing is CSS --list-* tokens. */
   compact?: boolean;
-  /** When false, title is not a sort control (Status on Register). ⋮ align/hide still work. */
+  /** When false, title is not a sort control (Status on Register). ↑/↓ still show when active. */
   sortable?: boolean;
   className?: string;
   width?: number;
@@ -112,6 +112,7 @@ export function SortHeader({
 }) {
   const active = sortable && sortKey === column;
   const [menuOpen, setMenuOpen] = useState(false);
+  const [menuAt, setMenuAt] = useState({ x: 0, y: 0 });
   const hasMenu = Boolean(onAlign || onVisible);
   const absorb =
     fill || Boolean(className && /\bcol-(?:flex|fill)\b/.test(className));
@@ -135,6 +136,7 @@ export function SortHeader({
         hasMenu
           ? (e) => {
               e.preventDefault();
+              setMenuAt({ x: e.clientX, y: e.clientY });
               setMenuOpen(true);
             }
           : undefined
@@ -143,7 +145,7 @@ export function SortHeader({
         hasMenu
           ? sortable
             ? "Click to sort · right-click for align / column options"
-            : "Right-click or ⋮ for align / column options"
+            : "Right-click for align / column options"
           : sortable
             ? "Click to sort"
             : undefined
@@ -162,60 +164,59 @@ export function SortHeader({
           ) : (
             <span className={cn("sort-header-main", titleSize, "text-muted-foreground")}>{titleInner}</span>
           )}
-          <span className="sort-header-controls" aria-hidden={!active && !hasMenu}>
-            {active ? (
-              <span className="sort-header-dir" aria-hidden="false">
+          {active ? (
+            <span className="sort-header-controls" aria-hidden="false">
+              <span className="sort-header-dir">
                 {dir === "asc" ? <ArrowUp className="size-3.5 shrink-0" /> : <ArrowDown className="size-3.5 shrink-0" />}
               </span>
-            ) : null}
-            {hasMenu ? (
-              <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    className="col-opts-trigger no-print inline-flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-60 hover:bg-muted hover:opacity-100"
-                    aria-label={`${label} column options`}
-                    title="Align or hide column"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <MoreVertical className="size-3.5" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="min-w-44">
-                  <DropdownMenuLabel>{label}</DropdownMenuLabel>
-                  {onAlign ? (
-                    <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuLabel className="text-[0.65rem] uppercase tracking-wide">Align</DropdownMenuLabel>
-                      {(
-                        [
-                          ["left", "Left", AlignLeft],
-                          ["center", "Center", AlignCenter],
-                          ["right", "Right", AlignRight],
-                        ] as const
-                      ).map(([id, text, Icon]) => (
-                        <DropdownMenuItem key={id} onClick={() => onAlign(id)}>
-                          <Icon className="size-3.5" />
-                          {text}
-                          {align === id ? <Check className="ml-auto size-3.5" /> : null}
-                        </DropdownMenuItem>
-                      ))}
-                    </>
-                  ) : null}
-                  {onVisible ? (
-                    <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => onVisible(!(visible ?? true))}>
-                        {visible === false ? "Show column" : "Hide column"}
-                      </DropdownMenuItem>
-                    </>
-                  ) : null}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : null}
-          </span>
+            </span>
+          ) : null}
         </div>
       </div>
+      {/* Hidden trigger: right-click opens align/hide menu (no header ⋮ chrome). */}
+      {hasMenu ? (
+        <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              tabIndex={-1}
+              aria-hidden
+              className="pointer-events-none fixed size-0 overflow-hidden opacity-0"
+              style={{ left: menuAt.x, top: menuAt.y }}
+            />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="min-w-44">
+            <DropdownMenuLabel>{label}</DropdownMenuLabel>
+            {onAlign ? (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="text-[0.65rem] uppercase tracking-wide">Align</DropdownMenuLabel>
+                {(
+                  [
+                    ["left", "Left", AlignLeft],
+                    ["center", "Center", AlignCenter],
+                    ["right", "Right", AlignRight],
+                  ] as const
+                ).map(([id, text, Icon]) => (
+                  <DropdownMenuItem key={id} onClick={() => onAlign(id)}>
+                    <Icon className="size-3.5" />
+                    {text}
+                    {align === id ? <Check className="ml-auto size-3.5" /> : null}
+                  </DropdownMenuItem>
+                ))}
+              </>
+            ) : null}
+            {onVisible ? (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => onVisible(!(visible ?? true))}>
+                  {visible === false ? "Show column" : "Hide column"}
+                </DropdownMenuItem>
+              </>
+            ) : null}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : null}
       {onWidth && width != null ? <ColResize width={width} onWidth={onWidth} onFit={onFit} /> : null}
     </th>
   );

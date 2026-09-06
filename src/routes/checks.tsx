@@ -9,7 +9,7 @@ import { ConfirmDelete } from "@/components/confirm-delete";
 import { CsvButton } from "@/components/export-menu";
 import { ListToolbar } from "@/components/filter-pills";
 import { ListFilters, applySortValue, useListPeriod } from "@/components/list-filters";
-import { ListCard, listColClass, listColWidthStyle } from "@/components/list-table";
+import { ListCard, listColClass, listColWidthStyle, listTableStyle} from "@/components/list-table";
 import { RowActions } from "@/components/row-actions";
 import { Field } from "@/components/field";
 import { ListPrint } from "@/components/list-print";
@@ -194,7 +194,7 @@ function ChecksPage() {
       </ListToolbar>
 
       <ListCard ref={pointer.bindContainer(gridRef)} tabIndex={0} className="outline-none">
-        <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
+        <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
           <colgroup>
             {(Object.keys(CHK_COLS) as Array<keyof typeof CHK_COLS>).map((id) => (
               <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id])} />

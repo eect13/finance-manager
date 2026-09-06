@@ -1,4 +1,4 @@
-# Finance Manager v3.62.65
+# Finance Manager v3.62.66
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -11,6 +11,13 @@ No accounts, no server setup. Books stay on this computer (IndexedDB). Settings 
 The app mark is a **navy tile with cream pillars** — a full opaque square (Windows 11 already rounds the tile; transparent corners were a white plate). Web uses the SVG favicon. Windows uses a **BMP 32-bit** `.ico` (PNG-in-ICO is a white square on the shortcut and the taskbar). After install, **delete any leftover blank shortcut** and pin the new one — Explorer caches the last icon.
 
 
+
+## What's new in v3.62.66
+
+- **Column widths (no crush)**: autofit uses painted scrollWidth + flex/Actions floors; FIT `content-10` clears stale locked widths. Tables keep readable mins and **scroll inside the card** (H and/or V) instead of compacting Name/Actions to fit the viewport
+- **Edge-to-edge Actions**: last col flush to the card; internal `--list-actions-px` / `--list-actions-min` breathing room for row ⋯/Delete — no phantom gutter strip after Actions
+- **SortHeader**: removed title **⋮** chrome app-wide — right-click still opens align/hide; keep ↑/↓ beside the title when sorted. Row Actions ⋯ unchanged. Options tip updated
+- **Customers / Vendors**: fix open-details race (focus sync no longer resets the Details tab); desk double-click / Enter / phone tap open correctly; sticky **Name** + ellipsis on Email so the primary col stays visible while scrolling
 
 ## What's new in v3.62.65
 

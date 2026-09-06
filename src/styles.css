@@ -54,17 +54,19 @@
   --list-cell-py: 0.65rem;
   --list-check-col: 2.75rem;
   --list-check-pad-x: 0.25rem;
-  --list-actions-px: 0.7rem;
-  --list-actions-min: 3.5rem;
+  --list-actions-px: 0.75rem;
+  --list-actions-min: 4rem;
+  --list-flex-min: 9rem;
   --list-tick-hit: 2.25rem;
 }
 :root[data-list-density="compact"] {
-  --list-cell-px: 0.45rem;
-  --list-cell-py: 0.35rem;
+  --list-cell-px: 0.5rem;
+  --list-cell-py: 0.4rem;
   --list-check-col: 2.25rem;
   --list-check-pad-x: 0.15rem;
-  --list-actions-px: 0.45rem;
-  --list-actions-min: 3rem;
+  --list-actions-px: 0.55rem;
+  --list-actions-min: 3.5rem;
+  --list-flex-min: 8rem;
   --list-tick-hit: 2rem;
 }
 :root[data-list-density="comfortable"] {
@@ -72,8 +74,9 @@
   --list-cell-py: 0.65rem;
   --list-check-col: 2.75rem;
   --list-check-pad-x: 0.25rem;
-  --list-actions-px: 0.7rem;
-  --list-actions-min: 3.5rem;
+  --list-actions-px: 0.75rem;
+  --list-actions-min: 4rem;
+  --list-flex-min: 9rem;
   --list-tick-hit: 2.25rem;
 }
 
@@ -4753,4 +4756,109 @@ body.is-phone-move-dragging {
 .list-grid td[data-col="detail"].col-fill,
 .list-grid td[data-col="detail"] {
   text-align: left;
+}
+
+
+/* =============================================================================
+   v3.62.66 — edge-to-edge lists, no crush, Actions breath, sticky party Name
+   Prefer readable min widths + card scroll over compacting columns to fit.
+   ============================================================================= */
+
+.list-grid colgroup col.col-flex,
+.register-matrix colgroup col.col-flex,
+.list-grid colgroup col.col-fill,
+.register-matrix colgroup col.col-fill,
+.party-dir-table colgroup col.col-flex,
+.party-txn-table colgroup col.col-flex,
+.recon-table-card colgroup col.col-flex {
+  min-width: var(--list-flex-min) !important;
+}
+
+.list-grid thead th.col-flex,
+.list-grid tbody td.col-flex,
+.list-grid thead th.col-fill,
+.list-grid tbody td.col-fill,
+.party-dir-table th[data-col="name"],
+.party-dir-table td[data-col="name"] {
+  min-width: var(--list-flex-min);
+}
+
+/* Actions hug + internal pad; last col flush to card (no trailing gutter void) */
+.list-grid colgroup col.col-actions,
+.recon-table-card colgroup col.col-actions,
+.party-dir-table colgroup col.col-actions {
+  width: 1% !important;
+  min-width: var(--list-actions-min) !important;
+  max-width: none;
+}
+
+.list-grid th.col-actions,
+.list-grid td.col-actions,
+.register-matrix th.col-actions,
+.register-matrix td.col-actions {
+  width: 1%;
+  min-width: var(--list-actions-min);
+  padding-left: var(--list-actions-px) !important;
+  padding-right: var(--list-actions-px) !important;
+  box-sizing: border-box;
+  vertical-align: middle;
+  text-align: right;
+  overflow: visible;
+}
+
+/* Edge-to-edge: table fills card; no outer gutter after last col */
+.list-card.list-grid,
+.party-pane-list .party-dir-table {
+  padding: 0;
+}
+
+.list-card.list-grid > table,
+.party-dir-table > table {
+  margin: 0;
+}
+
+/* Party directory: scroll instead of crushing Name; sticky primary col */
+.party-dir-table {
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.party-dir-table > table {
+  width: max-content;
+  min-width: 100%;
+  table-layout: fixed;
+}
+
+.party-dir-table th[data-col="name"],
+.party-dir-table td[data-col="name"] {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--color-card);
+  box-shadow: 1px 0 0 color-mix(in oklab, var(--color-foreground) 8%, transparent);
+}
+
+.party-dir-table thead th[data-col="name"] {
+  z-index: 4;
+  background: var(--color-muted);
+}
+
+.party-dir-table tbody tr[data-selected="true"] td[data-col="name"],
+.party-dir-table tbody tr[data-focused="true"] td[data-col="name"] {
+  background: color-mix(in oklab, var(--color-primary) 10%, var(--color-card));
+}
+
+.party-dir-table td[data-col="email"],
+.party-dir-table td[data-col="contact"],
+.list-grid td[data-col="email"] {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 18rem;
+}
+
+/* Hide obsolete header ⋮ trigger styles (row Actions ⋯ unchanged) */
+.list-grid .col-opts-trigger,
+.register-matrix .col-opts-trigger {
+  display: none !important;
 }

@@ -8,7 +8,7 @@ import { ConfirmDelete } from "@/components/confirm-delete";
 import { CompanySwitcher, NewCompanyDialog } from "@/components/company-switcher";
 import { Field } from "@/components/field";
 import { Money } from "@/components/money";
-import { listColClass, listColWidthStyle } from "@/components/list-table";
+import { listColClass, listColWidthStyle, listTableStyle} from "@/components/list-table";
 import { SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
@@ -126,6 +126,7 @@ function KeyboardOrTipsCard() {
             <ShortcutRow keys="↑ / ↓" label="Move focused row" />
             <ShortcutRow keys="Enter" label="Open / edit focused row" />
             <ShortcutRow keys="Space" label="Tick / untick (Register & Reconcile)" />
+            <ShortcutRow keys="Right-click header" label="Align or hide column (no ⋮ on titles)" />
           </div>
         </div>
         <div>
@@ -787,7 +788,7 @@ function RecurringCard() {
                     (e.currentTarget as HTMLElement).focus({ preventScroll: true });
                   }}
                 >
-                  <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
+                  <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
                     <colgroup>
                       {(Object.keys(REC_COLS) as Array<keyof typeof REC_COLS>).map((id) => (
                         <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id])} />

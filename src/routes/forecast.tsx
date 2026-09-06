@@ -7,7 +7,7 @@ import { Field } from "@/components/field";
 import { FilterPills } from "@/components/filter-pills";
 import { Money } from "@/components/money";
 import { Sparkline } from "@/components/sparkline";
-import { listColClass, listColWidthStyle } from "@/components/list-table";
+import { listColClass, listColWidthStyle, listTableStyle} from "@/components/list-table";
 import { SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
@@ -157,7 +157,7 @@ function ForecastPage() {
                   (e.currentTarget as HTMLElement).focus({ preventScroll: true });
                 }}
               >
-                <table ref={budgetCols.tableRef} className="text-sm" style={{ width: "100%" }}>
+                <table ref={budgetCols.tableRef} className="text-sm" style={listTableStyle(budgetCols.tableWidth)}>
                   <colgroup>
                     {(Object.keys(BUDGET_COLS) as Array<keyof typeof BUDGET_COLS>).map((id) => (
                       <col key={id} className={listColClass(id)} style={listColWidthStyle(id, budgetCols.widths[id])} />

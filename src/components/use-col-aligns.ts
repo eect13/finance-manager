@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 export type ColAlign = "left" | "center" | "right";
 
-/** Default cell content align: center for every column (⋮ menu overrides; prefs persist). */
+/** Default cell content align: center for every column (right-click header menu overrides; prefs persist). */
 export function defaultColAlign(_id: string): ColAlign {
   return "center";
 }
@@ -13,7 +13,7 @@ export function alignClass(align: ColAlign) {
   return "text-left";
 }
 
-/** Body cell class + data-align so CSS/⋮ prefs actually stick. */
+/** Body cell class + data-align so CSS/right-click align prefs actually stick. */
 export function cellAlign(align?: ColAlign) {
   const a: ColAlign = align ?? "center";
   return { className: alignClass(a), "data-align": a } as const;

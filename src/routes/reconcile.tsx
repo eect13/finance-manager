@@ -8,7 +8,7 @@ import { ConfirmDelete } from "@/components/confirm-delete";
 import { DateInput } from "@/components/date-input";
 import { ListToolbar } from "@/components/filter-pills";
 import { ListFilters, applySortValue } from "@/components/list-filters";
-import { ListCard, listColClass, listColWidthStyle } from "@/components/list-table";
+import { ListCard, listColClass, listColWidthStyle, listTableStyle} from "@/components/list-table";
 import { Field } from "@/components/field";
 import { Money } from "@/components/money";
 import { ReconPrint } from "@/components/period-print";
@@ -806,7 +806,7 @@ function ReconcilePage() {
         </div>
       ) : (
       <ListCard ref={pointer.bindContainer(gridRef)} tabIndex={0} className="recon-table-card outline-none">
-        <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
+        <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
           <colgroup>
             <col className="col-check no-print" style={{ width: CHECK_COL }} />
             {(Object.keys(RECON_COLS) as Array<keyof typeof RECON_COLS>).map((id) => (

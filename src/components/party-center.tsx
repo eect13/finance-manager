@@ -51,7 +51,7 @@ import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
 import { ListToolbar } from "@/components/filter-pills";
 import { ListFilters, applySortValue, useListPeriod, type FilterSelect } from "@/components/list-filters";
-import { ListCard, listColClass, listColWidthStyle } from "@/components/list-table";
+import { ListCard, listColClass, listColWidthStyle, listTableStyle } from "@/components/list-table";
 import { ViewToggle, useListView } from "@/components/view-toggle";
 
 const TXN_COLS = {
@@ -168,7 +168,7 @@ export function PartyTxnTable({
           className="party-txn-table outline-none"
           tabIndex={0}
         >
-          <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
+          <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
             <colgroup>
               {(Object.keys(TXN_COLS) as Array<keyof typeof TXN_COLS>).map((id) => (
                 <col key={id} className={cn(`col-txn-${id}`, listColClass(id))} style={listColWidthStyle(id, cols.widths[id])} />
@@ -559,6 +559,7 @@ function PartyDirectoryTable({
   selectedId,
   onSelect,
   onOpen,
+  onHighlight,
   currency,
 }: {
   kindLabel: string;
@@ -566,6 +567,8 @@ function PartyDirectoryTable({
   selectedId: string | null;
   onSelect: (id: string) => void;
   onOpen: (id: string) => void;
+  /** Focus sync only — must not reset detail tabs (unlike onSelect/pick). */
+  onHighlight: (id: string) => void;
   currency: string;
 }) {
   const cols = useColWidths(`finance-manager-${kindLabel}-dir-cols`, DIR_COLS);
@@ -583,7 +586,7 @@ function PartyDirectoryTable({
   const sort = useEntrySort(list, "name", getters, "asc");
   const ids = useMemo(() => sort.sorted.map((row) => row.id), [sort.sorted]);
   const colAligns = useColAligns(`finance-manager-${kindLabel}-dir-col-aligns`, Object.keys(DIR_COLS) as Array<keyof typeof DIR_COLS>);
-  const pointer = useTableKeyboardFocus({ ids, onOpen, onActive: onSelect });
+  const pointer = useTableKeyboardFocus({ ids, onOpen, onActive: onHighlight });
 
   useEffect(() => {
     if (selectedId) pointer.setActiveId(selectedId);
@@ -601,8 +604,9 @@ function PartyDirectoryTable({
       data-party-dir
       tabIndex={0}
       className="party-dir-table list-grid min-w-0 max-w-full overflow-x-auto outline-none"
+      onMouseDown={pointer.containerProps.onMouseDown}
     >
-      <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
+      <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
         <colgroup>
           {(Object.keys(DIR_COLS) as Array<keyof typeof DIR_COLS>).map((id) => (
             <col key={id} className={cn(`col-dir-${id}`, listColClass(id))} style={listColWidthStyle(id, cols.widths[id])} />
@@ -632,6 +636,7 @@ function PartyDirectoryTable({
                   "cursor-pointer border-b border-border/70 last:border-0",
                   selectedId === row.id && "bg-primary/10",
                 )}
+                data-selected={selectedId === row.id ? "true" : undefined}
                 data-active={pointer.activeId === row.id ? "true" : undefined}
                 data-focused={pointer.activeId === row.id ? "true" : undefined}
                 data-row-id={row.id}
@@ -640,17 +645,20 @@ function PartyDirectoryTable({
                   pointer.setActiveId(row.id);
                   onSelect(row.id);
                 }}
-                onDoubleClick={() => onOpen(row.id)}
+                onDoubleClick={(e) => {
+                  e.preventDefault();
+                  onOpen(row.id);
+                }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && e.currentTarget === e.target) {
                     e.preventDefault();
-                    onSelect(row.id);
+                    onOpen(row.id);
                   }
                 }}
               >
                 <td className={cn("px-4 py-3 font-medium", alignClass(colAligns.aligns.name ?? "center"))} data-col="name" data-align={colAligns.aligns.name ?? "center"}>{row.title}</td>
                 <td className={cn("px-4 py-3 text-muted-foreground", alignClass(colAligns.aligns.contact ?? "center"))} data-col="contact" data-align={colAligns.aligns.contact ?? "center"}>{row.contact || "—"}</td>
-                <td className={cn("px-4 py-3 text-muted-foreground", alignClass(colAligns.aligns.email ?? "center"))} data-col="email" data-align={colAligns.aligns.email ?? "center"}>{row.email || "—"}</td>
+                <td className={cn("px-4 py-3 text-muted-foreground truncate", alignClass(colAligns.aligns.email ?? "center"))} data-col="email" data-align={colAligns.aligns.email ?? "center"} title={row.email || undefined}>{row.email || "—"}</td>
                 <td className={cn("px-4 py-3 text-muted-foreground", alignClass(colAligns.aligns.phone ?? "center"))} data-col="phone" data-align={colAligns.aligns.phone ?? "center"}>{row.phone || "—"}</td>
                 <td className={cn("px-4 py-3", alignClass(colAligns.aligns.balance ?? "center"))} data-col="balance" data-align={colAligns.aligns.balance ?? "center"}>
                   <Money amount={row.balance} currency={currency} />
@@ -695,7 +703,10 @@ function PartyDirectoryCards({
                 on && "border-primary/40 bg-primary/10",
               )}
               onClick={() => onSelect(item.id)}
-              onDoubleClick={() => onOpen(item.id)}
+              onDoubleClick={(e) => {
+                e.preventDefault();
+                onOpen(item.id);
+              }}
             >
               <span className="block truncate font-medium">{item.title}</span>
               <span className="mt-1 block truncate text-xs text-muted-foreground">{item.subtitle}</span>
@@ -759,6 +770,10 @@ function PartySplit({
     return list;
   }, [list, balFilter]);
 
+  function highlight(id: string) {
+    onSelect(id);
+  }
+
   function pick(id: string) {
     onSelect(id);
     setMobileOpen(true);
@@ -766,7 +781,8 @@ function PartySplit({
   }
 
   function openDetails(id: string) {
-    pick(id);
+    onSelect(id);
+    setMobileOpen(true);
     setDetailTab("details");
   }
 
@@ -810,7 +826,7 @@ function PartySplit({
               )}
             </>
           ) : (
-            <PartyDirectoryTable kindLabel={kindLabel} list={visible} selectedId={selectedId} onSelect={pick} onOpen={tapOpens ? pick : openDetails} currency={currency} />
+            <PartyDirectoryTable kindLabel={kindLabel} list={visible} selectedId={selectedId} onSelect={pick} onOpen={tapOpens ? pick : openDetails} onHighlight={highlight} currency={currency} />
           )}
         </aside>
         <section className={cn("party-pane-detail min-w-0 rounded-3xl bg-card elevation", !mobileOpen && "is-list")}>

@@ -10,7 +10,7 @@ import { Money } from "@/components/money";
 import { PeriodPackPrint } from "@/components/period-print";
 import { requestPrint } from "@/components/print-preview";
 import { SortHeader } from "@/components/sort-header";
-import { listColClass, listColWidthStyle } from "@/components/list-table";
+import { listColClass, listColWidthStyle, listTableStyle} from "@/components/list-table";
 import { useColWidths } from "@/components/use-col-widths";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
 import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
@@ -269,7 +269,7 @@ function ChecklistTable({
         (e.currentTarget as HTMLElement).focus({ preventScroll: true });
       }}
     >
-      <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
+      <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
         <colgroup>
           {(Object.keys(CHECK_COLS) as Array<keyof typeof CHECK_COLS>).map((id) => (
             <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id])} />
@@ -369,7 +369,7 @@ function SnapshotTable({
         (e.currentTarget as HTMLElement).focus({ preventScroll: true });
       }}
     >
-      <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
+      <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
         <colgroup>
           {(Object.keys(SNAP_COLS) as Array<keyof typeof SNAP_COLS>).map((id) => (
             <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id])} />
@@ -472,7 +472,7 @@ function AuditTable({ rows }: { rows: AuditEvent[] }) {
           (e.currentTarget as HTMLElement).focus({ preventScroll: true });
         }}
       >
-        <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
+        <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
           <colgroup>
             {(Object.keys(AUDIT_COLS) as Array<keyof typeof AUDIT_COLS>).map((id) => (
               <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id])} />

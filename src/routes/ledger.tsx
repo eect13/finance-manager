@@ -6,7 +6,7 @@ import { AppShell } from "@/components/app-shell";
 import { CsvButton } from "@/components/export-menu";
 import { ListToolbar } from "@/components/filter-pills";
 import { ListFilters, applySortValue, useListPeriod } from "@/components/list-filters";
-import { ListCard, listColClass, listColWidthStyle } from "@/components/list-table";
+import { ListCard, listColClass, listColWidthStyle, listTableStyle} from "@/components/list-table";
 import { ListPrint } from "@/components/list-print";
 import { Money } from "@/components/money";
 import { requestPrint } from "@/components/print-preview";
@@ -193,7 +193,7 @@ function JournalTable({
   }
   return (
     <ListCard ref={pointer.bindContainer(gridRef)} tabIndex={0} className="outline-none">
-      <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
+      <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
         <colgroup>
           {(Object.keys(JRN_COLS) as Array<keyof typeof JRN_COLS>).map((id) => (
             <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id])} />
@@ -276,7 +276,7 @@ function AccountsTable({
   }
   return (
     <ListCard ref={pointer.bindContainer(gridRef)} tabIndex={0} className="outline-none">
-      <table ref={cols.tableRef} className="text-sm" style={{ width: "100%" }}>
+      <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
         <colgroup>
           {(Object.keys(ACCT_COLS) as Array<keyof typeof ACCT_COLS>).map((id) => (
             <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id])} />

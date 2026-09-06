@@ -1,4 +1,5 @@
 import { forwardRef, type CSSProperties, type HTMLAttributes, type ReactNode } from "react";
+import { ACTIONS_COL_MIN, FLEX_COL_MIN } from "@/lib/finance/fit-column";
 import { cn } from "@/lib/utils";
 
 /** One name-like column takes leftover width. Keep bank/status/money as fit — not flex. */
@@ -29,6 +30,17 @@ export function listColClass(id: string) {
 export function listColWidthStyle(id: string, width: number): CSSProperties | undefined {
   if (id === "actions" || FLEX_COL.has(id)) return undefined;
   return { width };
+}
+
+/** Desk lists: fill card when roomy; minWidth keeps readable cols and enables card scroll (no crush). */
+export function listTableStyle(tableWidth: number): CSSProperties {
+  return { width: "100%", minWidth: Math.max(tableWidth, 1) };
+}
+
+export function listFlexMinStyle(id: string): CSSProperties | undefined {
+  if (id === "actions") return { minWidth: ACTIONS_COL_MIN };
+  if (FLEX_COL.has(id)) return { minWidth: FLEX_COL_MIN };
+  return undefined;
 }
 
 /** Register-style card. One flex name col absorbs leftover; fit/actions stay compact. */

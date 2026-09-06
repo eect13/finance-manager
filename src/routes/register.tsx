@@ -964,7 +964,7 @@ function ViewOptions({
       </div>
       <ColumnChips cols={cols} onToggle={onToggleCol} onShowAll={onShowAllCols} />
       <p className="mt-2 text-[0.7rem] text-muted-foreground">
-        Column ⋮ menu (or right-click a header): align left / center / right. Default center; prefs persist.
+        Right-click a column header: align left / center / right. Default center; prefs persist.
       </p>
       <label className="mt-3 mb-3 flex flex-col gap-1.5">
         <span className="text-xs font-medium text-muted-foreground">Resize type {fontSize}px</span>

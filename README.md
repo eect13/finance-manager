@@ -1,4 +1,4 @@
-# Finance Manager v3.62.81
+# Finance Manager v3.62.82
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -11,6 +11,14 @@ No accounts, no server setup. Books stay on this computer (IndexedDB). Settings 
 The app mark is a **navy tile with cream pillars** — a full opaque square (Windows 11 already rounds the tile; transparent corners were a white plate). Web uses the SVG favicon. Windows uses a **BMP 32-bit** `.ico` (PNG-in-ICO is a white square on the shortcut and the taskbar). After install, **delete any leftover blank shortcut** and pin the new one — Explorer caches the last icon.
 
 
+
+## What's new in v3.62.82
+
+- **List type size**: Options → Display (10–18px, default 12) applies to every list, not only Register. Same slider as Register / Reconcile View.
+- **Center**: column headers, cells, and action titles default center (long-press still aligns left/right). Close Detail is no longer forced left.
+- **Tables**: no cell gap; last column (Status / Open) sits inside the rounded cream corner; list scrollbars autohide (that gray block under Deposit was the bar).
+- **Customers / Vendors**: list uses the full width until you pick a name; phone defaults to cards.
+- **Close the month**: checklist uses the same list card as other tabs.
 
 ## What's new in v3.62.81
 

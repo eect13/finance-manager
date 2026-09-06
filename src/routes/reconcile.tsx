@@ -543,19 +543,19 @@ function ReconcilePage() {
                 />
               </div>
               <label className="mb-2 flex flex-col gap-1.5">
-                <span className="text-xs font-medium text-muted-foreground">Resize type {fontSize}px</span>
+                <span className="text-xs font-medium text-muted-foreground">Type size {fontSize}px</span>
                 <input
                   type="range"
                   min={10}
                   max={18}
                   step={1}
                   value={fontSize}
-                  aria-label="Reconcile font size"
+                  aria-label="List type size"
                   className="w-full accent-primary"
                   onChange={(e) => updateSettings({ registerFontSize: Number(e.target.value) })}
                 />
               </label>
-              <p className="text-xs text-muted-foreground">Same type size as Register cards.</p>
+              <p className="text-xs text-muted-foreground">Same type size as every list (Options → Display).</p>
             </SheetContent>
           </Sheet>
           {sort.sorted.length === 0 ? (

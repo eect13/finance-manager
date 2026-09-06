@@ -101,15 +101,15 @@ export function DialogContent({ className, children, onPointerDownOutside, onInt
 }
 
 export function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
-  return <div data-dialog-drag className={cn("dialog-drag-handle mb-4 flex flex-col gap-1", className)} {...props} />;
+  return <div data-dialog-drag className={cn("dialog-drag-handle mb-4 flex flex-col items-center gap-1 text-center", className)} {...props} />;
 }
 
 export function DialogTitle({ className, ...props }: React.ComponentProps<typeof DialogPrimitive.Title>) {
-  return <DialogPrimitive.Title className={cn("font-display text-xl font-medium tracking-tight", className)} {...props} />;
+  return <DialogPrimitive.Title className={cn("font-display text-xl font-medium tracking-tight text-center", className)} {...props} />;
 }
 
 export function DialogDescription({ className, ...props }: React.ComponentProps<typeof DialogPrimitive.Description>) {
-  return <DialogPrimitive.Description className={cn("text-sm text-muted-foreground", className)} {...props} />;
+  return <DialogPrimitive.Description className={cn("text-sm text-muted-foreground text-center", className)} {...props} />;
 }
 
 export function DialogFooter({ className, ...props }: React.ComponentProps<"div">) {

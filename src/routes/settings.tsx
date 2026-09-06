@@ -31,7 +31,7 @@ import { browserStorage, countEntries, formatBytes, jsonSize, requestPersistentS
 import { COUNTRY_TAX_PACKS, CURRENCIES, countryTaxPackForCurrency, type RecurringItem } from "@/lib/finance/types";
 import { useShallow } from "zustand/react/shallow";
 import { AppearancePicker } from "@/components/theme-toggle";
-import { DisplayZoomSettings, ListDensitySettings } from "@/components/ui-zoom-controls";
+import { DisplayZoomSettings, ListDensitySettings, ListTypeSettings } from "@/components/ui-zoom-controls";
 import { usePhoneUi } from "@/lib/phone-layout";
 import { findShortcutLabel, isApplePlatform, redoShortcutLabel, undoShortcutLabel } from "@/lib/hotkey";
 
@@ -127,7 +127,7 @@ function KeyboardOrTipsCard() {
             <ShortcutRow keys="↑ / ↓" label="Move focused row" />
             <ShortcutRow keys="Enter" label="Open / edit focused row" />
             <ShortcutRow keys="Space" label="Tick / untick (Register & Reconcile)" />
-            <ShortcutRow keys="Right-click / long-press / Shift+F10" label="Align column (money defaults right; prefs persist)" />
+            <ShortcutRow keys="Right-click / long-press / Shift+F10" label="Align column (defaults center; prefs persist)" />
           </div>
         </div>
         <div>
@@ -263,14 +263,15 @@ function SettingsPage() {
           <CardHeader>
             <CardTitle>Display / Formatting</CardTitle>
             <OptionsDescMore>
-              Appearance, display zoom, and list density are saved on this device. Thousand separators and decimal places are stored with the company
-              file.
+              Appearance, display zoom, list density, and type size apply on every tab. Zoom and density stay on this
+              device; type size is stored with the company file along with thousand separators and decimal places.
             </OptionsDescMore>
           </CardHeader>
           <CardContent className="grid gap-4">
             <AppearancePicker />
             <DisplayZoomSettings />
             <ListDensitySettings />
+            <ListTypeSettings />
             <OptionsSwitchRow
               title="Use thousand separators"
               hint="Show amounts like 9,825,076.00 instead of 9825076.00 — including when currency is blank."

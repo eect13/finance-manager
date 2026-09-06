@@ -813,7 +813,7 @@ function PartySplit({
           {addLabel}
         </Button>
       </ListToolbar>
-      <div className="party-center min-w-0" data-view={view} data-pane={mobileOpen ? "detail" : "list"}>
+      <div className="party-center min-w-0" data-view={view} data-pane={mobileOpen ? "detail" : "list"} data-has-selection={selectedId ? "true" : "false"}>
         <aside className={cn("party-pane-list min-w-0 rounded-3xl bg-card elevation", mobileOpen && "is-detail")}>
           {view === "grid" ? (
             <>

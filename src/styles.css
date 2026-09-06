@@ -58,6 +58,8 @@
   --list-actions-min: 4rem;
   --list-flex-min: 9rem;
   --list-tick-hit: 2.25rem;
+  --list-type: 12px;
+  --register-font: 12px;
 }
 :root[data-list-density="compact"] {
   --list-cell-px: 0.5rem;
@@ -5031,5 +5033,148 @@ body.is-phone-move-dragging {
     font-size: 1.5rem !important;
   }
 }
+
+/* =============================================================================
+   v3.62.82 — type size, center cells, no-gap lists, autohide bars, party balance
+   ============================================================================= */
+
+.list-grid,
+.list-grid table,
+.register-matrix,
+.register-matrix table,
+.party-dir-table,
+.party-dir-table table,
+.party-txn-table,
+.recon-table-card,
+.recon-table-card table,
+.register-phone-list,
+.register-phone-table {
+  font-size: var(--list-type, var(--register-font, 12px));
+}
+
+/* Headers + cells default center. data-align left/right still wins. */
+.list-grid thead th,
+.list-grid tbody td,
+.list-grid tfoot td,
+.register-matrix thead th,
+.register-matrix tbody td,
+.register-matrix tfoot td,
+.party-dir-table thead th,
+.party-dir-table tbody td,
+.party-txn-table thead th,
+.party-txn-table tbody td,
+.recon-table-card thead th,
+.recon-table-card tbody td {
+  text-align: center;
+}
+
+.list-grid td[data-col="detail"],
+.list-grid td[data-col="detail"].col-fill {
+  text-align: center;
+}
+
+.list-grid th.col-actions,
+.list-grid td.col-actions,
+.register-matrix th.col-actions,
+.register-matrix td.col-actions {
+  text-align: center;
+}
+
+.list-grid td.col-actions > div {
+  justify-content: center;
+}
+
+/* No interstitial gap — cells share borders, table fills the card. */
+.list-grid table,
+.register-matrix table,
+.party-dir-table table,
+.party-txn-table table,
+.recon-table-card table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+}
+
+/* Last col clears the 2xl/3xl cream radius (Status / Open / Deposit). */
+.list-card.list-grid thead th:last-child,
+.list-card.list-grid tbody td:last-child,
+.register-card thead th:last-child,
+.register-card tbody td:last-child,
+.party-pane-list thead th:last-child,
+.party-pane-list tbody td:last-child {
+  padding-right: 1.5rem;
+}
+
+.list-card.list-grid thead th:last-child,
+.register-card thead th:last-child,
+.party-pane-list thead th:last-child {
+  border-top-right-radius: var(--radius-2xl);
+}
+
+.list-card.list-grid tbody tr:last-child td:last-child,
+.party-pane-list tbody tr:last-child td:last-child {
+  border-bottom-right-radius: var(--radius-2xl);
+}
+
+.list-card.list-grid tbody tr[data-selected="true"] td:last-child,
+.party-dir-table tbody tr[data-selected="true"] td:last-child {
+  background-clip: padding-box;
+}
+
+/* Autohide scrollbars on lists — the always-on bar was the gray slab under Deposit. */
+.list-card.list-grid,
+.register-matrix,
+.party-dir-table,
+.register-card,
+.recon-table-card,
+.party-pane-list,
+.party-pane-detail {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+.list-card.list-grid:hover,
+.list-card.list-grid:focus-within,
+.register-matrix:hover,
+.register-matrix:focus-within,
+.party-dir-table:hover,
+.party-dir-table:focus-within,
+.register-card:hover,
+.recon-table-card:hover,
+.party-pane-list:hover,
+.party-pane-detail:hover {
+  scrollbar-color: color-mix(in oklab, var(--color-foreground) 28%, transparent) transparent;
+}
+
+/* Customers / Vendors: empty detail does not steal half the page. */
+@container workspace (min-width: 56rem) {
+  .party-center[data-has-selection="false"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .party-center[data-has-selection="false"] .party-pane-detail {
+    display: none !important;
+  }
+  .party-center[data-has-selection="true"] {
+    grid-template-columns: minmax(18rem, 1.15fr) minmax(0, 1fr);
+  }
+}
+
+.page-actions,
+.page-actions .button,
+.page-actions button {
+  text-align: center;
+  justify-content: center;
+}
+
+.dialog-sheet .dialog-drag-handle,
+.dialog-sheet [data-dialog-drag] {
+  text-align: center;
+  align-items: center;
+}
+.dialog-sheet .dialog-drag-handle > *,
+.dialog-sheet [data-slot="dialog-title"] {
+  text-align: center;
+}
+
+
 
 

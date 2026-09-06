@@ -262,7 +262,7 @@ function ChecklistTable({
     <div
       ref={pointer.bindContainer(gridRef)}
       tabIndex={0}
-      className="list-grid overflow-x-auto rounded-2xl bg-card elevation outline-none"
+      className="list-card list-grid outline-none"
       onMouseDown={(e) => {
         const t = e.target as HTMLElement | null;
         if (t?.closest("input, textarea, select, button, a, [role='checkbox']")) return;
@@ -303,8 +303,8 @@ function ChecklistTable({
                 <td className={cn("px-4 py-3 font-medium", alignClass(colAligns.aligns.check ?? "center"))} data-col="check" data-align={colAligns.aligns.check ?? "center"}>{item.label}</td>
                 <td className={cn("px-4 py-3", alignClass(colAligns.aligns.status ?? "center"))} data-col="status" data-align={colAligns.aligns.status ?? "center"}>{item.ok ? "Clear" : "Blocked"}</td>
                 <td className={cn("px-4 py-3 col-fill", alignClass(colAligns.aligns.detail ?? "center"))} data-col="detail" data-align={colAligns.aligns.detail ?? "center"}>
-                  <div className="flex w-full min-w-0 flex-wrap items-center gap-2">
-                    <span className="min-w-0 flex-1">
+                  <div className="flex w-full min-w-0 flex-wrap items-center justify-center gap-2">
+                    <span className="min-w-0">
                       {item.href ? (
                         <Link to={item.href} className="underline-offset-2 hover:underline">
                           {item.detail}
@@ -314,7 +314,7 @@ function ChecklistTable({
                       )}
                     </span>
                     {item.id === "recurring" && !item.ok && onPostDue ? (
-                      <Button size="sm" className="ml-auto shrink-0" onClick={onPostDue}>
+                      <Button size="sm" className="shrink-0" onClick={onPostDue}>
                         {dueLabel || "Post due"}
                       </Button>
                     ) : null}
@@ -362,7 +362,7 @@ function SnapshotTable({
     <div
       ref={pointer.bindContainer(gridRef)}
       tabIndex={0}
-      className="list-grid overflow-x-auto rounded-2xl bg-card elevation outline-none"
+      className="list-card list-grid outline-none"
       onMouseDown={(e) => {
         const t = e.target as HTMLElement | null;
         if (t?.closest("input, textarea, select, button, a, [role='checkbox']")) return;
@@ -465,7 +465,7 @@ function AuditTable({ rows }: { rows: AuditEvent[] }) {
       <div
         ref={pointer.bindContainer(gridRef)}
         tabIndex={0}
-        className="list-grid overflow-x-auto rounded-2xl bg-card elevation outline-none"
+        className="list-card list-grid outline-none"
         onMouseDown={(e) => {
           const t = e.target as HTMLElement | null;
           if (t?.closest("input, textarea, select, button, a, [role='checkbox']")) return;

@@ -265,6 +265,13 @@ export function AppShell({
     setRail(readRail());
   }, []);
 
+  useLayoutEffect(() => {
+    const n = data.settings.registerFontSize ?? 12;
+    const px = `${Math.min(18, Math.max(10, n))}px`;
+    document.documentElement.style.setProperty("--list-type", px);
+    document.documentElement.style.setProperty("--register-font", px);
+  }, [data.settings.registerFontSize]);
+
   useEffect(() => {
     void bootBooks();
   }, []);

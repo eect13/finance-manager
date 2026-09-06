@@ -2,24 +2,13 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 export type ColAlign = "left" | "center" | "right";
 
-/** Column ids that default to right (money / amounts). Menu override + saved prefs still win. */
-const MONEY_RIGHT_IDS = new Set([
-  "amount",
-  "payment",
-  "deposit",
-  "balance",
-  "debit",
-  "credit",
-  "total",
-  "rate",
-  "book",
-  "pending",
-  "orig",
-]);
+/** One-shot invalidate so money-right defaults become center (v3.62.82). */
+const ALIGN_MARK = "finance-manager-colalign";
+const ALIGN_VERSION = "center-1";
 
-/** Default cell align: money/amount ids right; everything else center. Saved prefs overlay. */
-export function defaultColAlign(id: string): ColAlign {
-  return MONEY_RIGHT_IDS.has(id) ? "right" : "center";
+/** Default cell align: center. Right-click / long-press still overrides and persists. */
+export function defaultColAlign(_id: string): ColAlign {
+  return "center";
 }
 
 export function alignClass(align: ColAlign) {
@@ -54,8 +43,17 @@ export function useColAligns<K extends string>(storageKey: string, columnIds: re
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
+    let useSaved = true;
     try {
-      const raw = localStorage.getItem(storageKey);
+      if (localStorage.getItem(ALIGN_MARK) !== ALIGN_VERSION) {
+        localStorage.setItem(ALIGN_MARK, ALIGN_VERSION);
+        useSaved = false;
+      }
+    } catch {
+      useSaved = false;
+    }
+    try {
+      const raw = useSaved ? localStorage.getItem(storageKey) : null;
       if (raw) {
         const saved = JSON.parse(raw) as Record<string, unknown>;
         const next = buildDefaults();

@@ -1,6 +1,7 @@
 import { Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/ui/tooltip";
+import { useFinanceData, useFinanceStore } from "@/lib/finance/store";
 import { useListDensity, type ListDensity } from "@/lib/list-density";
 import { UI_ZOOM_MAX, UI_ZOOM_MIN, UI_ZOOM_STEP, useUiZoom } from "@/lib/ui-zoom";
 import { cn } from "@/lib/utils";
@@ -130,6 +131,38 @@ export function ListDensitySettings() {
           </Button>
         ))}
       </div>
+    </div>
+  );
+}
+
+/** Company type size — same knob as Register/Reconcile View, applied to every list. */
+export function ListTypeSettings() {
+  const data = useFinanceData();
+  const updateSettings = useFinanceStore((s) => s.updateSettings);
+  const font = data.settings.registerFontSize ?? 12;
+  return (
+    <div className="grid gap-3 rounded-xl bg-muted/70 px-4 py-3">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-sm font-medium">List type size</p>
+          <p className="text-xs text-muted-foreground">
+            Body text in every register and list. Default 12px. Same slider as Register / Reconcile View.
+          </p>
+        </div>
+        <span className="min-w-[3.25rem] text-center text-sm font-medium tabular-nums" aria-live="polite">
+          {font}px
+        </span>
+      </div>
+      <input
+        type="range"
+        className="w-full accent-primary"
+        min={10}
+        max={18}
+        step={1}
+        value={font}
+        aria-label="List type size"
+        onChange={(e) => updateSettings({ registerFontSize: Number(e.target.value) })}
+      />
     </div>
   );
 }

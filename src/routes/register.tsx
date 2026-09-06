@@ -954,17 +954,17 @@ function ViewOptions({
       </div>
       <ColumnChips cols={cols} onToggle={onToggleCol} onShowAll={onShowAllCols} />
       <p className="mt-2 text-[0.7rem] text-muted-foreground">
-        Right-click or long-press a column header: align left / center / right. Money columns default right; prefs persist.
+        Right-click or long-press a column header: align left / center / right. Columns default center; prefs persist.
       </p>
       <label className="mt-3 mb-3 flex flex-col gap-1.5">
-        <span className="text-xs font-medium text-muted-foreground">Resize type {fontSize}px</span>
+        <span className="text-xs font-medium text-muted-foreground">Type size {fontSize}px</span>
         <input
           type="range"
           min={10}
           max={18}
           step={1}
           value={fontSize}
-          aria-label="Register font size"
+          aria-label="List type size"
           className="w-full accent-primary"
           onChange={(e) => onFontSize(Number(e.target.value))}
         />

@@ -1,16 +1,21 @@
 import { useEffect, useState } from "react";
 import { LayoutGrid, List } from "lucide-react";
+import { isPhoneUi } from "@/lib/phone-layout";
 import { cn } from "@/lib/utils";
 
 export type ListView = "list" | "grid";
 
 export function useListView(key: string): [ListView, (next: ListView) => void] {
-  const storageKey = `finance-manager-${key}-view`;
-  const [view, setView] = useState<ListView>("list");
+  const storageKey = `finance-manager-${key}-view-v82`;
+  const [view, setView] = useState<ListView>(() => (isPhoneUi() ? "grid" : "list"));
   useEffect(() => {
     try {
       const saved = localStorage.getItem(storageKey);
-      if (saved === "list" || saved === "grid") setView(saved);
+      if (saved === "list" || saved === "grid") {
+        setView(saved);
+        return;
+      }
+      if (isPhoneUi()) setView("grid");
     } catch {
       /* private mode */
     }
@@ -28,7 +33,7 @@ export function useListView(key: string): [ListView, (next: ListView) => void] {
 
 export function ViewToggle({ value, onChange }: { value: ListView; onChange: (v: ListView) => void }) {
   return (
-    <div className="inline-flex rounded-xl bg-muted p-1 no-print" role="group" aria-label="List or cards">
+    <div className="inline-flex shrink-0 rounded-xl bg-muted p-1 no-print" role="group" aria-label="List or cards">
       {(
         [
           ["list", List, "List"],

@@ -67,7 +67,7 @@ import { parseBackupFile } from "./export";
 import { newId } from "./ids";
 import { listLocalBackups, readLocalBackup, writeLocalBackups } from "./local-backup";
 import { normalizeBooks } from "./normalize";
-import { setMoneyFormatPrefs } from "./format";
+import { parseDateFormat, setDateFormatPref, setMoneyFormatPrefs } from "./format";
 import { createSeed, emptyBooks, SAMPLE_COMPANY_ID } from "./seed";
 import { booksStorage, createDebouncedPersistStorage } from "./storage";
 import { watchPersistentStorage } from "./storage-usage";
@@ -779,6 +779,7 @@ function syncMoneyFormatFromData(data: FinanceData) {
     useThousandSeparators: data.settings.useThousandSeparators !== false,
     decimalPlaces: data.settings.decimalPlaces ?? 2,
   });
+  setDateFormatPref(parseDateFormat(data.settings.dateFormat));
 }
 
 export function useFinanceData(): FinanceData {

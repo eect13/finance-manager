@@ -127,6 +127,8 @@ export interface Settings {
   useThousandSeparators: boolean;
   /** Fraction digits for money display (0–4). Default 2. */
   decimalPlaces: number;
+  /** List/print date display. Typed dates stay MM/DD/YYYY. Default MDY. */
+  dateFormat: "MDY" | "DMY" | "LONG";
 }
 
 export interface AuditEvent {
@@ -638,4 +640,5 @@ export const DEFAULT_SETTINGS: Settings = {
   closedThrough: "",
   useThousandSeparators: true,
   decimalPlaces: 2,
+  dateFormat: "MDY",
 };

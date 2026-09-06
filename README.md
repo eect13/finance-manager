@@ -1,4 +1,4 @@
-# Finance Manager v3.62.85
+# Finance Manager v3.62.86
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -11,6 +11,13 @@ No accounts, no server setup. Books stay on this computer (IndexedDB). Settings 
 The app mark is a **navy tile with cream pillars** — a full opaque square (Windows 11 already rounds the tile; transparent corners were a white plate). Web uses the SVG favicon. Windows uses a **BMP 32-bit** `.ico` (PNG-in-ICO is a white square on the shortcut and the taskbar). After install, **delete any leftover blank shortcut** and pin the new one — Explorer caches the last icon.
 
 
+
+## What's new in v3.62.86
+
+- **Select**: each cell is its own tint (no merged last-cell/tick shadows). Same mix in light and dark, tick included.
+- **Dates**: Options → Display → Date format (MM/DD/YYYY default, also DD/MM/YYYY or Sep 30, 2026). Close messages use that format (`09/30/2026 cannot close yet…`).
+- **Type / density**: list type size and compact/comfortable now apply on phone too (they were overridden).
+- **Columns**: first fit is content auto-width, then leftover window space goes to the name column — never thinner than the text.
 
 ## What's new in v3.62.85
 

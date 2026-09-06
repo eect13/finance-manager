@@ -1,5 +1,5 @@
 import { endOfMonth, format, parseISO, startOfMonth } from "date-fns";
-import { todayIso } from "./format";
+import { formatDate, todayIso } from "./format";
 import { openPayables, openReceivables, trialBalance } from "./ledger";
 import { bookBalanceOn, lastReconForBank, unclearedLines } from "./reconcile";
 import type { FinanceData, RecurringItem } from "./types";
@@ -52,12 +52,12 @@ export function closeChecklist(
       label: `${bank.nickname} statement`,
       ok,
       detail: recd
-        ? `Finished ${last}`
+        ? `Finished ${formatDate(last)}`
         : skipEmpty
           ? "No activity — nothing to rec"
           : last
-            ? `Last finished ${last}. ${uncleared.length} still uncleared.`
-            : `${uncleared.length} uncleared. Finish a statement through ${through}.`,
+            ? `Last finished ${formatDate(last)}. ${uncleared.length} still uncleared.`
+            : `${uncleared.length} uncleared. Finish a statement through ${formatDate(through)}.`,
       href: "/reconcile",
     });
   }

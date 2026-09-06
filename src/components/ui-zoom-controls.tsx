@@ -1,6 +1,7 @@
 import { Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/ui/tooltip";
+import { DATE_FORMAT_OPTIONS, type DateFormatId } from "@/lib/finance/format";
 import { useFinanceData, useFinanceStore } from "@/lib/finance/store";
 import { useListDensity, type ListDensity } from "@/lib/list-density";
 import { UI_ZOOM_MAX, UI_ZOOM_MIN, UI_ZOOM_STEP, useUiZoom } from "@/lib/ui-zoom";
@@ -163,6 +164,37 @@ export function ListTypeSettings() {
         aria-label="List type size"
         onChange={(e) => updateSettings({ registerFontSize: Number(e.target.value) })}
       />
+    </div>
+  );
+}
+
+export function DateFormatSettings() {
+  const data = useFinanceData();
+  const updateSettings = useFinanceStore((s) => s.updateSettings);
+  const current = (data.settings.dateFormat ?? "MDY") as DateFormatId;
+  return (
+    <div className="grid gap-3 rounded-xl bg-muted/70 px-4 py-3">
+      <div className="min-w-0">
+        <p className="text-sm font-medium">Date format</p>
+        <p className="text-xs text-muted-foreground">
+          Lists, desk, Close, and print. Typed dates stay MM/DD/YYYY.
+        </p>
+      </div>
+      <div className="flex flex-wrap gap-2" role="group" aria-label="Date format">
+        {DATE_FORMAT_OPTIONS.map((opt) => (
+          <Button
+            key={opt.id}
+            type="button"
+            size="sm"
+            variant={current === opt.id ? "default" : "outline"}
+            aria-pressed={current === opt.id}
+            title={opt.sample}
+            onClick={() => updateSettings({ dateFormat: opt.id })}
+          >
+            {opt.label}
+          </Button>
+        ))}
+      </div>
     </div>
   );
 }

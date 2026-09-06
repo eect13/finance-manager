@@ -5707,6 +5707,152 @@ body.is-phone-move-dragging {
   background-color: color-mix(in oklab, var(--color-primary) 10%, var(--color-card)) !important;
 }
 
+/* =============================================================================
+   v3.62.86 — per-cell row highlight, one light/dark mix, density + type tokens
+   ============================================================================= */
+
+/* Do not merge cells: kill edge-bleed shadows so each td is its own rectangle */
+.list-grid tbody tr[data-selected="true"] td:last-child,
+.register-matrix tbody tr[data-selected="true"] td:last-child,
+.recon-table-card tbody tr[data-selected="true"] td:last-child,
+.party-dir-table tbody tr[data-selected="true"] td:last-child,
+.list-grid tbody tr[data-focused="true"] td:last-child,
+.register-matrix tbody tr[data-focused="true"] td:last-child,
+.recon-table-card tbody tr[data-focused="true"] td:last-child,
+.party-dir-table tbody tr[data-focused="true"] td:last-child,
+.list-grid tbody tr[data-selected="true"] td.col-check,
+.register-matrix tbody tr[data-selected="true"] td.col-check,
+.recon-table-card tbody tr[data-selected="true"] td.col-check,
+.list-grid tbody tr[data-focused="true"] td.col-check,
+.register-matrix tbody tr[data-focused="true"] td.col-check,
+.recon-table-card tbody tr[data-focused="true"] td.col-check {
+  box-shadow: none !important;
+}
+
+.register-matrix tbody td.col-check,
+.recon-table-card tbody td.col-check,
+.register-matrix tbody tr[data-selected="true"] td.col-check,
+.recon-table-card tbody tr[data-selected="true"] td.col-check,
+.register-matrix tbody tr[data-focused="true"] td.col-check,
+.recon-table-card tbody tr[data-focused="true"] td.col-check,
+.dark .list-grid tbody tr[data-selected="true"] td.col-check,
+.dark .register-matrix tbody tr[data-selected="true"] td.col-check,
+.dark .recon-table-card tbody tr[data-selected="true"] td.col-check,
+.dark .list-grid tbody tr[data-focused="true"] td.col-check,
+.dark .register-matrix tbody tr[data-focused="true"] td.col-check,
+.dark .recon-table-card tbody tr[data-focused="true"] td.col-check,
+.dark .list-grid tbody tr[data-selected="true"][data-focused="true"] td.col-check,
+.dark .register-matrix tbody tr[data-selected="true"][data-focused="true"] td.col-check,
+.dark .recon-table-card tbody tr[data-selected="true"][data-focused="true"] td.col-check {
+  box-shadow: 1px 0 0 color-mix(in oklab, var(--color-border) 80%, transparent) !important;
+}
+
+/* Whole-row highlight = same mix on every cell (tick, Date, Status), both themes */
+.list-grid tbody tr[data-selected="true"] td,
+.register-matrix tbody tr[data-selected="true"] td,
+.recon-table-card tbody tr[data-selected="true"] td,
+.party-dir-table tbody tr[data-selected="true"] td,
+.party-txn-table tbody tr[data-selected="true"] td,
+.list-grid tbody tr[data-selected="true"]:hover td,
+.register-matrix tbody tr[data-selected="true"]:hover td,
+.recon-table-card tbody tr[data-selected="true"]:hover td {
+  background: color-mix(in oklab, var(--color-primary) 12%, var(--color-card)) !important;
+  background-color: color-mix(in oklab, var(--color-primary) 12%, var(--color-card)) !important;
+}
+
+.list-grid tbody tr[data-focused="true"]:not([data-selected]) td,
+.register-matrix tbody tr[data-focused="true"]:not([data-selected]) td,
+.recon-table-card tbody tr[data-focused="true"]:not([data-selected]) td,
+.party-dir-table tbody tr[data-focused="true"]:not([data-selected]) td,
+.party-txn-table tbody tr[data-focused="true"]:not([data-selected]) td {
+  background: color-mix(in oklab, var(--color-primary) 10%, var(--color-card)) !important;
+  background-color: color-mix(in oklab, var(--color-primary) 10%, var(--color-card)) !important;
+}
+
+.dark .list-grid tbody tr[data-selected="true"] td,
+.dark .register-matrix tbody tr[data-selected="true"] td,
+.dark .recon-table-card tbody tr[data-selected="true"] td,
+.dark .party-dir-table tbody tr[data-selected="true"] td,
+.dark .party-txn-table tbody tr[data-selected="true"] td,
+.dark .list-grid tbody tr[data-selected="true"]:hover td,
+.dark .register-matrix tbody tr[data-selected="true"]:hover td,
+.dark .recon-table-card tbody tr[data-selected="true"]:hover td {
+  background: color-mix(in oklab, var(--color-primary) 18%, var(--color-card)) !important;
+  background-color: color-mix(in oklab, var(--color-primary) 18%, var(--color-card)) !important;
+}
+
+.dark .list-grid tbody tr[data-focused="true"]:not([data-selected]) td,
+.dark .register-matrix tbody tr[data-focused="true"]:not([data-selected]) td,
+.dark .recon-table-card tbody tr[data-focused="true"]:not([data-selected]) td,
+.dark .party-dir-table tbody tr[data-focused="true"]:not([data-selected]) td,
+.dark .party-txn-table tbody tr[data-focused="true"]:not([data-selected]) td {
+  background: color-mix(in oklab, var(--color-primary) 16%, var(--color-card)) !important;
+  background-color: color-mix(in oklab, var(--color-primary) 16%, var(--color-card)) !important;
+}
+
+/* Header band stays the 7% theme mix (not the row tint) */
+.list-grid thead th,
+.register-matrix thead th,
+.recon-table-card thead th,
+.party-dir-table thead th,
+.party-txn-table thead th,
+.register-matrix thead .col-check,
+.recon-table-card thead .col-check,
+.list-grid thead .col-check {
+  background: color-mix(in oklab, var(--color-primary) 7%, var(--color-card)) !important;
+  background-color: color-mix(in oklab, var(--color-primary) 7%, var(--color-card)) !important;
+}
+
+/* List type size wins over leftover 0.74/0.78/0.82rem register pins */
+.register-matrix,
+.recon-table-card,
+.list-grid,
+.party-dir-table,
+.party-txn-table,
+.register-phone-table {
+  font-size: var(--list-type, 12px) !important;
+}
+
+/* Density + list type: phone/coarse rules were pinning 0.74rem / 0.28rem padding */
+@media (max-width: 767px), ((hover: none) and (pointer: coarse)) {
+  .register-matrix,
+  .recon-table-card,
+  .list-grid,
+  .register-phone-table,
+  .party-dir-table {
+    font-size: var(--list-type, 12px) !important;
+  }
+  .register-matrix th,
+  .register-matrix td,
+  .recon-table-card th,
+  .recon-table-card td,
+  .list-grid th,
+  .list-grid td,
+  .party-dir-table th,
+  .party-dir-table td {
+    padding-left: var(--list-cell-px) !important;
+    padding-right: var(--list-cell-px) !important;
+    padding-top: var(--list-cell-py) !important;
+    padding-bottom: var(--list-cell-py) !important;
+  }
+  .register-matrix .col-check,
+  .recon-table-card .col-check,
+  .list-grid .col-check {
+    padding-left: var(--list-check-pad-x) !important;
+    padding-right: var(--list-check-pad-x) !important;
+    width: var(--list-check-col) !important;
+    min-width: var(--list-check-col) !important;
+    max-width: var(--list-check-col) !important;
+  }
+  .register-matrix th.col-date,
+  .register-matrix td.col-date,
+  .recon-table-card th[data-col="date"],
+  .recon-table-card td[data-col="date"] {
+    padding-left: calc(var(--list-cell-px) + 0.35rem) !important;
+  }
+}
+
+
 
 
 

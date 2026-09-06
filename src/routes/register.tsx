@@ -39,7 +39,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { cashRegisterRows } from "@/lib/finance/export";
 import { FIT_MARK, FIT_VERSION } from "@/lib/finance/col-fit-mark";
-import { fitColumnWidth, widthsMatch } from "@/lib/finance/fit-column";
+import { fillToWindow, fitColumnWidth, widthsMatch } from "@/lib/finance/fit-column";
 import { clampCol } from "@/components/use-col-widths";
 import { formatDate, formatRegisterDate, formatShortDate } from "@/lib/finance/format";
 import { openCashLine, stopOpen } from "@/lib/finance/open-record";
@@ -1185,7 +1185,9 @@ function RegisterTable({
           max: COL_MAX,
         });
       }
-      onFitted(next);
+      const visibleIds = ["check", ...REGISTER_COLS.filter((col) => cols[col.id]).map((col) => col.id)];
+      const target = wrapRef.current?.clientWidth ?? tableEl.parentElement?.clientWidth ?? 0;
+      onFitted(fillToWindow(next, visibleIds, target, (id) => id === "payee" || id === "memo", COL_MAX));
     }
     tryFit();
     return () => {

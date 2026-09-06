@@ -89,13 +89,13 @@ export function widthsMatch<K extends string>(a: Record<K, number>, b: Record<K,
 }
 
 /**
- * Auto-fit every listed column from painted cells.
- * Does NOT shrink columns to the viewport — readable mins + card scroll instead.
+ * Auto-fit every listed column from painted cells, then fill leftover window
+ * space into flex columns. Never shrinks below content (card scrolls instead).
  */
 export function autoFitTable(
   table: HTMLElement,
   ids: string[],
-  opts?: { min?: number; max?: number },
+  opts?: { min?: number; max?: number; targetWidth?: number },
 ): Record<string, number> {
   const next: Record<string, number> = {};
   for (const id of ids) {
@@ -116,6 +116,36 @@ export function autoFitTable(
       min,
       max,
     });
+  }
+  const target = opts?.targetWidth ?? table.parentElement?.clientWidth ?? table.clientWidth;
+  return fillToWindow(next, ids, target, (id) => columnRole(table, id) === "flex", opts?.max ?? 420);
+}
+
+/**
+ * Default width sits between content auto-fit and the list window:
+ * never shrink below content; if there is leftover room, give it to flex cols.
+ */
+export function fillToWindow<T extends Record<string, number>>(
+  widths: T,
+  ids: string[],
+  targetWidth: number,
+  isFlex: (id: string) => boolean,
+  max = 420,
+): T {
+  if (!(targetWidth > 0) || ids.length === 0) return widths;
+  const next = { ...widths };
+  const sum = ids.reduce((s, id) => s + (next[id] ?? 0), 0);
+  const extra = Math.floor(targetWidth - sum);
+  if (extra <= 0) return next;
+  const sinks = ids.filter((id) => isFlex(id) && id !== "check" && id !== "actions");
+  const targets = sinks.length ? sinks : ids.filter((id) => id !== "check" && id !== "actions");
+  if (!targets.length) return next;
+  const each = Math.floor(extra / targets.length);
+  let rem = extra - each * targets.length;
+  for (const id of targets) {
+    const add = each + (rem > 0 ? 1 : 0);
+    if (rem > 0) rem -= 1;
+    (next as Record<string, number>)[id] = Math.min(max, (next[id] ?? 0) + add);
   }
   return next;
 }

@@ -30,6 +30,35 @@ export function getMoneyFormatPrefs(): MoneyFormatPrefs {
   return { ...moneyFormatPrefs };
 }
 
+/** Live date display format from Options → Display (typed dates stay MM/DD/YYYY). */
+export type DateFormatId = "MDY" | "DMY" | "LONG";
+
+const DATE_PATTERNS: Record<DateFormatId, string> = {
+  MDY: "MM/dd/yyyy",
+  DMY: "dd/MM/yyyy",
+  LONG: "MMM d, yyyy",
+};
+
+let dateFormatPref: DateFormatId = "MDY";
+
+export function parseDateFormat(raw: unknown): DateFormatId {
+  return raw === "DMY" || raw === "LONG" ? raw : "MDY";
+}
+
+export function setDateFormatPref(id: DateFormatId): void {
+  dateFormatPref = parseDateFormat(id);
+}
+
+export function getDateFormatPref(): DateFormatId {
+  return dateFormatPref;
+}
+
+export const DATE_FORMAT_OPTIONS: { id: DateFormatId; label: string; sample: string }[] = [
+  { id: "MDY", label: "MM/DD/YYYY", sample: "09/30/2026" },
+  { id: "DMY", label: "DD/MM/YYYY", sample: "30/09/2026" },
+  { id: "LONG", label: "Mon D, YYYY", sample: "Sep 30, 2026" },
+];
+
 export type MoneyFormatOpts = Partial<MoneyFormatPrefs>;
 
 function resolvePrefs(opts?: MoneyFormatOpts): MoneyFormatPrefs {
@@ -110,12 +139,12 @@ export function formatCompact(amount: number, currency = "PHP", opts?: MoneyForm
   }
 }
 
-/** Display dates as zero-padded MM/DD/YYYY (e.g. 09/13/2026). */
+/** Display dates using Options → Display (default MM/DD/YYYY, e.g. 09/30/2026). */
 export function formatDate(iso: string): string {
   if (!iso) return "—";
   const date = parseISO(iso);
   if (!isValid(date)) return iso;
-  return format(date, "MM/dd/yyyy");
+  return format(date, DATE_PATTERNS[dateFormatPref]);
 }
 
 /** Register / phone / party tables — same numeric date as the rest of the books. */
@@ -144,7 +173,7 @@ export function formatMonth(iso: string): string {
 }
 
 export function formatGeneratedAt(at = new Date()): string {
-  return format(at, "MM/dd/yyyy 'at' HH:mm:ss");
+  return format(at, `${DATE_PATTERNS[dateFormatPref]} 'at' HH:mm:ss`);
 }
 
 export function todayIso(): string {

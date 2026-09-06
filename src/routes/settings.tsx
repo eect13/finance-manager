@@ -31,7 +31,7 @@ import { browserStorage, countEntries, formatBytes, jsonSize, requestPersistentS
 import { COUNTRY_TAX_PACKS, CURRENCIES, countryTaxPackForCurrency, type RecurringItem } from "@/lib/finance/types";
 import { useShallow } from "zustand/react/shallow";
 import { AppearancePicker } from "@/components/theme-toggle";
-import { DisplayZoomSettings, ListDensitySettings, ListTypeSettings } from "@/components/ui-zoom-controls";
+import { DisplayZoomSettings, ListDensitySettings, ListTypeSettings, DateFormatSettings } from "@/components/ui-zoom-controls";
 import { usePhoneUi } from "@/lib/phone-layout";
 import { findShortcutLabel, isApplePlatform, redoShortcutLabel, undoShortcutLabel } from "@/lib/hotkey";
 
@@ -263,8 +263,9 @@ function SettingsPage() {
           <CardHeader>
             <CardTitle>Display / Formatting</CardTitle>
             <OptionsDescMore>
-              Appearance, display zoom, list density, and type size apply on every tab. Zoom and density stay on this
-              device; type size is stored with the company file along with thousand separators and decimal places.
+              Appearance, display zoom, list density, type size, and date format apply on every tab. Zoom and density stay
+              on this device; type size and date format are stored with the company file along with thousand separators
+              and decimal places.
             </OptionsDescMore>
           </CardHeader>
           <CardContent className="grid gap-4">
@@ -272,6 +273,7 @@ function SettingsPage() {
             <DisplayZoomSettings />
             <ListDensitySettings />
             <ListTypeSettings />
+            <DateFormatSettings />
             <OptionsSwitchRow
               title="Use thousand separators"
               hint="Show amounts like 9,825,076.00 instead of 9825076.00 — including when currency is blank."

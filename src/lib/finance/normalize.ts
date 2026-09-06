@@ -1,4 +1,5 @@
 import { DEFAULT_SETTINGS, normalizeRegisterCols, parseRecon, type ReconStatus } from "./types";
+import { parseDateFormat } from "./format";
 import { parseMethod } from "./methods";
 import { ensureRegisterOrder } from "./register";
 import type { Employee, PayType,  Account, AuditEvent, Bank, Bill, CheckRecord, CloseSnapshot, Customer, FinanceData, Invoice, JournalEntry, Receipt, ReconStatement, Vendor } from "./types";
@@ -19,6 +20,7 @@ export function normalizeBooks(raw: unknown): FinanceData {
     closedThrough: typeof merged.closedThrough === "string" ? merged.closedThrough : "",
     useThousandSeparators: merged.useThousandSeparators !== false,
     decimalPlaces: Number.isFinite(decimals) ? Math.min(4, Math.max(0, Math.round(decimals))) : 2,
+    dateFormat: parseDateFormat(merged.dateFormat),
   };
   const customers = asArray<Customer>(p.customers).map((c, i) => ({
     ...c,

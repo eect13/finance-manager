@@ -20,6 +20,7 @@ import {
   readPhoneLayout,
   writePhoneLayout,
   type PhoneLayout,
+  isPhoneUi,
   usePhoneUi,
 } from "@/lib/phone-layout";
 import { SortHeader } from "@/components/sort-header";
@@ -53,15 +54,10 @@ const RECON_COLS = {
 
 
 function reconDefaultCols() {
-  if (typeof window !== "undefined" && window.matchMedia("(max-width: 767px), ((hover: none) and (pointer: coarse))").matches) {
+  if (isPhoneUi()) {
     return { date: 64, type: 72, payee: 128, days: 44, payment: 86, deposit: 86 };
   }
   return { ...RECON_COLS };
-}
-
-function isPhoneUi() {
-  if (typeof window === "undefined") return false;
-  return window.matchMedia("(max-width: 767px), ((hover: none) and (pointer: coarse))").matches;
 }
 
 function lineKey(line: CashLine) {

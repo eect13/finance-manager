@@ -11,6 +11,7 @@ import { usePhoneMoveDrag } from "@/components/use-phone-move-drag";
 import { PhoneLayoutToggle } from "@/components/phone-layout-toggle";
 import {
   REGISTER_PHONE_LAYOUT_KEY,
+  isPhoneUi,
   readPhoneLayout,
   writePhoneLayout,
   type PhoneLayout,
@@ -117,11 +118,6 @@ const MOBILE_COL_WIDTHS: typeof DEFAULT_COL_WIDTHS = {
 
 /** Phone: Date + Payee + money. Hide type/number/memo/bank/status until View. */
 type ColWidths = typeof DEFAULT_COL_WIDTHS;
-
-function isPhoneUi() {
-  if (typeof window === "undefined") return false;
-  return window.matchMedia("(max-width: 767px), ((hover: none) and (pointer: coarse))").matches;
-}
 
 function defaultColWidths(): ColWidths {
   return isPhoneUi() ? { ...MOBILE_COL_WIDTHS } : { ...DEFAULT_COL_WIDTHS };

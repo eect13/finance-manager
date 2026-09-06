@@ -24,13 +24,18 @@ export function writePhoneLayout(key: string, layout: PhoneLayout) {
 export const REGISTER_PHONE_LAYOUT_KEY = "finance-manager-register-phone-layout";
 export const RECONCILE_PHONE_LAYOUT_KEY = "finance-manager-reconcile-phone-layout";
 
+const PHONE_UI_MQ = "(max-width: 767px), ((hover: none) and (pointer: coarse))";
+
+/** Sync phone/coarse check (col defaults, one-shot layout). Prefer usePhoneUi in React trees. */
+export function isPhoneUi() {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia(PHONE_UI_MQ).matches;
+}
+
 export function usePhoneUi() {
-  const [phone, setPhone] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return window.matchMedia("(max-width: 767px), ((hover: none) and (pointer: coarse))").matches;
-  });
+  const [phone, setPhone] = useState(() => isPhoneUi());
   useEffect(() => {
-    const mq = window.matchMedia("(max-width: 767px), ((hover: none) and (pointer: coarse))");
+    const mq = window.matchMedia(PHONE_UI_MQ);
     const apply = () => setPhone(mq.matches);
     apply();
     mq.addEventListener("change", apply);

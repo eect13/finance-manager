@@ -40,7 +40,7 @@ const BUDGET_COLS = {
   kind: 110,
   start: 120,
   amount: 128,
-  actions: 88,
+  actions: 120,
 } as const;
 
 function ForecastPage() {

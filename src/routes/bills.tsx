@@ -60,7 +60,7 @@ const BILL_COLS = {
   amount: 120,
   balance: 120,
   status: 118,
-  actions: 120,
+  actions: 220,
 } as const;
 
 const BILL_SORT = [

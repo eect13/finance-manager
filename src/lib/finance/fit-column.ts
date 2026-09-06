@@ -36,12 +36,13 @@ export function columnRole(table: HTMLElement, id: string): ColRole {
 function cellContentWidth(el: HTMLElement) {
   const inner = el.firstElementChild as HTMLElement | null;
   const sw = Math.max(el.scrollWidth || 0, inner?.scrollWidth || 0);
-  if (sw > 0) return sw;
   const text = el.textContent?.replace(/\s+/g, " ").trim() ?? "";
-  if (!text) return 0;
+  if (!text && sw > 0) return sw;
   const style = getComputedStyle(el);
   const font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
-  return measure(text, font) + 28;
+  const pad = (parseFloat(style.paddingLeft) || 0) + (parseFloat(style.paddingRight) || 0);
+  const measured = text ? measure(text, font) + pad : 0;
+  return Math.max(sw, measured);
 }
 
 /** Width from currently painted cells. Header cluster is a floor; never viewport-crush. */

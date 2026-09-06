@@ -58,7 +58,7 @@ const INV_COLS = {
   total: 120,
   balance: 120,
   status: 118,
-  actions: 120,
+  actions: 260,
 } as const;
 
 const INV_SORT = [

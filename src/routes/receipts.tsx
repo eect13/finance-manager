@@ -62,7 +62,7 @@ const RCP_COLS = {
   kind: 120,
   amount: 128,
   status: 118,
-  actions: 88,
+  actions: 120,
 } as const;
 
 const RCP_SORT = [

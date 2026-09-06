@@ -865,7 +865,7 @@ const REC_COLS = {
   name: 200,
   next: 128,
   amount: 128,
-  actions: 88,
+  actions: 120,
 } as const;
 
 function StoragePanel() {

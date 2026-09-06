@@ -52,7 +52,7 @@ const BANK_COLS = {
   status: 100,
   book: 128,
   pending: 128,
-  actions: 96,
+  actions: 120,
 } as const;
 
 const BANK_SORT = [

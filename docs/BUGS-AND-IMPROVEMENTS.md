@@ -1,6 +1,14 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-07. Updated for v3.63.5.
+Re-verified in code 2026-09-07. Updated for v3.63.6.
+
+## Fixed in v3.63.6
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| 1 | Med | Name/Contact resize handle and auto-fit did nothing (sticky Name, `width: auto`, `min-width: 7em/8em !important`, table `max-width: 100%`) | Fit cols honor stored px; table grows and scrolls; auto-fit measures text, not the ellipsis box |
+| 2 | Low | Party directory (and leftover list chrome) was not the same plain `--color-table` paper | One paper token; no sticky Name, no muted header, no edge fade |
+| 3 | Med | Desk row Actions folded Collect/Pay/Delete into ⋯ even with side-scroll | Desk always shows labels; ⋯ is phone-only |
 
 ## Fixed in v3.63.5
 

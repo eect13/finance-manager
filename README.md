@@ -1,4 +1,4 @@
-# Finance Manager v3.63.5
+# Finance Manager v3.63.6
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -26,6 +26,12 @@ Unzip the repo (a second unzip named `finance-manager-main (1)` is fine) so `dep
 Vite is installed with the packages — no global `vite` command. `.npmrc` has `legacy-peer-deps=true`.
 
 After the Windows installer: **delete the leftover white shortcut** and pin the new one — shortcut and taskbar both use the navy pillars tile.
+
+## What's new in v3.63.6
+
+- **Customers / Vendors column width**: drag and double-click auto-fit on Name and Contact actually change the column. No freeze-pane overlay, no CSS min-width fighting the stored width. The list side-scrolls.
+- **Plain table paper**: directory, transaction history, and every other list use the same `--color-table` field — no sticky Name strip, no muted header, no edge fade.
+- **Actions labels on desk**: Collect, Pay, Delete (and the rest) stay on the row. ⋯ is phone-only; lists side-scroll when the buttons need room.
 
 ## What's new in v3.63.5
 

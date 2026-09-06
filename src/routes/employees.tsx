@@ -39,7 +39,7 @@ const EMP_COLS = {
   rate: 128,
   bank: 120,
   status: 100,
-  actions: 200,
+  actions: 240,
 } as const;
 
 const EMP_SORT = [

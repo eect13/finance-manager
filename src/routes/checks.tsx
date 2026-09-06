@@ -57,7 +57,7 @@ const CHK_COLS = {
   post: 118,
   amount: 128,
   status: 140,
-  actions: 88,
+  actions: 120,
 } as const;
 
 const CHK_SORT = [

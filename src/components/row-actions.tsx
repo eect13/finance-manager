@@ -11,7 +11,7 @@ export type RowMenuItem = {
   danger?: boolean;
 };
 
-/** Desk with room: at most this many extras render as buttons; more go in ⋯. */
+/** Phone: at most this many extras render as buttons; more go in ⋯. */
 const DESK_INLINE_MAX = 2;
 /** Below this width, extras (Delete, …) fold into ⋯. ~Delete sm button. */
 const INLINE_FIT_MIN = 84;
@@ -66,8 +66,7 @@ function MoreMenu({ items }: { items: RowMenuItem[] }) {
 }
 
 /**
- * Primary stays on the row when it fits.
- * Desk: ≤2 extras as buttons when the actions cell is wide enough; else ⋯.
+ * Desk: Collect / Pay / Delete (and the rest) stay on the row — lists side-scroll.
  * Phone / narrow: extras in compact ⋯; fold primary into ⋯ when the cell is too tight.
  */
 export function RowActions({
@@ -82,11 +81,11 @@ export function RowActions({
 }) {
   const phone = usePhoneUi();
   const rootRef = useRef<HTMLDivElement>(null);
-  // Default sensible: desk assumes room (buttons), phone assumes ⋯ — no first-paint flash.
-  const [narrow, setNarrow] = useState(false);
-  const [primaryNarrow, setPrimaryNarrow] = useState(false);
+  const [narrow, setNarrow] = useState(true);
+  const [primaryNarrow, setPrimaryNarrow] = useState(true);
 
   useLayoutEffect(() => {
+    if (!phone) return;
     const el = rootRef.current;
     if (!el) return;
     const measure = () => {
@@ -99,11 +98,28 @@ export function RowActions({
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-  }, []);
+  }, [phone]);
 
   const extra = (items ?? []).filter(Boolean);
-  const foldPrimary = Boolean(primary) && !phone && primaryNarrow;
-  const showInline = !phone && !narrow && extra.length > 0 && extra.length <= DESK_INLINE_MAX;
+
+  if (!phone) {
+    return (
+      <div
+        ref={rootRef}
+        className="flex w-max min-w-max flex-nowrap items-center justify-end gap-1"
+        onClick={stopOpen}
+        onPointerDown={stopOpen}
+      >
+        {primary ?? null}
+        {extra.map((item) => (
+          <ItemButton key={item.label} item={item} />
+        ))}
+      </div>
+    );
+  }
+
+  const foldPrimary = Boolean(primary) && primaryNarrow;
+  const showInline = !narrow && extra.length > 0 && extra.length <= DESK_INLINE_MAX;
   const menuItems: RowMenuItem[] =
     foldPrimary && primaryAsItem ? [primaryAsItem, ...extra] : extra;
   const showMenu = menuItems.length > 0 && (foldPrimary || !showInline);
@@ -126,7 +142,7 @@ export function RowActions({
   );
 }
 
-/** Delete-only row control — desk button when it fits, else ⋯ via RowActions. */
+/** Delete-only row control — desk button, phone ⋯ via RowActions. */
 export function RowDeleteButton({ onDelete, label = "Delete" }: { onDelete: () => void; label?: string }) {
   return <RowActions items={[{ label, onSelect: onDelete, danger: true }]} />;
 }

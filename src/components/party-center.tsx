@@ -604,7 +604,7 @@ function PartyDirectoryTable({
       className="party-dir-table list-grid min-w-0 max-w-full outline-none"
       onMouseDown={pointer.containerProps.onMouseDown}
     >
-      <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
+      <table ref={cols.tableRef} className="text-sm" style={{ width: cols.tableWidth, minWidth: cols.tableWidth }}>
         <colgroup>
           {(Object.keys(DIR_COLS) as Array<keyof typeof DIR_COLS>).map((id) => (
             <col key={id} className={cn(`col-dir-${id}`, "col-fit")} style={{ width: cols.widths[id], minWidth: cols.widths[id] }} />

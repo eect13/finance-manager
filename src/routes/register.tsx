@@ -564,8 +564,6 @@ function RegisterPage() {
     <AppShell
       title="Bank register"
       description="Inflows and outflows across every bank. Park receipts in safekeeping, then move them when they land."
-      align="center"
-      compact
       wide
       actions={
         <>
@@ -1375,8 +1373,8 @@ function RegisterTable({
               </thead>
               <tbody>
                 {padTop > 0 ? (
-                  <tr aria-hidden>
-                    <td colSpan={1 + (dragOn ? 1 : 0) + visibleCols.length} style={{ height: padTop, padding: 0, border: 0 }} />
+                  <tr aria-hidden className="register-virt-pad">
+                    <td colSpan={1 + (dragOn ? 1 : 0) + visibleCols.length} style={{ height: padTop, padding: 0, border: 0, background: "transparent" }} />
                   </tr>
                 ) : null}
                 {vItems.map((item) => {
@@ -1514,8 +1512,8 @@ function RegisterTable({
                   );
                 })}
                 {padBottom > 0 ? (
-                  <tr aria-hidden>
-                    <td colSpan={1 + (dragOn ? 1 : 0) + visibleCols.length} style={{ height: padBottom, padding: 0, border: 0 }} />
+                  <tr aria-hidden className="register-virt-pad">
+                    <td colSpan={1 + (dragOn ? 1 : 0) + visibleCols.length} style={{ height: padBottom, padding: 0, border: 0, background: "transparent" }} />
                   </tr>
                 ) : null}
               </tbody>
@@ -1543,7 +1541,8 @@ function RegisterTable({
           {padTop > 0 ? (
             <li
               aria-hidden
-              style={{ height: padTop, margin: 0, padding: 0, border: 0, overflow: "hidden", listStyle: "none" }}
+              className="register-virt-pad"
+              style={{ height: padTop, margin: 0, padding: 0, border: 0, overflow: "hidden", listStyle: "none", background: "transparent" }}
             />
           ) : null}
           {vItems.map((item) => {
@@ -1777,7 +1776,8 @@ function RegisterTable({
           {padBottom > 0 ? (
             <li
               aria-hidden
-              style={{ height: padBottom, margin: 0, padding: 0, border: 0, overflow: "hidden", listStyle: "none" }}
+              className="register-virt-pad"
+              style={{ height: padBottom, margin: 0, padding: 0, border: 0, overflow: "hidden", listStyle: "none", background: "transparent" }}
             />
           ) : null}
         </ul>
@@ -1978,8 +1978,8 @@ function RegisterTable({
           </thead>
           <tbody>
             {padTop > 0 ? (
-              <tr aria-hidden>
-                <td colSpan={11} style={{ height: padTop, padding: 0, border: 0 }} />
+              <tr aria-hidden className="register-virt-pad">
+                <td colSpan={11} style={{ height: padTop, padding: 0, border: 0, background: "transparent" }} />
               </tr>
             ) : null}
             {vItems.map((item) => {
@@ -2011,8 +2011,8 @@ function RegisterTable({
               );
             })}
             {padBottom > 0 ? (
-              <tr aria-hidden>
-                <td colSpan={11} style={{ height: padBottom, padding: 0, border: 0 }} />
+              <tr aria-hidden className="register-virt-pad">
+                <td colSpan={11} style={{ height: padBottom, padding: 0, border: 0, background: "transparent" }} />
               </tr>
             ) : null}
           </tbody>

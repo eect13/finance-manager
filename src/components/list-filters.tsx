@@ -257,6 +257,8 @@ export function ListFilters({
 }) {
   const phone = usePhoneUi();
   const dateOn = Boolean(onPreset);
+  const filterable = dateOn || selects.length > 0;
+  if (!filterable && !embedded) return null;
   const active = listFiltersActiveCount({ dateOn, datePreset, defaultPreset, selects });
 
   const panel = (

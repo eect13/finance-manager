@@ -1,4 +1,4 @@
-# Finance Manager v3.62.80
+# Finance Manager v3.62.81
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -11,6 +11,14 @@ No accounts, no server setup. Books stay on this computer (IndexedDB). Settings 
 The app mark is a **navy tile with cream pillars** — a full opaque square (Windows 11 already rounds the tile; transparent corners were a white plate). Web uses the SVG favicon. Windows uses a **BMP 32-bit** `.ico` (PNG-in-ICO is a white square on the shortcut and the taskbar). After install, **delete any leftover blank shortcut** and pin the new one — Explorer caches the last icon.
 
 
+
+## What's new in v3.62.81
+
+- **Tables**: last column (Status) sits inside the card radius instead of clipping into the cream corner; no gray slab under Deposit; overflow only when the grid is actually tight
+- **Customers / Vendors**: no auto-select of the first name; Name scrolls with the directory; list pane is at least as wide as history
+- **Filters**: hidden on pages with nothing to filter (Employees); phone actions bar no longer stretches Filters/View
+- **Post / dialogs**: drag from the title on desk; stay centered on phone with safe-area padding
+- **Titles**: one size and left alignment across pages
 
 ## What's new in v3.62.80
 

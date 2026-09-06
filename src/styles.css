@@ -2453,27 +2453,29 @@ body.printing .print-root .no-print {
   left: 50%;
   top: 50%;
   z-index: 60;
-  transform: translate(-50%, -50%);
+  --dialog-x: 0px;
+  --dialog-y: 0px;
+  transform: translate(calc(-50% + var(--dialog-x)), calc(-50% + var(--dialog-y)));
   max-height: min(90dvh, 44rem);
 }
 
-@media (max-width: 639px) {
+@media (max-width: 767px), ((hover: none) and (pointer: coarse)) {
   .dialog-sheet {
-    left: 0.5rem;
-    right: 0.5rem;
-    top: auto;
-    bottom: 0;
-    width: auto;
-    max-width: none;
-    transform: none;
+    left: 50%;
+    right: auto;
+    top: 50%;
+    bottom: auto;
+    width: calc(100% - 2rem - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+    max-width: 32rem;
+    transform: translate(-50%, -50%);
     max-height: min(
-      92dvh,
-      calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 0.75rem)
+      90dvh,
+      calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 1.25rem)
     );
     overflow-x: hidden;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+    padding-bottom: max(1.5rem, env(safe-area-inset-bottom, 0px));
   }
 }
 
@@ -4852,3 +4854,182 @@ body.is-phone-move-dragging {
   overflow: visible;
   text-overflow: clip;
 }
+
+/* =============================================================================
+   v3.62.81 — edge-to-edge last col, party list, filters, dialogs, titles
+   ============================================================================= */
+
+/* Last column flush to the card, inset enough to clear the 2xl radius
+   (Status was clipping into the cream corner). No trailing empty track. */
+.list-card.list-grid > table,
+.party-dir-table > table,
+.register-matrix table {
+  width: 100%;
+  max-width: none;
+}
+
+.list-grid thead th:last-child,
+.list-grid tbody td:last-child,
+.list-grid tfoot td:last-child,
+.register-matrix thead th:last-child,
+.register-matrix tbody td:last-child,
+.register-matrix tfoot td:last-child,
+.party-dir-table thead th:last-child,
+.party-dir-table tbody td:last-child {
+  padding-right: 1.25rem;
+}
+
+.list-card.list-grid thead th:last-child,
+.register-card thead th:last-child {
+  border-top-right-radius: var(--radius-2xl);
+}
+
+.list-grid thead th:last-child .sort-header-title,
+.register-matrix thead th:last-child .sort-header-title,
+.party-dir-table thead th:last-child .sort-header-title {
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.list-grid thead th,
+.register-matrix thead th,
+.party-dir-table thead th,
+.list-card.list-grid thead th {
+  background: var(--color-card);
+  background-color: var(--color-card);
+}
+
+.register-virt-pad,
+.register-virt-pad td,
+.list-grid tbody tr[aria-hidden] td,
+.register-matrix tbody tr[aria-hidden] td {
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Dual-axis scroll was painting a gray corner under Deposit / Status. */
+.list-card.list-grid,
+.register-matrix,
+.party-dir-table,
+.register-card {
+  scrollbar-color: color-mix(in oklab, var(--color-foreground) 28%, transparent) transparent;
+}
+.list-card.list-grid::-webkit-scrollbar-corner,
+.register-matrix::-webkit-scrollbar-corner,
+.party-dir-table::-webkit-scrollbar-corner,
+.register-card::-webkit-scrollbar-corner,
+.list-card::-webkit-scrollbar-corner {
+  background: transparent;
+  background-color: transparent;
+}
+
+/* Phone edge-fade was washing Status and leaving a gray slab on empty money cols. */
+.register-card,
+.recon-table-card,
+.list-card {
+  background: var(--color-card);
+  background-image: none;
+}
+
+/* Party directory: names scroll with the table (not frozen). List pane ≥ detail. */
+.party-dir-table th[data-col="name"],
+.party-dir-table td[data-col="name"] {
+  position: static;
+  left: auto;
+  z-index: auto;
+  box-shadow: none;
+}
+
+.party-dir-table thead th[data-col="name"] {
+  z-index: auto;
+  background: var(--color-card);
+}
+
+.party-dir-table > table {
+  width: 100%;
+  min-width: 100%;
+}
+
+@container workspace (min-width: 56rem) {
+  .party-center {
+    grid-template-columns: minmax(18rem, 1.15fr) minmax(0, 1fr);
+  }
+}
+
+.party-pane-list {
+  overflow: auto;
+  max-height: min(42rem, calc(100dvh - 13rem));
+}
+
+/* Actions bar: do not stretch Filters/View (that shifted the right toggle). */
+@media (max-width: 767px), ((hover: none) and (pointer: coarse)) {
+  .register-toolbar-actions {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+  }
+  .register-toolbar-actions > * {
+    flex: 0 0 auto !important;
+  }
+  .register-card,
+  .recon-table-card,
+  .list-card {
+    background: var(--color-card) !important;
+    background-image: none !important;
+  }
+}
+
+/* Post / dialogs: grab the title to move on desk; stay centered on phone. */
+.dialog-drag-handle {
+  cursor: grab;
+  user-select: none;
+}
+.dialog-sheet[data-dragging="true"] {
+  cursor: grabbing;
+}
+.dialog-sheet[data-dragging="true"] .dialog-drag-handle {
+  cursor: grabbing;
+}
+
+@media (max-width: 767px), ((hover: none) and (pointer: coarse)) {
+  .dialog-sheet {
+    left: 50% !important;
+    top: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: translate(-50%, -50%) !important;
+    width: calc(100% - 2rem - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+    max-width: 32rem;
+    max-height: min(
+      90dvh,
+      calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 1.25rem)
+    );
+  }
+  .dialog-drag-handle {
+    cursor: default;
+  }
+}
+
+/* Page titles — one size, one weight, left-aligned with the page. */
+.app-page-title,
+.app-page-title.app-page-title-compact {
+  font-size: 1.5rem !important;
+  line-height: 1.25 !important;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+@media (min-width: 768px) {
+  .app-page-title,
+  .app-page-title.app-page-title-compact {
+    font-size: 1.75rem !important;
+  }
+}
+
+@media (max-width: 767px), ((hover: none) and (pointer: coarse)) {
+  .app-page-title,
+  .app-page-title.app-page-title-compact {
+    font-size: 1.5rem !important;
+  }
+}
+
+

@@ -282,8 +282,7 @@ export function CustomerCenter() {
   }, [data, query]);
 
   useEffect(() => {
-    if (selectedId && filtered.some((c) => c.id === selectedId)) return;
-    setSelectedId(filtered[0]?.id ?? null);
+    if (selectedId && !filtered.some((c) => c.id === selectedId)) setSelectedId(null);
   }, [filtered, selectedId]);
 
   const selected = data.customers.find((c) => c.id === selectedId) ?? null;
@@ -414,8 +413,7 @@ export function VendorCenter() {
   }, [data, query]);
 
   useEffect(() => {
-    if (selectedId && filtered.some((v) => v.id === selectedId)) return;
-    setSelectedId(filtered[0]?.id ?? null);
+    if (selectedId && !filtered.some((v) => v.id === selectedId)) setSelectedId(null);
   }, [filtered, selectedId]);
 
   const selected = data.vendors.find((v) => v.id === selectedId) ?? null;
@@ -603,7 +601,7 @@ function PartyDirectoryTable({
       ref={pointer.bindContainer(gridRef)}
       data-party-dir
       tabIndex={0}
-      className="party-dir-table list-grid min-w-0 max-w-full overflow-x-auto outline-none"
+      className="party-dir-table list-grid min-w-0 max-w-full outline-none"
       onMouseDown={pointer.containerProps.onMouseDown}
     >
       <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>

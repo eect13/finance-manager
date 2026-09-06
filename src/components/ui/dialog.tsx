@@ -8,6 +8,13 @@ export const DialogTrigger = DialogPrimitive.Trigger;
 export const DialogClose = DialogPrimitive.Close;
 export const DialogPortal = DialogPrimitive.Portal;
 
+const DESK_DRAG_MQ = "(max-width: 767px), ((hover: none) and (pointer: coarse))";
+
+function deskDialogDrag() {
+  if (typeof window === "undefined") return false;
+  return !window.matchMedia(DESK_DRAG_MQ).matches;
+}
+
 export function DialogOverlay({ className, ...props }: React.ComponentProps<typeof DialogPrimitive.Overlay>) {
   return (
     <DialogPrimitive.Overlay
@@ -17,19 +24,58 @@ export function DialogOverlay({ className, ...props }: React.ComponentProps<type
   );
 }
 
-export function DialogContent({ className, children, onPointerDownOutside, onInteractOutside, onFocusOutside, ...props }: React.ComponentProps<typeof DialogPrimitive.Content>) {
+export function DialogContent({ className, children, onPointerDownOutside, onInteractOutside, onFocusOutside, onPointerDown, ...props }: React.ComponentProps<typeof DialogPrimitive.Content>) {
+  const sheetRef = React.useRef<HTMLDivElement>(null);
+  const drag = React.useRef({ on: false, sx: 0, sy: 0, ox: 0, oy: 0 });
+
   function keepDateCal(event: { target: EventTarget | null; preventDefault: () => void }) {
     const node = event.target;
     if (node instanceof Element && node.closest("[data-date-cal]")) event.preventDefault();
   }
+
+  function startDrag(event: React.PointerEvent<HTMLDivElement>) {
+    if (event.button !== 0) return;
+    if (!deskDialogDrag()) return;
+    const node = event.target;
+    if (!(node instanceof Element) || !node.closest("[data-dialog-drag]")) return;
+    if (node.closest("button, input, textarea, select, a, [role='button']")) return;
+    const sheet = sheetRef.current;
+    if (!sheet) return;
+    event.preventDefault();
+    const ox = Number.parseFloat(sheet.style.getPropertyValue("--dialog-x") || "0") || 0;
+    const oy = Number.parseFloat(sheet.style.getPropertyValue("--dialog-y") || "0") || 0;
+    drag.current = { on: true, sx: event.clientX, sy: event.clientY, ox, oy };
+    sheet.dataset.dragging = "true";
+    function move(ev: PointerEvent) {
+      if (!drag.current.on || !sheetRef.current) return;
+      const x = drag.current.ox + (ev.clientX - drag.current.sx);
+      const y = drag.current.oy + (ev.clientY - drag.current.sy);
+      sheetRef.current.style.setProperty("--dialog-x", `${x}px`);
+      sheetRef.current.style.setProperty("--dialog-y", `${y}px`);
+    }
+    function up() {
+      drag.current.on = false;
+      if (sheetRef.current) delete sheetRef.current.dataset.dragging;
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+    }
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  }
+
   return (
     <DialogPortal>
       <DialogOverlay />
       <DialogPrimitive.Content
+        ref={sheetRef}
         className={cn(
           "dialog-sheet z-50 grid w-[calc(100%-2rem)] max-w-lg min-w-0 max-h-[min(90dvh,44rem)] overflow-x-hidden overflow-y-auto rounded-3xl bg-card p-6 text-card-foreground elevation overscroll-contain",
           className,
         )}
+        onPointerDown={(event) => {
+          startDrag(event);
+          onPointerDown?.(event);
+        }}
         onPointerDownOutside={(event) => {
           keepDateCal(event);
           onPointerDownOutside?.(event);
@@ -55,7 +101,7 @@ export function DialogContent({ className, children, onPointerDownOutside, onInt
 }
 
 export function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
-  return <div className={cn("mb-4 flex flex-col gap-1", className)} {...props} />;
+  return <div data-dialog-drag className={cn("dialog-drag-handle mb-4 flex flex-col gap-1", className)} {...props} />;
 }
 
 export function DialogTitle({ className, ...props }: React.ComponentProps<typeof DialogPrimitive.Title>) {

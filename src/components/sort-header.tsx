@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AlignCenter, AlignLeft, AlignRight, ArrowDown, ArrowUp, Check } from "lucide-react";
 import type { SortDir } from "@/lib/finance/sort";
 import { cn } from "@/lib/utils";
@@ -11,6 +11,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
+const LONG_PRESS_MS = 480;
+const LONG_PRESS_MOVE_PX = 12;
+
+function isTouchLikePointer(e: { pointerType: string }) {
+  if (e.pointerType === "touch" || e.pointerType === "pen") return true;
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+}
 
 export function ColResize({
   width,
@@ -118,6 +127,24 @@ export function SortHeader({
     fill || Boolean(className && /\bcol-(?:flex|fill)\b/.test(className));
   const titleTone = active ? "text-foreground" : "text-muted-foreground hover:text-foreground";
   const titleSize = compact ? "min-h-8 text-xs tracking-wide uppercase" : "min-h-11 text-sm";
+  const longPressTimer = useRef<number | null>(null);
+  const longPressOrigin = useRef<{ x: number; y: number } | null>(null);
+  const suppressSortClick = useRef(false);
+
+  function clearLongPress() {
+    if (longPressTimer.current != null) {
+      window.clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    longPressOrigin.current = null;
+  }
+
+  function openColumnMenu(x: number, y: number) {
+    setMenuAt({ x, y });
+    setMenuOpen(true);
+  }
+
+  useEffect(() => () => clearLongPress(), []);
 
   const titleInner = <span className="sort-header-title">{label}</span>;
 
@@ -136,16 +163,54 @@ export function SortHeader({
         hasMenu
           ? (e) => {
               e.preventDefault();
-              setMenuAt({ x: e.clientX, y: e.clientY });
-              setMenuOpen(true);
+              clearLongPress();
+              openColumnMenu(e.clientX, e.clientY);
             }
           : undefined
       }
+      onPointerDown={
+        hasMenu
+          ? (e) => {
+              if (e.button !== 0) return;
+              if ((e.target as Element | null)?.closest?.(".col-resize-handle")) return;
+              if (!isTouchLikePointer(e)) return;
+              clearLongPress();
+              longPressOrigin.current = { x: e.clientX, y: e.clientY };
+              const x = e.clientX;
+              const y = e.clientY;
+              longPressTimer.current = window.setTimeout(() => {
+                longPressTimer.current = null;
+                longPressOrigin.current = null;
+                suppressSortClick.current = true;
+                openColumnMenu(x, y);
+                try {
+                  navigator.vibrate?.(10);
+                } catch {
+                  /* ignore */
+                }
+              }, LONG_PRESS_MS);
+            }
+          : undefined
+      }
+      onPointerMove={
+        hasMenu
+          ? (e) => {
+              const origin = longPressOrigin.current;
+              if (!origin || longPressTimer.current == null) return;
+              const dx = e.clientX - origin.x;
+              const dy = e.clientY - origin.y;
+              if (dx * dx + dy * dy > LONG_PRESS_MOVE_PX * LONG_PRESS_MOVE_PX) clearLongPress();
+            }
+          : undefined
+      }
+      onPointerUp={hasMenu ? () => clearLongPress() : undefined}
+      onPointerCancel={hasMenu ? () => clearLongPress() : undefined}
+      onPointerLeave={hasMenu ? () => clearLongPress() : undefined}
       title={
         hasMenu
           ? sortable
-            ? "Click to sort · right-click for align / column options"
-            : "Right-click for align / column options"
+            ? "Click to sort · right-click or long-press for align / column options"
+            : "Right-click or long-press for align / column options"
           : sortable
             ? "Click to sort"
             : undefined
@@ -156,7 +221,13 @@ export function SortHeader({
           {sortable ? (
             <button
               type="button"
-              onClick={() => onToggle(column)}
+              onClick={() => {
+                if (suppressSortClick.current) {
+                  suppressSortClick.current = false;
+                  return;
+                }
+                onToggle(column);
+              }}
               className={cn("sort-header-main", titleSize, titleTone)}
             >
               {titleInner}
@@ -173,7 +244,7 @@ export function SortHeader({
           ) : null}
         </div>
       </div>
-      {/* Hidden trigger: right-click opens align/hide menu (no header ⋮ chrome). */}
+      {/* Hidden trigger: right-click / long-press opens align menu (no header ⋮ chrome). */}
       {hasMenu ? (
         <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
           <DropdownMenuTrigger asChild>
@@ -260,4 +331,3 @@ export function ActionsHeader({
     </th>
   );
 }
-

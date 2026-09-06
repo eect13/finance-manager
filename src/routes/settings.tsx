@@ -93,6 +93,7 @@ function KeyboardOrTipsCard() {
           <ul className="options-tips-list">
             <li>Tap a row or card to open and edit.</li>
             <li>Find, theme, and export are under <strong>More</strong> in the header.</li>
+            <li>Long-press a column header to align left / center / right (no ⋮ on titles).</li>
             <li>Register: turn on <strong>Move dates</strong> in View, then drag the grip above/below a row.</li>
             <li>Row actions use the ⋯ menu — swipe-to-act is gone.</li>
             <li>Pinch to zoom the whole app (or Options → Display zoom).</li>
@@ -126,7 +127,7 @@ function KeyboardOrTipsCard() {
             <ShortcutRow keys="↑ / ↓" label="Move focused row" />
             <ShortcutRow keys="Enter" label="Open / edit focused row" />
             <ShortcutRow keys="Space" label="Tick / untick (Register & Reconcile)" />
-            <ShortcutRow keys="Right-click header" label="Align or hide column (no ⋮ on titles)" />
+            <ShortcutRow keys="Right-click / long-press header" label="Align or hide column (no ⋮ on titles)" />
           </div>
         </div>
         <div>

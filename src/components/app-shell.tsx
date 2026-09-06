@@ -40,7 +40,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { bootBooks, useFinanceData, useFinanceStore } from "@/lib/finance/store";
 import { cn } from "@/lib/utils";
 import { CompanySwitcher } from "./company-switcher";
-import { ExportMenu } from "./export-menu";
+import { ExportMenu, ExportMorePanel } from "./export-menu";
 import { FindButton, FindTransaction } from "./find-transaction";
 import { RecordSheet } from "./record-sheet";
 import { PrintStage } from "./print-preview";
@@ -249,6 +249,7 @@ export function AppShell({
   const [open, setOpen] = useState(false);
   const [findOpen, setFindOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [moreView, setMoreView] = useState<"main" | "export">("main");
   const [rail, setRail] = useState(false);
   const hydrated = useFinanceStore((s) => s.hydrated);
   const data = useFinanceData();
@@ -397,52 +398,89 @@ export function AppShell({
                 <ThemeToggle compact />
                 <ExportMenu data={data} />
               </div>
-              <Tip label="More — Find, theme, Options">
+              <Tip label="More — Find, zoom, export, theme, Options">
                 <Button
                   variant="outline"
                   size="icon"
                   className="size-10 shrink-0 touch-manipulation md:hidden"
                   aria-label="More"
-                  onClick={() => setMoreOpen(true)}
+                  onClick={() => {
+                    setMoreView("main");
+                    setMoreOpen(true);
+                  }}
                 >
                   <MoreHorizontal />
                 </Button>
               </Tip>
-              <Dialog open={moreOpen} onOpenChange={setMoreOpen}>
+              <Dialog
+                open={moreOpen}
+                onOpenChange={(open) => {
+                  setMoreOpen(open);
+                  if (!open) setMoreView("main");
+                }}
+              >
                 <DialogContent className="max-w-sm">
                   <DialogHeader>
-                    <DialogTitle>More</DialogTitle>
-                    <DialogDescription>Find, theme, and Options.</DialogDescription>
+                    <DialogTitle>{moreView === "export" ? "Export" : "More"}</DialogTitle>
+                    <DialogDescription>
+                      {moreView === "export"
+                        ? "Download spreadsheets (CSV)."
+                        : "Find, display zoom, export, theme, and Options."}
+                    </DialogDescription>
                   </DialogHeader>
-                  <div className="grid gap-1">
-                    <button
-                      type="button"
-                      className="flex min-h-11 w-full items-center rounded-xl px-3 text-left text-sm hover:bg-muted"
-                      onClick={() => {
-                        setMoreOpen(false);
-                        setFindOpen(true);
-                      }}
-                    >
-                      Find transaction
-                    </button>
-                    <button
-                      type="button"
-                      className="flex min-h-11 w-full items-center rounded-xl px-3 text-left text-sm hover:bg-muted"
-                      onClick={() => {
-                        setTheme(resolved === "dark" ? "light" : "dark");
-                        setMoreOpen(false);
-                      }}
-                    >
-                      {resolved === "dark" ? "Switch to light" : "Switch to dark"}
-                    </button>
-                    <Link
-                      to="/settings"
-                      className="flex min-h-11 w-full items-center rounded-xl px-3 text-left text-sm hover:bg-muted"
-                      onClick={() => setMoreOpen(false)}
-                    >
-                      Options (zoom, export, companies)
-                    </Link>
-                  </div>
+                  {moreView === "export" ? (
+                    <div className="grid gap-2">
+                      <button
+                        type="button"
+                        className="flex min-h-11 w-full items-center rounded-xl px-3 text-left text-sm text-muted-foreground hover:bg-muted"
+                        onClick={() => setMoreView("main")}
+                      >
+                        ← Back
+                      </button>
+                      <ExportMorePanel data={data} onDone={() => setMoreOpen(false)} />
+                    </div>
+                  ) : (
+                    <div className="grid gap-1">
+                      <button
+                        type="button"
+                        className="flex min-h-11 w-full items-center rounded-xl px-3 text-left text-sm hover:bg-muted"
+                        onClick={() => {
+                          setMoreOpen(false);
+                          setFindOpen(true);
+                        }}
+                      >
+                        Find transaction
+                      </button>
+                      <div className="flex min-h-11 items-center justify-between gap-3 rounded-xl px-3">
+                        <span className="text-sm">Display zoom</span>
+                        <DisplayZoomHeaderControl />
+                      </div>
+                      <button
+                        type="button"
+                        className="flex min-h-11 w-full items-center rounded-xl px-3 text-left text-sm hover:bg-muted"
+                        onClick={() => setMoreView("export")}
+                      >
+                        Export spreadsheets…
+                      </button>
+                      <button
+                        type="button"
+                        className="flex min-h-11 w-full items-center rounded-xl px-3 text-left text-sm hover:bg-muted"
+                        onClick={() => {
+                          setTheme(resolved === "dark" ? "light" : "dark");
+                          setMoreOpen(false);
+                        }}
+                      >
+                        {resolved === "dark" ? "Switch to light" : "Switch to dark"}
+                      </button>
+                      <Link
+                        to="/settings"
+                        className="flex min-h-11 w-full items-center rounded-xl px-3 text-left text-sm hover:bg-muted"
+                        onClick={() => setMoreOpen(false)}
+                      >
+                        Options (companies, density, …)
+                      </Link>
+                    </div>
+                  )}
                 </DialogContent>
               </Dialog>
             </div>

@@ -92,7 +92,7 @@ function KeyboardOrTipsCard() {
         <CardContent>
           <ul className="options-tips-list">
             <li>Tap a row or card to open and edit.</li>
-            <li>Find, theme, and export are under <strong>More</strong> in the header.</li>
+            <li>Find, display zoom, export, and theme are under <strong>More</strong> in the header.</li>
             <li>Long-press a column header to align left / center / right (no ⋮ on titles).</li>
             <li>Register: turn on <strong>Move dates</strong> in View, then drag the grip above/below a row.</li>
             <li>Row actions use the ⋯ menu — swipe-to-act is gone.</li>

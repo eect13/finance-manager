@@ -32,8 +32,25 @@ function saveCsv(filename: string, rows: Array<Record<string, string | number>>)
   toast.success("Downloaded CSV.");
 }
 
+export type ExportCsvAction = { label: string; filename: string; rows: Array<Record<string, string | number>> };
+
+export function exportCsvActions(data: FinanceData, day = stamp()): ExportCsvAction[] {
+  return [
+    { label: "General ledger CSV", filename: `ledger-${day}.csv`, rows: ledgerRows(data) },
+    { label: "Trial balance CSV", filename: `trial-balance-${day}.csv`, rows: trialBalanceRows(data) },
+    { label: "Bank register CSV", filename: `bank-register-${day}.csv`, rows: cashRegisterRows(data) },
+    { label: "Check register CSV", filename: `checks-${day}.csv`, rows: checkRegisterRows(data) },
+    { label: "Invoices CSV", filename: `invoices-${day}.csv`, rows: invoiceRows(data) },
+    { label: "Customers CSV", filename: `customers-${day}.csv`, rows: customerRows(data) },
+    { label: "Vendors CSV", filename: `vendors-${day}.csv`, rows: vendorRows(data) },
+    { label: "Receipts CSV", filename: `receipts-${day}.csv`, rows: receiptRows(data) },
+    { label: "Bills CSV", filename: `bills-${day}.csv`, rows: billRows(data) },
+    { label: "Banks CSV", filename: `banks-${day}.csv`, rows: bankRows(data) },
+  ];
+}
+
 export function ExportMenu({ data }: { data: FinanceData }) {
-  const day = stamp();
+  const actions = exportCsvActions(data);
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -50,38 +67,42 @@ export function ExportMenu({ data }: { data: FinanceData }) {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>Spreadsheets</DropdownMenuLabel>
-        <DropdownMenuItem onClick={() => saveCsv(`ledger-${day}.csv`, ledgerRows(data))}>
-          General ledger CSV
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => saveCsv(`trial-balance-${day}.csv`, trialBalanceRows(data))}>
-          Trial balance CSV
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => saveCsv(`bank-register-${day}.csv`, cashRegisterRows(data))}>
-          Bank register CSV
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => saveCsv(`checks-${day}.csv`, checkRegisterRows(data))}>
-          Check register CSV
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => saveCsv(`invoices-${day}.csv`, invoiceRows(data))}>
-          Invoices CSV
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => saveCsv(`customers-${day}.csv`, customerRows(data))}>
-          Customers CSV
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => saveCsv(`vendors-${day}.csv`, vendorRows(data))}>
-          Vendors CSV
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => saveCsv(`receipts-${day}.csv`, receiptRows(data))}>
-          Receipts CSV
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => saveCsv(`bills-${day}.csv`, billRows(data))}>
-          Bills CSV
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => saveCsv(`banks-${day}.csv`, bankRows(data))}>
-          Banks CSV
-        </DropdownMenuItem>
+        {actions.map((a) => (
+          <DropdownMenuItem key={a.filename} onClick={() => saveCsv(a.filename, a.rows)}>
+            {a.label}
+          </DropdownMenuItem>
+        ))}
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+/** Phone More: flat CSV list (avoids DropdownMenu-in-Dialog stacking). */
+export function ExportMorePanel({
+  data,
+  onDone,
+}: {
+  data: FinanceData;
+  onDone?: () => void;
+}) {
+  const actions = exportCsvActions(data);
+  return (
+    <div className="grid gap-1" role="group" aria-label="Export spreadsheets">
+      <p className="px-3 pt-2 text-[0.65rem] font-medium uppercase tracking-wide text-muted-foreground">Export CSV</p>
+      {actions.map((a) => (
+        <button
+          key={a.filename}
+          type="button"
+          className="flex min-h-11 w-full items-center rounded-xl px-3 text-left text-sm hover:bg-muted"
+          onClick={() => {
+            saveCsv(a.filename, a.rows);
+            onDone?.();
+          }}
+        >
+          {a.label}
+        </button>
+      ))}
+    </div>
   );
 }
 

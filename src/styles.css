@@ -5571,6 +5571,142 @@ body.is-phone-move-dragging {
   }
 }
 
+/* =============================================================================
+   v3.62.85 — title-only sticky, unglue tick/Date, themed header, full-row tick
+   ============================================================================= */
+
+/* Title row stays frozen at top. Date is not a freeze pane (body + title left). */
+.register-matrix thead th.col-date,
+.recon-table-card thead th[data-col="date"] {
+  position: sticky !important;
+  top: 0 !important;
+  left: auto !important;
+  z-index: 4;
+  background: color-mix(in oklab, var(--color-primary) 7%, var(--color-card)) !important;
+  background-color: color-mix(in oklab, var(--color-primary) 7%, var(--color-card)) !important;
+}
+
+.register-matrix tbody td.col-date,
+.recon-table-card tbody td[data-col="date"],
+.recon-table-card tbody th[data-col="date"] {
+  position: static !important;
+  left: auto !important;
+  top: auto !important;
+  z-index: auto;
+  background: transparent;
+  background-color: transparent;
+  box-shadow: none !important;
+}
+
+.hide-check .col-date,
+.register-matrix.hide-check thead th.col-date,
+.register-matrix.hide-check tbody td.col-date {
+  left: auto !important;
+}
+
+/* Tick stays left-sticky + opaque so sideways scroll cannot paint Date over it.
+   1px divider only — drop the 8px cream glue that fused tick into Date. */
+.register-matrix .col-check,
+.recon-table-card .col-check {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  background-clip: padding-box;
+  box-shadow: 1px 0 0 color-mix(in oklab, var(--color-border) 80%, transparent) !important;
+}
+
+.register-matrix thead .col-check,
+.recon-table-card thead .col-check,
+.list-grid thead .col-check {
+  z-index: 5;
+  background: color-mix(in oklab, var(--color-primary) 7%, var(--color-card));
+  background-color: color-mix(in oklab, var(--color-primary) 7%, var(--color-card));
+}
+
+.register-matrix tbody td.col-check,
+.recon-table-card tbody td.col-check {
+  z-index: 4;
+  isolation: isolate;
+  transform: translateZ(0);
+}
+
+/* Proximity: Date breathes after the tick (two columns, not one fused pane) */
+.register-matrix th.col-date,
+.register-matrix td.col-date,
+.recon-table-card th[data-col="date"],
+.recon-table-card td[data-col="date"] {
+  padding-left: calc(var(--list-cell-px) + 0.35rem) !important;
+}
+
+/* Themed header band — common region, navy/cream tokens only */
+.list-grid thead th,
+.register-matrix thead th,
+.recon-table-card thead th,
+.party-dir-table thead th,
+.party-txn-table thead th {
+  background: color-mix(in oklab, var(--color-primary) 7%, var(--color-card));
+  background-color: color-mix(in oklab, var(--color-primary) 7%, var(--color-card));
+  box-shadow: 0 1px 0 color-mix(in oklab, var(--color-primary) 22%, var(--color-border));
+  color: var(--color-card-foreground);
+}
+
+/* Full-row select includes the tick — same mix as the rest of the row, both edges */
+.list-grid tbody tr[data-selected="true"] td.col-check,
+.register-matrix tbody tr[data-selected="true"] td.col-check,
+.recon-table-card tbody tr[data-selected="true"] td.col-check,
+.list-grid tbody tr[data-selected="true"][data-focused="true"] td.col-check,
+.register-matrix tbody tr[data-selected="true"][data-focused="true"] td.col-check,
+.recon-table-card tbody tr[data-selected="true"][data-focused="true"] td.col-check {
+  background: color-mix(in oklab, var(--color-primary) 12%, var(--color-card)) !important;
+  background-color: color-mix(in oklab, var(--color-primary) 12%, var(--color-card)) !important;
+  box-shadow:
+    -10px 0 0 0 color-mix(in oklab, var(--color-primary) 12%, var(--color-card)),
+    1px 0 0 color-mix(in oklab, var(--color-border) 80%, transparent) !important;
+}
+
+.list-grid tbody tr[data-focused="true"]:not([data-selected]) td.col-check,
+.register-matrix tbody tr[data-focused="true"]:not([data-selected]) td.col-check,
+.recon-table-card tbody tr[data-focused="true"]:not([data-selected]) td.col-check {
+  background: color-mix(in oklab, var(--color-primary) 10%, var(--color-card)) !important;
+  background-color: color-mix(in oklab, var(--color-primary) 10%, var(--color-card)) !important;
+  box-shadow:
+    -10px 0 0 0 color-mix(in oklab, var(--color-primary) 10%, var(--color-card)),
+    1px 0 0 color-mix(in oklab, var(--color-border) 80%, transparent) !important;
+}
+
+.dark .list-grid tbody tr[data-selected="true"] td.col-check,
+.dark .register-matrix tbody tr[data-selected="true"] td.col-check,
+.dark .recon-table-card tbody tr[data-selected="true"] td.col-check,
+.dark .list-grid tbody tr[data-selected="true"][data-focused="true"] td.col-check,
+.dark .register-matrix tbody tr[data-selected="true"][data-focused="true"] td.col-check,
+.dark .recon-table-card tbody tr[data-selected="true"][data-focused="true"] td.col-check {
+  background: color-mix(in oklab, var(--color-primary) 18%, var(--color-card)) !important;
+  background-color: color-mix(in oklab, var(--color-primary) 18%, var(--color-card)) !important;
+  box-shadow:
+    -10px 0 0 0 color-mix(in oklab, var(--color-primary) 18%, var(--color-card)),
+    1px 0 0 color-mix(in oklab, var(--color-border) 80%, transparent) !important;
+}
+
+.dark .list-grid tbody tr[data-focused="true"]:not([data-selected]) td.col-check,
+.dark .register-matrix tbody tr[data-focused="true"]:not([data-selected]) td.col-check,
+.dark .recon-table-card tbody tr[data-focused="true"]:not([data-selected]) td.col-check {
+  background: color-mix(in oklab, var(--color-primary) 16%, var(--color-card)) !important;
+  background-color: color-mix(in oklab, var(--color-primary) 16%, var(--color-card)) !important;
+  box-shadow:
+    -10px 0 0 0 color-mix(in oklab, var(--color-primary) 16%, var(--color-card)),
+    1px 0 0 color-mix(in oklab, var(--color-border) 80%, transparent) !important;
+}
+
+.register-matrix tbody tr[data-selected="true"] td.col-date,
+.recon-table-card tbody tr[data-selected="true"] td[data-col="date"] {
+  background-color: color-mix(in oklab, var(--color-primary) 12%, var(--color-card)) !important;
+}
+
+.register-matrix tbody tr[data-focused="true"]:not([data-selected]) td.col-date,
+.recon-table-card tbody tr[data-focused="true"]:not([data-selected]) td[data-col="date"] {
+  background-color: color-mix(in oklab, var(--color-primary) 10%, var(--color-card)) !important;
+}
+
 
 
 

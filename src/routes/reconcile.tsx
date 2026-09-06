@@ -55,7 +55,7 @@ const RECON_COLS = {
 
 function reconDefaultCols() {
   if (isPhoneUi()) {
-    return { check: CHECK_COL, date: 64, type: 72, payee: 128, days: 44, payment: 86, deposit: 86 };
+    return { check: CHECK_COL, date: 96, type: 72, payee: 128, days: 44, payment: 86, deposit: 86 };
   }
   return { check: CHECK_COL, ...RECON_COLS };
 }

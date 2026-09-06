@@ -104,7 +104,7 @@ const DEFAULT_COL_WIDTHS = {
 /** Narrower defaults for phone so Register fits more useful columns before scrolling. */
 const MOBILE_COL_WIDTHS: typeof DEFAULT_COL_WIDTHS = {
   check: 40,
-  date: 56,
+  date: 96,
   type: 70,
   number: 64,
   payee: 140,

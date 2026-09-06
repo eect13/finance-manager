@@ -110,20 +110,17 @@ export function formatCompact(amount: number, currency = "PHP", opts?: MoneyForm
   }
 }
 
+/** Display dates as zero-padded MM/DD/YYYY (e.g. 09/13/2026). */
 export function formatDate(iso: string): string {
   if (!iso) return "—";
   const date = parseISO(iso);
   if (!isValid(date)) return iso;
-  return format(date, "MMM d, yyyy");
+  return format(date, "MM/dd/yyyy");
 }
 
-/** Month and day; year only when it is not this year. Register / phone tables. */
-export function formatRegisterDate(iso: string, today = todayIso()): string {
-  if (!iso) return "—";
-  const date = parseISO(iso);
-  if (!isValid(date)) return iso;
-  if (iso.slice(0, 4) === today.slice(0, 4)) return format(date, "MMM d");
-  return format(date, "MMM d, yyyy");
+/** Register / phone / party tables — same numeric date as the rest of the books. */
+export function formatRegisterDate(iso: string, _today = todayIso()): string {
+  return formatDate(iso);
 }
 
 export function formatWeekday(iso: string): string {

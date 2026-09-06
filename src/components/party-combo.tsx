@@ -112,7 +112,7 @@ export function PartyCombo({
       {open && (matches.length > 0 || canCreate) ? (
         <ul
           data-party-list
-          className="absolute z-50 mt-1 max-h-40 w-full overflow-y-auto rounded-xl bg-popover p-1 elevation sm:max-h-56"
+          className="absolute z-[200] mt-1 max-h-40 w-full overflow-y-auto rounded-xl bg-popover p-1 elevation sm:max-h-56"
         >
           {matches.map((item, i) => (
             <li key={item.id}>
@@ -120,7 +120,7 @@ export function PartyCombo({
                 type="button"
                 tabIndex={-1}
                 className={cn(
-                  "flex min-h-10 w-full items-center rounded-lg px-3 text-left text-sm",
+                  "flex min-h-11 w-full items-center rounded-md px-3 text-left text-sm",
                   i === hi || item.id === valueId ? "bg-accent" : "hover:bg-muted",
                 )}
                 onMouseDown={(e) => e.preventDefault()}
@@ -136,7 +136,7 @@ export function PartyCombo({
                 type="button"
                 tabIndex={-1}
                 className={cn(
-                  "flex min-h-10 w-full items-center rounded-lg px-3 text-left text-sm font-medium",
+                  "flex min-h-11 w-full items-center rounded-md px-3 text-left text-sm font-medium",
                   hi === matches.length ? "bg-accent" : "hover:bg-muted",
                 )}
                 onMouseDown={(e) => e.preventDefault()}

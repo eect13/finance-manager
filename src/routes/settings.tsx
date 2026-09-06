@@ -127,7 +127,7 @@ function KeyboardOrTipsCard() {
             <ShortcutRow keys="↑ / ↓" label="Move focused row" />
             <ShortcutRow keys="Enter" label="Open / edit focused row" />
             <ShortcutRow keys="Space" label="Tick / untick (Register & Reconcile)" />
-            <ShortcutRow keys="Right-click / long-press header" label="Align column left/center/right (no ⋮ on titles)" />
+            <ShortcutRow keys="Right-click / long-press header" label="Align column (money defaults right; prefs persist)" />
           </div>
         </div>
         <div>

@@ -2,9 +2,24 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 export type ColAlign = "left" | "center" | "right";
 
-/** Default cell content align: center for every column (right-click header menu overrides; prefs persist). */
-export function defaultColAlign(_id: string): ColAlign {
-  return "center";
+/** Column ids that default to right (money / amounts). Menu override + saved prefs still win. */
+const MONEY_RIGHT_IDS = new Set([
+  "amount",
+  "payment",
+  "deposit",
+  "balance",
+  "debit",
+  "credit",
+  "total",
+  "rate",
+  "book",
+  "pending",
+  "orig",
+]);
+
+/** Default cell align: money/amount ids right; everything else center. Saved prefs overlay. */
+export function defaultColAlign(id: string): ColAlign {
+  return MONEY_RIGHT_IDS.has(id) ? "right" : "center";
 }
 
 export function alignClass(align: ColAlign) {

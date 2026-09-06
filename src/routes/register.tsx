@@ -82,7 +82,7 @@ export const Route = createFileRoute("/register")({ component: RegisterPage });
 
 const UI_KEY = "finance-manager-register-ui";
 const FIT_MARK = "finance-manager-colfit";
-const FIT_VERSION = "content-9";
+const FIT_VERSION = "content-11";
 const MONTH_RANGE = datePresetRange("month");
 const CHECK_COL = 44;
 const COL_MIN = 56;

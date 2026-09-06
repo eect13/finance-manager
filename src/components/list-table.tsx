@@ -2,7 +2,7 @@ import { forwardRef, type CSSProperties, type HTMLAttributes, type ReactNode } f
 import { ACTIONS_COL_MIN, FLEX_COL_MIN } from "@/lib/finance/fit-column";
 import { cn } from "@/lib/utils";
 
-/** One name-like column takes leftover width. Keep bank/status/money/actions as fit — not flex. */
+/** Name-like columns used to absorb leftover. Lists now lock every col to stored px (sheet-style). */
 const FLEX_COL = new Set([
   "payee",
   "from",
@@ -22,19 +22,18 @@ export function isListFlexCol(id: string) {
 
 export function listColClass(id: string) {
   if (id === "actions") return "col-actions";
-  if (FLEX_COL.has(id)) return "col-flex";
   return "col-fit";
 }
 
-/** Inline width for <col>: flex cols keep a drag min so every column is adjustable. */
-export function listColWidthStyle(id: string, width: number): CSSProperties | undefined {
-  if (FLEX_COL.has(id)) return { minWidth: width };
+/** Inline width for <col>: every list column is a stored px width (drag/auto-fit apply). */
+export function listColWidthStyle(_id: string, width: number): CSSProperties | undefined {
   return { width, minWidth: width };
 }
 
-/** Desk lists: fill card when roomy; minWidth keeps readable cols and enables card scroll (no crush). */
+/** Table is the sum of columns — leftover is empty paper, not dumped into a neighbor. */
 export function listTableStyle(tableWidth: number): CSSProperties {
-  return { width: "100%", minWidth: Math.max(tableWidth, 1) };
+  const w = Math.max(tableWidth, 1);
+  return { width: w, minWidth: w };
 }
 
 export function listFlexMinStyle(id: string): CSSProperties | undefined {
@@ -43,7 +42,7 @@ export function listFlexMinStyle(id: string): CSSProperties | undefined {
   return undefined;
 }
 
-/** Register-style card. One flex name col absorbs leftover; fit cols + Actions use stored widths. */
+/** Register-style card. Columns keep stored widths; the card side-scrolls when they overflow. */
 export const ListCard = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(function ListCard(
   { className, children, ...rest },
   ref,
@@ -57,6 +56,6 @@ export const ListCard = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement
 
 export function ListEmpty({ children }: { children: ReactNode }) {
   return (
-    <div className="list-card px-4 py-6 text-center text-sm text-muted-foreground">{children}</div>
+    <div className="list-card px-4 py-6 text-center text-muted-foreground">{children}</div>
   );
 }

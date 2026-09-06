@@ -1,9 +1,32 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { FIT_MARK, FIT_VERSION } from "@/lib/finance/col-fit-mark";
-import { ACTIONS_COL_MIN, autoFitTable, columnRole, FLEX_COL_MIN, widthsMatch } from "@/lib/finance/fit-column";
+import { useCallback, useEffect, useState } from "react";
+import { FIT_VERSION } from "@/lib/finance/col-fit-mark";
+import { ACTIONS_COL_MIN } from "@/lib/finance/fit-column";
 
 export function clampCol(n: number, min = 56, max = 420) {
   return Math.min(max, Math.max(min, Math.round(n)));
+}
+
+function loadColWidths<K extends string>(
+  storageKey: string,
+  defaults: Record<K, number>,
+  min: number,
+  max: number,
+): Record<K, number> {
+  const next = { ...defaults };
+  if (typeof window === "undefined") return next;
+  try {
+    const raw = localStorage.getItem(storageKey);
+    if (!raw) return next;
+    const saved = JSON.parse(raw) as Record<string, unknown>;
+    if (saved._fit !== FIT_VERSION) return next;
+    for (const key of Object.keys(defaults) as K[]) {
+      const value = saved[key];
+      if (typeof value === "number" && Number.isFinite(value)) next[key] = clampCol(value, min, max);
+    }
+  } catch {
+    /* keep defaults */
+  }
+  return next;
 }
 
 export function useColWidths<K extends string>(
@@ -13,94 +36,31 @@ export function useColWidths<K extends string>(
 ) {
   const min = opts?.min ?? 56;
   const max = opts?.max ?? 420;
-  const [widths, setWidths] = useState<Record<K, number>>(defaults);
-  const [hydrated, setHydrated] = useState(false);
-  const virginRef = useRef(true);
-  const fittedRef = useRef(false);
-  const [tableEl, setTableEl] = useState<HTMLTableElement | null>(null);
+  const [widths, setWidths] = useState<Record<K, number>>(() => loadColWidths(storageKey, defaults, min, max));
 
-  const tableRef = useCallback((node: HTMLTableElement | null) => {
-    setTableEl(node);
+  const tableRef = useCallback((_node: HTMLTableElement | null) => {
+    /* Callers still pass ref={cols.tableRef}; widths are stored px, not measured on mount. */
   }, []);
 
   useEffect(() => {
-    let forceContent = true;
-    try {
-      forceContent = localStorage.getItem(FIT_MARK) !== FIT_VERSION;
-      if (forceContent) localStorage.setItem(FIT_MARK, FIT_VERSION);
-    } catch {
-      /* stay true — re-fit */
-    }
-    try {
-      const raw = localStorage.getItem(storageKey);
-      if (raw && !forceContent) {
-        const saved = JSON.parse(raw) as Record<string, unknown>;
-        const next = { ...defaults };
-        for (const key of Object.keys(defaults) as K[]) {
-          const value = saved[key];
-          if (typeof value === "number" && Number.isFinite(value)) next[key] = clampCol(value, min, max);
-        }
-        setWidths(next);
-        virginRef.current = widthsMatch(next, defaults);
-      } else {
-        virginRef.current = true;
-      }
-    } catch {
-      virginRef.current = true;
-    }
-    setHydrated(true);
-    // Hydrate once per key.
+    setWidths(loadColWidths(storageKey, defaults, min, max));
+    // Reload when the storage key changes (party dir customer vs vendor).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [storageKey]);
+  }, [storageKey, min, max]);
 
   useEffect(() => {
-    if (!hydrated) return;
     const timer = window.setTimeout(() => {
       try {
-        localStorage.setItem(storageKey, JSON.stringify(widths));
+        localStorage.setItem(storageKey, JSON.stringify({ ...widths, _fit: FIT_VERSION }));
       } catch {
         /* quota */
       }
     }, 160);
     return () => window.clearTimeout(timer);
-  }, [storageKey, widths, hydrated]);
-
-  useEffect(() => {
-    if (!hydrated || !virginRef.current || fittedRef.current || !tableEl) return;
-    const ids = Object.keys(defaults) as K[];
-
-    function tryFit() {
-      if (fittedRef.current || !tableEl) return false;
-      const hasCells = ids.some((id) => tableEl.querySelector(`td[data-col="${id}"], td.col-${id}`));
-      if (!hasCells) return false;
-      const fitted = autoFitTable(tableEl, ids, { min, max });
-      fittedRef.current = true;
-      virginRef.current = false;
-      setWidths((prev) => {
-        const next = { ...prev };
-        for (const id of ids) {
-          const value = fitted[id];
-          if (typeof value !== "number") continue;
-          const role = columnRole(tableEl, id);
-          const floor = role === "actions" ? ACTIONS_COL_MIN : role === "flex" ? FLEX_COL_MIN : min;
-          next[id] = clampCol(Math.max(value, floor), min, role === "actions" ? Math.min(max, 280) : max);
-        }
-        return next;
-      });
-      return true;
-    }
-
-    if (tryFit()) return;
-    const mo = new MutationObserver(() => {
-      if (tryFit()) mo.disconnect();
-    });
-    mo.observe(tableEl, { childList: true, subtree: true });
-    return () => mo.disconnect();
-  }, [hydrated, tableEl, defaults, min, max]);
+  }, [storageKey, widths]);
 
   const setWidth = useCallback(
     (id: K, next: number) => {
-      virginRef.current = false;
       const role = id === "actions" ? "actions" : undefined;
       const floor = role === "actions" ? Math.max(min, ACTIONS_COL_MIN) : min;
       const ceil = role === "actions" ? Math.min(max, 320) : max;
@@ -109,7 +69,7 @@ export function useColWidths<K extends string>(
     [min, max],
   );
 
-  const tableWidth = (Object.keys(defaults) as K[]).reduce((sum, key) => sum + widths[key], 0);
+  const tableWidth = (Object.keys(defaults) as K[]).reduce((sum, key) => sum + (widths[key] ?? defaults[key]), 0);
 
   return { widths, setWidth, tableWidth, tableRef };
 }

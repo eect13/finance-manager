@@ -101,8 +101,8 @@ export function SortHeader({
   width,
   onWidth,
   onFit,
-  /** When true (or className has col-flex/col-fill), do not lock th to a px width — leftover goes to the flex col. */
-  fill = false,
+  /** Ignored: list columns lock stored px like a sheet (no leftover absorber). */
+  fill: _fill = false,
 }: {
   label: string;
   column: string;
@@ -125,8 +125,6 @@ export function SortHeader({
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuAt, setMenuAt] = useState({ x: 0, y: 0 });
   const hasMenu = Boolean(onAlign);
-  const absorb =
-    fill || Boolean(className && /\bcol-(?:flex|fill)\b/.test(className));
   const titleTone = "sort-header-label";
   const titleSize = compact ? "min-h-8 text-xs tracking-wide uppercase" : "min-h-11 text-sm";
   const longPressTimer = useRef<number | null>(null);
@@ -165,10 +163,9 @@ export function SortHeader({
       className={cn(
         "relative align-middle font-medium text-center",
         compact ? "py-2 px-2" : "px-4 py-3",
-        absorb && "col-flex",
         className,
       )}
-      style={width != null ? (absorb ? { minWidth: width } : { minWidth: width, width }) : undefined}
+      style={width != null ? { minWidth: width, width } : undefined}
       data-align={align}
       data-col={column}
       aria-sort={active ? (dir === "asc" ? "ascending" : "descending") : sortable ? "none" : undefined}

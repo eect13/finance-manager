@@ -10,7 +10,7 @@ import { Money } from "@/components/money";
 import { receiptStatusMenuItems } from "@/components/receipt-status-menu";
 import { ReceiptBadge, ReconBadge } from "@/components/status-badge";
 import { ShopTick } from "@/components/shop-tick";
-import { listColClass, listColWidthStyle } from "@/components/list-table";
+import { listColClass, listColWidthStyle, listTableStyle } from "@/components/list-table";
 import { SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
@@ -566,7 +566,7 @@ export function CustomerPayment({
           </div>
           <div className="receive-alloc">
             <div ref={allocRef} className="list-grid">
-              <table ref={allocCols.tableRef} className="text-sm" style={{ width: "100%" }}>
+              <table ref={allocCols.tableRef} className="text-sm" style={listTableStyle(allocCols.tableWidth + APPLY_COL)}>
                 <colgroup>
                   <col style={{ width: APPLY_COL }} />
                   {(Object.keys(ALLOC_COLS) as Array<keyof typeof ALLOC_COLS>).map((id) => (

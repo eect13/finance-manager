@@ -37,7 +37,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { cashRegisterRows } from "@/lib/finance/export";
 import { FIT_MARK, FIT_VERSION } from "@/lib/finance/col-fit-mark";
-import { fillToWindow, fitColumnWidth, widthsMatch } from "@/lib/finance/fit-column";
+import { fitColumnWidth } from "@/lib/finance/fit-column";
 import { clampCol } from "@/components/use-col-widths";
 import { formatDate, formatRegisterDate, formatShortDate } from "@/lib/finance/format";
 import { openCashLine, stopOpen } from "@/lib/finance/open-record";
@@ -214,11 +214,11 @@ function RegisterPage() {
         if (saved.colWidths && !forceContent && !isPhoneUi()) {
           const parsed = parseColWidths(saved.colWidths);
           setColWidths(parsed);
-          setNeedFit(widthsMatch({ ...parsed, check: DEFAULT_COL_WIDTHS.check }, DEFAULT_COL_WIDTHS));
+          setNeedFit(false);
         } else if (isPhoneUi()) {
           setColWidths(defaultColWidths());
           setNeedFit(false);
-        } else setNeedFit(true);
+        } else setNeedFit(false);
         if (saved.datePreset === "month" || saved.datePreset === "year" || saved.datePreset === "all") {
           const range = datePresetRange(saved.datePreset);
           setDatePreset(saved.datePreset);
@@ -1054,9 +1054,7 @@ function RegisterTable({
           max: COL_MAX,
         });
       }
-      const visibleIds = ["check", ...REGISTER_COLS.filter((col) => cols[col.id]).map((col) => col.id)];
-      const target = wrapRef.current?.clientWidth ?? tableEl.parentElement?.clientWidth ?? 0;
-      onFitted(fillToWindow(next, visibleIds, target, (id) => id === "payee" || id === "memo", COL_MAX));
+      onFitted(next);
     }
     tryFit();
     return () => {
@@ -1085,13 +1083,6 @@ function RegisterTable({
   const firstLabel = REGISTER_COLS.find(
     (col) => cols[col.id] && col.id !== "payment" && col.id !== "deposit" && col.id !== "balance",
   )?.id;
-  const lastVisible = [...REGISTER_COLS].reverse().find((col) => cols[col.id])?.id;
-  /* Exactly one leftover absorber — never payee+memo both flex (void / last-col stretch). */
-  const flexColId: RegisterColId | undefined = cols.payee
-    ? "payee"
-    : cols.memo
-      ? "memo"
-      : lastVisible;
   function widthOf(id: RegisterColId) {
     return colWidths[id];
   }
@@ -1681,18 +1672,15 @@ function RegisterTable({
           (e.currentTarget as HTMLElement).focus({ preventScroll: true });
         }}
       >
-        <table style={{ width: "100%", minWidth: tableWidth }}>
+        <table style={{ width: tableWidth, minWidth: tableWidth }}>
           <colgroup>
             <col className="col-check no-print" style={{ width: colWidths.check }} />
             {REGISTER_COLS.map((col) => (
               <col
                 key={col.id}
-                className={cn(
-                  REGISTER_COL_CLASS[col.id],
-                  col.id === flexColId && "col-flex",
-                )}
+                className={REGISTER_COL_CLASS[col.id]}
                 style={{
-                  width: !cols[col.id] ? 0 : col.id === flexColId ? undefined : colWidths[col.id],
+                  width: !cols[col.id] ? 0 : colWidths[col.id],
                   minWidth: !cols[col.id] ? 0 : colWidths[col.id],
                 }}
               />
@@ -1749,8 +1737,7 @@ function RegisterTable({
                 sortKey={sortKey}
                 dir={sortDir}
                 onToggle={requestSort}
-                className={cn("col-date", lastVisible === "date" && "col-fill")}
-                fill={flexColId === "date"}
+                className="col-date"
                 {...resizeProps("date")}
                 onAlign={(a) => colAligns.setAlign("date", a)}
               />
@@ -1762,8 +1749,7 @@ function RegisterTable({
                 sortKey={sortKey}
                 dir={sortDir}
                 onToggle={requestSort}
-                className={cn("col-type", lastVisible === "type" && "col-fill")}
-                fill={flexColId === "type"}
+                className="col-type"
                 {...resizeProps("type")}
               />
               <SortHeader
@@ -1774,8 +1760,7 @@ function RegisterTable({
                 sortKey={sortKey}
                 dir={sortDir}
                 onToggle={requestSort}
-                className={cn("col-num", lastVisible === "number" && "col-fill")}
-                fill={flexColId === "number"}
+                className="col-num"
                 {...resizeProps("number")}
               />
               <SortHeader
@@ -1786,8 +1771,7 @@ function RegisterTable({
                 sortKey={sortKey}
                 dir={sortDir}
                 onToggle={requestSort}
-                className={cn("col-payee", lastVisible === "payee" && "col-fill")}
-                fill={flexColId === "payee"}
+                className="col-payee"
                 {...resizeProps("payee")}
               />
               <SortHeader
@@ -1798,8 +1782,7 @@ function RegisterTable({
                 sortKey={sortKey}
                 dir={sortDir}
                 onToggle={requestSort}
-                className={cn("col-memo", lastVisible === "memo" && "col-fill")}
-                fill={flexColId === "memo"}
+                className="col-memo"
                 {...resizeProps("memo")}
               />
               <SortHeader
@@ -1810,8 +1793,7 @@ function RegisterTable({
                 sortKey={sortKey}
                 dir={sortDir}
                 onToggle={requestSort}
-                className={cn("col-bank", lastVisible === "bank" && "col-fill")}
-                fill={flexColId === "bank"}
+                className="col-bank"
                 {...resizeProps("bank")}
               />
               <SortHeader
@@ -1822,8 +1804,7 @@ function RegisterTable({
                 sortKey={sortKey}
                 dir={sortDir}
                 onToggle={requestSort}
-                className={cn("col-money col-payment", lastVisible === "payment" && "col-fill")}
-                fill={flexColId === "payment"}
+                className="col-money col-payment"
                 {...resizeProps("payment")}
               />
               <SortHeader
@@ -1834,8 +1815,7 @@ function RegisterTable({
                 sortKey={sortKey}
                 dir={sortDir}
                 onToggle={requestSort}
-                className={cn("col-money col-deposit", lastVisible === "deposit" && "col-fill")}
-                fill={flexColId === "deposit"}
+                className="col-money col-deposit"
                 {...resizeProps("deposit")}
               />
               <SortHeader
@@ -1846,8 +1826,7 @@ function RegisterTable({
                 sortKey={sortKey}
                 dir={sortDir}
                 onToggle={requestSort}
-                className={cn("col-money col-balance", lastVisible === "balance" && "col-fill")}
-                fill={flexColId === "balance"}
+                className="col-money col-balance"
                 {...resizeProps("balance")}
               />
               <SortHeader
@@ -1859,8 +1838,7 @@ function RegisterTable({
                 sortKey={sortKey}
                 dir={sortDir}
                 onToggle={requestSort}
-                className={cn("col-status", lastVisible === "status" && "col-fill")}
-                fill={flexColId === "status"}
+                className="col-status"
                 {...resizeProps("status")}
               />
             </tr>

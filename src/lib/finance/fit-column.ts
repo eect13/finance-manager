@@ -33,19 +33,29 @@ export function columnRole(table: HTMLElement, id: string): ColRole {
   return "fit";
 }
 
+/** Content width only — never the clipped cell box (that made auto-fit grow on every click). */
 function cellContentWidth(el: HTMLElement) {
-  const inner = el.firstElementChild as HTMLElement | null;
-  const sw = Math.max(el.scrollWidth || 0, inner?.scrollWidth || 0);
-  const text = el.textContent?.replace(/\s+/g, " ").trim() ?? "";
-  if (!text && sw > 0) return sw;
   const style = getComputedStyle(el);
-  const font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
   const pad = (parseFloat(style.paddingLeft) || 0) + (parseFloat(style.paddingRight) || 0);
-  const measured = text ? measure(text, font) + pad : 0;
-  return Math.max(sw, measured);
+  const font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+  const widgets = el.querySelectorAll("button, a, input, [data-slot]");
+  if (widgets.length > 0) {
+    const inner = el.firstElementChild as HTMLElement | null;
+    let widest = inner?.scrollWidth || 0;
+    widgets.forEach((node) => {
+      const n = node as HTMLElement;
+      widest = Math.max(widest, n.scrollWidth || 0, n.offsetWidth || 0);
+    });
+    return widest + pad;
+  }
+  const text = el.textContent?.replace(/\s+/g, " ").trim() ?? "";
+  if (text) return measure(text, font) + pad;
+  const inner = el.firstElementChild as HTMLElement | null;
+  if (inner) return (inner.scrollWidth || inner.offsetWidth || 0) + pad;
+  return 0;
 }
 
-/** Width from currently painted cells. Header cluster is a floor; never viewport-crush. */
+/** Width from cell content. Header title is a floor; current column width is ignored. */
 export function fitColumnWidth(opts: {
   table: HTMLElement;
   selector: string;
@@ -69,8 +79,12 @@ export function fitColumnWidth(opts: {
     dataCol ? table.querySelector(`thead th[data-col="${dataCol}"]`) : table.querySelector("thead th")
   ) as HTMLElement | null;
   if (th) {
-    const cluster = th.querySelector(".sort-header-cluster") as HTMLElement | null;
-    widest = Math.max(widest, cluster?.scrollWidth || 0, th.scrollWidth || 0);
+    const label = th.querySelector(".sort-header-title") as HTMLElement | null;
+    const thStyle = getComputedStyle(th);
+    const thFont = `${thStyle.fontWeight} ${thStyle.fontSize} ${thStyle.fontFamily}`;
+    const thPad = (parseFloat(thStyle.paddingLeft) || 0) + (parseFloat(thStyle.paddingRight) || 0);
+    const title = (label?.textContent ?? header).replace(/\s+/g, " ").trim();
+    if (title) widest = Math.max(widest, measure(title, thFont) + thPad + 16);
   }
   if (widest === 0) {
     const sample = (table.querySelector(selector) ?? th) as HTMLElement | null;
@@ -90,8 +104,8 @@ export function widthsMatch<K extends string>(a: Record<K, number>, b: Record<K,
 }
 
 /**
- * Auto-fit every listed column from painted cells, then fill leftover window
- * space into flex columns. Never shrinks below content (card scrolls instead).
+ * Auto-fit every listed column from painted cells (sheet-style).
+ * Does not dump leftover window space into a neighbor — that made widths jump.
  */
 export function autoFitTable(
   table: HTMLElement,
@@ -118,13 +132,12 @@ export function autoFitTable(
       max,
     });
   }
-  const target = opts?.targetWidth ?? table.parentElement?.clientWidth ?? table.clientWidth;
-  return fillToWindow(next, ids, target, (id) => columnRole(table, id) === "flex", opts?.max ?? 420);
+  return next;
 }
 
 /**
- * Default width sits between content auto-fit and the list window:
- * never shrink below content; if there is leftover room, give it to flex cols.
+ * Optional leftover fill (List does not use this).
+ * Kept so a caller can opt in; default auto-fit does not.
  */
 export function fillToWindow<T extends Record<string, number>>(
   widths: T,

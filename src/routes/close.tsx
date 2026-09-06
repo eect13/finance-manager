@@ -303,7 +303,7 @@ function ChecklistTable({
               >
                 <td className={cn("px-4 py-3 font-medium", alignClass(colAligns.aligns.check ?? "center"))} data-col="check" data-align={colAligns.aligns.check ?? "center"}>{item.label}</td>
                 <td className={cn("px-4 py-3", alignClass(colAligns.aligns.status ?? "center"))} data-col="status" data-align={colAligns.aligns.status ?? "center"}>{item.ok ? "Clear" : "Blocked"}</td>
-                <td className={cn("px-4 py-3 col-fill", alignClass(colAligns.aligns.detail ?? "center"))} data-col="detail" data-align={colAligns.aligns.detail ?? "center"}>
+                <td className={cn("px-4 py-3", alignClass(colAligns.aligns.detail ?? "center"))} data-col="detail" data-align={colAligns.aligns.detail ?? "center"}>
                   <div className="flex w-full min-w-0 flex-wrap items-center justify-center gap-2">
                     <span className="min-w-0">
                       {item.href ? (

@@ -9,7 +9,7 @@ import { ReportsPrint } from "@/components/period-print";
 import { Money } from "@/components/money";
 import { requestPrint } from "@/components/print-preview";
 import { SortHeader } from "@/components/sort-header";
-import { listColClass, listColWidthStyle } from "@/components/list-table";
+import { listColClass, listColWidthStyle, listTableStyle } from "@/components/list-table";
 import { useColWidths } from "@/components/use-col-widths";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
 import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
@@ -176,7 +176,7 @@ function AgingTable({
           (e.currentTarget as HTMLElement).focus({ preventScroll: true });
         }}
       >
-        <table ref={cols.tableRef} className="text-sm" style={{ width: "100%", minWidth: cols.tableWidth }}>
+        <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
           <colgroup>
             {(Object.keys(AGE_COLS) as Array<keyof typeof AGE_COLS>).map((id) => (
               <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id])} />
@@ -275,7 +275,7 @@ function TrialTable({ rows, currency }: { rows: TbRow[]; currency: string }) {
         (e.currentTarget as HTMLElement).focus({ preventScroll: true });
       }}
     >
-      <table ref={cols.tableRef} className="text-sm" style={{ width: "100%", minWidth: cols.tableWidth }}>
+      <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
         <colgroup>
           {(Object.keys(TB_COLS) as Array<keyof typeof TB_COLS>).map((id) => (
             <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id])} />
@@ -351,7 +351,7 @@ function PlTable({ rows, net, currency }: { rows: PlRow[]; net: number; currency
         (e.currentTarget as HTMLElement).focus({ preventScroll: true });
       }}
     >
-      <table ref={cols.tableRef} className="text-sm" style={{ width: "100%", minWidth: cols.tableWidth }}>
+      <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
         <colgroup>
           {(Object.keys(PL_COLS) as Array<keyof typeof PL_COLS>).map((id) => (
             <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id])} />

@@ -1,6 +1,15 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-07. Updated for v3.63.6.
+Re-verified in code 2026-09-07. Updated for v3.63.7.
+
+## Fixed in v3.63.7
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| 1 | Med | List auto-fit dumped leftover window into a flex col (Name/Customer/Payee) so widths jumped on refresh | Content-only auto-fit; table width is the sum of columns |
+| 2 | Med | `col-flex { width:100% }` and `th.col-flex { width:auto }` made drag/auto-fit a no-op and stole width from neighbors | Every list col is `col-fit` with stored px; no leftover absorber |
+| 3 | Low | Last column hid its resize handle and stretched (`col-fill`) | Handle stays; last col is a normal px column |
+| 4 | Med | Opening a List re-measured every column (clipped cell width as a floor) so auto-fit grew and refresh jumped | Saved px on first paint; double-click measures text/widgets only |
 
 ## Fixed in v3.63.6
 

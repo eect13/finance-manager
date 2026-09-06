@@ -1,4 +1,4 @@
-# Finance Manager v3.63.6
+# Finance Manager v3.63.7
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -26,6 +26,10 @@ Unzip the repo (a second unzip named `finance-manager-main (1)` is fine) so `dep
 Vite is installed with the packages — no global `vite` command. `.npmrc` has `legacy-peer-deps=true`.
 
 After the Windows installer: **delete the leftover white shortcut** and pin the new one — shortcut and taskbar both use the navy pillars tile.
+
+## What's new in v3.63.7
+
+- **List columns like a sheet**: every List (and sub-table) column has its own width. Drag and double-click auto-fit change only that column — no leftover dump into Name/Customer/Payee, no last-column stretch, no cells merging. Refresh keeps the widths you set. The card side-scrolls; empty paper stays empty.
 
 ## What's new in v3.63.6
 

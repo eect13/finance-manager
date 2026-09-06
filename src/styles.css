@@ -579,9 +579,6 @@
   }
 
   .list-grid table {
-    width: 100%;
-    min-width: 100%;
-    /* Fixed: one .col-flex takes leftover; fit/actions stay compact (no mid-table void). */
     table-layout: fixed;
     border-collapse: separate;
     border-spacing: 0;
@@ -596,8 +593,7 @@
   .register-matrix colgroup col.col-flex,
   .list-grid colgroup col.col-fill,
   .register-matrix colgroup col.col-fill {
-    /* 100% beats SortHeader th px under table-layout:fixed — leftover lands here, not after Actions */
-    width: 100% !important;
+    /* Sheet-style: stored px via inline style — no leftover absorber. */
   }
 
   .list-grid colgroup col.col-actions,
@@ -609,8 +605,7 @@
 
   .list-grid colgroup col.col-fit,
   .register-matrix colgroup col.col-fit {
-    /* Prefer inline useColWidths px; avoid max-content fighting fixed layout */
-    max-width: 20rem;
+    max-width: none;
   }
 
   .list-grid th.col-actions,
@@ -1437,30 +1432,6 @@
         display: none;
       }
 
-      .party-txn-table col.col-txn-type,
-      .party-txn-table col.col-txn-memo,
-      .party-txn-table col.col-txn-open,
-      .party-txn-table col.col-txn-status,
-      .party-txn-table .col-txn-type,
-      .party-txn-table .col-txn-memo,
-      .party-txn-table .col-txn-open,
-      .party-txn-table .col-txn-status,
-      .party-txn-table td[data-col="type"],
-      .party-txn-table td[data-col="memo"],
-      .party-txn-table td[data-col="open"],
-      .party-txn-table td[data-col="status"] {
-        display: none !important;
-        width: 0 !important;
-        min-width: 0 !important;
-        max-width: 0 !important;
-        padding: 0 !important;
-        border: 0 !important;
-      }
-
-      .party-txn-table th.col-txn-balance .col-resize-handle {
-        display: none;
-      }
-
       .party-txn-table table {
         width: max-content !important;
       }
@@ -1504,23 +1475,7 @@
     .register-matrix td.col-bank,
     .register-matrix col.col-status,
     .register-matrix th.col-status,
-    .register-matrix td.col-status,
-    .party-txn-table col.col-txn-type,
-    .party-txn-table col.col-txn-memo,
-    .party-txn-table col.col-txn-open,
-    .party-txn-table col.col-txn-status,
-    .party-txn-table .col-txn-type,
-    .party-txn-table .col-txn-memo,
-    .party-txn-table .col-txn-open,
-    .party-txn-table .col-txn-status,
-    .party-txn-table td[data-col="type"],
-    .party-txn-table td[data-col="memo"],
-    .party-txn-table td[data-col="open"],
-    .party-txn-table td[data-col="status"],
-    .party-txn-table th[data-col="type"],
-    .party-txn-table th[data-col="memo"],
-    .party-txn-table th[data-col="open"],
-    .party-txn-table th[data-col="status"] {
+    .register-matrix td.col-status {
       display: none !important;
       width: 0 !important;
       min-width: 0 !important;
@@ -2355,8 +2310,6 @@
   border-top-width: 0;
 }
 
-.list-grid thead th:last-child:not(.col-actions) .col-resize-handle,
-.register-matrix thead th:last-child .col-resize-handle,
 .list-grid thead th.col-fill .col-resize-handle,
 .register-matrix thead th.col-fill .col-resize-handle {
   display: none;
@@ -4613,8 +4566,7 @@ body.is-phone-move-dragging {
 .recon-table-card table,
 .party-dir-table table,
 .party-txn-table table {
-  width: 100%;
-  max-width: 100%;
+  max-width: none;
   table-layout: fixed;
 }
 
@@ -4625,13 +4577,13 @@ body.is-phone-move-dragging {
 .recon-table-card colgroup col.col-flex,
 .party-dir-table colgroup col.col-flex,
 .party-txn-table colgroup col.col-flex {
-  width: 100% !important;
+  max-width: none;
 }
 
 .list-grid colgroup col.col-actions,
 .recon-table-card colgroup col.col-actions,
 .party-dir-table colgroup col.col-actions {
-  min-width: var(--list-actions-min) !important;
+  min-width: var(--list-actions-min);
   max-width: none;
 }
 
@@ -4654,13 +4606,11 @@ body.is-phone-move-dragging {
   flex-wrap: nowrap !important;
 }
 
-/* Flex header must not lock a px width that steals leftover from the absorber */
+/* Sheet-style: every header keeps stored px — leftover is empty paper, not a stretched col. */
 .list-grid thead th.col-flex,
 .register-matrix thead th.col-flex,
 .list-grid thead th.col-fill,
 .register-matrix thead th.col-fill {
-  width: auto !important;
-  min-width: 0 !important;
   max-width: none;
 }
 
@@ -4681,9 +4631,9 @@ body.is-phone-move-dragging {
   --tw-ring-shadow: 0 0 #0000 !important;
 }
 
-/* v3.62.60: Close checklist — Status fits "Status"/"Blocked"; Detail is sole flex */
+/* v3.62.60: Close checklist — Status fits "Status"/"Blocked" */
 .list-grid thead th[data-col="status"] {
-  min-width: 7.5em !important;
+  min-width: 4.5em;
 }
 .list-grid thead th[data-col="status"] .sort-header-title {
   overflow: visible;
@@ -4721,7 +4671,7 @@ body.is-phone-move-dragging {
 .list-grid colgroup col.col-actions,
 .recon-table-card colgroup col.col-actions,
 .party-dir-table colgroup col.col-actions {
-  min-width: var(--list-actions-min) !important;
+  min-width: var(--list-actions-min);
   max-width: none;
 }
 
@@ -4791,7 +4741,6 @@ body.is-phone-move-dragging {
 .list-card.list-grid > table,
 .party-dir-table > table,
 .register-matrix table {
-  width: 100%;
   max-width: none;
 }
 
@@ -5015,7 +4964,6 @@ body.is-phone-move-dragging {
 .recon-table-card table {
   border-collapse: separate;
   border-spacing: 0;
-  width: 100%;
 }
 
 /* Last col clears the 2xl/3xl cream radius (Status / Open / Deposit). */
@@ -6245,7 +6193,7 @@ thead button.sort-header-label:hover {
 .party-txn-table th[data-col="status"],
 .party-txn-table td[data-col="status"] {
   font-size: inherit;
-  min-width: 6.5em !important;
+  min-width: 4.5em;
   overflow: visible !important;
 }
 
@@ -6263,7 +6211,7 @@ thead button.sort-header-label:hover {
 .list-grid td.col-actions,
 .list-grid th[data-col="actions"],
 .list-grid td[data-col="actions"] {
-  min-width: 5.5em !important;
+  min-width: var(--list-actions-min);
 }
 
 .list-grid td.col-actions button,
@@ -6286,6 +6234,59 @@ thead button.sort-header-label:hover {
 .list-grid td.col-actions button svg {
   width: 1em;
   height: 1em;
+}
+
+/* =============================================================================
+   v3.63.7 — Sheet-style List columns: independent px widths, no leftover dump,
+   no last-col merge, drag/auto-fit change only that column. Refresh keeps saved
+   px (no mount auto-fit jump). Double-click auto-fit measures content, not the
+   clipped cell.
+   ============================================================================= */
+
+.list-grid table,
+.register-matrix table,
+.recon-table-card table,
+.party-dir-table table,
+.party-txn-table table {
+  max-width: none !important;
+  table-layout: fixed;
+}
+
+.list-grid colgroup col,
+.register-matrix colgroup col,
+.recon-table-card colgroup col,
+.party-dir-table colgroup col,
+.party-txn-table colgroup col {
+  max-width: none !important;
+}
+
+.list-grid colgroup col.col-flex,
+.register-matrix colgroup col.col-flex,
+.list-grid colgroup col.col-fill,
+.register-matrix colgroup col.col-fill,
+.recon-table-card colgroup col.col-flex,
+.party-dir-table colgroup col.col-flex,
+.party-txn-table colgroup col.col-flex {
+  width: auto;
+  min-width: 0;
+}
+
+.list-grid thead th,
+.register-matrix thead th,
+.party-dir-table thead th,
+.party-txn-table thead th,
+.recon-table-card thead th {
+  overflow: visible !important;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .list-grid thead th:last-child .col-resize-handle,
+  .register-matrix thead th:last-child .col-resize-handle,
+  .party-dir-table thead th:last-child .col-resize-handle,
+  .party-txn-table thead th:last-child .col-resize-handle {
+    display: block;
+    pointer-events: auto;
+  }
 }
 
 /* =============================================================================

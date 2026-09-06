@@ -30,12 +30,18 @@ export function ColResize({
   onWidth: (next: number) => void;
   onFit?: () => void;
 }) {
+  const coarse =
+    typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
   return (
     <span
       role="separator"
       aria-orientation="vertical"
-      aria-label="Resize column"
-      title="Drag to resize · double-tap or double-click to auto-fit"
+      aria-label={coarse ? "Auto-fit column" : "Resize column"}
+      title={
+        coarse
+          ? "Double-tap to auto-fit (drag resize is for mouse)"
+          : "Drag to resize · double-click to auto-fit"
+      }
       className="col-resize-handle no-print"
       onDoubleClick={(e) => {
         e.preventDefault();

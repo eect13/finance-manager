@@ -1,4 +1,4 @@
-# Finance Manager v3.63.0
+# Finance Manager v3.63.1
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -11,6 +11,12 @@ No accounts, no server setup. Books stay on this computer (IndexedDB). Settings 
 The app mark is a **navy tile with cream pillars** — a full opaque square (Windows 11 already rounds the tile; transparent corners were a white plate). Web uses the SVG favicon. Windows uses a **BMP 32-bit** `.ico` (PNG-in-ICO is a white square on the shortcut and the taskbar). After install, **delete any leftover blank shortcut** and pin the new one — Explorer caches the last icon.
 
 
+
+## What's new in v3.63.1
+
+- **Android pack**: clean sync without dependencies now installs the Tauri CLI when missing.
+- **Android pack**: writes the gitignored Gradle helper files from cargo metadata for the Windows fallback path.
+- **Android pack**: sets WRY Android env so cargo emits TauriActivity before Gradle on a fresh gen tree.
 
 ## What's new in v3.63.0
 

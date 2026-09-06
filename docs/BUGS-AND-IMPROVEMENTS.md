@@ -1,6 +1,10 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-06. Updated for v3.63.0.
+Re-verified in code 2026-09-06. Updated for v3.63.1.
+
+## Fixed in v3.63.1
+
+- Android one-click pack works after clean sync.
 
 ## Fixed in v3.63.0
 

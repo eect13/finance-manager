@@ -11,6 +11,7 @@ import { ListFilters, applySortValue } from "@/components/list-filters";
 import { ListCard, listColClass, listColWidthStyle } from "@/components/list-table";
 import { Money } from "@/components/money";
 import { SortHeader } from "@/components/sort-header";
+import { RowActions } from "@/components/row-actions";
 import { useColWidths } from "@/components/use-col-widths";
 import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
@@ -19,6 +20,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { fitColumnWidth } from "@/lib/finance/fit-column";
 import { parseAmountToCents, todayIso } from "@/lib/finance/format";
 import { useEntrySort } from "@/lib/finance/sort";
 import { EMPTY_EMPLOYEE, type Employee, type PayType } from "@/lib/finance/types";
@@ -137,6 +139,11 @@ function EmployeesPage() {
     },
   });
   const gridRef = useRef<HTMLDivElement>(null);
+  function fit(id: keyof typeof EMP_COLS, label: string) {
+    const table = gridRef.current?.querySelector("table");
+    if (!table) return;
+    cols.setWidth(id, fitColumnWidth({ table, selector: `td[data-col="${id}"]`, header: label }));
+  }
   const activeCount = (data.employees ?? []).filter((e) => e.active).length;
 
   const [editId, setEditId] = useState<string | null>(null);
@@ -295,11 +302,11 @@ function EmployeesPage() {
           </colgroup>
           <thead>
             <tr className="border-b border-border text-muted-foreground">
-              <SortHeader label="Name" column="name" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.name} onWidth={(n) => cols.setWidth("name", n)}  align={colAligns.aligns.name ?? "center"} onAlign={(a) => colAligns.setAlign("name", a)} fill />
-              <SortHeader label="Title" column="title" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.title} onWidth={(n) => cols.setWidth("title", n)} align={colAligns.aligns.title ?? "center"} onAlign={(a) => colAligns.setAlign("title", a)} />
-              <SortHeader label="Pay" column="rate" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.rate} onWidth={(n) => cols.setWidth("rate", n)} align={colAligns.aligns.rate ?? "center"} onAlign={(a) => colAligns.setAlign("rate", a)} />
-              <SortHeader label="Bank" column="bank" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.bank} onWidth={(n) => cols.setWidth("bank", n)} align={colAligns.aligns.bank ?? "center"} onAlign={(a) => colAligns.setAlign("bank", a)} />
-              <SortHeader label="Status" column="status" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.status} onWidth={(n) => cols.setWidth("status", n)} align={colAligns.aligns.status ?? "center"} onAlign={(a) => colAligns.setAlign("status", a)} />
+              <SortHeader label="Name" column="name" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.name} onWidth={(n) => cols.setWidth("name", n)} onFit={() => fit("name", "Name")} align={colAligns.aligns.name ?? "center"} onAlign={(a) => colAligns.setAlign("name", a)} fill />
+              <SortHeader label="Title" column="title" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.title} onWidth={(n) => cols.setWidth("title", n)} onFit={() => fit("title", "Title")} align={colAligns.aligns.title ?? "center"} onAlign={(a) => colAligns.setAlign("title", a)} />
+              <SortHeader label="Pay" column="rate" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.rate} onWidth={(n) => cols.setWidth("rate", n)} onFit={() => fit("rate", "Pay")} align={colAligns.aligns.rate ?? "center"} onAlign={(a) => colAligns.setAlign("rate", a)} />
+              <SortHeader label="Bank" column="bank" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.bank} onWidth={(n) => cols.setWidth("bank", n)} onFit={() => fit("bank", "Bank")} align={colAligns.aligns.bank ?? "center"} onAlign={(a) => colAligns.setAlign("bank", a)} />
+              <SortHeader label="Status" column="status" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.status} onWidth={(n) => cols.setWidth("status", n)} onFit={() => fit("status", "Status")} align={colAligns.aligns.status ?? "center"} onAlign={(a) => colAligns.setAlign("status", a)} />
               <th className="col-actions"><span className="sr-only">Actions</span></th>
             </tr>
           </thead>
@@ -343,17 +350,22 @@ function EmployeesPage() {
                       </span>
                     </td>
                     <td className="col-actions text-right" data-col="actions">
-                      <div className="flex flex-nowrap justify-end gap-1">
-                        <Button size="sm" variant="outline" disabled={!e.active} onClick={() => openPay(e)}>
-                          Pay
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => openEdit(e)}>
-                          Edit
-                        </Button>
-                        <Button size="sm" variant="outline" className="text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => setDropId(e.id)}>
-                          Delete
-                        </Button>
-                      </div>
+                      <RowActions
+                        primary={
+                          <Button size="sm" variant="outline" disabled={!e.active} onClick={() => openPay(e)}>
+                            Pay
+                          </Button>
+                        }
+                        primaryAsItem={
+                          e.active
+                            ? { label: "Pay", onSelect: () => openPay(e) }
+                            : undefined
+                        }
+                        items={[
+                          { label: "Edit", onSelect: () => openEdit(e) },
+                          { label: "Delete", onSelect: () => setDropId(e.id), danger: true },
+                        ]}
+                      />
                     </td>
                   </tr>
                 );

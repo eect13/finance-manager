@@ -112,7 +112,7 @@ const MOBILE_COL_WIDTHS: typeof DEFAULT_COL_WIDTHS = {
   payment: 88,
   deposit: 88,
   balance: 96,
-  status: 64,
+  status: 100,
 };
 
 /** Phone: Date + Payee + money. Hide type/number/memo/bank/status until View. */
@@ -1871,9 +1871,7 @@ function RegisterTable({
                 className={cn("col-date", lastVisible === "date" && "col-fill")}
                 fill={flexColId === "date"}
                 {...resizeProps("date")}
-              
                 onAlign={(a) => colAligns.setAlign("date", a)}
-                visible={cols.date}
               />
               <SortHeader
                 label="Type"

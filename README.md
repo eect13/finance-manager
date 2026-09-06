@@ -1,4 +1,4 @@
-# Finance Manager v3.62.63
+# Finance Manager v3.62.64
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -11,6 +11,13 @@ No accounts, no server setup. Books stay on this computer (IndexedDB). Settings 
 The app mark is a **navy tile with cream pillars** — a full opaque square (Windows 11 already rounds the tile; transparent corners were a white plate). Web uses the SVG favicon. Windows uses a **BMP 32-bit** `.ico` (PNG-in-ICO is a white square on the shortcut and the taskbar). After install, **delete any leftover blank shortcut** and pin the new one — Explorer caches the last icon.
 
 
+
+## What's new in v3.62.64
+
+- **Flex absorber fill**: Settings Recurring Name, Reports TB/P&L Account, journal-line Account, Reconcile phone Payee — SortHeader `fill` so th no longer locks a px width against the col-flex leftover (phantom void risk from 3.62.63 align pass)
+- **Employees**: double-click column auto-fit (`onFit`); row Pay/Edit/Delete use shared `RowActions` fold so Status is not crowded on narrow desk
+- **Phone Register**: default Status col width 64→100 so "Status" + ⋮ is less likely to read as "Stat…" when the column is shown
+- FIT mark `content-9` once so virgin/forced layouts reflow after fill
 
 ## What's new in v3.62.63
 

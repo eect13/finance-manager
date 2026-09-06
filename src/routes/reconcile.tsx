@@ -593,6 +593,7 @@ function ReconcilePage() {
                       align={colAligns.aligns.payee ?? "center"}
                       onAlign={(a) => colAligns.setAlign("payee", a)}
                       className="min-w-[10rem] whitespace-nowrap px-2"
+                      fill
                     />
                     <SortHeader
                       compact

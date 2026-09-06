@@ -393,6 +393,47 @@ function ensureTauriGradleHelpers() {
   console.log(`  Wrote ${buildPath}`);
 }
 
+
+/**
+ * wry build.rs honors rerun-if-env-changed for WRY_ANDROID_*; tauri's build.rs does not,
+ * so a cached tauri build can skip TauriActivity.kt even when the env is set now.
+ * Write missing codegen files from the crate templates (same substitutions as build.rs).
+ */
+function ensureTauriKotlinFromTemplates() {
+  const outDir = androidKotlinOutDir();
+  mkdirSync(outDir, { recursive: true });
+  const meta = runCapture("cargo", [
+    "metadata",
+    "--format-version",
+    "1",
+    "--manifest-path",
+    join(ROOT, "src-tauri", "Cargo.toml"),
+  ]);
+  if (meta.status !== 0) return;
+  let parsed;
+  try {
+    parsed = JSON.parse(meta.out);
+  } catch {
+    return;
+  }
+  const pkgName = escapeKotlinPackage(androidIdentifier());
+  const libName = androidLibName();
+  for (const pkg of parsed.packages || []) {
+    if (pkg.name !== "tauri") continue;
+    const tplDir = join(dirname(pkg.manifest_path), "mobile", "android-codegen");
+    if (!existsSync(tplDir)) continue;
+    for (const name of readdirSync(tplDir)) {
+      if (!name.endsWith(".kt")) continue;
+      const dest = join(outDir, name);
+      if (existsSync(dest)) continue;
+      let content = readFileSync(join(tplDir, name), "utf8");
+      content = content.replaceAll("{{package}}", pkgName).replaceAll("{{library}}", libName);
+      writeFileSync(dest, content);
+      console.log(`  Wrote ${name} from tauri android-codegen template`);
+    }
+  }
+}
+
 function ensureAndroidProject(env) {
   const gradlew = join(GEN, WIN ? "gradlew.bat" : "gradlew");
   const settings = join(GEN, "settings.gradle");
@@ -550,6 +591,7 @@ function buildRustArm64(env) {
     } else {
       console.log("  Built via cargo --release --features custom-protocol");
     }
+    ensureTauriKotlinFromTemplates();
     const tauriAct = join(androidKotlinOutDir(), "TauriActivity.kt");
     if (!existsSync(tauriAct)) {
       fail(
@@ -557,7 +599,7 @@ function buildRustArm64(env) {
         `Expected: ${tauriAct}\nWRY_ANDROID_* env must be set during cargo (packer bug).`,
       );
     }
-    console.log(`  Generated ${basename(tauriAct)}`);
+    console.log(`  Kotlin activity ${basename(tauriAct)}`);
     return true;
   }
 

@@ -294,7 +294,7 @@ export function SortHeader({
   );
 }
 
-/** Last-col Actions header: visible label, resize + dblclick/right-click fit (no sort, no ⋮). */
+/** Last-col Actions header: visible label, resize + dblclick/right-click/long-press fit (no sort, no ⋮). */
 export function ActionsHeader({
   width,
   onWidth,
@@ -306,20 +306,69 @@ export function ActionsHeader({
   onFit?: () => void;
   className?: string;
 }) {
+  const longPressTimer = useRef<number | null>(null);
+  const longPressOrigin = useRef<{ x: number; y: number } | null>(null);
+
+  function clearLongPress() {
+    if (longPressTimer.current != null) {
+      window.clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    longPressOrigin.current = null;
+  }
+
+  useEffect(() => () => clearLongPress(), []);
+
   return (
     <th
       className={cn("col-actions relative align-middle px-4 py-3 font-medium text-center", className)}
       style={{ minWidth: width, width }}
       data-col="actions"
-      title="Drag to resize · double-click or right-click to auto-fit"
+      title="Drag to resize · double-click, right-click, or long-press to auto-fit"
       onContextMenu={
         onFit
           ? (e) => {
               e.preventDefault();
+              clearLongPress();
               onFit();
             }
           : undefined
       }
+      onPointerDown={
+        onFit
+          ? (e) => {
+              if (e.button !== 0) return;
+              if ((e.target as Element | null)?.closest?.(".col-resize-handle")) return;
+              if (!isTouchLikePointer(e)) return;
+              clearLongPress();
+              longPressOrigin.current = { x: e.clientX, y: e.clientY };
+              longPressTimer.current = window.setTimeout(() => {
+                longPressTimer.current = null;
+                longPressOrigin.current = null;
+                onFit();
+                try {
+                  navigator.vibrate?.(10);
+                } catch {
+                  /* ignore */
+                }
+              }, LONG_PRESS_MS);
+            }
+          : undefined
+      }
+      onPointerMove={
+        onFit
+          ? (e) => {
+              const origin = longPressOrigin.current;
+              if (!origin || longPressTimer.current == null) return;
+              const dx = e.clientX - origin.x;
+              const dy = e.clientY - origin.y;
+              if (dx * dx + dy * dy > LONG_PRESS_MOVE_PX * LONG_PRESS_MOVE_PX) clearLongPress();
+            }
+          : undefined
+      }
+      onPointerUp={onFit ? () => clearLongPress() : undefined}
+      onPointerCancel={onFit ? () => clearLongPress() : undefined}
+      onPointerLeave={onFit ? () => clearLongPress() : undefined}
     >
       <div className="sort-header-row h-full">
         <div className="sort-header-cluster">

@@ -1,3 +1,27 @@
+# Finance Manager — bugs & improvements (v3.63)
+
+Re-verified in code 2026-09-06. Updated for v3.63.0.
+
+## Fixed in v3.63.0
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| 1 | Low | Reports / Forecast / Recurring cream ring around white cells | One `--color-table` paper |
+| 2 | Low | Date header leftover 7% navy wash still in stylesheet | Removed; headers use `--color-table-header` |
+| 3 | Low | Post Delete confirm same z as Post | Confirm `z-[80]` |
+| 4 | Low | Field labels almost never wired | Auto `htmlFor` + first-control id / click-to-focus |
+| 5 | Low | Only Register/Reconcile virtualized | Receipts/Invoices/Bills/Checks/Ledger/Employees use same virtualizer (Register internals untouched) |
+| 6 | Low | Taxed cash-sale Register edit left `receipt.lines` stale | Proportional rescale to new net |
+| 7 | Low | README said All dates “through today” | Copy matches `to: ""` (open end) |
+| 8 | Low | 280ms persist could drop last keystroke on hard close | `beforeunload` flush |
+| 9 | Low | Dual IDB copies wrote every persist | Skip identical backup JSON; Restore last local copy stays |
+| 10 | Low | `npm test` ran leftover auth-gate, not finance tests | Finance tests included; unused sign-in-gate files dropped |
+| 11 | Low | Forecast / Recurring Actions had sort chrome | `ActionsHeader` with resize |
+| 12 | Low | PartyCombo clipped in overflow sheets | Portaled list |
+| 13 | Low | Print paper cream | White print paper |
+| 14 | Product | Bills had no input VAT | Taxed bills: expense net + Input VAT + AP gross; Reports → VAT |
+| 15 | Product | Hourly pay ignored hours; no withholding | Hours × rate; optional withholding to 2210 |
+
 # Finance Manager — bugs & improvements (v3.62)
 
 Re-verified in code 2026-09-05 (Asia/Manila). Updated for v3.62.47. UI direction: gestalt / professional ledger — cream paper, navy ink, real chrome — not an overly-minimal white sheet.
@@ -80,21 +104,21 @@ Re-verified in code 2026-09-05 (Asia/Manila). Updated for v3.62.47. UI direction
 
 | # | Severity | Area | Notes | Status |
 | --- | --- | --- | --- | --- |
-| A | Low–med | Register “All dates” | `datePresetRange("all")` sets `from` = prior Jan 1 and **`to` = ""** (open-ended). Not all-time; README still says “through today” in one place but the window does not cap at `todayIso()`. | Still open (by design for memory) |
+| A | Low–med | Register “All dates” | `datePresetRange("all")` sets `from` = prior Jan 1 and **`to` = ""** (open-ended). README now matches. | Copy fixed (v3.63.0) |
 | B | Low | Register column sort vs running balance | Running Bal stays passbook values mapped onto rows. **Passbook** sort restores arrangement; **Balance** / other columns reorder display only. | Improved (v3.62.45) |
-| C | Low–med | VAT model | Output VAT only (`createBill` is expense↔AP, no input VAT). | Still open (product) |
-| D | Low | `ensureOutputVat` | Still hardcodes `acct-2200` when inserting code 2200 (`normalize.ts`). Lookups elsewhere use `code === "2200"`. | Still open |
-| E | Low | Debounced persist (~280ms) | `pagehide` / `visibilitychange` flush exist; hard kill/crash can still drop last keystrokes. | Still open |
-| F | Low | `patchJournalAmount` | Still used for check / payment receipt / bill / deposit / expense / transfer (2-line). **Do not** use for multi-line VAT (invoice + taxed cash sale now rebuild). | Still open (safe for 2-line) |
-| G | Med (product) | Thin payroll | No hours×rate run, withholdings, 13th month, or `employeeId` on check records; pay is `issueCheck` via linked vendor. | Still open |
+| C | Low–med | VAT model | Input VAT on taxed bills + Reports → VAT. | Fixed (v3.63.0) |
+| D | Low | `ensureOutputVat` | Now `ensureSystemAccounts` (2200 / 1300 / 2210). Lookups still use `code`. | Improved (v3.63.0) |
+| E | Low | Debounced persist (~280ms) | `beforeunload` + `pagehide` / `visibilitychange` flush. Crash can still drop a beat. | Improved (v3.63.0) |
+| F | Low | `patchJournalAmount` | Still used for check / payment receipt / untaxed bill / deposit / expense / transfer (2-line). **Do not** use for multi-line VAT. | Still open (safe for 2-line) |
+| G | Med (product) | Thin payroll | Hours × rate and optional withholding shipped. No 13th month / statutory PH engine. | Improved (v3.63.0) |
 | H | — | Android APK | Solo path improved in v3.59 (JDK 17, NDK resolve, symlink fallback, auto-sign). Still needs SDK+NDK on the machine. | Improved (env) |
 
 ## New findings (confirmed) — not yet fixed or deferred
 
 | # | Severity | Area | Notes |
 | --- | --- | --- | --- |
-| I | Low | Cash-sale line drift | Register amount edit on a taxed cash sale rebuilds the journal from gross amount + stored `taxRate`; `receipt.lines` are not rescaled, so line subtotals can diverge from `receipt.amount`. Full line editor would be the proper UX. |
-| J | Low | a11y labels | `Field` supports `htmlFor` but almost no call sites pass it (~155 Field tags, ~5 `htmlFor`). Selects/combos often lack a programmatic name beyond visible text. |
+| I | Low | Cash-sale line drift | Register amount edit on a taxed cash sale rebuilds the journal and rescales `receipt.lines`. | Fixed (v3.63.0) |
+| J | Low | a11y labels | Field auto-wires `htmlFor` and first-control id; Select still uses click-to-focus. | Improved (v3.63.0) |
 | K | Low | Tax % visibility | Invoice/receipt Tax % fields hide when Settings tax is off, even if the document still carries historical `taxRate > 0` (totals remain correct). Matches “Settings seeds new docs” but can surprise editors. |
 | L | Info | Dead / unused | `src/lib/multiplayer/p2p.ts` exported but unused by app routes (multi-device still aspirational). |
 | M | Low | `removeCashLines` | Per-line failures are swallowed (`catch {}`). If a closed-period line is mixed into a bulk delete, the toast can still say N deleted while some remain. Return the actual deleted count. |

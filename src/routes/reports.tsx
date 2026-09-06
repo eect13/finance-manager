@@ -20,7 +20,7 @@ import { AGE_LABEL, AGE_ORDER, agingTotals, apAging, arAging, type AgingRow } fr
 import { trialBalanceRows } from "@/lib/finance/export";
 import { fitColumnWidth } from "@/lib/finance/fit-column";
 import { formatDate, todayIso } from "@/lib/finance/format";
-import { incomeStatement, trialBalance } from "@/lib/finance/ledger";
+import { incomeStatement, trialBalance, vatBalances } from "@/lib/finance/ledger";
 import type { Account } from "@/lib/finance/types";
 import { openProps, openTxn } from "@/lib/finance/open-record";
 import { useEntrySort } from "@/lib/finance/sort";
@@ -61,7 +61,7 @@ function ReportsPage() {
   return (
     <AppShell
       title="Reports"
-      description="Trial balance, profit and loss, and 30/60/90 aging as of a date."
+      description="Trial balance, profit and loss, VAT, and 30/60/90 aging as of a date."
       wide
       actions={
         <>
@@ -82,6 +82,7 @@ function ReportsPage() {
           <TabsTrigger value="aging">Aging</TabsTrigger>
           <TabsTrigger value="tb">Trial balance</TabsTrigger>
           <TabsTrigger value="pl">Profit and loss</TabsTrigger>
+          <TabsTrigger value="vat">VAT</TabsTrigger>
         </TabsList>
         <TabsContent value="aging">
           <ListToolbar query={query} onQuery={setQuery} placeholder="Search party or number" label="Search aging" />
@@ -103,8 +104,11 @@ function ReportsPage() {
           <ListToolbar query={query} onQuery={setQuery} placeholder="Search account" label="Search profit and loss" />
           <PlTable rows={plVisible} net={pl.net} currency={settings.currency} />
         </TabsContent>
+        <TabsContent value="vat">
+          <VatPanel asOf={asOf} currency={settings.currency} />
+        </TabsContent>
       </Tabs>
-      <ReportsPrint asOf={asOf} tab={tab === "tb" || tab === "pl" ? tab : "aging"} />
+      <ReportsPrint asOf={asOf} tab={tab === "tb" || tab === "pl" || tab === "vat" ? tab : "aging"} />
     </AppShell>
   );
 }
@@ -165,7 +169,7 @@ function AgingTable({
       <div
         ref={pointer.bindContainer(gridRef)}
         tabIndex={0}
-        className="list-grid list-scroll overflow-auto rounded-2xl bg-card elevation outline-none"
+        className="list-grid list-scroll overflow-auto rounded-2xl table-paper elevation outline-none"
         onMouseDown={(e) => {
           const t = e.target as HTMLElement | null;
           if (t?.closest("input, textarea, select, button, a, [role='checkbox']")) return;
@@ -264,7 +268,7 @@ function TrialTable({ rows, currency }: { rows: TbRow[]; currency: string }) {
     <div
       ref={pointer.bindContainer(gridRef)}
       tabIndex={0}
-      className="list-grid list-scroll overflow-auto rounded-2xl bg-card elevation outline-none"
+      className="list-grid list-scroll overflow-auto rounded-2xl table-paper elevation outline-none"
       onMouseDown={(e) => {
         const t = e.target as HTMLElement | null;
         if (t?.closest("input, textarea, select, button, a, [role='checkbox']")) return;
@@ -340,7 +344,7 @@ function PlTable({ rows, net, currency }: { rows: PlRow[]; net: number; currency
     <div
       ref={pointer.bindContainer(gridRef)}
       tabIndex={0}
-      className="list-grid list-scroll overflow-auto rounded-2xl bg-card elevation outline-none"
+      className="list-grid list-scroll overflow-auto rounded-2xl table-paper elevation outline-none"
       onMouseDown={(e) => {
         const t = e.target as HTMLElement | null;
         if (t?.closest("input, textarea, select, button, a, [role='checkbox']")) return;
@@ -389,6 +393,46 @@ function PlTable({ rows, net, currency }: { rows: PlRow[]; net: number; currency
           </tr>
         </tbody>
       </table>
+    </div>
+  );
+}
+
+function VatPanel({ asOf, currency }: { asOf: string; currency: string }) {
+  const data = useFinanceData();
+  const vat = vatBalances(data, asOf);
+  return (
+    <div className="list-grid list-scroll overflow-auto rounded-2xl table-paper elevation outline-none">
+      <table className="text-sm" style={{ width: "100%" }}>
+        <thead>
+          <tr className="border-b border-border text-muted-foreground">
+            <th className="px-4 py-3 text-center font-medium">Account</th>
+            <th className="px-4 py-3 text-center font-medium">Balance</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr className="border-b border-border/70">
+            <td className="px-4 py-3">Output VAT Payable (2200)</td>
+            <td className="px-4 py-3">
+              <Money amount={vat.output} currency={currency} />
+            </td>
+          </tr>
+          <tr className="border-b border-border/70">
+            <td className="px-4 py-3">Input VAT Receivable (1300)</td>
+            <td className="px-4 py-3">
+              <Money amount={vat.input} currency={currency} />
+            </td>
+          </tr>
+          <tr>
+            <td className="px-4 py-3 font-medium">Net VAT payable</td>
+            <td className="px-4 py-3 font-medium">
+              <Money amount={vat.netPayable} currency={currency} signed />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <p className="px-4 py-3 text-xs text-muted-foreground">
+        Output from taxed invoices and cash sales, input from taxed bills. Amount on a bill is VAT-inclusive when Tax % is set. Not a BIR return.
+      </p>
     </div>
   );
 }

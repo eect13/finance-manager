@@ -290,6 +290,8 @@ export interface Bill {
   journalId: string;
   sortOrder: number;
   createdAt?: number;
+  /** Percent. Amount is VAT-inclusive when this is > 0. */
+  taxRate: number;
 }
 
 export interface CheckRecord {

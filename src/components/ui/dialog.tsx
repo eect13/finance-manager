@@ -24,7 +24,7 @@ export function DialogOverlay({ className, ...props }: React.ComponentProps<type
   );
 }
 
-export function DialogContent({ className, children, onPointerDownOutside, onInteractOutside, onFocusOutside, onPointerDown, ...props }: React.ComponentProps<typeof DialogPrimitive.Content>) {
+export function DialogContent({ className, overlayClassName, children, onPointerDownOutside, onInteractOutside, onFocusOutside, onPointerDown, ...props }: React.ComponentProps<typeof DialogPrimitive.Content> & { overlayClassName?: string }) {
   const sheetRef = React.useRef<HTMLDivElement>(null);
   const drag = React.useRef({ on: false, sx: 0, sy: 0, ox: 0, oy: 0 });
 
@@ -65,7 +65,7 @@ export function DialogContent({ className, children, onPointerDownOutside, onInt
 
   return (
     <DialogPortal>
-      <DialogOverlay />
+      <DialogOverlay className={overlayClassName} />
       <DialogPrimitive.Content
         ref={sheetRef}
         className={cn(

@@ -9,7 +9,7 @@ import { CompanySwitcher, NewCompanyDialog } from "@/components/company-switcher
 import { Field } from "@/components/field";
 import { Money } from "@/components/money";
 import { listColClass, listColWidthStyle, listTableStyle} from "@/components/list-table";
-import { SortHeader } from "@/components/sort-header";
+import { ActionsHeader, SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
 import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
@@ -785,7 +785,7 @@ function RecurringCard() {
                 <div
                   ref={pointer.bindContainer(gridRef)}
                   tabIndex={0}
-                  className="options-recurring-desk list-grid overflow-x-auto rounded-2xl bg-card elevation outline-none"
+                  className="options-recurring-desk list-grid overflow-x-auto rounded-2xl table-paper elevation outline-none"
                   onMouseDown={(e) => {
                     const t = e.target as HTMLElement | null;
                     if (t?.closest("input, textarea, select, button, a, [role='checkbox']")) return;
@@ -797,14 +797,13 @@ function RecurringCard() {
                       {(Object.keys(REC_COLS) as Array<keyof typeof REC_COLS>).map((id) => (
                         <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id])} />
                       ))}
-                      <col className="col-actions" style={{ width: 88 }} />
                     </colgroup>
                     <thead>
                       <tr className="border-b border-border text-muted-foreground">
                         <SortHeader label="Name" column="name" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.name} onWidth={(n) => cols.setWidth("name", n)} onFit={() => fit("name", "Name")} align={colAligns.aligns.name ?? "center"} onAlign={(a) => colAligns.setAlign("name", a)} fill />
                         <SortHeader label="Next" column="next" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.next} onWidth={(n) => cols.setWidth("next", n)} onFit={() => fit("next", "Next")} align={colAligns.aligns.next ?? "center"} onAlign={(a) => colAligns.setAlign("next", a)} />
                         <SortHeader label="Amount" column="amount" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.amount} onWidth={(n) => cols.setWidth("amount", n)} onFit={() => fit("amount", "Amount")} align={colAligns.aligns.amount ?? "center"} onAlign={(a) => colAligns.setAlign("amount", a)} />
-                        <th className="col-actions px-4 py-3 text-muted-foreground font-medium" data-col="actions">Actions</th>
+                        <ActionsHeader width={cols.widths.actions} onWidth={(n) => cols.setWidth("actions", n)} onFit={() => fit("actions", "Actions")} />
                       </tr>
                     </thead>
                     <tbody>
@@ -861,6 +860,7 @@ const REC_COLS = {
   name: 200,
   next: 128,
   amount: 128,
+  actions: 88,
 } as const;
 
 function StoragePanel() {

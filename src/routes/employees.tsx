@@ -15,6 +15,7 @@ import { RowActions } from "@/components/row-actions";
 import { useColWidths } from "@/components/use-col-widths";
 import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
+import { useListVirtualizer, VirtPad } from "@/components/use-list-virtualizer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -139,6 +140,7 @@ function EmployeesPage() {
     },
   });
   const gridRef = useRef<HTMLDivElement>(null);
+  const listVirt = useListVirtualizer(sort.sorted.length, gridRef, (index) => sort.sorted[index]?.id ?? index);
   function fit(id: keyof typeof EMP_COLS, label: string) {
     const table = gridRef.current?.querySelector("table");
     if (!table) return;
@@ -152,10 +154,13 @@ function EmployeesPage() {
   const [dropId, setDropId] = useState<string | null>(null);
   const [payId, setPayId] = useState<string | null>(null);
   const [payAmount, setPayAmount] = useState("");
+  const [payHours, setPayHours] = useState("");
+  const [payWithholding, setPayWithholding] = useState("");
   const [payDate, setPayDate] = useState(todayIso());
   const [payBankId, setPayBankId] = useState("");
 
   const editing = editId ? (data.employees ?? []).find((e) => e.id === editId) : null;
+  const payingEmp = payId ? (data.employees ?? []).find((e) => e.id === payId) : null;
   const dialogOpen = creating || Boolean(editing);
 
   function openNew() {
@@ -207,6 +212,8 @@ function EmployeesPage() {
     setPayId(e.id);
     setPayDate(todayIso());
     setPayBankId(e.bankId || banks[0]?.id || "");
+    setPayHours("");
+    setPayWithholding("");
     setPayAmount(e.payType === "salary" && e.rate ? String(e.rate / 100) : "");
   }
 
@@ -216,6 +223,8 @@ function EmployeesPage() {
       payEmployee({
         employeeId: payId,
         amount: parseAmountToCents(payAmount),
+        hours: payHours ? Number(payHours) : undefined,
+        withholding: parseAmountToCents(payWithholding),
         date: payDate,
         bankId: payBankId,
       });
@@ -320,7 +329,11 @@ function EmployeesPage() {
                 </td>
               </tr>
             ) : (
-              sort.sorted.map((e) => {
+              <>
+              <VirtPad height={listVirt.padTop} colSpan={6} />
+              {listVirt.items.map((v) => {
+                const e = sort.sorted[v.index];
+                if (!e) return null;
                 const bank = data.banks.find((b) => b.id === e.bankId);
                 return (
                   <tr
@@ -369,7 +382,9 @@ function EmployeesPage() {
                     </td>
                   </tr>
                 );
-              })
+              })}
+              <VirtPad height={listVirt.padBottom} colSpan={6} />
+              </>
             )}
           </tbody>
         </table>
@@ -380,7 +395,7 @@ function EmployeesPage() {
           <DialogHeader>
             <DialogTitle>{editing ? editing.name : "New employee"}</DialogTitle>
             <DialogDescription>
-              Roster details for paychecks. This is not a full tax engine — withholdings stay outside the books for now.
+              Roster details for paychecks. Hourly rate is per hour; salary is monthly. Optional withholding is entered when you post pay.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -456,7 +471,7 @@ function EmployeesPage() {
           <DialogHeader>
             <DialogTitle>Post paycheck</DialogTitle>
             <DialogDescription>
-              Writes a check to the employee from the selected bank (Payroll expense). It appears in Register and Checks.
+              Writes a check to the employee from the selected bank (Payroll expense). Hourly pay is hours × rate. Optional withholding is a liability, not a tax engine.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3">
@@ -477,8 +492,27 @@ function EmployeesPage() {
                 </SelectContent>
               </Select>
             </Field>
-            <Field label="Amount">
+            {payingEmp?.payType === "hourly" ? (
+              <Field label="Hours">
+                <Input
+                  inputMode="decimal"
+                  value={payHours}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setPayHours(v);
+                    const h = Number(v);
+                    if (payingEmp.rate && Number.isFinite(h) && h > 0) {
+                      setPayAmount(String((h * payingEmp.rate) / 100));
+                    }
+                  }}
+                />
+              </Field>
+            ) : null}
+            <Field label={payingEmp?.payType === "hourly" ? "Gross" : "Amount"}>
               <Input inputMode="decimal" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} />
+            </Field>
+            <Field label="Withholding (optional)">
+              <Input inputMode="decimal" value={payWithholding} onChange={(e) => setPayWithholding(e.target.value)} />
             </Field>
           </div>
           <DialogFooter>

@@ -273,7 +273,7 @@ function BillBody({ id, onClose }: { id: string; onClose: () => void }) {
   const removeBill = useFinanceStore((s) => s.removeBill);
   const [paying, setPaying] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [edit, setEdit] = useState({ date: "", dueDate: "", amount: "", memo: "" });
+  const [edit, setEdit] = useState({ date: "", dueDate: "", amount: "", memo: "", taxRate: "" });
   const [payForm, setPayForm] = useState({
     amount: "",
     date: todayIso(),
@@ -290,6 +290,7 @@ function BillBody({ id, onClose }: { id: string; onClose: () => void }) {
       dueDate: bill.dueDate,
       amount: String(bill.amount / 100),
       memo: bill.memo,
+      taxRate: String(bill.taxRate ?? 0),
     });
   }, [bill, onClose]);
   if (!bill) return null;
@@ -321,6 +322,11 @@ function BillBody({ id, onClose }: { id: string; onClose: () => void }) {
         <Field label="Amount">
           <Input value={edit.amount} disabled={bill.status === "void"} inputMode="decimal" onChange={(e) => setEdit({ ...edit, amount: e.target.value })} />
         </Field>
+        {data.settings.taxEnabled || (bill.taxRate ?? 0) > 0 ? (
+          <Field label="Tax %">
+            <Input value={edit.taxRate} disabled={bill.status === "void"} inputMode="decimal" onChange={(e) => setEdit({ ...edit, taxRate: e.target.value })} />
+          </Field>
+        ) : null}
         <Field label="Memo">
           <Input value={edit.memo} disabled={bill.status === "void"} onChange={(e) => setEdit({ ...edit, memo: e.target.value })} />
         </Field>
@@ -386,6 +392,7 @@ function BillBody({ id, onClose }: { id: string; onClose: () => void }) {
                   dueDate: edit.dueDate,
                   amount: parseAmountToCents(edit.amount),
                   memo: edit.memo,
+                  taxRate: Number(edit.taxRate) || 0,
                 });
                 toast.success("Bill updated.");
                 onClose();

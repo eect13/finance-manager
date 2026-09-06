@@ -263,6 +263,17 @@ export function trialBalance(
     .filter((row) => row.balance !== 0 || row.account.system);
 }
 
+export function vatBalances(
+  data: FinanceData,
+  asOf?: string,
+): { input: number; output: number; netPayable: number } {
+  const inputAcct = data.accounts.find((a) => a.code === "1300");
+  const outputAcct = data.accounts.find((a) => a.code === "2200");
+  const input = inputAcct ? accountBalance(data, inputAcct.id, asOf) : 0;
+  const output = outputAcct ? accountBalance(data, outputAcct.id, asOf) : 0;
+  return { input, output, netPayable: output - input };
+}
+
 export function incomeStatement(
   data: FinanceData,
   asOf?: string,

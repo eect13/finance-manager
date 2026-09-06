@@ -90,8 +90,10 @@ export const SYSTEM_ACCOUNTS: Account[] = [
   { id: IDS.cashSafe, code: "1030", name: "Cash — Safekeeping", type: "asset", bankId: IDS.safe, system: true },
   { id: IDS.cashPnb, code: "1040", name: "Cash — PNB (closed)", type: "asset", bankId: IDS.pnb, system: true },
   { id: IDS.ar, code: "1200", name: "Accounts Receivable", type: "asset", system: true },
+  { id: "acct-1300", code: "1300", name: "Input VAT Receivable", type: "asset", system: true },
   { id: IDS.ap, code: "2000", name: "Accounts Payable", type: "liability", system: true },
   { id: "acct-2200", code: "2200", name: "Output VAT Payable", type: "liability", system: true },
+  { id: "acct-2210", code: "2210", name: "Payroll Withholdings", type: "liability", system: true },
   { id: IDS.equity, code: "3000", name: "Opening Balance Equity", type: "equity", system: true },
   { id: IDS.sales, code: "4000", name: "Sales & Service Income", type: "income", system: true },
   { id: IDS.opex, code: "5000", name: "Operating Expenses", type: "expense", system: true },
@@ -934,6 +936,7 @@ export function createSeed(): FinanceData {
       payments,
       journalId,
       sortOrder: bills.length,
+      taxRate: 0,
     });
   }
 

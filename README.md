@@ -1,4 +1,4 @@
-# Finance Manager v3.62.88
+# Finance Manager v3.63.0
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -11,6 +11,18 @@ No accounts, no server setup. Books stay on this computer (IndexedDB). Settings 
 The app mark is a **navy tile with cream pillars** — a full opaque square (Windows 11 already rounds the tile; transparent corners were a white plate). Web uses the SVG favicon. Windows uses a **BMP 32-bit** `.ico` (PNG-in-ICO is a white square on the shortcut and the taskbar). After install, **delete any leftover blank shortcut** and pin the new one — Explorer caches the last icon.
 
 
+
+## What's new in v3.63.0
+
+- **One paper**: Reports, Forecast, and Options Recurring use the same white/dark table paper as Register (no cream ring around a white grid). Print paper is white.
+- **Date header**: leftover navy wash rules are gone from the stylesheet, not only overridden.
+- **Post → Delete**: confirm sits above Post. Click a field label (Date, Payee, Amount) to focus the box.
+- **Lists**: Receipts, Invoices, Bills, Checks, Ledger, and Employees virtualize like Reconcile (Register internals unchanged).
+- **Taxed cash sale**: editing the amount on Register rescales receipt lines to match the journal.
+- **All dates**: last calendar year through an open end (new lines after today still show). Not capped at today.
+- **Reliability**: last keystroke flushes on close/hide; Restore last local copy skips identical backup writes; `npm test` runs the finance tests.
+- **Input VAT**: taxed bills split expense / Input VAT / AP (amount is VAT-inclusive). Reports → VAT shows payable vs receivable.
+- **Payroll**: hourly pay is hours × rate; optional withholding posts to Payroll Withholdings (not a PH tax engine).
 
 ## What's new in v3.62.88
 
@@ -618,7 +630,7 @@ Books do **not** follow you to another phone or laptop. Download a backup on one
 
 ## Bank register
 
-- Opens on **this month**, not the whole file. Filters → **Month**, **Year**, or **All dates**. All dates on screen is **last calendar year through today** (plus a Balance forward) so a fat file does not allocate every historical line. A custom From/To still walks exactly that range. CSV is the whole bank. Type dates as `08312026` or `08/31/2026`.
+- Opens on **this month**, not the whole file. Filters → **Month**, **Year**, or **All dates**. All dates on screen is **last calendar year through an open end** (plus a Balance forward) so a fat file does not allocate every historical line, and a line dated after today still appears. A custom From/To still walks exactly that range. CSV is the whole bank. Type dates as `08312026` or `08/31/2026`.
 - The first row is **Balance forward** when a date window is on — one number for everything before the From date, then only this period’s lines. Running balance stays correct without walking five years of rows on screen.
 - Last balance in the strip is the end of **this window**, in document flow — it does not stick over search or filters. Desk is still the full cash position.
 - The bank tab you were on comes back after a refresh. Hidden columns and type size live in the company file; light/dark is a browser preference. Search and drag do not stick — those are easy to leave on by accident.
@@ -710,7 +722,7 @@ Settings → **Save company file** writes this company as JSON (or downloads if 
 
 About **100 entries a day** is ~36,000 a year. Books live in this browser (IndexedDB) — there is no separate database to install, and Remix stays one click. The company file is still the whole book; **Purge closed** is how old years leave the file. What the register holds in the table is the date window plus one rolled opening, and only the rows on screen are painted.
 
-A month is tens of rows. A year is the sample. **All dates** on screen is last calendar year plus a Balance forward — it does not allocate every historical line. Twenty years in one file is still a lot of source documents to keep — export a JSON backup yearly, then purge. Settings → Storage shows usage (type PURGE).
+A month is tens of rows. A year is the sample. **All dates** on screen is last calendar year through an open end plus a Balance forward — it does not allocate every historical line. Twenty years in one file is still a lot of source documents to keep — export a JSON backup yearly, then purge. Settings → Storage shows usage (type PURGE).
 
 Reload the sample from Settings anytime, or **Remove sample** to drop it from this browser.
 

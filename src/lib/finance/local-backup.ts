@@ -60,23 +60,39 @@ function asCopy(raw: unknown): LocalCopy | null {
   }
 }
 
+const lastSnapshot = new Map<string, string>();
+
+function snapshotKey(data: FinanceData): string {
+  return JSON.stringify(data);
+}
+
 /** One timestamped snapshot per company. Survives Remove company / Remove sample. */
 export async function writeLocalBackup(id: string, data: FinanceData): Promise<void> {
   if (!id || !data?.settings) return;
+  const json = snapshotKey(data);
+  if (lastSnapshot.get(id) === json) return;
+  lastSnapshot.set(id, json);
   const row: LocalCopy = { id, savedAt: new Date().toISOString(), data };
   await idbOp("readwrite", (store) => store.put(row));
 }
 
 export async function writeLocalBackups(companies: Record<string, FinanceData>): Promise<void> {
   const entries = Object.entries(companies).filter(([, data]) => data?.settings);
-  if (entries.length === 0) return;
+  const changed: Array<[string, FinanceData]> = [];
+  for (const [id, data] of entries) {
+    const json = snapshotKey(data);
+    if (lastSnapshot.get(id) === json) continue;
+    lastSnapshot.set(id, json);
+    changed.push([id, data]);
+  }
+  if (changed.length === 0) return;
   const savedAt = new Date().toISOString();
   await openDb().then(
     (db) =>
       new Promise<void>((resolve, reject) => {
         const tx = db.transaction(STORE, "readwrite");
         const store = tx.objectStore(STORE);
-        for (const [id, data] of entries) {
+        for (const [id, data] of changed) {
           store.put({ id, savedAt, data } satisfies LocalCopy);
         }
         tx.oncomplete = () => {

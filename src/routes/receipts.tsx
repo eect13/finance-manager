@@ -24,6 +24,7 @@ import { ActionsHeader, SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
 import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
+import { useListVirtualizer, VirtPad } from "@/components/use-list-virtualizer";
 import { cn } from "@/lib/utils";
 import { useRowDrag } from "@/components/use-row-drag";
 import { Button } from "@/components/ui/button";
@@ -137,6 +138,7 @@ function ReceiptsPage() {
     ids: sort.sorted.map((r) => r.id),
     onOpen: openReceipt,
   });
+  const listVirt = useListVirtualizer(sort.sorted.length, gridRef, (index) => sort.sorted[index]?.id ?? index);
   function fit(id: keyof typeof RCP_COLS, label: string) {
     const table = gridRef.current?.querySelector("table");
     if (!table) return;
@@ -271,7 +273,11 @@ function ReceiptsPage() {
                 </td>
               </tr>
             ) : (
-              sort.sorted.map((receipt) => {
+              <>
+              <VirtPad height={listVirt.padTop} colSpan={dragEnabled ? 8 : 7} />
+              {listVirt.items.map((v) => {
+                const receipt = sort.sorted[v.index];
+                if (!receipt) return null;
                 const bank = data.banks.find((b) => b.id === receipt.bankId);
                 const applyStatus = (next: ReceiptStatusAction) => {
                   try {
@@ -340,7 +346,9 @@ function ReceiptsPage() {
                         </td>
                       </tr>
                 );
-              })
+              })}
+              <VirtPad height={listVirt.padBottom} colSpan={dragEnabled ? 8 : 7} />
+              </>
             )}
           </tbody>
         </table>

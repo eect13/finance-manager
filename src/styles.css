@@ -2093,7 +2093,7 @@
   }
 
   .print-sheet {
-    --color-card: #fbfaf6;
+    --color-card: #ffffff;
     --color-card-foreground: #1a1916;
     --color-muted: #ebe6da;
     --color-muted-foreground: #6a665c;
@@ -5582,8 +5582,8 @@ body.is-phone-move-dragging {
   top: 0 !important;
   left: auto !important;
   z-index: 4;
-  background: color-mix(in oklab, var(--color-primary) 7%, var(--color-card)) !important;
-  background-color: color-mix(in oklab, var(--color-primary) 7%, var(--color-card)) !important;
+  background: var(--color-table-header) !important;
+  background-color: var(--color-table-header) !important;
 }
 
 .register-matrix tbody td.col-date,
@@ -5619,8 +5619,8 @@ body.is-phone-move-dragging {
 .recon-table-card thead .col-check,
 .list-grid thead .col-check {
   z-index: 5;
-  background: color-mix(in oklab, var(--color-primary) 7%, var(--color-card));
-  background-color: color-mix(in oklab, var(--color-primary) 7%, var(--color-card));
+  background: var(--color-table-header);
+  background-color: var(--color-table-header);
 }
 
 .register-matrix tbody td.col-check,
@@ -5638,16 +5638,16 @@ body.is-phone-move-dragging {
   padding-left: calc(var(--list-cell-px) + 0.35rem) !important;
 }
 
-/* Themed header band — common region, navy/cream tokens only */
+/* Header band — same paper as the table (no leftover navy wash) */
 .list-grid thead th,
 .register-matrix thead th,
 .recon-table-card thead th,
 .party-dir-table thead th,
 .party-txn-table thead th {
-  background: color-mix(in oklab, var(--color-primary) 7%, var(--color-card));
-  background-color: color-mix(in oklab, var(--color-primary) 7%, var(--color-card));
-  box-shadow: 0 1px 0 color-mix(in oklab, var(--color-primary) 22%, var(--color-border));
-  color: var(--color-card-foreground);
+  background: var(--color-table-header);
+  background-color: var(--color-table-header);
+  box-shadow: 0 1px 0 var(--color-table-divider, var(--color-border));
+  color: var(--color-table-title, var(--color-muted-foreground));
 }
 
 /* Full-row select includes the tick — same mix as the rest of the row, both edges */
@@ -5790,7 +5790,7 @@ body.is-phone-move-dragging {
   background-color: color-mix(in oklab, var(--color-primary) 16%, var(--color-card)) !important;
 }
 
-/* Header band stays the 7% theme mix (not the row tint) */
+/* Header band stays table paper (not a navy wash, not the row tint) */
 .list-grid thead th,
 .register-matrix thead th,
 .recon-table-card thead th,
@@ -5799,8 +5799,8 @@ body.is-phone-move-dragging {
 .register-matrix thead .col-check,
 .recon-table-card thead .col-check,
 .list-grid thead .col-check {
-  background: color-mix(in oklab, var(--color-primary) 7%, var(--color-card)) !important;
-  background-color: color-mix(in oklab, var(--color-primary) 7%, var(--color-card)) !important;
+  background: var(--color-table-header) !important;
+  background-color: var(--color-table-header) !important;
 }
 
 /* List type size wins over leftover 0.74/0.78/0.82rem register pins */
@@ -6244,6 +6244,18 @@ thead button.sort-header-label:hover {
     background-color: var(--color-table) !important;
   }
 }
+
+/* =============================================================================
+   v3.63.0 — Reports/Forecast/Recurring one paper; leftover 7% wash gone
+   ============================================================================= */
+
+.table-paper,
+.list-grid.list-scroll,
+.options-recurring-desk.list-grid {
+  background: var(--color-table) !important;
+  background-color: var(--color-table) !important;
+}
+
 
 
 

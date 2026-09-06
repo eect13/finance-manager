@@ -42,6 +42,7 @@ export function normalizeBooks(raw: unknown): FinanceData {
       : [],
     reference: b.reference ?? "",
     memo: b.memo ?? "",
+    taxRate: typeof b.taxRate === "number" && Number.isFinite(b.taxRate) ? b.taxRate : 0,
     sortOrder: typeof b.sortOrder === "number" ? b.sortOrder : i,
     createdAt: typeof b.createdAt === "number" ? b.createdAt : i,
   }));
@@ -129,7 +130,7 @@ export function normalizeBooks(raw: unknown): FinanceData {
     sortOrder: typeof e.sortOrder === "number" ? e.sortOrder : i,
   }));
   const banks = ensureSafekeeping(asArray<Bank>(p.banks), asArray<Account>(p.accounts));
-  const accounts = ensureOutputVat(banks.accounts);
+  const accounts = ensureSystemAccounts(banks.accounts);
   const registerOrderRaw =
     p.registerOrder && typeof p.registerOrder === "object" && !Array.isArray(p.registerOrder)
       ? (p.registerOrder as Record<string, unknown>)
@@ -217,10 +218,25 @@ function ensureSafekeeping(banks: Bank[], accounts: Account[]): { banks: Bank[];
 }
 
 
-function ensureOutputVat(accounts: Account[]): Account[] {
-  if (accounts.some((a) => a.code === "2200")) return accounts;
-  return [
-    ...accounts,
-    { id: "acct-2200", code: "2200", name: "Output VAT Payable", type: "liability", system: true },
-  ];
+function ensureSystemAccounts(accounts: Account[]): Account[] {
+  let next = accounts;
+  if (!next.some((a) => a.code === "2200")) {
+    next = [
+      ...next,
+      { id: "acct-2200", code: "2200", name: "Output VAT Payable", type: "liability", system: true },
+    ];
+  }
+  if (!next.some((a) => a.code === "1300")) {
+    next = [
+      ...next,
+      { id: "acct-1300", code: "1300", name: "Input VAT Receivable", type: "asset", system: true },
+    ];
+  }
+  if (!next.some((a) => a.code === "2210")) {
+    next = [
+      ...next,
+      { id: "acct-2210", code: "2210", name: "Payroll Withholdings", type: "liability", system: true },
+    ];
+  }
+  return next;
 }

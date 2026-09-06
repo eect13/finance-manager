@@ -99,6 +99,7 @@ export function createDebouncedPersistStorage<T>(kv: StateStorage, delay = 280):
 
   if (typeof window !== "undefined") {
     window.addEventListener("pagehide", flush);
+    window.addEventListener("beforeunload", flush);
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "hidden") flush();
     });

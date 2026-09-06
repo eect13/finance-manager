@@ -311,6 +311,7 @@ function PartyBillDialog({
     accountId: defaultExpense,
     memo: "",
     reference: "",
+    taxRate: String(data.settings.taxEnabled ? data.settings.defaultTaxRate : 0),
   });
 
   useEffect(() => {
@@ -322,6 +323,7 @@ function PartyBillDialog({
       accountId: defaultExpense,
       memo: "",
       reference: "",
+      taxRate: String(data.settings.taxEnabled ? data.settings.defaultTaxRate : 0),
     });
   }, [open, defaultExpense]);
 
@@ -344,6 +346,11 @@ function PartyBillDialog({
           <Field label="Amount">
             <Input value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} inputMode="decimal" />
           </Field>
+          {data.settings.taxEnabled ? (
+            <Field label="Tax %">
+              <Input value={form.taxRate} onChange={(e) => setForm({ ...form, taxRate: e.target.value })} inputMode="decimal" />
+            </Field>
+          ) : null}
           <Field label="Charge to">
             <Select value={form.accountId} onValueChange={(v) => setForm({ ...form, accountId: v })}>
               <SelectTrigger>
@@ -377,6 +384,7 @@ function PartyBillDialog({
                   accountId: form.accountId,
                   memo: form.memo,
                   reference: form.reference,
+                  taxRate: data.settings.taxEnabled ? Number(form.taxRate) || 0 : 0,
                 });
                 onClose();
                 toast.success("Bill posted.");

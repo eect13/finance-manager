@@ -20,6 +20,7 @@ import { ActionsHeader, SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
 import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
+import { useListVirtualizer, VirtPad } from "@/components/use-list-virtualizer";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -120,6 +121,7 @@ function ChecksPage() {
     ids: sort.sorted.map((c) => c.id),
     onOpen: openCheck,
   });
+  const listVirt = useListVirtualizer(sort.sorted.length, gridRef, (index) => sort.sorted[index]?.id ?? index);
   function fit(id: keyof typeof CHK_COLS, label: string) {
     const table = gridRef.current?.querySelector("table");
     if (!table) return;
@@ -213,7 +215,10 @@ function ChecksPage() {
             </tr>
           </thead>
           <tbody>
-            {sort.sorted.map((check) => {
+            <VirtPad height={listVirt.padTop} colSpan={8} />
+            {listVirt.items.map((v) => {
+              const check = sort.sorted[v.index];
+              if (!check) return null;
               const bank = data.banks.find((b) => b.id === check.bankId);
               const applyStatus = (next: typeof check.status) => {
                 try {
@@ -273,6 +278,7 @@ function ChecksPage() {
                     </tr>
                 );
             })}
+            <VirtPad height={listVirt.padBottom} colSpan={8} />
           </tbody>
         </table>
       </ListCard>

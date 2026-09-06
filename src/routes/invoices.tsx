@@ -22,6 +22,7 @@ import { ActionsHeader, SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
 import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
+import { useListVirtualizer, VirtPad } from "@/components/use-list-virtualizer";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -125,6 +126,7 @@ function InvoicesPage() {
     ids: sort.sorted.map((i) => i.id),
     onOpen: openInvoice,
   });
+  const listVirt = useListVirtualizer(sort.sorted.length, gridRef, (index) => sort.sorted[index]?.id ?? index);
 
   function fit(id: keyof typeof INV_COLS, label: string) {
     const table = gridRef.current?.querySelector("table");
@@ -221,7 +223,11 @@ function InvoicesPage() {
                 </td>
               </tr>
             ) : (
-            sort.sorted.map((inv) => {
+            <>
+            <VirtPad height={listVirt.padTop} colSpan={8} />
+            {listVirt.items.map((v) => {
+              const inv = sort.sorted[v.index];
+              if (!inv) return null;
               const customer = data.customers.find((c) => c.id === inv.customerId);
               const due = invoiceBalance(data, inv.id);
               const overdue = due > 0 && inv.dueDate < today && inv.status !== "void" && inv.status !== "paid";
@@ -308,7 +314,9 @@ function InvoicesPage() {
                       </td>
                     </tr>
                 );
-            })
+            })}
+            <VirtPad height={listVirt.padBottom} colSpan={8} />
+            </>
             )}
           </tbody>
         </table>

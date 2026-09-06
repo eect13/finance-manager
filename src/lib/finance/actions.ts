@@ -687,21 +687,26 @@ export function createBill(data: FinanceData, input): FinanceData {
   if (!expense || !ap) throw new Error("Expense or AP account missing");
   const id = newId();
   const number = `BILL-${input.date.slice(0, 4)}-${String(data.nextNumbers.bill).padStart(3, "0")}`;
+  const taxRate = input.taxRate ?? (data.settings.taxEnabled ? data.settings.defaultTaxRate : 0);
+  const tax = taxRate > 0 ? input.amount - Math.round((input.amount * 100) / (100 + taxRate)) : 0;
+  const net = input.amount - tax;
+  const vat = data.accounts.find((a) => a.code === "1300");
+  if (tax > 0 && !vat) throw new Error("Input VAT account missing");
   const journal = makeJournal({
     date: input.date,
     description: `Bill ${number} — ${vendor.name}`,
     sourceType: "bill",
     sourceId: id,
-    lines: [{
-      accountId: expense.id,
-      debit: input.amount,
-      credit: 0,
-      memo: input.memo
-    }, {
-      accountId: ap.id,
-      debit: 0,
-      credit: input.amount
-    }]
+    lines: tax > 0 && vat
+      ? [
+          { accountId: expense.id, debit: net, credit: 0, memo: input.memo },
+          { accountId: vat.id, debit: tax, credit: 0, memo: "" },
+          { accountId: ap.id, debit: 0, credit: input.amount },
+        ]
+      : [
+          { accountId: expense.id, debit: input.amount, credit: 0, memo: input.memo },
+          { accountId: ap.id, debit: 0, credit: input.amount },
+        ],
   });
   const bill = {
     id,
@@ -717,7 +722,8 @@ export function createBill(data: FinanceData, input): FinanceData {
     payments: [],
     journalId: journal.id,
     sortOrder: data.bills.length,
-    createdAt: journal.createdAt
+    createdAt: journal.createdAt,
+    taxRate,
   };
   return {
     ...data,
@@ -1274,6 +1280,33 @@ export function updateReceipt(data: FinanceData, id, patch): FinanceData {
         return { ...j, date, description, lines: rebuilt };
       }),
     };
+    if (receipt.kind === "cash-sale" && receipt.lines.length > 0 && receipt.amount > 0 && amount !== receipt.amount) {
+      const oldSub = taxRate > 0 ? Math.round((receipt.amount * 100) / (100 + taxRate)) : receipt.amount;
+      if (oldSub > 0 && sub !== oldSub) {
+        let allocated = 0;
+        const scaled = receipt.lines.map((line, i, arr) => {
+          const qty = line.quantity || 1;
+          if (i === arr.length - 1) {
+            const rest = sub - allocated;
+            return { ...line, unitPrice: Math.round(rest / qty) };
+          }
+          const lineAmt = Math.round(line.quantity * line.unitPrice);
+          const nextAmt = Math.round((lineAmt * sub) / oldSub);
+          allocated += nextAmt;
+          return { ...line, unitPrice: Math.round(nextAmt / qty) };
+        });
+        const got = invoiceSubtotal(scaled);
+        if (got !== sub && scaled.length > 0) {
+          const last = scaled[scaled.length - 1];
+          const qty = last.quantity || 1;
+          scaled[scaled.length - 1] = { ...last, unitPrice: last.unitPrice + Math.round((sub - got) / qty) };
+        }
+        next = {
+          ...next,
+          receipts: next.receipts.map((r) => (r.id === id ? { ...r, lines: scaled } : r)),
+        };
+      }
+    }
   } else {
     next = patchJournalAmount(next, receipt.journalId, {
       date,
@@ -1305,17 +1338,56 @@ export function updateBillRecord(data: FinanceData, id, patch): FinanceData {
   const dueDate = patch.dueDate ?? bill.dueDate;
   const amount = patch.amount ?? bill.amount;
   const memo = patch.memo ?? bill.memo;
+  const taxRate = patch.taxRate ?? bill.taxRate ?? 0;
   const paid = bill.payments.reduce((s, p) => s + p.amount, 0);
   if (amount <= 0) throw new Error("Amount must be greater than zero");
   if (amount < paid) throw new Error("Amount cannot be less than already paid.");
   const status = paid <= 0 ? "open" : paid >= amount ? "paid" : "partial";
   let next = data;
-  if (bill.journalId) next = patchJournalAmount(next, bill.journalId, {
-    date,
-    description: `Bill ${bill.number}${memo ? ` — ${memo}` : ""}`,
-    amount,
-    memo
-  });
+  if (bill.journalId) {
+    const expense = next.accounts.find((a) => a.id === bill.accountId);
+    const ap = next.accounts.find((a) => a.code === "2000");
+    const vat = next.accounts.find((a) => a.code === "1300");
+    const journal = next.journals.find((j) => j.id === bill.journalId);
+    const needsVatRebuild = taxRate > 0 || (journal?.lines.length ?? 0) > 2;
+    if (needsVatRebuild && expense && ap) {
+      const tax = taxRate > 0 ? amount - Math.round((amount * 100) / (100 + taxRate)) : 0;
+      const net = amount - tax;
+      if (tax > 0 && !vat) throw new Error("Input VAT account missing");
+      const rebuilt = tax > 0 && vat
+        ? [
+            { id: newId(), accountId: expense.id, debit: net, credit: 0, memo: memo || "" },
+            { id: newId(), accountId: vat.id, debit: tax, credit: 0, memo: "" },
+            { id: newId(), accountId: ap.id, debit: 0, credit: amount, memo: "" },
+          ]
+        : [
+            { id: newId(), accountId: expense.id, debit: amount, credit: 0, memo: memo || "" },
+            { id: newId(), accountId: ap.id, debit: 0, credit: amount, memo: "" },
+          ];
+      const deb = rebuilt.reduce((s, l) => s + l.debit, 0);
+      const cred = rebuilt.reduce((s, l) => s + l.credit, 0);
+      if (deb !== cred) throw new Error(`Unbalanced bill journal: debit ${deb} credit ${cred}`);
+      next = {
+        ...next,
+        journals: next.journals.map((j) => {
+          if (j.id !== bill.journalId) return j;
+          return {
+            ...j,
+            date,
+            description: `Bill ${bill.number}${memo ? ` — ${memo}` : ""}`,
+            lines: rebuilt,
+          };
+        }),
+      };
+    } else {
+      next = patchJournalAmount(next, bill.journalId, {
+        date,
+        description: `Bill ${bill.number}${memo ? ` — ${memo}` : ""}`,
+        amount,
+        memo
+      });
+    }
+  }
   return {
     ...next,
     bills: next.bills.map((b) => b.id === id ? {
@@ -1324,6 +1396,7 @@ export function updateBillRecord(data: FinanceData, id, patch): FinanceData {
       dueDate,
       amount,
       memo,
+      taxRate,
       status
     } : b)
   };
@@ -2156,8 +2229,15 @@ export function payEmployee(data: FinanceData, input): FinanceData {
   const bankId = input.bankId || employee.bankId;
   const bank = data.banks.find((b) => b.id === bankId);
   if (!bank) throw new Error("Pick a bank to pay from.");
-  const amount = Math.round(Number(input.amount) || 0);
+  const hours = Number(input.hours);
+  let amount = Math.round(Number(input.amount) || 0);
+  if (employee.payType === "hourly" && Number.isFinite(hours) && hours > 0) {
+    amount = Math.round(hours * employee.rate);
+  }
   if (amount <= 0) throw new Error("Enter a paycheck amount.");
+  const withholding = Math.max(0, Math.round(Number(input.withholding) || 0));
+  if (withholding >= amount) throw new Error("Withholding must be less than gross pay.");
+  const net = amount - withholding;
   const date = input.date || todayIso();
   const payroll = data.accounts.find((a) => a.code === "5300") ?? data.accounts.find((a) => a.type === "expense");
   if (!payroll) throw new Error("Payroll expense account missing.");
@@ -2187,14 +2267,65 @@ export function payEmployee(data: FinanceData, input): FinanceData {
     });
     vendor = working.vendors.find((v) => v.id === vendor.id)!;
   }
-  return issueCheck(working, {
-    bankId: bank.id,
-    vendorId: vendor.id,
-    payee: employee.name,
-    issueDate: date,
-    postDate: date,
-    amount,
-    memo: input.memo?.trim() || `Payroll — ${employee.title || "employee"}`,
-    accountId: payroll.id,
+  const hoursBit = employee.payType === "hourly" && Number.isFinite(hours) && hours > 0 ? ` · ${hours}h` : "";
+  const memo = input.memo?.trim() || `Payroll — ${employee.title || "employee"}${hoursBit}`;
+  if (withholding <= 0) {
+    return issueCheck(working, {
+      bankId: bank.id,
+      vendorId: vendor.id,
+      payee: employee.name,
+      issueDate: date,
+      postDate: date,
+      amount,
+      memo,
+      accountId: payroll.id,
+    });
+  }
+  const withholdAcct = working.accounts.find((a) => a.code === "2210");
+  if (!withholdAcct) throw new Error("Payroll withholdings account missing.");
+  assertOpenPeriod(working, date);
+  const nextNum = working.nextNumbers.check[bank.id] ?? 1;
+  const checkNumber = String(nextNum).padStart(4, "0");
+  const id = newId();
+  const journal = makeJournal({
+    date,
+    description: `Check ${checkNumber} — ${employee.name}`,
+    sourceType: "check",
+    sourceId: id,
+    lines: [
+      { accountId: payroll.id, debit: amount, credit: 0, memo },
+      { accountId: bank.accountId, debit: 0, credit: net },
+      { accountId: withholdAcct.id, debit: 0, credit: withholding, memo: "Withholding" },
+    ],
   });
+  const deb = journal.lines.reduce((s, l) => s + l.debit, 0);
+  const cred = journal.lines.reduce((s, l) => s + l.credit, 0);
+  if (deb !== cred) throw new Error(`Unbalanced paycheck journal: debit ${deb} credit ${cred}`);
+  return {
+    ...working,
+    checks: [...working.checks, {
+      id,
+      bankId: bank.id,
+      checkNumber,
+      payee: employee.name,
+      issueDate: date,
+      postDate: date,
+      amount: net,
+      status: "pending",
+      recon: "pending",
+      memo,
+      accountId: payroll.id,
+      journalId: journal.id,
+      vendorId: vendor.id,
+      createdAt: journal.createdAt,
+    }],
+    journals: [...working.journals, journal],
+    nextNumbers: {
+      ...working.nextNumbers,
+      check: {
+        ...working.nextNumbers.check,
+        [bank.id]: nextNum + 1,
+      },
+    },
+  };
 }

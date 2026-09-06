@@ -21,6 +21,7 @@ import { ActionsHeader, SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
 import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
+import { useListVirtualizer, VirtPad } from "@/components/use-list-virtualizer";
 import { cn } from "@/lib/utils";
 import { useRowDrag } from "@/components/use-row-drag";
 import { Button } from "@/components/ui/button";
@@ -94,6 +95,7 @@ function BillsPage() {
     accountId: expenseAccounts[0]?.id ?? "",
     memo: "",
     reference: "",
+    taxRate: String(data.settings.taxEnabled ? data.settings.defaultTaxRate : 0),
   });
 
   const getters = useMemo(
@@ -138,6 +140,7 @@ function BillsPage() {
     ids: sort.sorted.map((b) => b.id),
     onOpen: openBill,
   });
+  const listVirt = useListVirtualizer(sort.sorted.length, gridRef, (index) => sort.sorted[index]?.id ?? index);
   function fit(id: keyof typeof BILL_COLS, label: string) {
     const table = gridRef.current?.querySelector("table");
     if (!table) return;
@@ -235,7 +238,11 @@ function BillsPage() {
                 </td>
               </tr>
             ) : (
-              sort.sorted.map((bill) => {
+              <>
+              <VirtPad height={listVirt.padTop} colSpan={dragEnabled ? 9 : 8} />
+              {listVirt.items.map((v) => {
+                const bill = sort.sorted[v.index];
+                if (!bill) return null;
                 const vendor = data.vendors.find((v) => v.id === bill.vendorId);
                 const due = billBalance(bill);
                 const overdue = due > 0 && bill.dueDate < today && bill.status !== "void" && bill.status !== "paid";
@@ -309,7 +316,9 @@ function BillsPage() {
                         </td>
                       </tr>
                 );
-              })
+              })}
+              <VirtPad height={listVirt.padBottom} colSpan={dragEnabled ? 9 : 8} />
+              </>
             )}
           </tbody>
         </table>
@@ -369,6 +378,11 @@ function BillsPage() {
             <Field label="Amount">
               <Input value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} inputMode="decimal" />
             </Field>
+            {data.settings.taxEnabled ? (
+              <Field label="Tax %">
+                <Input value={form.taxRate} onChange={(e) => setForm({ ...form, taxRate: e.target.value })} inputMode="decimal" />
+              </Field>
+            ) : null}
             <Field label="Charge to">
               <Select value={form.accountId} onValueChange={(v) => setForm({ ...form, accountId: v })}>
                 <SelectTrigger>
@@ -406,6 +420,7 @@ function BillsPage() {
                     accountId: form.accountId,
                     memo: form.memo,
                     reference: form.reference,
+                    taxRate: data.settings.taxEnabled ? Number(form.taxRate) || 0 : 0,
                   });
                   setCreateOpen(false);
                   toast.success("Bill posted.");

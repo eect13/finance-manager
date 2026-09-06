@@ -8,7 +8,7 @@ import { FilterPills } from "@/components/filter-pills";
 import { Money } from "@/components/money";
 import { Sparkline } from "@/components/sparkline";
 import { listColClass, listColWidthStyle, listTableStyle} from "@/components/list-table";
-import { SortHeader } from "@/components/sort-header";
+import { ActionsHeader, SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
 import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
@@ -40,6 +40,7 @@ const BUDGET_COLS = {
   kind: 110,
   start: 120,
   amount: 128,
+  actions: 88,
 } as const;
 
 function ForecastPage() {
@@ -150,7 +151,7 @@ function ForecastPage() {
               <div
                 ref={pointer.bindContainer(budgetRef)}
                 tabIndex={0}
-                className="list-grid overflow-x-auto rounded-2xl bg-card elevation outline-none"
+                className="list-grid overflow-x-auto rounded-2xl table-paper elevation outline-none"
                 onMouseDown={(e) => {
                   const t = e.target as HTMLElement | null;
                   if (t?.closest("input, textarea, select, button, a, [role='checkbox']")) return;
@@ -162,7 +163,6 @@ function ForecastPage() {
                     {(Object.keys(BUDGET_COLS) as Array<keyof typeof BUDGET_COLS>).map((id) => (
                       <col key={id} className={listColClass(id)} style={listColWidthStyle(id, budgetCols.widths[id])} />
                     ))}
-                    <col className="col-actions" style={{ width: 88 }} />
                   </colgroup>
                   <thead>
                     <tr className="border-b border-border text-muted-foreground">
@@ -186,7 +186,11 @@ function ForecastPage() {
                         if (!table) return;
                         budgetCols.setWidth("amount", fitColumnWidth({ table, selector: `td[data-col="amount"]`, header: "Amount" }));
                       }} align={budgetAligns.aligns.amount ?? "center"} onAlign={(a) => budgetAligns.setAlign("amount", a)} />
-                      <th className="col-actions px-4 py-3 text-muted-foreground font-medium" data-col="actions">Actions</th>
+                      <ActionsHeader width={budgetCols.widths.actions} onWidth={(n) => budgetCols.setWidth("actions", n)} onFit={() => {
+                        const table = budgetRef.current?.querySelector("table");
+                        if (!table) return;
+                        budgetCols.setWidth("actions", fitColumnWidth({ table, selector: `td[data-col="actions"]`, header: "Actions" }));
+                      }} />
                     </tr>
                   </thead>
                   <tbody>

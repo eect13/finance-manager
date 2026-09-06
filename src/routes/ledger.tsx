@@ -14,6 +14,7 @@ import { SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
 import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
+import { useListVirtualizer, VirtPad } from "@/components/use-list-virtualizer";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ledgerRows } from "@/lib/finance/export";
@@ -183,6 +184,7 @@ function JournalTable({
   });
   const rows = sort.sorted;
   const gridRef = useRef<HTMLDivElement>(null);
+  const listVirt = useListVirtualizer(rows.length, gridRef, (index) => rows[index]?.id ?? index);
   function fit(id: keyof typeof JRN_COLS, label: string) {
     const table = gridRef.current?.querySelector("table");
     if (!table) return;
@@ -209,7 +211,10 @@ function JournalTable({
           </tr>
         </thead>
         <tbody>
-          {rows.map((entry) => {
+          <VirtPad height={listVirt.padTop} colSpan={5} />
+          {listVirt.items.map((v) => {
+            const entry = rows[v.index];
+            if (!entry) return null;
             const debit = entry.lines.reduce((s, l) => s + l.debit, 0);
             const credit = entry.lines.reduce((s, l) => s + l.credit, 0);
             return (
@@ -230,6 +235,7 @@ function JournalTable({
               </tr>
             );
           })}
+          <VirtPad height={listVirt.padBottom} colSpan={5} />
         </tbody>
       </table>
     </ListCard>

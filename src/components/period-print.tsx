@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { AGE_LABEL, AGE_ORDER, agingTotals, apAging, arAging } from "@/lib/finance/aging";
 import { monthStartIso } from "@/lib/finance/close";
 import { formatDate, formatMoney } from "@/lib/finance/format";
-import { fiscalStartOn, incomeStatement, trialBalance } from "@/lib/finance/ledger";
+import { fiscalStartOn, incomeStatement, trialBalance, vatBalances } from "@/lib/finance/ledger";
 import { customerStatement, type CustomerStatement } from "@/lib/finance/statement";
 import type { CashLine } from "@/lib/finance/register";
 import { KIND_LABEL } from "@/lib/finance/register";
@@ -408,12 +408,45 @@ export function PeriodPackPrint({
   );
 }
 
-export function ReportsPrint({ asOf, tab }: { asOf: string; tab: "aging" | "tb" | "pl" }) {
+export function ReportsPrint({ asOf, tab }: { asOf: string; tab: "aging" | "tb" | "pl" | "vat" }) {
   const data = useFinanceData();
   const mounted = usePrintPortal();
   if (!mounted) return null;
   const currency = data.settings.currency;
   const money = (n: number) => formatMoney(n, currency);
+  if (tab === "vat") {
+    const vat = vatBalances(data, asOf);
+    return createPortal(
+      <PrintFrame>
+        <article className="print-sheet">
+          <SheetHead title="VAT" subtitle={`As of ${formatDate(asOf)}`} />
+          <table className="register-print-table">
+            <thead>
+              <tr>
+                <th>Account</th>
+                <th className="col-money">Balance</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Output VAT Payable (2200)</td>
+                <td className="col-money">{money(vat.output)}</td>
+              </tr>
+              <tr>
+                <td>Input VAT Receivable (1300)</td>
+                <td className="col-money">{money(vat.input)}</td>
+              </tr>
+              <tr>
+                <td>Net VAT payable</td>
+                <td className="col-money">{money(vat.netPayable)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </article>
+      </PrintFrame>,
+      document.body,
+    );
+  }
   if (tab === "tb") {
     const tb = trialBalance(data, asOf);
     return createPortal(

@@ -800,7 +800,7 @@ function RecurringCard() {
                         <SortHeader label="Name" column="name" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.name} onWidth={(n) => cols.setWidth("name", n)} onFit={() => fit("name", "Name")} align={colAligns.aligns.name ?? "center"} onAlign={(a) => colAligns.setAlign("name", a)} fill />
                         <SortHeader label="Next" column="next" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.next} onWidth={(n) => cols.setWidth("next", n)} onFit={() => fit("next", "Next")} align={colAligns.aligns.next ?? "center"} onAlign={(a) => colAligns.setAlign("next", a)} />
                         <SortHeader label="Amount" column="amount" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.amount} onWidth={(n) => cols.setWidth("amount", n)} onFit={() => fit("amount", "Amount")} align={colAligns.aligns.amount ?? "center"} onAlign={(a) => colAligns.setAlign("amount", a)} />
-                        <th className="col-actions px-4 py-3" />
+                        <th className="col-actions px-4 py-3 text-muted-foreground font-medium" data-col="actions">Actions</th>
                       </tr>
                     </thead>
                     <tbody>

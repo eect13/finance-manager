@@ -599,8 +599,7 @@
   }
 
   .list-grid colgroup col.col-actions {
-    /* Hug content; min keeps ⋯/Delete from card edge (not a flex filler) */
-    width: 1% !important;
+    /* Stored/autofit px via inline style; min keeps ⋯/Delete from card edge */
     min-width: var(--list-actions-min);
     max-width: none;
   }
@@ -736,10 +735,7 @@
     }
   }
 
-  /* Only actions never resizes. Last data col (Status/Balance) keeps a handle. */
-  .list-grid thead th.col-actions .col-resize-handle {
-    display: none;
-  }
+  /* Actions resizes like other cols (v3.62.67). */
 
   .list-grid thead th.col-fill,
   .register-matrix thead th.col-fill,
@@ -2409,7 +2405,7 @@
   border-top-width: 0;
 }
 
-.list-grid thead th:last-child .col-resize-handle,
+.list-grid thead th:last-child:not(.col-actions) .col-resize-handle,
 .register-matrix thead th:last-child .col-resize-handle,
 .list-grid thead th.col-fill .col-resize-handle,
 .register-matrix thead th.col-fill .col-resize-handle {
@@ -4567,7 +4563,6 @@ body.is-phone-move-dragging {
 }
 
 .list-grid colgroup col.col-actions {
-  width: 1% !important;
   min-width: var(--list-actions-min);
   max-width: none;
 }
@@ -4667,7 +4662,7 @@ body.is-phone-move-dragging {
 /*
   v3.62.60 — kill phantom trailing void; keep Actions padded:
   - one .col-flex at width:100% absorbs leftover (not Actions/Status)
-  - .col-actions hugs (1%) with --list-actions-min + --list-actions-px breathing room
+  - .col-actions uses stored/autofit width with --list-actions-min + --list-actions-px breathing room
   - no empty flex strip after last real column
 */
 .list-grid table,
@@ -4693,14 +4688,12 @@ body.is-phone-move-dragging {
 .list-grid colgroup col.col-actions,
 .recon-table-card colgroup col.col-actions,
 .party-dir-table colgroup col.col-actions {
-  width: 1% !important;
   min-width: var(--list-actions-min) !important;
   max-width: none;
 }
 
 .list-grid th.col-actions,
 .list-grid td.col-actions {
-  width: 1%;
   max-width: none;
   white-space: nowrap;
   vertical-align: middle;
@@ -4783,11 +4776,10 @@ body.is-phone-move-dragging {
   min-width: var(--list-flex-min);
 }
 
-/* Actions hug + internal pad; last col flush to card (no trailing gutter void) */
+/* Actions: stored/autofit width + internal pad; last col flush (no trailing gutter void) */
 .list-grid colgroup col.col-actions,
 .recon-table-card colgroup col.col-actions,
 .party-dir-table colgroup col.col-actions {
-  width: 1% !important;
   min-width: var(--list-actions-min) !important;
   max-width: none;
 }
@@ -4796,7 +4788,6 @@ body.is-phone-move-dragging {
 .list-grid td.col-actions,
 .register-matrix th.col-actions,
 .register-matrix td.col-actions {
-  width: 1%;
   min-width: var(--list-actions-min);
   padding-left: var(--list-actions-px) !important;
   padding-right: var(--list-actions-px) !important;
@@ -4861,4 +4852,12 @@ body.is-phone-move-dragging {
 .list-grid .col-opts-trigger,
 .register-matrix .col-opts-trigger {
   display: none !important;
+}
+
+/* =============================================================================
+   v3.62.67 — Actions labeled + resizable; Status ≠ Actions
+   ============================================================================= */
+.list-grid thead th.col-actions .sort-header-title {
+  overflow: visible;
+  text-overflow: clip;
 }

@@ -2,7 +2,7 @@ import { forwardRef, type CSSProperties, type HTMLAttributes, type ReactNode } f
 import { ACTIONS_COL_MIN, FLEX_COL_MIN } from "@/lib/finance/fit-column";
 import { cn } from "@/lib/utils";
 
-/** One name-like column takes leftover width. Keep bank/status/money as fit — not flex. */
+/** One name-like column takes leftover width. Keep bank/status/money/actions as fit — not flex. */
 const FLEX_COL = new Set([
   "payee",
   "from",
@@ -26,9 +26,9 @@ export function listColClass(id: string) {
   return "col-fit";
 }
 
-/** Inline width for <col>: skip flex (CSS 100%) and actions (CSS 1% hug). */
+/** Inline width for <col>: skip flex (CSS 100%). Actions uses stored/autofit px like fit cols. */
 export function listColWidthStyle(id: string, width: number): CSSProperties | undefined {
-  if (id === "actions" || FLEX_COL.has(id)) return undefined;
+  if (FLEX_COL.has(id)) return undefined;
   return { width };
 }
 
@@ -43,7 +43,7 @@ export function listFlexMinStyle(id: string): CSSProperties | undefined {
   return undefined;
 }
 
-/** Register-style card. One flex name col absorbs leftover; fit/actions stay compact. */
+/** Register-style card. One flex name col absorbs leftover; fit cols + Actions use stored widths. */
 export const ListCard = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(function ListCard(
   { className, children, ...rest },
   ref,

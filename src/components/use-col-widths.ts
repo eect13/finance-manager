@@ -2,8 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ACTIONS_COL_MIN, autoFitTable, columnRole, FLEX_COL_MIN, widthsMatch } from "@/lib/finance/fit-column";
 
 const FIT_MARK = "finance-manager-colfit";
-/** content-10: DOM scrollWidth fit, flex/actions floors, no viewport crush; invalidate stale locks */
-const FIT_VERSION = "content-10";
+/** content-11: Actions resizable + labeled; DOM scrollWidth fit; invalidate stale 1% locks */
+const FIT_VERSION = "content-11";
 
 export function clampCol(n: number, min = 56, max = 420) {
   return Math.min(max, Math.max(min, Math.round(n)));
@@ -104,7 +104,10 @@ export function useColWidths<K extends string>(
   const setWidth = useCallback(
     (id: K, next: number) => {
       virginRef.current = false;
-      setWidths((prev) => ({ ...prev, [id]: clampCol(next, min, max) }));
+      const role = id === "actions" ? "actions" : undefined;
+      const floor = role === "actions" ? Math.max(min, ACTIONS_COL_MIN) : min;
+      const ceil = role === "actions" ? Math.min(max, 320) : max;
+      setWidths((prev) => ({ ...prev, [id]: clampCol(next, floor, ceil) }));
     },
     [min, max],
   );

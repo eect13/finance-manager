@@ -18,7 +18,7 @@ import { ListPrint } from "@/components/list-print";
 import { Money } from "@/components/money";
 import { requestPrint } from "@/components/print-preview";
 import { InvoiceBadge } from "@/components/status-badge";
-import { SortHeader } from "@/components/sort-header";
+import { ActionsHeader, SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
 import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
@@ -208,9 +208,7 @@ function InvoicesPage() {
               <SortHeader label="Total" column="total" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.total} onWidth={(n) => cols.setWidth("total", n)} onFit={() => fit("total", "Total")} align={colAligns.aligns.total ?? "center"} onAlign={(a) => colAligns.setAlign("total", a)} />
               <SortHeader label="Balance" column="balance" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.balance} onWidth={(n) => cols.setWidth("balance", n)} onFit={() => fit("balance", "Balance")} align={colAligns.aligns.balance ?? "center"} onAlign={(a) => colAligns.setAlign("balance", a)} />
               <SortHeader label="Status" column="status" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.status} onWidth={(n) => cols.setWidth("status", n)} onFit={() => fit("status", "Status")} align={colAligns.aligns.status ?? "center"} onAlign={(a) => colAligns.setAlign("status", a)} />
-              <th className="col-actions relative">
-                <span className="sr-only">Actions</span>
-              </th>
+              <ActionsHeader width={cols.widths.actions} onWidth={(n) => cols.setWidth("actions", n)} onFit={() => fit("actions", "Actions")} />
             </tr>
           </thead>
           <tbody>
@@ -305,7 +303,7 @@ function InvoicesPage() {
                       <td className={cn("px-4 py-3", alignClass(colAligns.aligns.status ?? "center"))} data-col="status" data-align={colAligns.aligns.status ?? "center"}>
                         <InvoiceBadge status={inv.status} overdue={overdue} />
                       </td>
-                      <td className="col-actions" onDoubleClick={stopOpen}>
+                      <td className="col-actions" data-col="actions" onDoubleClick={stopOpen}>
                         {rowActions}
                       </td>
                     </tr>

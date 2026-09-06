@@ -221,3 +221,43 @@ export function SortHeader({
     </th>
   );
 }
+
+/** Last-col Actions header: visible label, resize + dblclick/right-click fit (no sort, no ⋮). */
+export function ActionsHeader({
+  width,
+  onWidth,
+  onFit,
+  className,
+}: {
+  width: number;
+  onWidth: (next: number) => void;
+  onFit?: () => void;
+  className?: string;
+}) {
+  return (
+    <th
+      className={cn("col-actions relative align-middle px-4 py-3 font-medium text-center", className)}
+      style={{ minWidth: width, width }}
+      data-col="actions"
+      title="Drag to resize · double-click or right-click to auto-fit"
+      onContextMenu={
+        onFit
+          ? (e) => {
+              e.preventDefault();
+              onFit();
+            }
+          : undefined
+      }
+    >
+      <div className="sort-header-row h-full">
+        <div className="sort-header-cluster">
+          <span className={cn("sort-header-main", "min-h-11 text-sm", "text-muted-foreground")}>
+            <span className="sort-header-title">Actions</span>
+          </span>
+        </div>
+      </div>
+      <ColResize width={width} onWidth={onWidth} onFit={onFit} />
+    </th>
+  );
+}
+

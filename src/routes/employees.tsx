@@ -10,7 +10,7 @@ import { FilterPills, ListToolbar } from "@/components/filter-pills";
 import { ListFilters, applySortValue } from "@/components/list-filters";
 import { ListCard, listColClass, listColWidthStyle, listTableStyle} from "@/components/list-table";
 import { Money } from "@/components/money";
-import { SortHeader } from "@/components/sort-header";
+import { ActionsHeader, SortHeader } from "@/components/sort-header";
 import { RowActions } from "@/components/row-actions";
 import { useColWidths } from "@/components/use-col-widths";
 import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
@@ -307,7 +307,7 @@ function EmployeesPage() {
               <SortHeader label="Pay" column="rate" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.rate} onWidth={(n) => cols.setWidth("rate", n)} onFit={() => fit("rate", "Pay")} align={colAligns.aligns.rate ?? "center"} onAlign={(a) => colAligns.setAlign("rate", a)} />
               <SortHeader label="Bank" column="bank" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.bank} onWidth={(n) => cols.setWidth("bank", n)} onFit={() => fit("bank", "Bank")} align={colAligns.aligns.bank ?? "center"} onAlign={(a) => colAligns.setAlign("bank", a)} />
               <SortHeader label="Status" column="status" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.status} onWidth={(n) => cols.setWidth("status", n)} onFit={() => fit("status", "Status")} align={colAligns.aligns.status ?? "center"} onAlign={(a) => colAligns.setAlign("status", a)} />
-              <th className="col-actions"><span className="sr-only">Actions</span></th>
+              <ActionsHeader width={cols.widths.actions} onWidth={(n) => cols.setWidth("actions", n)} onFit={() => fit("actions", "Actions")} />
             </tr>
           </thead>
           <tbody>

@@ -186,7 +186,7 @@ function ForecastPage() {
                         if (!table) return;
                         budgetCols.setWidth("amount", fitColumnWidth({ table, selector: `td[data-col="amount"]`, header: "Amount" }));
                       }} align={budgetAligns.aligns.amount ?? "center"} onAlign={(a) => budgetAligns.setAlign("amount", a)} />
-                      <th className="col-actions px-4 py-3" />
+                      <th className="col-actions px-4 py-3 text-muted-foreground font-medium" data-col="actions">Actions</th>
                     </tr>
                   </thead>
                   <tbody>

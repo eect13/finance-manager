@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { SortHeader } from "@/components/sort-header";
+import { ActionsHeader, SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
 import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
@@ -237,7 +237,7 @@ function BanksPage() {
                 <SortHeader label="Status" column="status" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.status} onWidth={(n) => cols.setWidth("status", n)} onFit={() => fit("status", "Status")} align={colAligns.aligns.status ?? "center"} onAlign={(a) => colAligns.setAlign("status", a)} />
                 <SortHeader label="Book" column="book" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.book} onWidth={(n) => cols.setWidth("book", n)} onFit={() => fit("book", "Book")} align={colAligns.aligns.book ?? "center"} onAlign={(a) => colAligns.setAlign("book", a)} />
                 <SortHeader label="Pending" column="pending" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.pending} onWidth={(n) => cols.setWidth("pending", n)} onFit={() => fit("pending", "Pending")} align={colAligns.aligns.pending ?? "center"} onAlign={(a) => colAligns.setAlign("pending", a)} />
-                <th className="col-actions"><span className="sr-only">Actions</span></th>
+                <ActionsHeader width={cols.widths.actions} onWidth={(n) => cols.setWidth("actions", n)} onFit={() => fit("actions", "Actions")} />
               </tr>
             </thead>
             <tbody>

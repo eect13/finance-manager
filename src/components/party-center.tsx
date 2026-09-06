@@ -607,12 +607,12 @@ function PartyDirectoryTable({
       <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
         <colgroup>
           {(Object.keys(DIR_COLS) as Array<keyof typeof DIR_COLS>).map((id) => (
-            <col key={id} className={cn(`col-dir-${id}`, listColClass(id))} style={listColWidthStyle(id, cols.widths[id])} />
+            <col key={id} className={cn(`col-dir-${id}`, "col-fit")} style={{ width: cols.widths[id], minWidth: cols.widths[id] }} />
           ))}
         </colgroup>
         <thead>
           <tr className="border-b border-border text-muted-foreground">
-            <SortHeader label="Name" column="name" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-dir-name" width={cols.widths.name} onWidth={(n) => cols.setWidth("name", n)} onFit={() => fit("name", "Name")} align={colAligns.aligns.name ?? "center"} onAlign={(a) => colAligns.setAlign("name", a)} fill />
+            <SortHeader label="Name" column="name" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-dir-name" width={cols.widths.name} onWidth={(n) => cols.setWidth("name", n)} onFit={() => fit("name", "Name")} align={colAligns.aligns.name ?? "center"} onAlign={(a) => colAligns.setAlign("name", a)} />
             <SortHeader label="Contact" column="contact" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-dir-contact" width={cols.widths.contact} onWidth={(n) => cols.setWidth("contact", n)} onFit={() => fit("contact", "Contact")} align={colAligns.aligns.contact ?? "center"} onAlign={(a) => colAligns.setAlign("contact", a)} />
             <SortHeader label="Email" column="email" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-dir-email" width={cols.widths.email} onWidth={(n) => cols.setWidth("email", n)} onFit={() => fit("email", "Email")} align={colAligns.aligns.email ?? "center"} onAlign={(a) => colAligns.setAlign("email", a)} />
             <SortHeader label="Phone" column="phone" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} className="col-dir-phone" width={cols.widths.phone} onWidth={(n) => cols.setWidth("phone", n)} onFit={() => fit("phone", "Phone")} align={colAligns.aligns.phone ?? "center"} onAlign={(a) => colAligns.setAlign("phone", a)} />

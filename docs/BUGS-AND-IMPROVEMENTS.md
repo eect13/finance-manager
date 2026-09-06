@@ -1,6 +1,13 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-07. Updated for v3.63.4.
+Re-verified in code 2026-09-07. Updated for v3.63.5.
+
+## Fixed in v3.63.5
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| 1 | Med | Customers/Vendors hid Contact/Email/Phone and crushed Name into one strip; width drag did nothing | Keep every directory column; Name/Contact are fit + resize; pane scrolls |
+| 2 | Med | Status badges (`0.7rem`) and Actions buttons (`h-9`) ignored View type size | em sizing on badges and row action buttons; Status/Actions min-width in em |
 
 ## Fixed in v3.63.4
 

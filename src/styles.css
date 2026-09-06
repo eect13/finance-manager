@@ -1281,7 +1281,7 @@
 
   @container workspace (min-width: 56rem) {
     .party-center {
-      grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
+      grid-template-columns: minmax(22rem, 34rem) minmax(0, 1fr);
     }
 
     .party-pane-list,
@@ -1477,32 +1477,6 @@
         order: -1;
       }
 
-      .party-dir-table col.col-dir-contact,
-      .party-dir-table col.col-dir-email,
-      .party-dir-table col.col-dir-phone,
-      .party-dir-table .col-dir-contact,
-      .party-dir-table .col-dir-email,
-      .party-dir-table .col-dir-phone,
-      .party-dir-table th[data-col="contact"],
-      .party-dir-table th[data-col="email"],
-      .party-dir-table th[data-col="phone"],
-      .party-dir-table td[data-col="contact"],
-      .party-dir-table td[data-col="email"],
-      .party-dir-table td[data-col="phone"] {
-        display: none !important;
-        width: 0 !important;
-        min-width: 0 !important;
-        max-width: 0 !important;
-        padding: 0 !important;
-        overflow: hidden !important;
-        border: 0 !important;
-      }
-
-      .party-dir-table table {
-        width: 100% !important;
-        min-width: 0 !important;
-      }
-
       .notion-cal-day {
         min-height: 2.75rem;
       }
@@ -1580,32 +1554,6 @@
     .notion-cal-day .notion-cal-pill ~ .notion-cal-pill,
     .notion-cal-more {
       display: none;
-    }
-
-    .party-dir-table col.col-dir-contact,
-    .party-dir-table col.col-dir-email,
-    .party-dir-table col.col-dir-phone,
-    .party-dir-table .col-dir-contact,
-    .party-dir-table .col-dir-email,
-    .party-dir-table .col-dir-phone,
-    .party-dir-table th[data-col="contact"],
-    .party-dir-table th[data-col="email"],
-    .party-dir-table th[data-col="phone"],
-    .party-dir-table td[data-col="contact"],
-    .party-dir-table td[data-col="email"],
-    .party-dir-table td[data-col="phone"] {
-      display: none !important;
-      width: 0 !important;
-      min-width: 0 !important;
-      max-width: 0 !important;
-      padding: 0 !important;
-      overflow: hidden !important;
-      border: 0 !important;
-    }
-
-    .party-dir-table table {
-      width: 100% !important;
-      min-width: 0 !important;
     }
   }
 
@@ -4735,7 +4683,7 @@ body.is-phone-move-dragging {
 
 /* v3.62.60: Close checklist — Status fits "Status"/"Blocked"; Detail is sole flex */
 .list-grid thead th[data-col="status"] {
-  min-width: 7.5rem !important;
+  min-width: 7.5em !important;
 }
 .list-grid thead th[data-col="status"] .sort-header-title {
   overflow: visible;
@@ -5506,12 +5454,12 @@ body.is-phone-move-dragging {
   background-color: color-mix(in oklab, var(--color-primary) 10%, var(--color-card));
 }
 
-/* Status title matches other headers (text-sm). Body badges match the row, not 0.85em. */
+/* Status title matches other headers. Body badges follow row type size. */
 .register-matrix thead th.col-status,
 .register-matrix thead th.col-status span,
 .register-matrix thead th.col-status .sort-header-title,
 .register-matrix thead th.col-status .sort-header-main {
-  font-size: 0.875rem !important;
+  font-size: inherit !important;
 }
 
 .register-matrix tbody td.col-status,
@@ -6273,6 +6221,115 @@ thead button.sort-header-label:hover {
   z-index: 90;
   pointer-events: auto;
 }
+
+/* =============================================================================
+   v3.63.5 — Customers/Vendors: separate Name + Contact with resize; Status/Actions
+   follow View type size (--register-font) instead of rem locks.
+   ============================================================================= */
+
+.party-dir-table > table {
+  width: max-content !important;
+  min-width: 100%;
+  max-width: none;
+  table-layout: fixed;
+}
+
+.party-dir-table col.col-dir-contact,
+.party-dir-table col.col-dir-email,
+.party-dir-table col.col-dir-phone {
+  display: table-column !important;
+}
+.party-dir-table th[data-col="contact"],
+.party-dir-table th[data-col="email"],
+.party-dir-table th[data-col="phone"],
+.party-dir-table td[data-col="contact"],
+.party-dir-table td[data-col="email"],
+.party-dir-table td[data-col="phone"] {
+  display: table-cell !important;
+  width: auto;
+  min-width: 7em !important;
+  max-width: none !important;
+  padding-left: var(--list-cell-px) !important;
+  padding-right: var(--list-cell-px) !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.party-dir-table thead th[data-col="name"],
+.party-dir-table tbody td[data-col="name"],
+.party-dir-table colgroup col.col-dir-name {
+  min-width: 8em !important;
+  max-width: none !important;
+}
+
+/* Sticky name for H-scroll, but a cell divider — not a merged strip. */
+.party-dir-table th[data-col="name"],
+.party-dir-table td[data-col="name"] {
+  box-shadow: inset -1px 0 0 var(--color-table-divider, color-mix(in oklab, var(--color-border) 80%, transparent)) !important;
+}
+
+.party-dir-table thead th:not(:last-child),
+.party-dir-table tbody td:not(:last-child) {
+  box-shadow: inset -1px 0 0 var(--color-table-divider, color-mix(in oklab, var(--color-border) 80%, transparent));
+}
+
+.party-dir-table td[data-col="email"],
+.party-dir-table td[data-col="contact"] {
+  max-width: none;
+}
+
+/* Status + Actions: size in em so View → type size reflows the content. */
+.list-grid th[data-col="status"],
+.list-grid td[data-col="status"],
+.register-matrix th.col-status,
+.register-matrix td.col-status,
+.party-txn-table th[data-col="status"],
+.party-txn-table td[data-col="status"] {
+  font-size: inherit;
+  min-width: 6.5em !important;
+  overflow: visible !important;
+}
+
+.list-grid td[data-col="status"] > *,
+.list-grid td[data-col="status"] span,
+.register-matrix td.col-status span,
+.party-txn-table td[data-col="status"] span,
+.list-grid td[data-col="status"] button {
+  font-size: 1em !important;
+  line-height: 1.25;
+}
+
+.list-grid colgroup col.col-actions,
+.list-grid th.col-actions,
+.list-grid td.col-actions,
+.list-grid th[data-col="actions"],
+.list-grid td[data-col="actions"] {
+  min-width: 5.5em !important;
+}
+
+.list-grid td.col-actions button,
+.list-grid td[data-col="actions"] button {
+  height: 2.15em;
+  min-height: 2.15em;
+  font-size: 1em;
+  padding-left: 0.65em;
+  padding-right: 0.65em;
+}
+
+.list-grid td.col-actions button.size-8,
+.list-grid td.col-actions button.px-0 {
+  width: 2.15em;
+  min-width: 2.15em;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.list-grid td.col-actions button svg {
+  width: 1em;
+  height: 1em;
+}
+
 
 
 

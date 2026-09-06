@@ -24,7 +24,7 @@ import { RegisterPrint, requestPrint } from "@/components/print-preview";
 import { RegisterPost } from "@/components/register-post";
 import { RegisterSwap } from "@/components/register-swap";
 import { ShopTick } from "@/components/shop-tick";
-import { SortHeader } from "@/components/sort-header";
+import { SortHeader, ColResize } from "@/components/sort-header";
 import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
 import { CheckStatusControl } from "@/components/check-status-menu";
@@ -1824,6 +1824,7 @@ function RegisterTable({
                 )}
                 style={{
                   width: !cols[col.id] ? 0 : col.id === flexColId ? undefined : colWidths[col.id],
+                  minWidth: !cols[col.id] ? 0 : colWidths[col.id],
                 }}
               />
             ))}
@@ -1832,6 +1833,7 @@ function RegisterTable({
             <tr>
               <th
                 className="col-check no-print relative"
+                style={{ width: colWidths.check, minWidth: colWidths.check }}
                 onClick={stopOpen}
                 onDoubleClick={stopOpen}
                 onPointerDown={stopOpen}
@@ -1852,6 +1854,24 @@ function RegisterTable({
                     label="Select all"
                   />
                 </span>
+                <ColResize
+                  width={colWidths.check}
+                  onWidth={(n) => onColWidth("check", n)}
+                  onFit={() => {
+                    const tableEl = wrapRef.current?.querySelector("table");
+                    if (!tableEl) return;
+                    onColWidth(
+                      "check",
+                      fitColumnWidth({
+                        table: tableEl,
+                        selector: "td.col-check",
+                        header: " ",
+                        min: 36,
+                        max: 88,
+                      }),
+                    );
+                  }}
+                />
               </th>
               <SortHeader
                 label="Date"

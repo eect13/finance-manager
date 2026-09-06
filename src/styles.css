@@ -5409,6 +5409,169 @@ body.is-phone-move-dragging {
   background: color-mix(in oklab, var(--color-primary) 10%, var(--color-card));
 }
 
+/* =============================================================================
+   v3.62.84 — edge-to-edge select, sticky Date, Status type, hide party detail
+   ============================================================================= */
+
+/* Selected / focused row fills the card edge — last cell extends into the 2xl radius */
+.list-grid tbody tr[data-selected="true"] td,
+.register-matrix tbody tr[data-selected="true"] td,
+.recon-table-card tbody tr[data-selected="true"] td,
+.party-dir-table tbody tr[data-selected="true"] td,
+.party-txn-table tbody tr[data-selected="true"] td {
+  background-color: color-mix(in oklab, var(--color-primary) 12%, var(--color-card));
+}
+
+.list-grid tbody tr[data-focused="true"]:not([data-selected]) td,
+.register-matrix tbody tr[data-focused="true"]:not([data-selected]) td,
+.recon-table-card tbody tr[data-focused="true"]:not([data-selected]) td,
+.party-dir-table tbody tr[data-focused="true"]:not([data-selected]) td {
+  background-color: color-mix(in oklab, var(--color-primary) 10%, var(--color-card));
+}
+
+.list-grid tbody tr[data-selected="true"] td:last-child,
+.register-matrix tbody tr[data-selected="true"] td:last-child,
+.recon-table-card tbody tr[data-selected="true"] td:last-child,
+.party-dir-table tbody tr[data-selected="true"] td:last-child,
+.list-grid tbody tr[data-focused="true"] td:last-child,
+.register-matrix tbody tr[data-focused="true"] td:last-child,
+.recon-table-card tbody tr[data-focused="true"] td:last-child,
+.party-dir-table tbody tr[data-focused="true"] td:last-child {
+  box-shadow: 10px 0 0 0 color-mix(in oklab, var(--color-primary) 12%, var(--color-card));
+}
+
+.list-grid tbody tr[data-focused="true"]:not([data-selected]) td:last-child,
+.register-matrix tbody tr[data-focused="true"]:not([data-selected]) td:last-child,
+.recon-table-card tbody tr[data-focused="true"]:not([data-selected]) td:last-child,
+.party-dir-table tbody tr[data-focused="true"]:not([data-selected]) td:last-child {
+  box-shadow: 10px 0 0 0 color-mix(in oklab, var(--color-primary) 10%, var(--color-card));
+}
+
+.register-virt-pad td,
+.list-grid tbody tr[aria-hidden] td,
+.register-matrix tbody tr[aria-hidden] td {
+  box-shadow: none !important;
+}
+
+/* Sticky headers on every list (Excel freeze-top) */
+.list-grid thead th,
+.register-matrix thead th,
+.recon-table-card thead th,
+.party-dir-table thead th,
+.party-txn-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  background: var(--color-card);
+  background-color: var(--color-card);
+}
+
+/* Reconcile / Register: Date title + column freeze next to the tick (Excel freeze panes) */
+.register-matrix thead th.col-date,
+.recon-table-card thead th[data-col="date"] {
+  position: sticky !important;
+  top: 0 !important;
+  left: var(--list-check-col) !important;
+  z-index: 6;
+  background: var(--color-card);
+  background-color: var(--color-card);
+}
+
+.register-matrix tbody td.col-date,
+.recon-table-card tbody td[data-col="date"] {
+  position: sticky !important;
+  left: var(--list-check-col) !important;
+  top: auto !important;
+  z-index: 2;
+  background: var(--color-card);
+  background-color: var(--color-card);
+  box-shadow: 1px 0 0 color-mix(in oklab, var(--color-border) 80%, transparent);
+}
+
+.hide-check .col-date,
+.register-matrix.hide-check thead th.col-date,
+.register-matrix.hide-check tbody td.col-date {
+  left: 0 !important;
+}
+
+.register-matrix tbody tr[data-selected="true"] td.col-date,
+.recon-table-card tbody tr[data-selected="true"] td[data-col="date"],
+.register-matrix tbody tr[data-focused="true"] td.col-date,
+.recon-table-card tbody tr[data-focused="true"] td[data-col="date"] {
+  background-color: color-mix(in oklab, var(--color-primary) 12%, var(--color-card));
+}
+
+.register-matrix tbody tr[data-focused="true"]:not([data-selected]) td.col-date,
+.recon-table-card tbody tr[data-focused="true"]:not([data-selected]) td[data-col="date"] {
+  background-color: color-mix(in oklab, var(--color-primary) 10%, var(--color-card));
+}
+
+/* Status title matches other headers (text-sm). Body badges match the row, not 0.85em. */
+.register-matrix thead th.col-status,
+.register-matrix thead th.col-status span,
+.register-matrix thead th.col-status .sort-header-title,
+.register-matrix thead th.col-status .sort-header-main {
+  font-size: 0.875rem !important;
+}
+
+.register-matrix tbody td.col-status,
+.register-matrix tbody td.col-status span {
+  font-size: 1em !important;
+}
+
+/* Tabular figures on money / phone / days */
+.list-grid td[data-col="amount"],
+.list-grid td[data-col="balance"],
+.list-grid td[data-col="open"],
+.list-grid td[data-col="payment"],
+.list-grid td[data-col="deposit"],
+.list-grid td[data-col="debit"],
+.list-grid td[data-col="credit"],
+.list-grid td[data-col="total"],
+.list-grid td[data-col="phone"],
+.list-grid td[data-col="days"],
+.list-grid td[data-col="rate"],
+.register-matrix td.col-money,
+.register-matrix td.col-date,
+.recon-table-card td[data-col="payment"],
+.recon-table-card td[data-col="deposit"],
+.recon-table-card td[data-col="days"],
+.recon-table-card td[data-col="date"],
+.party-dir-table td[data-col="phone"],
+.party-dir-table td[data-col="balance"] {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Truncate detail fields so row height stays even; width is the resizable col */
+.list-grid td[data-col="memo"],
+.list-grid td[data-col="payee"],
+.list-grid td[data-col="detail"],
+.list-grid td[data-col="email"],
+.list-grid td[data-col="name"],
+.list-grid td[data-col="contact"],
+.register-matrix td.col-payee,
+.register-matrix td.col-memo,
+.recon-table-card td[data-col="payee"],
+.party-dir-table td[data-col="name"],
+.party-dir-table td[data-col="email"],
+.party-dir-table td[data-col="contact"],
+.party-txn-table td[data-col="memo"] {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Customers / Vendors: Hide details / All names on desk as well as phone */
+@layer utilities {
+  @container workspace (min-width: 56rem) {
+    .party-center[data-has-selection="true"] .party-pane-back {
+      display: flex !important;
+      align-items: center;
+    }
+  }
+}
+
+
 
 
 

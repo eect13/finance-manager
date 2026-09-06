@@ -40,7 +40,7 @@ import { useFinanceData, useFinanceStore } from "@/lib/finance/store";
 import { cn } from "@/lib/utils";
 import { customerStatement } from "@/lib/finance/statement";
 import { EMPTY_CUSTOMER, EMPTY_VENDOR, type Customer, type Vendor } from "@/lib/finance/types";
-import { ArrowLeft, ChevronDown, Plus, Printer } from "lucide-react";
+import { ArrowLeft, ChevronDown, PanelRightClose, Plus, Printer } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, cloneElement, isValidElement, type ReactElement, type ReactNode } from "react";
 import { toast } from "sonner";
 import { ConfirmDelete } from "@/components/confirm-delete";
@@ -745,7 +745,7 @@ function PartySplit({
   onSaveCreate: () => void;
   list: PartyDirRow[];
   selectedId: string | null;
-  onSelect: (id: string) => void;
+  onSelect: (id: string | null) => void;
   emptyList: string;
   currency: string;
   detail: ReactNode;
@@ -765,6 +765,11 @@ function PartySplit({
 
   function highlight(id: string) {
     onSelect(id);
+  }
+
+  function hideDetail() {
+    onSelect(null);
+    setMobileOpen(false);
   }
 
   function pick(id: string) {
@@ -803,6 +808,12 @@ function PartySplit({
           onClear={() => setBalFilter("all")}
         />
         <ViewToggle value={view} onChange={setView} />
+        {selectedId ? (
+          <Button variant="outline" className="no-print w-fit" onClick={hideDetail}>
+            <PanelRightClose />
+            Hide details
+          </Button>
+        ) : null}
         <Button className="no-print w-fit" onClick={onAdd}>
           <Plus />
           {addLabel}
@@ -824,7 +835,7 @@ function PartySplit({
         </aside>
         <section className={cn("party-pane-detail min-w-0 rounded-3xl bg-card elevation", !mobileOpen && "is-list")}>
           <div className="party-pane-back no-print border-b border-border px-3 py-2">
-            <Button variant="ghost" size="sm" onClick={() => setMobileOpen(false)}>
+            <Button variant="ghost" size="sm" onClick={hideDetail}>
               <ArrowLeft />
               All {kindLabel}s
             </Button>

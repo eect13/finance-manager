@@ -168,7 +168,7 @@ export function SortHeader({
         absorb && "col-flex",
         className,
       )}
-      style={width && !absorb ? { minWidth: width, width } : undefined}
+      style={width != null ? (absorb ? { minWidth: width } : { minWidth: width, width }) : undefined}
       data-align={align}
       data-col={column}
       aria-sort={active ? (dir === "asc" ? "ascending" : "descending") : sortable ? "none" : undefined}

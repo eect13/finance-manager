@@ -26,10 +26,10 @@ export function listColClass(id: string) {
   return "col-fit";
 }
 
-/** Inline width for <col>: skip flex (CSS 100%). Actions uses stored/autofit px like fit cols. */
+/** Inline width for <col>: flex cols keep a drag min so every column is adjustable. */
 export function listColWidthStyle(id: string, width: number): CSSProperties | undefined {
-  if (FLEX_COL.has(id)) return undefined;
-  return { width };
+  if (FLEX_COL.has(id)) return { minWidth: width };
+  return { width, minWidth: width };
 }
 
 /** Desk lists: fill card when roomy; minWidth keeps readable cols and enables card scroll (no crush). */

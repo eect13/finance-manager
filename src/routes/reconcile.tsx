@@ -23,7 +23,7 @@ import {
   isPhoneUi,
   usePhoneUi,
 } from "@/lib/phone-layout";
-import { SortHeader } from "@/components/sort-header";
+import { SortHeader, ColResize } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
 import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
@@ -55,9 +55,9 @@ const RECON_COLS = {
 
 function reconDefaultCols() {
   if (isPhoneUi()) {
-    return { date: 64, type: 72, payee: 128, days: 44, payment: 86, deposit: 86 };
+    return { check: CHECK_COL, date: 64, type: 72, payee: 128, days: 44, payment: 86, deposit: 86 };
   }
-  return { ...RECON_COLS };
+  return { check: CHECK_COL, ...RECON_COLS };
 }
 
 function lineKey(line: CashLine) {
@@ -95,7 +95,7 @@ function ReconcilePage() {
   const [undoing, setUndoing] = useState(false);
   const [printLast, setPrintLast] = useState(false);
   const gridRef = useRef<HTMLDivElement>(null);
-  const cols = useColWidths("finance-manager-recon-cols-v2", reconDefaultCols());
+  const cols = useColWidths("finance-manager-recon-cols-v2", reconDefaultCols(), { min: 36 });
   const colAligns = useColAligns(
     "finance-manager-recon-col-aligns",
     Object.keys(RECON_COLS) as Array<keyof typeof RECON_COLS>,
@@ -230,10 +230,20 @@ function ReconcilePage() {
     else toast.success(keys.length === 1 ? "1 unticked." : `${keys.length} unticked.`);
   }
 
-  function fit(id: keyof typeof RECON_COLS, label: string) {
+  function fit(id: "check" | keyof typeof RECON_COLS, label: string) {
     const table = gridRef.current?.querySelector("table");
     if (!table) return;
-    cols.setWidth(id, fitColumnWidth({ table, selector: `td[data-col="${id}"]`, header: label }));
+    const selector = id === "check" ? "td.col-check" : `td[data-col="${id}"]`;
+    cols.setWidth(
+      id,
+      fitColumnWidth({
+        table,
+        selector,
+        header: label,
+        min: id === "check" ? 36 : 56,
+        max: id === "check" ? 88 : 420,
+      }),
+    );
   }
 
   function finish() {
@@ -804,14 +814,14 @@ function ReconcilePage() {
       <ListCard ref={pointer.bindContainer(gridRef)} tabIndex={0} className="recon-table-card outline-none">
         <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
           <colgroup>
-            <col className="col-check no-print" style={{ width: CHECK_COL }} />
+            <col className="col-check no-print" style={{ width: cols.widths.check, minWidth: cols.widths.check }} />
             {(Object.keys(RECON_COLS) as Array<keyof typeof RECON_COLS>).map((id) => (
               <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id])} />
             ))}
           </colgroup>
           <thead>
             <tr className="border-b border-border text-muted-foreground">
-              <th className="col-check no-print relative">
+              <th className="col-check no-print relative" style={{ width: cols.widths.check, minWidth: cols.widths.check }}>
                 <span className="register-check-cell">
                   <ShopTick
                     checked={allOn}
@@ -820,6 +830,11 @@ function ReconcilePage() {
                     label="Select all"
                   />
                 </span>
+                <ColResize
+                  width={cols.widths.check}
+                  onWidth={(n) => cols.setWidth("check", n)}
+                  onFit={() => fit("check", " ")}
+                />
               </th>
               <SortHeader
                 label="Date"

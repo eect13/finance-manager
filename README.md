@@ -1,4 +1,4 @@
-# Finance Manager v3.63.1
+# Finance Manager v3.63.2
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -12,6 +12,10 @@ The app mark is a **navy tile with cream pillars** — a full opaque square (Win
 
 
 
+## What's new in v3.63.2
+
+- **Remove sample / any DELETE confirm**: the dimmer was sitting on top of the sheet, so Remove could not be clicked after typing DELETE. Same for Purge, Close, Restore, and Register delete.
+
 ## What's new in v3.63.1
 
 - **Android pack**: clean sync without dependencies now installs the Tauri CLI when missing.
@@ -19,6 +23,7 @@ The app mark is a **navy tile with cream pillars** — a full opaque square (Win
 - **Android pack**: sets WRY Android env so cargo emits TauriActivity before Gradle on a fresh gen tree.
 
 ## What's new in v3.63.0
+
 
 - **One paper**: Reports, Forecast, and Options Recurring use the same white/dark table paper as Register (no cream ring around a white grid). Print paper is white.
 - **Date header**: leftover navy wash rules are gone from the stylesheet, not only overridden.

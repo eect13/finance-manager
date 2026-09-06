@@ -31,11 +31,11 @@ export function ConfirmDelete({
   useEffect(() => {
     if (open) setPhrase("");
   }, [open]);
-  const ready = !requirePhrase || phrase === requirePhrase;
+  const ready = !requirePhrase || phrase.trim() === requirePhrase;
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="z-[80]" overlayClassName="z-[80]">
+      <DialogContent className="confirm-delete-sheet" overlayClassName="confirm-delete-overlay">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{body}</DialogDescription>
@@ -48,8 +48,15 @@ export function ConfirmDelete({
             <Input
               value={phrase}
               onChange={(e) => setPhrase(e.target.value)}
-              placeholder={requirePhrase}
+              placeholder={`Type ${requirePhrase}`}
               autoComplete="off"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && ready) {
+                  e.preventDefault();
+                  void onConfirm();
+                }
+              }}
             />
           </div>
         ) : null}

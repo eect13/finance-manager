@@ -6256,6 +6256,19 @@ thead button.sort-header-label:hover {
   background-color: var(--color-table) !important;
 }
 
+/* =============================================================================
+   v3.63.2 — Confirm must sit above its own overlay (sheet z-60 is unlayered)
+   ============================================================================= */
+
+/* Overlay above Post (z-60), sheet above overlay — Tailwind z-[80] loses to .dialog-sheet. */
+.confirm-delete-overlay {
+  z-index: 70;
+}
+.dialog-sheet.confirm-delete-sheet {
+  z-index: 80;
+}
+
+
 
 
 

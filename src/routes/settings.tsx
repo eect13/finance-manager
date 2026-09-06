@@ -604,9 +604,14 @@ function SettingsPage() {
         requirePhrase="DELETE"
         onClose={() => setDropId(null)}
         onConfirm={() => {
-          if (dropId) removeCompany(dropId);
-          setDropId(null);
-          toast.success("Company removed.");
+          if (!dropId) return;
+          try {
+            removeCompany(dropId);
+            setDropId(null);
+            toast.success("Company removed.");
+          } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Could not remove.");
+          }
         }}
       />
       <ConfirmDelete

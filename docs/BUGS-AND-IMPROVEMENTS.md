@@ -1,6 +1,12 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-06. Updated for v3.63.1.
+Re-verified in code 2026-09-06. Updated for v3.63.2.
+
+## Fixed in v3.63.2
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| 1 | High | ConfirmDelete overlay was z-80 (Tailwind) while `.dialog-sheet` stayed unlayered z-60, so Remove/Purge/Close could not be clicked | Unlayered overlay 70 / sheet 80 |
 
 ## Fixed in v3.63.1
 

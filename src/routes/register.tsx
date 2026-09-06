@@ -37,7 +37,9 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { cashRegisterRows } from "@/lib/finance/export";
+import { FIT_MARK, FIT_VERSION } from "@/lib/finance/col-fit-mark";
 import { fitColumnWidth, widthsMatch } from "@/lib/finance/fit-column";
+import { clampCol } from "@/components/use-col-widths";
 import { formatDate, formatRegisterDate, formatShortDate } from "@/lib/finance/format";
 import { openCashLine, stopOpen } from "@/lib/finance/open-record";
 import {
@@ -81,8 +83,6 @@ import { getWorkspaceScrollElement } from "@/lib/workspace-scroll";
 export const Route = createFileRoute("/register")({ component: RegisterPage });
 
 const UI_KEY = "finance-manager-register-ui";
-const FIT_MARK = "finance-manager-colfit";
-const FIT_VERSION = "content-11";
 const MONTH_RANGE = datePresetRange("month");
 const CHECK_COL = 44;
 const COL_MIN = 56;
@@ -125,10 +125,6 @@ function isPhoneUi() {
 
 function defaultColWidths(): ColWidths {
   return isPhoneUi() ? { ...MOBILE_COL_WIDTHS } : { ...DEFAULT_COL_WIDTHS };
-}
-
-function clampCol(n: number, min = COL_MIN, max = COL_MAX) {
-  return Math.min(max, Math.max(min, Math.round(n)));
 }
 
 function parseColWidths(raw: unknown): ColWidths {

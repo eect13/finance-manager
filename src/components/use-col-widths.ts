@@ -1,9 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { FIT_MARK, FIT_VERSION } from "@/lib/finance/col-fit-mark";
 import { ACTIONS_COL_MIN, autoFitTable, columnRole, FLEX_COL_MIN, widthsMatch } from "@/lib/finance/fit-column";
-
-const FIT_MARK = "finance-manager-colfit";
-/** content-11: Actions resizable + labeled; DOM scrollWidth fit; invalidate stale 1% locks */
-const FIT_VERSION = "content-11";
 
 export function clampCol(n: number, min = 56, max = 420) {
   return Math.min(max, Math.max(min, Math.round(n)));

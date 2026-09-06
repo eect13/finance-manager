@@ -598,7 +598,8 @@
     width: 100% !important;
   }
 
-  .list-grid colgroup col.col-actions {
+  .list-grid colgroup col.col-actions,
+  .register-matrix colgroup col.col-actions {
     /* Stored/autofit px via inline style; min keeps ⋯/Delete from card edge */
     min-width: var(--list-actions-min);
     max-width: none;
@@ -890,7 +891,6 @@
   }
 
   .register-matrix .col-money {
-    text-align: center;
     font-variant-numeric: tabular-nums;
   }
 
@@ -907,7 +907,7 @@
   .list-grid td.col-money,
   .register-matrix td.col-money,
   .register-matrix tfoot td.col-money {
-    text-align: center;
+    font-variant-numeric: tabular-nums;
   }
 
   .list-grid th[data-align="right"] > button,
@@ -4376,24 +4376,15 @@ body.is-phone-move-dragging {
   height: 2.25rem;
 }
 
-/* Column align: center + left (right already wired) */
-.list-grid th[data-align="center"],
-.register-matrix th[data-align="center"],
-.list-grid td[data-align="center"],
-.register-matrix td[data-align="center"] {
-  text-align: center;
-}
-.list-grid th[data-align="left"],
-.register-matrix th[data-align="left"],
-.list-grid td[data-align="left"],
-.register-matrix td[data-align="left"] {
-  text-align: left;
-}
+/* Column align prefs (data-align). Headers keep title centered via SortHeader; body honors prefs. */
 .list-grid th[data-align="center"] > button,
 .register-matrix th[data-align="center"] > button,
 .list-grid th[data-align="left"] > button,
-.register-matrix th[data-align="left"] > button {
-  justify-content: inherit;
+.register-matrix th[data-align="left"] > button,
+.list-grid th[data-align="right"] > button,
+.register-matrix th[data-align="right"] > button {
+  justify-content: center;
+  text-align: center;
 }
 .list-grid td[data-align="left"],
 .register-matrix td[data-align="left"] { text-align: left !important; }

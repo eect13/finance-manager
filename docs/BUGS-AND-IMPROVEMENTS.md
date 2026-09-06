@@ -1,6 +1,16 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-06. Updated for v3.63.2.
+Re-verified in code 2026-09-07. Updated for v3.63.3.
+
+## Fixed in v3.63.3
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| 1 | High | Root `deploy.bat` was LF-only; GitHub zip double-click on Windows failed | `.gitattributes` `*.bat eol=crlf`; bats rewritten ASCII CRLF |
+| 2 | High | `cd /d "%~dp0"` + unzip folder `finance-manager-main (1)` / trailing `\` quote trap | `cd /d "%~dp0."` and two-step cd; no `%CD%` inside `( )` blocks |
+| 3 | Med | Android pack on a clean unzip missed npm deps, cargo on PATH, and `aarch64-linux-android` | packer `npm install`, prepend `~/.cargo/bin`, `rustup target add` |
+| 4 | Low | `apk.bat` required Microsoft JDK 17 only and hardcoded `C:\Users\Eric\finance-manager-v362` | Bat only cds + runs packer; packer already finds Temurin/Microsoft 17 |
+| 5 | Low | README was a 3.62.x changelog dump; `desk.png` was a phone shot | Slim README + recaptured gallery |
 
 ## Fixed in v3.63.2
 

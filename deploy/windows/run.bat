@@ -1,14 +1,16 @@
 @echo off
-setlocal
-cd /d "%~dp0\..\.."
+setlocal EnableExtensions
+cd /d "%~dp0."
+cd /d "..\.."
+if not exist "package.json" goto :noroots
 
 if exist "src-tauri\target\release\Finance Manager.exe" (
   start "" "src-tauri\target\release\Finance Manager.exe"
-  goto :eof
+  exit /b 0
 )
 if exist "src-tauri\target\release\finance-manager.exe" (
   start "" "src-tauri\target\release\finance-manager.exe"
-  goto :eof
+  exit /b 0
 )
 
 echo Install Finance Manager first.
@@ -17,3 +19,9 @@ echo   src-tauri\target\release\bundle\nsis\
 echo After install, launch Finance Manager from the Start menu.
 echo.
 pause
+exit /b 1
+
+:noroots
+echo ERROR: Could not find the Finance Manager repo root.
+pause
+exit /b 1

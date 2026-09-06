@@ -36,11 +36,13 @@ function fail(msg, extra) {
 }
 
 function run(cmd, cmdArgs) {
+  const bat = WIN && /\.(bat|cmd)$/i.test(String(cmd).replace(/^"|"$/g, ""));
   const r = spawnSync(cmd, cmdArgs, {
     cwd: ROOT,
     stdio: "inherit",
-    shell: WIN,
+    shell: bat,
     env: process.env,
+    windowsHide: true,
   });
   return r.status ?? 1;
 }
@@ -79,6 +81,16 @@ console.log("    1) Vite packs the UI     ← ends with “Phase 1 done”");
 console.log("    2) cargo compiles Rust   ← several minutes, looks like a new process");
 console.log("    3) MSI / NSIS installers ← Explorer opens the bundle folder\n");
 
+if (!existsSync(join(ROOT, "package.json")) || !existsSync(join(ROOT, "scripts", "desktop-setup.mjs"))) {
+  fail(
+    "This is not the Finance Manager folder.",
+    "Unzip the GitHub download so deploy.bat sits next to package.json, then double-click it.",
+  );
+}
+if (!existsSync(join(ROOT, "desktop.html"))) {
+  fail("desktop.html is missing — the GitHub zip looks incomplete.");
+}
+
 log("1/4", "Tools");
 const major = Number(process.versions.node.split(".")[0]);
 if (major < 22) {
@@ -92,7 +104,7 @@ console.log(`  Node ${process.version}`);
 console.log(`  ${existsSync(join(cargoBin, WIN ? "cargo.exe" : "cargo")) ? "Rust cargo on PATH" : "Rust will install in step 2 if missing"}`);
 
 log("2/4", "Install deps + compile release (Tauri)");
-if (run(WIN ? "node.exe" : "node", ["scripts/desktop-setup.mjs", "--build"]) !== 0) {
+if (run(process.execPath, ["scripts/desktop-setup.mjs", "--build"]) !== 0) {
   fail(
     "Step 2 failed.",
     "desktop-setup.bat only runs the app. Use this script (deploy.bat) for installers.",

@@ -94,6 +94,85 @@ function which(cmd) {
   return r.status === 0;
 }
 
+function prependCargoBin() {
+  const bin = join(homedir(), ".cargo", "bin");
+  if (!existsSync(bin)) return;
+  const key =
+    WIN ? Object.keys(process.env).find((k) => k.toLowerCase() === "path") || "Path" : "PATH";
+  const cur = process.env[key] || process.env.PATH || "";
+  const needle = WIN ? bin.toLowerCase() : bin;
+  const hay = WIN ? cur.toLowerCase() : cur;
+  if (hay.includes(needle)) return;
+  const next = `${bin}${WIN ? ";" : ":"}${cur}`;
+  process.env[key] = next;
+  process.env.PATH = next;
+}
+
+function npmCmd() {
+  const local = join(dirname(process.execPath), WIN ? "npm.cmd" : "npm");
+  if (existsSync(local)) return local;
+  return WIN ? "npm.cmd" : "npm";
+}
+
+function rustupBin() {
+  const p = join(homedir(), ".cargo", "bin", WIN ? "rustup.exe" : "rustup");
+  return existsSync(p) ? p : "rustup";
+}
+
+function ensureRust() {
+  prependCargoBin();
+  if (which("rustc") && which("cargo")) return;
+  console.log("\nRust is missing — installing (one time)…");
+  if (WIN) {
+    const winget = spawnSync(
+      "winget",
+      [
+        "install",
+        "-e",
+        "--id",
+        "Rustlang.Rustup",
+        "--accept-package-agreements",
+        "--accept-source-agreements",
+      ],
+      { stdio: "inherit", shell: true },
+    );
+    if (winget.status !== 0) {
+      fail(
+        "Could not install Rust automatically.",
+        "Open https://rustup.rs then re-run apk.bat.\nOr double-click desktop-setup.bat first.",
+      );
+    }
+  } else {
+    const sh = spawnSync(
+      "sh",
+      ["-c", "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y"],
+      { stdio: "inherit", env: process.env },
+    );
+    if (sh.status !== 0) fail("Could not install Rust automatically.", "Open https://rustup.rs then re-run.");
+  }
+  prependCargoBin();
+  if (!which("rustc") || !which("cargo")) {
+    fail(
+      "Rust installed, but this window cannot see it yet.",
+      "Close this window, open a new one, then double-click apk.bat again.",
+    );
+  }
+}
+
+function ensureAndroidRustTarget() {
+  prependCargoBin();
+  const rustup = rustupBin();
+  const listed = runCapture(rustup, ["target", "list", "--installed"]);
+  if (listed.out.includes("aarch64-linux-android")) {
+    console.log("  Rust target aarch64-linux-android OK");
+    return;
+  }
+  console.log("  Adding Rust target aarch64-linux-android (one time)…");
+  if (run(rustup, ["target", "add", "aarch64-linux-android"]) !== 0) {
+    fail("Could not add aarch64-linux-android.", "Run: rustup target add aarch64-linux-android");
+  }
+}
+
 function javaMajor(javaHome) {
   const bin = join(javaHome, "bin", WIN ? "java.exe" : "java");
   if (!existsSync(bin)) return null;
@@ -270,8 +349,8 @@ function ensureNpmDeps() {
   const cliBin = join(ROOT, "node_modules", ".bin", WIN ? "tauri.cmd" : "tauri");
   if (existsSync(cliJs) || existsSync(cliBin)) return;
   console.log("\nnode_modules/@tauri-apps/cli missing (common after sync without node_modules)…");
-  console.log("Running npm install…");
-  const status = run(WIN ? "npm.cmd" : "npm", ["install"], process.env);
+  console.log("Running npm install --legacy-peer-deps…");
+  const status = run(npmCmd(), ["install", "--legacy-peer-deps"], process.env, { shell: WIN });
   if (status !== 0 || !(existsSync(cliJs) || existsSync(cliBin))) {
     fail("npm install failed or @tauri-apps/cli still missing.", "Run npm install at the repo root, then retry.");
   }
@@ -1029,17 +1108,17 @@ function fallbackAssemble(env, sdk) {
 
 console.log("Finance Manager — Android APK (Tauri, not a PWA)\n");
 
+prependCargoBin();
 if (!which("node")) fail("Node.js 22+ is required.", "Install from https://nodejs.org");
-if (!which("rustc") || !which("cargo")) {
-  fail("Rust is required for the Android APK.", "Run desktop-setup.bat once, then this again.");
-}
+ensureRust();
+ensureAndroidRustTarget();
 
 const jdk = findJdk17();
 if (!jdk) {
   fail(
     "JDK 17 not found (required).",
     [
-      "Install Microsoft OpenJDK 17, then re-run deploy\\android\\apk.bat.",
+      "Install Microsoft OpenJDK 17 or Eclipse Temurin 17, then re-run apk.bat.",
       "  https://learn.microsoft.com/en-us/java/openjdk/download",
       "",
       "Do NOT use Android Studio’s bundled JBR (often Java 25) — it breaks Gradle for this project.",

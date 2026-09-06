@@ -1,0 +1,3 @@
+# Windows double-click of a GitHub zip fails if .bat files are LF-only.
+*.bat text eol=crlf
+*.cmd text eol=crlf

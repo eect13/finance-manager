@@ -9,7 +9,7 @@
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { homedir, platform } from "node:os";
-import { delimiter, join } from "node:path";
+import { delimiter, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = join(fileURLToPath(new URL("..", import.meta.url)));
@@ -34,12 +34,27 @@ function which(cmd) {
   return r.status === 0;
 }
 
+function winQuote(cmd) {
+  if (!WIN) return cmd;
+  if (!/[ \t]/.test(cmd)) return cmd;
+  if (cmd.startsWith('"') && cmd.endsWith('"')) return cmd;
+  return `"${cmd}"`;
+}
+
+function npmCmd() {
+  const local = join(dirname(process.execPath), WIN ? "npm.cmd" : "npm");
+  if (existsSync(local)) return local;
+  return WIN ? "npm.cmd" : "npm";
+}
+
 function run(cmd, cmdArgs, opts = {}) {
-  const r = spawnSync(cmd, cmdArgs, {
+  const bat = WIN && /\.(bat|cmd)$/i.test(String(cmd).replace(/^"|"$/g, ""));
+  const r = spawnSync(bat ? winQuote(cmd) : cmd, cmdArgs, {
     cwd: ROOT,
     stdio: "inherit",
-    shell: WIN,
+    shell: bat,
     env: process.env,
+    windowsHide: true,
     ...opts,
   });
   return r.status ?? 1;
@@ -54,6 +69,13 @@ function prependCargoBin() {
 
 function nodeMajor() {
   return Number(process.versions.node.split(".")[0]);
+}
+
+if (!existsSync(join(ROOT, "package.json")) || !existsSync(join(ROOT, "desktop.html"))) {
+  fail(
+    "This is not the Finance Manager folder.",
+    "Unzip the GitHub download so desktop-setup.bat sits next to package.json, then run it again.",
+  );
 }
 
 if (nodeMajor() < 22) {
@@ -104,9 +126,41 @@ if (!which("rustc") || !which("cargo")) {
 
 if (!which("rustc") || !which("cargo")) {
   fail(
-    "Rust installed, but this terminal cannot see it yet.",
-    "Close VS Code completely, reopen the project folder, then run setup once more.",
+    "Rust installed, but this window cannot see it yet.",
+    "Close this window, open a new one, then run setup once more.",
   );
+}
+
+if (WIN) {
+  const vswhere = join(
+    process.env["ProgramFiles(x86)"] || "C:\\Program Files (x86)",
+    "Microsoft Visual Studio",
+    "Installer",
+    "vswhere.exe",
+  );
+  let msvc = which("link");
+  if (!msvc && existsSync(vswhere)) {
+    const probe = spawnSync(
+      vswhere,
+      [
+        "-latest",
+        "-requires",
+        "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
+        "-property",
+        "installationPath",
+      ],
+      { encoding: "utf8", windowsHide: true, stdio: ["ignore", "pipe", "ignore"] },
+    );
+    msvc = probe.status === 0 && Boolean((probe.stdout || "").trim());
+  }
+  if (!msvc) {
+    console.log(`
+  Visual Studio Build Tools (Desktop development with C++) not found.
+  Cargo needs the MSVC linker for the Windows .exe.
+  Install once: https://visualstudio.microsoft.com/visual-cpp-build-tools/
+  Tick "Desktop development with C++", then run this again.
+`);
+  }
 }
 
 if (platform() === "linux") {
@@ -121,7 +175,7 @@ Linux needs WebKitGTK once. Paste this in a terminal, then re-run setup:
 }
 
 log("Installing npm packages…");
-if (run(WIN ? "npm.cmd" : "npm", ["install", "--legacy-peer-deps"]) !== 0) {
+if (run(npmCmd(), ["install", "--legacy-peer-deps"]) !== 0) {
   fail("npm install failed.");
 }
 
@@ -161,7 +215,7 @@ if (wantBuild) {
     );
     extra.push("--", "--bundles", "nsis");
   }
-  if (run(WIN ? "npm.cmd" : "npm", ["run", "desktop:build", ...extra]) !== 0) {
+  if (run(npmCmd(), ["run", "desktop:build", ...extra]) !== 0) {
     fail("Desktop build failed.");
   }
   console.log(`
@@ -173,7 +227,7 @@ if (wantBuild) {
 
 if (wantRun) {
   log("Opening Finance Manager… first launch compiles Rust (slow). Next times are faster.");
-  const code = run(WIN ? "npm.cmd" : "npm", ["run", "desktop"]);
+  const code = run(npmCmd(), ["run", "desktop"]);
   process.exit(code);
 }
 

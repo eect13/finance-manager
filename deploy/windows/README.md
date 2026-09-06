@@ -2,6 +2,8 @@
 
 This is a **Tauri 2 desktop app**. Double-click `deploy.bat` at the repo root for an NSIS setup (and MSI if WiX v3 is installed). Copy that installer to other PCs — they do not need Node or Rust.
 
+A second GitHub unzip named `finance-manager-main (1)` works. Do not move `deploy.bat` out of the folder.
+
 ## One-click on this PC
 
 1. Install **Node 22** and **Visual Studio Build Tools** with “Desktop development with C++”.

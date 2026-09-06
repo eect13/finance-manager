@@ -647,10 +647,8 @@ function ReconcilePage() {
                         key={line.id}
                         ref={phoneVirt.measureElement}
                         data-index={item.index}
-                        className={cn(
-                          "border-b border-border/70 last:border-0 touch-manipulation",
-                          on && "bg-primary/15",
-                        )}
+                        data-selected={on ? "true" : undefined}
+                        className="border-b border-border/70 last:border-0 touch-manipulation"
                         {...openProps(openKindFor(line), openId, { click: true })}
                       >
                         <td
@@ -730,10 +728,8 @@ function ReconcilePage() {
                 return (
                   <li key={line.id} ref={phoneVirt.measureElement} data-index={item.index}>
                       <div
-                        className={cn(
-                          "recon-phone-card flex items-start gap-2 rounded-2xl border border-border/40 bg-card px-3 py-3 touch-manipulation shadow-none",
-                          on && "bg-primary/15",
-                        )}
+                        data-selected={on ? "true" : undefined}
+                        className="recon-phone-card flex items-start gap-2 rounded-2xl border border-border/40 bg-card px-3 py-3 touch-manipulation shadow-none"
                         {...openProps(openKindFor(line), openId, { click: true })}
                       >
                         <div

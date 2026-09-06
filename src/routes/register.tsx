@@ -1396,14 +1396,13 @@ function RegisterTable({
                       data-move-row-date={dragOn && !isOpening ? line.date : undefined}
                       data-dragging={isDragging ? "true" : undefined}
                       data-drop-place={overRow === line.id && dragOn ? overPlace ?? undefined : undefined}
-                      data-focused={activeId === line.id ? "true" : undefined}
+                      data-opening={isOpening ? "true" : undefined}
+                      data-focused={!isOpening && activeId === line.id ? "true" : undefined}
                       data-row-id={isOpening ? undefined : line.id}
-                      aria-current={activeId === line.id ? "true" : undefined}
-                      data-selected={isOn ? "true" : undefined}
+                      aria-current={!isOpening && activeId === line.id ? "true" : undefined}
+                      data-selected={!isOpening && isOn ? "true" : undefined}
                       className={cn(
                         "border-b border-border/70 last:border-0 touch-manipulation",
-                        isOn && "bg-primary/15",
-                        activeId === line.id && "bg-accent/30",
                         isDragging && "ring-1 ring-inset ring-primary opacity-60",
                         overRow === line.id && dragOn && "bg-accent/50",
                       )}
@@ -1565,14 +1564,13 @@ function RegisterTable({
                     data-move-row-date={dragOn && !isOpening ? line.date : undefined}
                     data-dragging={isDragging ? "true" : undefined}
                     data-drop-place={overRow === line.id && dragOn ? overPlace ?? undefined : undefined}
-                    data-focused={activeId === line.id ? "true" : undefined}
+                    data-opening={isOpening ? "true" : undefined}
+                    data-focused={!isOpening && activeId === line.id ? "true" : undefined}
                     data-row-id={isOpening ? undefined : line.id}
-                    aria-current={activeId === line.id ? "true" : undefined}
-                    data-selected={isOn ? "true" : undefined}
+                    aria-current={!isOpening && activeId === line.id ? "true" : undefined}
+                    data-selected={!isOpening && isOn ? "true" : undefined}
                     className={cn(
                       "register-phone-card rounded-2xl border border-border/40 bg-card px-3 py-3 touch-manipulation shadow-none",
-                      isOn && "bg-primary/15",
-                      activeId === line.id && "bg-accent/30",
                       isDragging && "ring-2 ring-primary opacity-60",
                       overRow === line.id && dragOn && "bg-accent/50",
                     )}
@@ -2152,11 +2150,12 @@ const RegisterRow = memo(
         ref={measureRef}
         data-index={index}
         data-open={isOpening ? undefined : "true"}
-        data-selected={isOn ? "true" : undefined}
-        data-active={isActive ? "true" : undefined}
-        data-focused={isActive ? "true" : undefined}
+        data-opening={isOpening ? "true" : undefined}
+        data-selected={!isOpening && isOn ? "true" : undefined}
+        data-active={!isOpening && isActive ? "true" : undefined}
+        data-focused={!isOpening && isActive ? "true" : undefined}
         data-row-id={isOpening ? undefined : line.id}
-        aria-current={isActive ? "true" : undefined}
+        aria-current={!isOpening && isActive ? "true" : undefined}
         data-dragging={dragging ? "true" : undefined}
         data-drop={over ? "true" : undefined}
         data-drop-place={over && overPlace ? overPlace : undefined}

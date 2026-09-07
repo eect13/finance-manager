@@ -6550,6 +6550,26 @@ thead button.sort-header-label:hover {
   }
 }
 
+/* Reconcile list is in-flow like Register — workspace is the Y scroller, not a nested card.
+   `overflow: visible !important` beats `.list-card.list-grid { overflow: auto !important }`.
+   Do not mix overflow-x:auto + overflow-y:visible (spec computes Y to auto). */
+.recon-phone-list .list-card,
+.recon-phone-list .register-phone-table,
+.recon-table-card,
+.recon-table-card.list-card,
+.recon-table-card.list-card.list-grid,
+.recon-table-card.list-scroll {
+  max-height: none !important;
+  overflow: visible !important;
+}
+.recon-phone-list .list-grid,
+.recon-table-card .list-grid {
+  max-height: none !important;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+
 
 
 

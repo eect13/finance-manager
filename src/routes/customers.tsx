@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Printer } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
+import { useColVisible } from "@/components/column-chips";
 import { CsvButton } from "@/components/export-menu";
 import { ListPrint } from "@/components/list-print";
 import { CustomerCenter } from "@/components/party-center";
@@ -15,8 +16,11 @@ import { useFinanceData } from "@/lib/finance/store";
 
 export const Route = createFileRoute("/customers")({ component: CustomersPage });
 
+const DIR_VIS = ["name", "contact", "email", "phone", "balance"] as const;
+
 function CustomersPage() {
   const data = useFinanceData();
+  const vis = useColVisible("finance-manager-customer-dir-vis", DIR_VIS);
   const totalOpen = data.customers.reduce((sum, c) => sum + customerOpenBalance(data, c.id), 0);
 
   return (
@@ -26,7 +30,7 @@ function CustomersPage() {
       wide
       actions={
         <>
-          <CsvButton filename="customers.csv" rows={customerRows(data)} />
+          <CsvButton filename="customers.csv" rows={customerRows(data)} visible={vis.on} />
           <Button variant="outline" onClick={requestPrint}>
             <Printer />
             Print
@@ -53,12 +57,13 @@ function CustomersPage() {
       </div>
       <ListPrint
         title="Customers"
+        visible={vis.on}
         columns={[
           { key: "name", label: "Name" },
           { key: "contact", label: "Contact" },
           { key: "email", label: "Email" },
           { key: "phone", label: "Phone" },
-          { key: "open", label: "Open", align: "right" },
+          { key: "balance", label: "Open", align: "right" },
         ]}
         rows={[...data.customers]
           .sort((a, b) => a.name.localeCompare(b.name, "en", { sensitivity: "base" }))
@@ -67,7 +72,7 @@ function CustomersPage() {
             contact: c.contact,
             email: c.email,
             phone: c.phone,
-            open: formatMoney(customerOpenBalance(data, c.id), data.settings.currency),
+            balance: formatMoney(customerOpenBalance(data, c.id), data.settings.currency),
           }))}
       />
     </AppShell>

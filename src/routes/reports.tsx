@@ -91,7 +91,7 @@ function ReportsPage() {
       wide
       actions={
         <>
-          <CsvButton filename="trial-balance.csv" rows={trialBalanceRows(data)} />
+          <CsvButton filename="trial-balance.csv" rows={trialBalanceRows(data)} visible={tbVis.on} />
           <Button variant="outline" onClick={requestPrint}>
             <Printer />
             Print

@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Printer } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
+import { useColVisible } from "@/components/column-chips";
 import { CsvButton } from "@/components/export-menu";
 import { ListPrint } from "@/components/list-print";
 import { VendorCenter } from "@/components/party-center";
@@ -15,8 +16,11 @@ import { useFinanceData } from "@/lib/finance/store";
 
 export const Route = createFileRoute("/vendors")({ component: VendorsPage });
 
+const DIR_VIS = ["name", "contact", "email", "phone", "balance"] as const;
+
 function VendorsPage() {
   const data = useFinanceData();
+  const vis = useColVisible("finance-manager-vendor-dir-vis", DIR_VIS);
   const totalOpen = data.vendors.reduce((sum, v) => sum + vendorOpenBalance(data, v.id), 0);
 
   return (
@@ -26,7 +30,7 @@ function VendorsPage() {
       wide
       actions={
         <>
-          <CsvButton filename="vendors.csv" rows={vendorRows(data)} />
+          <CsvButton filename="vendors.csv" rows={vendorRows(data)} visible={vis.on} />
           <Button variant="outline" onClick={requestPrint}>
             <Printer />
             Print
@@ -53,12 +57,13 @@ function VendorsPage() {
       </div>
       <ListPrint
         title="Vendors"
+        visible={vis.on}
         columns={[
           { key: "name", label: "Name" },
           { key: "contact", label: "Contact" },
           { key: "email", label: "Email" },
           { key: "phone", label: "Phone" },
-          { key: "open", label: "Open", align: "right" },
+          { key: "balance", label: "Open", align: "right" },
         ]}
         rows={[...data.vendors]
           .sort((a, b) => a.name.localeCompare(b.name, "en", { sensitivity: "base" }))
@@ -67,7 +72,7 @@ function VendorsPage() {
             contact: v.contact,
             email: v.email,
             phone: v.phone,
-            open: formatMoney(vendorOpenBalance(data, v.id), data.settings.currency),
+            balance: formatMoney(vendorOpenBalance(data, v.id), data.settings.currency),
           }))}
       />
     </AppShell>

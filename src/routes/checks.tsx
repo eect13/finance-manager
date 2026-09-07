@@ -160,7 +160,7 @@ function ChecksPage() {
       wide
       actions={
         <>
-          <CsvButton filename="check-register.csv" rows={checkRegisterRows(data)} />
+          <CsvButton filename="check-register.csv" rows={checkRegisterRows(data)} visible={vis.on} />
           <Button variant="outline" onClick={requestPrint}>
             <Printer />
             Print
@@ -333,6 +333,7 @@ function ChecksPage() {
       )}
       <ListPrint
         title="Check register"
+        visible={vis.on}
         columns={[
           { key: "number", label: "Check" },
           { key: "payee", label: "Payee" },

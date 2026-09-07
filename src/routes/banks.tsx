@@ -165,7 +165,7 @@ function BanksPage() {
       wide
       actions={
         <>
-          <CsvButton filename="banks.csv" rows={bankRows(data)} />
+          <CsvButton filename="banks.csv" rows={bankRows(data)} visible={vis.on} />
           <Button variant="outline" onClick={requestPrint}>
             <Printer />
             Print
@@ -314,6 +314,7 @@ function BanksPage() {
       )}
       <ListPrint
         title="Banks"
+        visible={vis.on}
         columns={[
           { key: "nickname", label: "Nickname" },
           { key: "name", label: "Bank" },

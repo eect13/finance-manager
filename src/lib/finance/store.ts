@@ -15,6 +15,7 @@ import {
   issueCheck,
   payBill,
   payEmployee,
+  payEmployees,
   recordInvoicePayment,
   removeBank,
   removeBill,
@@ -64,7 +65,7 @@ import {
   postRecurring,
   postDueRecurring,
 } from "./actions";
-import { parseBackupFile } from "./export";
+import { mergeBooks, parseBackupFile } from "./export";
 import { newId } from "./ids";
 import { listLocalBackups, readLocalBackup, writeLocalBackups } from "./local-backup";
 import { normalizeBooks } from "./normalize";
@@ -195,6 +196,7 @@ export interface FinanceState {
   resetDemo: () => void;
   startFresh: () => void;
   importBackup: (raw: string) => "company" | "workspace";
+  mergeCompanyFile: (raw: string) => { added: number; skipped: number };
   restoreLocalCopy: () => Promise<{ name: string; savedAt: string; revived: boolean }>;
   addCompany: (name: string) => string;
   switchCompany: (id: string) => void;
@@ -256,6 +258,7 @@ export interface FinanceState {
   updateEmployee: (id: string, patch: Parameters<typeof updateEmployee>[2]) => void;
   removeEmployee: (id: string) => void;
   payEmployee: (input: Parameters<typeof payEmployee>[1]) => void;
+  payEmployees: (input: Parameters<typeof payEmployees>[1]) => { posted: number; skippedHourly: number };
   purgeClosedThrough: (throughDate: string) => number;
   closeBooks: (throughDate: string, packetPrinted?: boolean) => void;
   reopenBooks: (reason?: string) => void;
@@ -380,6 +383,22 @@ export const useFinanceStore = create<FinanceState>()(
           });
           return "company";
         },
+        mergeCompanyFile: (raw) => {
+          const file = parseBackupFile(raw);
+          const incoming = file.type === "company" ? file.data : file.companies[file.activeCompanyId] ?? Object.values(file.companies)[0];
+          if (!incoming) throw new Error("That file has no company.");
+          const s = get();
+          const local = s.companies[s.activeCompanyId];
+          if (!local) throw new Error("No open company.");
+          const { data, added, skipped } = mergeBooks(local, incoming);
+          set({
+            companies: { ...s.companies, [s.activeCompanyId]: data },
+            hydrated: true,
+            openRecord: null,
+            ...clearHistory(),
+          });
+          return { added, skipped };
+        },
         restoreLocalCopy: async () => {
           const s = get();
           const mine = await readLocalBackup(s.activeCompanyId);
@@ -473,6 +492,17 @@ export const useFinanceStore = create<FinanceState>()(
             const e = (before.employees ?? []).find((x) => x.id === input.employeeId);
             return `post paycheck ${e?.name || ""}`.trim();
           }),
+        payEmployees: (input) => {
+          let posted = 0;
+          let skippedHourly = 0;
+          apply((d) => {
+            const next = payEmployees(d, input);
+            posted = next.posted;
+            skippedHourly = next.skippedHourly;
+            return next.data;
+          }, `pay run ${input.date || ""}`.trim());
+          return { posted, skippedHourly };
+        },
         updateCustomer: (id, patch) =>
           apply((d) => updateCustomer(d, id, patch), (before) => {
             const c = before.customers.find((x) => x.id === id);

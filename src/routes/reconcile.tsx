@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { useEffect, useMemo, useRef, useState, memo, type Ref, type RefObject } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, memo, type Ref, type RefObject } from "react";
 import { Printer } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
@@ -8,7 +8,7 @@ import { ConfirmDelete } from "@/components/confirm-delete";
 import { DateInput } from "@/components/date-input";
 import { ListToolbar } from "@/components/filter-pills";
 import { ListFilters, applySortValue } from "@/components/list-filters";
-import { ListCard, listColClass, listColWidthStyle, listTableStyle} from "@/components/list-table";
+import { listColClass, listColWidthStyle, listTableStyle} from "@/components/list-table";
 import { useColVisible, visibleTableWidth, viewColumnExtra } from "@/components/column-chips";
 import { Field } from "@/components/field";
 import { Money } from "@/components/money";
@@ -38,7 +38,7 @@ import { openProps, openTxn } from "@/lib/finance/open-record";
 import { useEntrySort } from "@/lib/finance/sort";
 import { useFinanceData, useFinanceStore } from "@/lib/finance/store";
 import { cn } from "@/lib/utils";
-import { getWorkspaceScrollElement } from "@/lib/workspace-scroll";
+import { getWorkspaceScrollElement, listScrollElement, listScrollMargin } from "@/lib/workspace-scroll";
 
 export const Route = createFileRoute("/reconcile")({ component: ReconcilePage });
 
@@ -625,29 +625,46 @@ function ReconcileLines({
   vis: ReturnType<typeof useColVisible>;
 }) {
   const narrow = isNarrowUi();
-  const cardMode = narrow || phoneLayout === "grid";
-  const [listScrollEl, setListScrollEl] = useState<HTMLElement | null>(null);
+  const cardMode = phoneLayout === "grid";
+  const rowSize = cardMode ? (narrow ? 168 : 148) : narrow ? 52 : 44;
+  const listRef = useRef<HTMLElement | null>(null);
+  function bindList(node: HTMLElement | null) {
+    listRef.current = node;
+  }
+  const [scrollEl, setScrollEl] = useState<HTMLElement | null>(null);
+  const [scrollMargin, setScrollMargin] = useState(0);
+  const keyRef = useRef<(i: number) => string | number>((i) => lines[i]?.id ?? i);
+  keyRef.current = (i) => lines[i]?.id ?? i;
+  const sizeRef = useRef(rowSize);
+  sizeRef.current = rowSize;
+  useLayoutEffect(() => {
+    const node = listRef.current;
+    const el = listScrollElement(node);
+    setScrollEl((prev) => (prev === el ? prev : el));
+    const margin = listScrollMargin(node, el);
+    setScrollMargin((prev) => (Math.abs(prev - margin) < 1 ? prev : margin));
+  });
   const virt = useVirtualizer({
     count: lines.length,
-    getScrollElement: () =>
-      cardMode ? getWorkspaceScrollElement() : (listScrollEl ?? getWorkspaceScrollElement()),
-    estimateSize: () => (cardMode ? (narrow ? 168 : 148) : narrow ? 52 : 44),
+    getScrollElement: () => scrollEl ?? listScrollElement(listRef.current) ?? getWorkspaceScrollElement(),
+    estimateSize: () => sizeRef.current,
     overscan: cardMode ? 8 : 12,
-    getItemKey: (index) => lines[index]?.id ?? index,
+    getItemKey: (index) => keyRef.current(index),
     gap: cardMode ? 8 : 0,
+    scrollMargin,
   });
   useEffect(() => {
     virt.measure();
-    // Remeasure when layout or type size changes variable card / row heights.
+    // Layout / type / count / scroller / margin only — virt identity would remeasure every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phoneLayout, fontSize, lines.length, listScrollEl, cardMode]);
+  }, [phoneLayout, cardMode, fontSize, lines.length, scrollEl, scrollMargin, rowSize]);
   const vItems = virt.getVirtualItems();
   const first = vItems[0];
   const last = vItems[vItems.length - 1];
-  const padTop = first ? first.start : 0;
-  const padBottom = last ? Math.max(0, virt.getTotalSize() - last.end) : 0;
+  const padTop = first ? Math.max(0, first.start - scrollMargin) : 0;
+  const padBottom = last ? Math.max(0, virt.getTotalSize() - last.end + scrollMargin) : 0;
 
-  if (cardMode) {
+  if (cardMode || narrow) {
     return (
       <div
         className={cn("recon-phone-list", phoneLayout === "list" && "is-list")}
@@ -666,7 +683,13 @@ function ReconcileLines({
             Nothing uncleared on or before this date.
           </p>
         ) : phoneLayout === "list" ? (
-          <div className="list-card list-grid register-phone-table min-w-0" {...vis.hideAttrs}>
+          <div ref={bindList} className="list-card register-phone-table min-w-0">
+            <div
+              ref={pointer.bindContainer(gridRef)}
+              tabIndex={0}
+              className="list-grid min-w-0 outline-none"
+              {...vis.hideAttrs}
+            >
             <table style={{ width: "max-content", minWidth: "100%" }}>
               <thead>
                 <tr className="border-b border-border text-muted-foreground">
@@ -721,7 +744,7 @@ function ReconcileLines({
               </thead>
               <tbody>
                 {padTop > 0 ? (
-                  <tr aria-hidden>
+                  <tr aria-hidden className="register-virt-pad">
                     <td colSpan={5} style={{ height: padTop, padding: 0, border: 0 }} />
                   </tr>
                 ) : null}
@@ -747,18 +770,20 @@ function ReconcileLines({
                   );
                 })}
                 {padBottom > 0 ? (
-                  <tr aria-hidden>
+                  <tr aria-hidden className="register-virt-pad">
                     <td colSpan={5} style={{ height: padBottom, padding: 0, border: 0 }} />
                   </tr>
                 ) : null}
               </tbody>
             </table>
+            </div>
           </div>
         ) : (
-          <ul className="flex flex-col">
+          <ul ref={bindList} className="flex flex-col">
             {padTop > 0 ? (
               <li
                 aria-hidden
+                className="register-virt-pad"
                 style={{
                   height: padTop,
                   margin: 0,
@@ -789,6 +814,7 @@ function ReconcileLines({
             {padBottom > 0 ? (
               <li
                 aria-hidden
+                className="register-virt-pad"
                 style={{
                   height: padBottom,
                   margin: 0,
@@ -806,15 +832,13 @@ function ReconcileLines({
   }
 
   return (
-    <ListCard
-      ref={(el) => {
-        pointer.bindContainer(gridRef)(el);
-        setListScrollEl((prev) => (prev === el ? prev : el));
-      }}
-      tabIndex={0}
-      className="recon-table-card outline-none"
-      {...vis.hideAttrs}
-    >
+    <div ref={bindList} className="list-card recon-table-card">
+      <div
+        ref={pointer.bindContainer(gridRef)}
+        tabIndex={0}
+        className="list-grid min-w-0 outline-none"
+        {...vis.hideAttrs}
+      >
       <table ref={cols.tableRef} className="text-sm" style={listTableStyle(visibleTableWidth(cols.widths, vis.on))}>
         <colgroup>
           <col className="col-check no-print" style={{ width: cols.widths.check, minWidth: cols.widths.check }} />
@@ -924,7 +948,7 @@ function ReconcileLines({
           ) : (
             <>
               {padTop > 0 ? (
-                <tr aria-hidden>
+                <tr aria-hidden className="register-virt-pad">
                   <td colSpan={7} style={{ height: padTop, padding: 0, border: 0 }} />
                 </tr>
               ) : null}
@@ -954,7 +978,7 @@ function ReconcileLines({
                 );
               })}
               {padBottom > 0 ? (
-                <tr aria-hidden>
+                <tr aria-hidden className="register-virt-pad">
                   <td colSpan={7} style={{ height: padBottom, padding: 0, border: 0 }} />
                 </tr>
               ) : null}
@@ -962,7 +986,8 @@ function ReconcileLines({
           )}
         </tbody>
       </table>
-    </ListCard>
+      </div>
+    </div>
   );
 }
 

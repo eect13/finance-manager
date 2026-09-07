@@ -46,6 +46,32 @@ export function exportCsv(filename: string, rows: Array<Record<string, string | 
   downloadText(filename, toCsv(rows), "text/csv;charset=utf-8");
 }
 
+function csvKeyToken(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+/** Drop CSV fields whose chip id is hidden. Extra headers (not a chip) stay. */
+export function visibleCsv(
+  rows: Array<Record<string, string | number>>,
+  visible?: Record<string, boolean>,
+): Array<Record<string, string | number>> {
+  if (!visible || rows.length === 0) return rows;
+  const hidden = new Set(
+    Object.entries(visible)
+      .filter(([, on]) => on === false)
+      .map(([id]) => csvKeyToken(id)),
+  );
+  if (hidden.size === 0) return rows;
+  const headers = Object.keys(rows[0]);
+  const keep = headers.filter((h) => !hidden.has(csvKeyToken(h)));
+  if (keep.length === 0 || keep.length === headers.length) return rows;
+  return rows.map((row) => {
+    const next: Record<string, string | number> = {};
+    for (const key of keep) next[key] = row[key];
+    return next;
+  });
+}
+
 export function ledgerRows(data: FinanceData): Array<Record<string, string | number>> {
   const rows: Array<Record<string, string | number>> = [];
   const sorted = [...data.journals].sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id));
@@ -217,7 +243,7 @@ export function cashRegisterRows(data: FinanceData, bankId?: string): Array<Reco
 
 export const WORKSPACE_BACKUP_KIND = "finance-manager-backup";
 export const COMPANY_FILE_KIND = "finance-manager-company";
-export const COMPANY_FILE_VERSION = 15;
+export const COMPANY_FILE_VERSION = 16;
 
 /** Flat tables in a company file. Parties do not nest transactions. Journal `lines` stay on the journal (two legs, one document). New ids are UUIDs. */
 export const BOOKS_TABLES = [
@@ -237,6 +263,7 @@ export const BOOKS_TABLES = [
   "reconHistory",
   "closeHistory",
   "audit",
+  "registerOrder",
   "nextNumbers",
 ] as const;
 
@@ -258,6 +285,7 @@ function companyBooksObject(data: FinanceData) {
     reconHistory: data.reconHistory ?? [],
     closeHistory: data.closeHistory ?? [],
     audit: data.audit ?? [],
+    registerOrder: data.registerOrder ?? {},
     nextNumbers: data.nextNumbers,
   };
 }
@@ -357,6 +385,58 @@ export function parseBackup(raw: string): FinanceData {
   const file = parseBackupFile(raw);
   if (file.type === "company") return file.data;
   return file.companies[file.activeCompanyId] ?? Object.values(file.companies)[0];
+}
+
+const MERGE_TABLES = [
+  "banks",
+  "accounts",
+  "customers",
+  "vendors",
+  "employees",
+  "invoices",
+  "bills",
+  "receipts",
+  "checks",
+  "journals",
+  "budgetItems",
+  "recurrences",
+  "reconHistory",
+  "closeHistory",
+] as const;
+
+/** Union by id: keep local on conflict, add incoming-only rows. Settings stay local. */
+export function mergeBooks(local: FinanceData, incoming: FinanceData): { data: FinanceData; added: number; skipped: number } {
+  let added = 0;
+  let skipped = 0;
+  const next: FinanceData = { ...local };
+  for (const table of MERGE_TABLES) {
+    const loc = (local[table] ?? []) as Array<{ id: string }>;
+    const ids = new Set(loc.map((row) => row.id));
+    const extra: Array<{ id: string }> = [];
+    for (const row of (incoming[table] ?? []) as Array<{ id: string }>) {
+      if (ids.has(row.id)) {
+        skipped += 1;
+        continue;
+      }
+      extra.push(row);
+      added += 1;
+    }
+    (next as unknown as Record<string, unknown>)[table] = extra.length ? [...loc, ...extra] : loc;
+  }
+  next.registerOrder = { ...(incoming.registerOrder ?? {}), ...(local.registerOrder ?? {}) };
+  const inChecks = incoming.nextNumbers?.check ?? {};
+  const locChecks = local.nextNumbers?.check ?? {};
+  const check: Record<string, number> = { ...inChecks };
+  for (const [bankId, n] of Object.entries(locChecks)) {
+    check[bankId] = Math.max(n, inChecks[bankId] ?? 0);
+  }
+  next.nextNumbers = {
+    invoice: Math.max(local.nextNumbers?.invoice ?? 1, incoming.nextNumbers?.invoice ?? 1),
+    receipt: Math.max(local.nextNumbers?.receipt ?? 1, incoming.nextNumbers?.receipt ?? 1),
+    bill: Math.max(local.nextNumbers?.bill ?? 1, incoming.nextNumbers?.bill ?? 1),
+    check,
+  };
+  return { data: normalizeBooks(next), added, skipped };
 }
 
 export function auditRows(data: FinanceData): Array<Record<string, string | number>> {

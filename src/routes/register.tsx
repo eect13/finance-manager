@@ -565,7 +565,7 @@ function RegisterPage() {
       wide
       actions={
         <>
-          <CsvButton filename="bank-register.csv" rows={cashRegisterRows(data, bankId)} />
+          <CsvButton filename="bank-register.csv" rows={cashRegisterRows(data, bankId)} visible={cols} />
           <Button variant="outline" onClick={requestPrint}>
             <Printer />
             Print

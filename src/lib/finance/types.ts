@@ -308,6 +308,7 @@ export interface CheckRecord {
   accountId: string;
   journalId: string;
   vendorId?: string;
+  employeeId?: string;
   reversalJournalId?: string;
   createdAt?: number;
 }
@@ -401,6 +402,7 @@ export interface BudgetItem {
 }
 
 export type PayType = "salary" | "hourly";
+export type PayPeriod = "weekly" | "biweekly" | "semimonthly" | "monthly";
 
 export interface Employee {
   id: string;
@@ -413,6 +415,8 @@ export interface Employee {
   rate: number;
   bankId: string;
   hireDate: string;
+  /** How often this person is paid. Used by Pay all active. */
+  payPeriod: PayPeriod;
   active: boolean;
   notes: string;
   sortOrder: number;
@@ -427,6 +431,7 @@ export const EMPTY_EMPLOYEE: Omit<Employee, "id"> = {
   rate: 0,
   bankId: "",
   hireDate: "",
+  payPeriod: "monthly",
   active: true,
   notes: "",
   sortOrder: 0,

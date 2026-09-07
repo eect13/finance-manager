@@ -2176,6 +2176,10 @@ export function addEmployee(data: FinanceData, input): FinanceData {
     rate: Math.round(Number(input.rate) || 0),
     bankId: String(input.bankId ?? ""),
     hireDate: String(input.hireDate ?? ""),
+    payPeriod:
+      input.payPeriod === "weekly" || input.payPeriod === "biweekly" || input.payPeriod === "semimonthly"
+        ? input.payPeriod
+        : "monthly",
     active: input.active !== false,
     notes: String(input.notes ?? ""),
     sortOrder: (data.employees ?? []).length,
@@ -2201,6 +2205,13 @@ export function updateEmployee(data: FinanceData, id, patch): FinanceData {
         rate: patch.rate !== undefined ? Math.round(Number(patch.rate) || 0) : e.rate,
         bankId: patch.bankId !== undefined ? String(patch.bankId) : e.bankId,
         hireDate: patch.hireDate !== undefined ? String(patch.hireDate) : e.hireDate,
+        payPeriod:
+          patch.payPeriod === "weekly" ||
+          patch.payPeriod === "biweekly" ||
+          patch.payPeriod === "semimonthly" ||
+          patch.payPeriod === "monthly"
+            ? patch.payPeriod
+            : e.payPeriod ?? "monthly",
         active: patch.active !== undefined ? Boolean(patch.active) : e.active,
         notes: patch.notes !== undefined ? String(patch.notes) : e.notes,
       };
@@ -2285,7 +2296,7 @@ export function payEmployee(data: FinanceData, input): FinanceData {
   const hoursBit = employee.payType === "hourly" && Number.isFinite(hours) && hours > 0 ? ` · ${hours}h` : "";
   const memo = input.memo?.trim() || `Payroll — ${employee.title || "employee"}${hoursBit}`;
   if (withholding <= 0) {
-    return issueCheck(working, {
+    const posted = issueCheck(working, {
       bankId: bank.id,
       vendorId: vendor.id,
       payee: employee.name,
@@ -2295,6 +2306,12 @@ export function payEmployee(data: FinanceData, input): FinanceData {
       memo,
       accountId: payroll.id,
     });
+    const last = posted.checks.at(-1);
+    if (!last) return posted;
+    return {
+      ...posted,
+      checks: posted.checks.map((c) => (c.id === last.id ? { ...c, employeeId: employee.id } : c)),
+    };
   }
   const withholdAcct = working.accounts.find((a) => a.code === "2210");
   if (!withholdAcct) throw new Error("Payroll withholdings account missing.");
@@ -2332,6 +2349,7 @@ export function payEmployee(data: FinanceData, input): FinanceData {
       accountId: payroll.id,
       journalId: journal.id,
       vendorId: vendor.id,
+      employeeId: employee.id,
       createdAt: journal.createdAt,
     }],
     journals: [...working.journals, journal],
@@ -2344,3 +2362,42 @@ export function payEmployee(data: FinanceData, input): FinanceData {
     },
   };
 }
+
+const PERIOD_LABEL = {
+  weekly: "weekly",
+  biweekly: "biweekly",
+  semimonthly: "semi-monthly",
+  monthly: "monthly",
+} as const;
+
+/** Post paychecks for every active salary employee. Hourly staff need hours — skip those. */
+export function payEmployees(
+  data: FinanceData,
+  input: { date?: string; bankId?: string; withholding?: number },
+): { data: FinanceData; posted: number; skippedHourly: number } {
+  const date = input.date || todayIso();
+  const active = (data.employees ?? []).filter((e) => e.active);
+  let working = data;
+  let posted = 0;
+  let skippedHourly = 0;
+  for (const emp of active) {
+    if (emp.payType === "hourly") {
+      skippedHourly += 1;
+      continue;
+    }
+    if (emp.rate <= 0) continue;
+    const period = PERIOD_LABEL[emp.payPeriod ?? "monthly"] ?? "monthly";
+    working = payEmployee(working, {
+      employeeId: emp.id,
+      amount: emp.rate,
+      date,
+      bankId: input.bankId || emp.bankId,
+      withholding: input.withholding,
+      memo: `Payroll — ${period} — ${emp.title || "employee"}`,
+    });
+    posted += 1;
+  }
+  if (posted === 0 && skippedHourly === 0) throw new Error("No active salaried employees to pay.");
+  return { data: working, posted, skippedHourly };
+}
+

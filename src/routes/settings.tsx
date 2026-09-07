@@ -180,8 +180,10 @@ function SettingsPage() {
   const resetDemo = useFinanceStore((s) => s.resetDemo);
   const startFresh = useFinanceStore((s) => s.startFresh);
   const importBackup = useFinanceStore((s) => s.importBackup);
+  const mergeCompanyFile = useFinanceStore((s) => s.mergeCompanyFile);
   const restoreLocalCopy = useFinanceStore((s) => s.restoreLocalCopy);
   const fileRef = useRef<HTMLInputElement>(null);
+  const mergeRef = useRef<HTMLInputElement>(null);
   const [countryPackId, setCountryPackId] = useState("");
   /** When applying a country tax pack, also set home currency to the pack’s currency. */
   const [updateCurrencyWithPack, setUpdateCurrencyWithPack] = useState(true);
@@ -484,9 +486,8 @@ function SettingsPage() {
             <OptionsDescMore>
               This JSON is this company — banks, invoices, receipts, recon, close, and audit. There is no cloud; the
               file in this browser is the books. Save writes a copy on this device where the browser allows it;
-              otherwise it downloads. Open replaces this company, or adds it if it is a different file. After every
-              save this browser also keeps a local copy, so you can restore the company you are in without leaving the
-              app.
+              otherwise it downloads. Open replaces this company. Bring in from another device adds records that are
+              not already here and leaves yours alone. After every save this browser also keeps a local copy.
             </OptionsDescMore>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-2">
@@ -507,6 +508,9 @@ function SettingsPage() {
             <Button variant="outline" onClick={() => fileRef.current?.click()}>
               Open company file
             </Button>
+            <Button variant="outline" onClick={() => mergeRef.current?.click()}>
+              Bring in from another device
+            </Button>
             <Button variant="outline" onClick={() => setBooksConfirm({ kind: "restore" })} disabled={!localStamp}>
               Restore last local copy
             </Button>
@@ -524,6 +528,27 @@ function SettingsPage() {
                   toast.success(kind === "workspace" ? "Opened companies from that file." : "Company file opened.");
                 } catch (err) {
                   toast.error(err instanceof Error ? err.message : "Could not restore.");
+                }
+              }}
+            />
+            <input
+              ref={mergeRef}
+              type="file"
+              accept="application/json"
+              className="hidden"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                e.target.value = "";
+                if (!file) return;
+                try {
+                  const { added, skipped } = mergeCompanyFile(await file.text());
+                  toast.success(
+                    added === 0 && skipped === 0
+                      ? "Nothing new in that file."
+                      : `Brought in ${added} new record${added === 1 ? "" : "s"}${skipped ? ` · ${skipped} already here` : ""}.`,
+                  );
+                } catch (err) {
+                  toast.error(err instanceof Error ? err.message : "Could not merge.");
                 }
               }}
             />

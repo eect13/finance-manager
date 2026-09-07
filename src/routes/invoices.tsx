@@ -165,7 +165,7 @@ function InvoicesPage() {
       wide
       actions={
         <>
-          <CsvButton filename="invoices.csv" rows={invoiceRows(data)} />
+          <CsvButton filename="invoices.csv" rows={invoiceRows(data)} visible={vis.on} />
           <Button variant="outline" onClick={requestPrint}>
             <Printer />
             Print
@@ -373,6 +373,7 @@ function InvoicesPage() {
       )}
       <ListPrint
         title="Invoices"
+        visible={vis.on}
         columns={[
           { key: "number", label: "Number" },
           { key: "customer", label: "Customer" },

@@ -178,7 +178,7 @@ function BillsPage() {
       wide
       actions={
         <>
-          <CsvButton filename="bills.csv" rows={billRows(data)} />
+          <CsvButton filename="bills.csv" rows={billRows(data)} visible={vis.on} />
           <Button variant="outline" onClick={requestPrint}>
             <Printer />
             Print
@@ -375,6 +375,7 @@ function BillsPage() {
       )}
       <ListPrint
         title="Bills"
+        visible={vis.on}
         columns={[
           { key: "number", label: "Number" },
           { key: "vendor", label: "Vendor" },

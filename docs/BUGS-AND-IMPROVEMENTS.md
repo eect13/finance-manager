@@ -1,6 +1,15 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.12.
+Re-verified in code 2026-09-08. Updated for v3.63.13.
+
+## Fixed in v3.63.13
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| 1 | High | Reconcile phone List: huge empty pad, two rows at the bottom (353 uncleared) | Register-style virt: `cardMode = layout==="grid"`, estimate 52 on List, workspace + `scrollMargin` so the proof board is not pad. Desk table in-flow. |
+| 2 | Low | Print/CSV ignored View chips | `ListPrint visible` + `visibleCsv` on page CSV; Register CSV uses `registerColumns` |
+| 3 | Low | Payroll was one-person only; checks had no `employeeId` | Pay period on employee; Pay all active (salary); `employeeId` on paycheck |
+| 4 | Low | Company file Open overwrites; passbook order dropped | `registerOrder` in the file; Bring in from another device merges by id |
 
 ## Fixed in v3.63.12
 
@@ -209,7 +218,7 @@ Re-verified in code 2026-09-05 (Asia/Manila). Updated for v3.62.47. UI direction
 | D | Low | `ensureOutputVat` | Now `ensureSystemAccounts` (2200 / 1300 / 2210). Lookups still use `code`. | Improved (v3.63.0) |
 | E | Low | Debounced persist (~280ms) | `beforeunload` + `pagehide` / `visibilitychange` flush. Crash can still drop a beat. | Improved (v3.63.0) |
 | F | Low | `patchJournalAmount` | Still used for check / payment receipt / untaxed bill / deposit / expense / transfer (2-line). **Do not** use for multi-line VAT. | Still open (safe for 2-line) |
-| G | Med (product) | Thin payroll | Hours × rate and optional withholding shipped. No 13th month / statutory PH engine. | Improved (v3.63.0) |
+| G | Med (product) | Thin payroll | Pay period, batch Pay all active (salary), `employeeId` on checks. No 13th month / statutory PH engine. | Improved (v3.63.13) |
 | H | — | Android APK | Solo path improved in v3.59 (JDK 17, NDK resolve, symlink fallback, auto-sign). Still needs SDK+NDK on the machine. | Improved (env) |
 
 ## New findings (confirmed) — not yet fixed or deferred
@@ -219,12 +228,12 @@ Re-verified in code 2026-09-05 (Asia/Manila). Updated for v3.62.47. UI direction
 | I | Low | Cash-sale line drift | Register amount edit on a taxed cash sale rebuilds the journal and rescales `receipt.lines`. | Fixed (v3.63.0) |
 | J | Low | a11y labels | Field auto-wires `htmlFor` and first-control id; Select still uses click-to-focus. | Improved (v3.63.0) |
 | K | Low | Tax % visibility | Edit/print show Tax % when the document has a rate even if Settings tax is off. New docs still seed 0. | Fixed (v3.63.10) |
-| L | Info | Dead / unused | `src/lib/multiplayer/p2p.ts` exported but unused by app routes (multi-device still aspirational). |
+| L | Info | Dead / unused | `src/lib/multiplayer/p2p.ts` still unused. Multi-device is company-file merge by id (Settings → Bring in from another device). | Improved (v3.63.13) |
 | M | Low | `removeCashLines` | All-or-nothing; `assertOpenPeriod` on each line; toast is unique deletes. | Fixed (v3.63.10) |
 | N | Low | Register virtualizer | Uses `getWorkspaceScrollElement()` (`main[data-workspace-scroll]`). Full AppShell ref still optional. |
 | O | Low | Nested dialogs | Post **Delete** opens `ConfirmDelete` (both Dialog z-50). Sibling order puts confirm on top today; a dedicated higher z on confirm would be safer than relying on DOM order. |
 | P | Info | `actions.ts` | Still `@ts-nocheck` restored from production build — types live via `typeof` in store. Prefer small surgical fixes over a rewrite. |
-| Q | Low | List virtualization | Banks, party dir/history, Reports aging/TB/P&L, chart of accounts, plus invoices/bills/receipts/checks/ledger/employees. Reconcile is one virt (Register-style). `getItemKey` via ref (v3.63.12). | Improved (v3.63.11–12) |
+| Q | Low | List virtualization | Banks, party dir/history, Reports aging/TB/P&L, chart of accounts, plus invoices/bills/receipts/checks/ledger/employees. Reconcile virt matches Register (workspace + scrollMargin; nested card only if it is the Y scroller). | Improved (v3.63.13) |
 | R | Low | Party combo stacking | `party-combo` list is `absolute z-50` (not portaled). Fine inside dialogs; would clip inside `overflow: hidden` sheets. |
 
 ## Areas of improvement
@@ -233,8 +242,8 @@ Re-verified in code 2026-09-05 (Asia/Manila). Updated for v3.62.47. UI direction
 2. **List virtualization** — Register pattern (`@tanstack/react-virtual`, pad rows, one scroller) is on the large lists. Close checklist, Settings recurring, Forecast budget, VAT panel, and record-sheet lines stay unwindowed (tiny).
 3. **Code-split** — Lazy TanStack routes + Vite `manualChunks` for reports/close/reconcile/seed.
 4. **Tauri / Android** — Validate WebView IDB persistence; share/save company JSON; cold-start via splits. Solo APK path improved in v3.59; still needs SDK+NDK installed.
-5. **Payroll depth** — Pay periods, withholdings, link checks to `employeeId`, batch pay run, block delete when pay history exists (partially done for employee delete).
-6. **Multi-device** — Explicit company-file exchange / LWW or CRDT; no naive full-state overwrite. P2P stub exists unused.
+5. **Payroll depth** — Pay periods, `employeeId` on checks, and batch salary run shipped (v3.63.13). No SSS/PhilHealth/Pag-IBIG engine.
+6. **Multi-device** — Company-file merge by id (local wins, incoming-only rows added). Open still replaces. P2P stub unused.
 7. **Purchase VAT** — Input VAT on bills + VAT payable/receivable reports.
 8. **Invoice edit UX** — Surface tax as document field clearly so Settings toggle never feels like it rewrites history (partially: Tax % on create/edit when tax enabled).
 9. **“All dates” copy** — Align README (“through today”) with code (`to: ""`) or cap `dateTo` at `todayIso()`.

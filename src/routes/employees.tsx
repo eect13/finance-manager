@@ -29,7 +29,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { fitColumnWidth } from "@/lib/finance/fit-column";
 import { parseAmountToCents, todayIso } from "@/lib/finance/format";
 import { useEntrySort } from "@/lib/finance/sort";
-import { EMPTY_EMPLOYEE, type Employee, type PayType } from "@/lib/finance/types";
+import { EMPTY_EMPLOYEE, type Employee, type PayPeriod, type PayType } from "@/lib/finance/types";
 import { useFinanceData, useFinanceStore } from "@/lib/finance/store";
 
 export const Route = createFileRoute("/employees")({ component: EmployeesPage });
@@ -72,6 +72,7 @@ type FormState = {
   rate: string;
   bankId: string;
   hireDate: string;
+  payPeriod: PayPeriod;
   notes: string;
   active: boolean;
 };
@@ -87,6 +88,7 @@ function toForm(e?: Employee | null): FormState {
       rate: "",
       bankId: "",
       hireDate: todayIso(),
+      payPeriod: "monthly",
       notes: "",
       active: true,
     };
@@ -100,6 +102,7 @@ function toForm(e?: Employee | null): FormState {
     rate: e.rate ? String(e.rate / 100) : "",
     bankId: e.bankId,
     hireDate: e.hireDate || todayIso(),
+    payPeriod: e.payPeriod ?? "monthly",
     notes: e.notes,
     active: e.active,
   };
@@ -111,6 +114,7 @@ function EmployeesPage() {
   const updateEmployee = useFinanceStore((s) => s.updateEmployee);
   const removeEmployee = useFinanceStore((s) => s.removeEmployee);
   const payEmployee = useFinanceStore((s) => s.payEmployee);
+  const payEmployees = useFinanceStore((s) => s.payEmployees);
   const banks = data.banks.filter((b) => !b.archived);
 
   const [query, setQuery] = useState("");
@@ -180,6 +184,9 @@ function EmployeesPage() {
   const [payWithholding, setPayWithholding] = useState("");
   const [payDate, setPayDate] = useState(todayIso());
   const [payBankId, setPayBankId] = useState("");
+  const [runOpen, setRunOpen] = useState(false);
+  const [runDate, setRunDate] = useState(todayIso());
+  const [runBankId, setRunBankId] = useState("");
 
   const editing = editId ? (data.employees ?? []).find((e) => e.id === editId) : null;
   const payingEmp = payId ? (data.employees ?? []).find((e) => e.id === payId) : null;
@@ -214,6 +221,7 @@ function EmployeesPage() {
         rate: parseAmountToCents(form.rate),
         bankId: form.bankId,
         hireDate: form.hireDate,
+        payPeriod: form.payPeriod,
         notes: form.notes,
         active: form.active,
       };
@@ -257,11 +265,41 @@ function EmployeesPage() {
     }
   }
 
+  function runPayAll() {
+    try {
+      const result = payEmployees({ date: runDate, bankId: runBankId || undefined });
+      const hourly = result.skippedHourly
+        ? ` ${result.skippedHourly} hourly ${result.skippedHourly === 1 ? "person needs" : "people need"} hours — post those one at a time.`
+        : "";
+      toast.success(
+        result.posted === 1 ? `1 paycheck posted.${hourly}` : `${result.posted} paychecks posted.${hourly}`,
+      );
+      setRunOpen(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not post pay run.");
+    }
+  }
+
   return (
     <AppShell
       title="Employees"
       description="People on payroll. Keep a roster, set pay type and rate, and post paychecks to a bank — the check lands in Register like any other payment."
-      actions={<Button onClick={openNew}>+ Add employee</Button>}
+      actions={
+        <>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setRunDate(todayIso());
+              setRunBankId(banks[0]?.id ?? "");
+              setRunOpen(true);
+            }}
+            disabled={activeCount === 0}
+          >
+            Pay all active
+          </Button>
+          <Button onClick={openNew}>+ Add employee</Button>
+        </>
+      }
     >
       <section className="mb-4 grid grid-cols-3 gap-2">
         <Card>
@@ -466,7 +504,7 @@ function EmployeesPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="salary">Salary (monthly)</SelectItem>
+                  <SelectItem value="salary">Salary</SelectItem>
                   <SelectItem value="hourly">Hourly</SelectItem>
                 </SelectContent>
               </Select>
@@ -484,6 +522,22 @@ function EmployeesPage() {
             </Field>
             <Field label="Hire date">
               <DateInput value={form.hireDate} onChange={(iso) => setForm({ ...form, hireDate: iso })} />
+            </Field>
+            <Field label="Pay period">
+              <Select
+                value={form.payPeriod}
+                onValueChange={(v) => setForm({ ...form, payPeriod: v as PayPeriod })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="weekly">Weekly</SelectItem>
+                  <SelectItem value="biweekly">Every two weeks</SelectItem>
+                  <SelectItem value="semimonthly">Twice a month</SelectItem>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                </SelectContent>
+              </Select>
             </Field>
             <Field label="Notes">
               <Input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
@@ -552,6 +606,31 @@ function EmployeesPage() {
               Cancel
             </Button>
             <Button onClick={runPay}>Post paycheck</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={runOpen} onOpenChange={setRunOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Pay all active</DialogTitle>
+            <DialogDescription>
+              Posts a paycheck for each active salaried employee at their rate. Hourly people are skipped — they need hours on a single paycheck. Not a statutory tax engine.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3">
+            <Field label="Date">
+              <DateInput value={runDate} onChange={setRunDate} />
+            </Field>
+            <Field label="Bank">
+              <BankCombo valueId={runBankId} onChoose={(id) => setRunBankId(id)} placeholder="Type a bank" />
+            </Field>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRunOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={runPayAll}>Post pay run</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

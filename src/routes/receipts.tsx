@@ -200,7 +200,7 @@ function ReceiptsPage() {
       wide
       actions={
         <>
-          <CsvButton filename="receipts.csv" rows={receiptRows(data)} />
+          <CsvButton filename="receipts.csv" rows={receiptRows(data)} visible={vis.on} />
           <Button variant="outline" onClick={requestPrint}>
             <Printer />
             Print
@@ -403,6 +403,7 @@ function ReceiptsPage() {
       )}
       <ListPrint
         title="Receipts"
+        visible={vis.on}
         columns={[
           { key: "number", label: "Number" },
           { key: "date", label: "Date" },

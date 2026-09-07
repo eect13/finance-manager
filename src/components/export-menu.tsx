@@ -20,6 +20,7 @@ import {
   receiptRows,
   trialBalanceRows,
   vendorRows,
+  visibleCsv,
 } from "@/lib/finance/export";
 import type { FinanceData } from "@/lib/finance/types";
 
@@ -110,13 +111,15 @@ export function CsvButton({
   filename,
   rows,
   label = "CSV",
+  visible,
 }: {
   filename: string;
   rows: Array<Record<string, string | number>>;
   label?: string;
+  visible?: Record<string, boolean>;
 }) {
   return (
-    <Button variant="outline" onClick={() => saveCsv(filename, rows)}>
+    <Button variant="outline" onClick={() => saveCsv(filename, visibleCsv(rows, visible))}>
       <Download />
       {label}
     </Button>

@@ -125,6 +125,11 @@ export function normalizeBooks(raw: unknown): FinanceData {
     rate: typeof e.rate === "number" ? e.rate : 0,
     bankId: e.bankId ?? "",
     hireDate: e.hireDate ?? "",
+    payPeriod: (
+      e.payPeriod === "weekly" || e.payPeriod === "biweekly" || e.payPeriod === "semimonthly" || e.payPeriod === "monthly"
+        ? e.payPeriod
+        : "monthly"
+    ) as Employee["payPeriod"],
     active: e.active !== false,
     notes: e.notes ?? "",
     sortOrder: typeof e.sortOrder === "number" ? e.sortOrder : i,

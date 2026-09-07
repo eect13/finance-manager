@@ -1,7 +1,8 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { normalizeBooks } from "./normalize.ts";
-import { createBill, createCashSale, payEmployee, updateReceipt } from "./actions.ts";
+import { createBill, createCashSale, payEmployee, payEmployees, updateReceipt } from "./actions.ts";
+import { mergeBooks, visibleCsv } from "./export.ts";
 import { invoiceSubtotal } from "./ledger.ts";
 import type { FinanceData } from "./types.ts";
 
@@ -41,6 +42,7 @@ function books(): FinanceData {
         rate: 15000,
         bankId: "bank-op",
         hireDate: "2026-01-01",
+        payPeriod: "weekly",
         active: true,
         notes: "",
         sortOrder: 0,
@@ -115,6 +117,7 @@ describe("payroll hours and withholding", () => {
     });
     const check = next.checks.at(-1)!;
     assert.equal(check.amount, 120000);
+    assert.equal(check.employeeId, "emp-1");
     const journal = next.journals.find((j) => j.id === check.journalId)!;
     assert.equal(journal.lines.find((l) => l.accountId === "acc-pay")?.debit, 120000);
     assert.equal(journal.lines.find((l) => l.accountId === "acc-op")?.credit, 120000);
@@ -139,5 +142,61 @@ describe("payroll hours and withholding", () => {
       journal.lines.reduce((s, l) => s + l.debit, 0),
       journal.lines.reduce((s, l) => s + l.credit, 0),
     );
+  });
+});
+
+describe("pay run and merge", () => {
+  it("payEmployees posts salary and skips hourly", () => {
+    const start = books();
+    start.employees.push({
+      id: "emp-sal",
+      name: "Salary Ben",
+      title: "Clerk",
+      email: "",
+      phone: "",
+      payType: "salary",
+      rate: 50000,
+      bankId: "bank-op",
+      hireDate: "2026-01-01",
+      payPeriod: "monthly",
+      active: true,
+      notes: "",
+      sortOrder: 1,
+    });
+    const { data, posted, skippedHourly } = payEmployees(start, { date: "2026-09-01", bankId: "bank-op" });
+    assert.equal(posted, 1);
+    assert.equal(skippedHourly, 1);
+    const check = data.checks.at(-1)!;
+    assert.equal(check.employeeId, "emp-sal");
+    assert.equal(check.amount, 50000);
+  });
+
+  it("mergeBooks adds incoming-only rows and keeps local", () => {
+    const local = books();
+    const incoming = books();
+    incoming.customers.push({
+      id: "cust-new",
+      name: "New Co",
+      contact: "",
+      email: "",
+      phone: "",
+      address: "",
+      terms: "",
+      notes: "",
+      sortOrder: 1,
+    });
+    const { data, added, skipped } = mergeBooks(local, incoming);
+    assert.ok(added >= 1);
+    assert.ok(skipped >= 1);
+    assert.ok(data.customers.some((c) => c.id === "cust-new"));
+    assert.equal(data.customers.find((c) => c.id === "cust-1")?.name, "Acme");
+  });
+
+  it("visibleCsv drops hidden chip columns", () => {
+    const rows = visibleCsv(
+      [{ Date: "1", Payee: "A", Amount: 1 }],
+      { date: false, payee: true, amount: true },
+    );
+    assert.deepEqual(Object.keys(rows[0]), ["Payee", "Amount"]);
   });
 });

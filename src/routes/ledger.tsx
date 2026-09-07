@@ -82,7 +82,7 @@ function LedgerPage() {
       wide
       actions={
         <>
-          <CsvButton filename="general-ledger.csv" rows={ledgerRows(data)} />
+          <CsvButton filename="general-ledger.csv" rows={ledgerRows(data)} visible={jVis.on} />
           <Button variant="outline" onClick={requestPrint}>
             <Printer />
             Print
@@ -178,6 +178,7 @@ function LedgerPage() {
       </Tabs>
       <ListPrint
         title="General ledger"
+        visible={jVis.on}
         columns={[
           { key: "date", label: "Date" },
           { key: "description", label: "Description" },

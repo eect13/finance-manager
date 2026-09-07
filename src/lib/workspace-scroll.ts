@@ -7,6 +7,35 @@ export function getWorkspaceScrollElement(): HTMLElement | null {
   );
 }
 
+/** Offset of `node` from the start of the workspace scroller (Register-style virt). */
+export function workspaceScrollMargin(node: HTMLElement | null): number {
+  const scroll = getWorkspaceScrollElement();
+  if (!node || !scroll) return 0;
+  return node.getBoundingClientRect().top - scroll.getBoundingClientRect().top + scroll.scrollTop;
+}
+
+/**
+ * Y scroller for a list paper node.
+ * Capped overflow box (`.list-card.list-grid`) is the scroller — otherwise workspace, like Register.
+ */
+export function listScrollElement(node: HTMLElement | null): HTMLElement | null {
+  const workspace = getWorkspaceScrollElement();
+  if (!node || typeof getComputedStyle === "undefined") return workspace;
+  const style = getComputedStyle(node);
+  const canY = style.overflowY === "auto" || style.overflowY === "scroll";
+  const maxH = style.maxHeight;
+  const capped = maxH !== "none" && maxH !== "" && Number.parseFloat(maxH) > 0;
+  if (canY && capped) return node;
+  return workspace;
+}
+
+/** `scrollMargin` only when virt is bound to the workspace (proof board sits above the list). */
+export function listScrollMargin(node: HTMLElement | null, scrollEl: HTMLElement | null): number {
+  const workspace = getWorkspaceScrollElement();
+  if (!scrollEl || scrollEl !== workspace) return 0;
+  return workspaceScrollMargin(node);
+}
+
 const EDGE_PX = 56;
 const MAX_STEP = 28;
 

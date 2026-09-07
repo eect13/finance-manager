@@ -1,4 +1,4 @@
-# Finance Manager v3.63.12
+# Finance Manager v3.63.13
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -26,6 +26,13 @@ Unzip the repo (a second unzip named `finance-manager-main (1)` is fine) so `dep
 Vite is installed with the packages — no global `vite` command. `.npmrc` has `legacy-peer-deps=true`.
 
 After the Windows installer: **delete the leftover white shortcut** and pin the new one — shortcut and taskbar both use the navy pillars tile.
+
+## What's new in v3.63.13
+
+- **Reconcile mobile List**: windowing matches Register. Phone List was using card-height estimates and counting the proof board as empty pad, so 353 uncleared lines looked like a blank card with two rows at the bottom.
+- **Print / CSV follow View chips**: hidden Date (etc.) stay hidden on list print and the page CSV button. Register CSV follows Register columns.
+- **Pay all active**: salaried employees get a paycheck run (hourly still needs hours). Pay period lives on the employee. Paychecks store `employeeId`.
+- **Bring in from another device**: Options → Backup merges a company file by id — new records arrive, yours stay. Open still replaces. Company files now keep passbook order.
 
 ## What's new in v3.63.12
 

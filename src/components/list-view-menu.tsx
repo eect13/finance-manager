@@ -44,7 +44,7 @@ export function ListViewMenu({
         </div>
       ) : null}
       {extra}
-      {onFitAll ? (
+      {onFitAll && !phone ? (
         <button
           type="button"
           className="mt-2 text-sm font-medium text-foreground"

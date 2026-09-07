@@ -1202,10 +1202,11 @@ function RegisterTable({
         <div className="register-phone-list is-list" data-layout="list">
           {toolbar}
           {moveHint}
+          <div className="list-card register-phone-table min-w-0">
           <div
             ref={kbBindContainer(wrapRef)}
             tabIndex={0}
-            className="list-card list-grid register-phone-table min-w-0 outline-none"
+            className="list-grid min-w-0 outline-none"
             onMouseDown={(e) => {
               const t = e.target as HTMLElement | null;
               if (t?.closest("input, textarea, select, button, a, [role='checkbox']")) return;
@@ -1215,7 +1216,7 @@ function RegisterTable({
             <table style={{ width: "max-content", minWidth: phoneListMinWidth }}>
               <thead>
                 <tr className="border-b border-border text-muted-foreground">
-                  <th className="w-10 px-2 py-2.5 no-print whitespace-nowrap" aria-label="Select" />
+                  <th className="col-check w-10 px-0 py-2.5 no-print whitespace-nowrap" aria-label="Select" />
                   {dragOn ? <th className="w-9 px-1 py-2.5 no-print whitespace-nowrap" aria-label="Move" /> : null}
                   {visibleCols.map((col) => (
                     <SortHeader
@@ -1288,7 +1289,7 @@ function RegisterTable({
                       }
                     >
                       <td
-                        className="px-2 py-3 no-print"
+                        className="col-check px-0 py-3 no-print"
                         onClick={(e) => e.stopPropagation()}
                         onDoubleClick={(e) => e.stopPropagation()}
                         onPointerDown={(e) => e.stopPropagation()}
@@ -1381,6 +1382,7 @@ function RegisterTable({
                 ) : null}
               </tbody>
             </table>
+          </div>
           </div>
         </div>
       );

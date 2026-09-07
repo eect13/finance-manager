@@ -1,4 +1,4 @@
-# Finance Manager v3.63.13
+# Finance Manager v3.63.14
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -26,6 +26,12 @@ Unzip the repo (a second unzip named `finance-manager-main (1)` is fine) so `dep
 Vite is installed with the packages — no global `vite` command. `.npmrc` has `legacy-peer-deps=true`.
 
 After the Windows installer: **delete the leftover white shortcut** and pin the new one — shortcut and taskbar both use the navy pillars tile.
+
+## What's new in v3.63.14
+
+- **Register phone ticks**: checkboxes stay in the select column. They were painting over DATE / TYPE because the tick sat above the frozen header (same class of bug Reconcile already had).
+- **Phone lists**: column width and auto-fit are off under 768px. Desktop List still drags and double-click auto-fits. Row height is not resizable.
+- **Same List paper on phone Register**: `list-card` and `list-grid` are separate nodes (like Reconcile), so the card is not a second vertical scroller.
 
 ## What's new in v3.63.13
 

@@ -1,6 +1,14 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.13.
+Re-verified in code 2026-09-08. Updated for v3.63.14.
+
+## Fixed in v3.63.14
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| 1 | High | Register phone List ticks sat on DATE / TYPE; first row ghosted under the header | Tick `z-index: 0`; sticky thead z-index 8 + opaque header; `.col-check` clips overflow. Same bug class as Reconcile ticks. |
+| 2 | Med | Phone still showed column resize / tap auto-fit (22px handles) | Handles `display: none` under 768px. Desktop List keeps drag + double-click. No row-resize. |
+| 3 | Low | Register phone List used `list-card list-grid` on one node (nested Y scroller) | Split nodes like Reconcile. Virt internals unchanged. |
 
 ## Fixed in v3.63.13
 

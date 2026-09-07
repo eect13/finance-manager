@@ -75,7 +75,11 @@ p.setDefaultTimeout(60_000);
 console.log("phone…");
 await waitApp(p);
 await shot(p, "desk-phone.png");
+await p.evaluate(() => {
+  localStorage.setItem("finance-manager-register-phone-layout", "list");
+});
 await go(p, "/register");
+await p.waitForTimeout(800);
 await shot(p, "register-phone.png");
 await phone.close();
 

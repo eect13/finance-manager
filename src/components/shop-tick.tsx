@@ -35,7 +35,7 @@ export function ShopTick({
       }}
       onDoubleClick={stop}
       className={cn(
-        "register-tick relative z-10 inline-flex h-full min-h-10 min-w-10 w-full items-center justify-center bg-transparent",
+        "register-tick relative z-0 inline-flex h-full min-h-10 min-w-10 w-full items-center justify-center bg-transparent",
         locked && "is-locked",
       )}
     >

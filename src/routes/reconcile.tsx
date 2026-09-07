@@ -693,7 +693,7 @@ function ReconcileLines({
             <table style={{ width: "max-content", minWidth: "100%" }}>
               <thead>
                 <tr className="border-b border-border text-muted-foreground">
-                  <th className="w-10 px-2 py-2 no-print whitespace-nowrap" aria-label="Cleared" />
+                  <th className="col-check w-10 px-0 py-2 no-print whitespace-nowrap" aria-label="Cleared" />
                   <SortHeader
                     compact
                     label="Date"
@@ -1098,7 +1098,7 @@ const ReconPhoneListRow = memo(function ReconPhoneListRow({
       {...openProps(openKindFor(line), openId, { click: true })}
     >
       <td
-        className="px-2 py-2.5 no-print"
+        className="col-check px-0 py-2.5 no-print"
         onClick={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}
       >

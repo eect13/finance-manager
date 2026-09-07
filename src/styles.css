@@ -6569,6 +6569,74 @@ thead button.sort-header-label:hover {
   overflow-y: hidden;
 }
 
+/* =============================================================================
+   v3.63.14 — Register phone ticks must not paint over DATE; no phone col-resize
+   ============================================================================= */
+
+/* ShopTick used to be Tailwind z-10, which sat above sticky thead (z-index 2). */
+.register-tick {
+  z-index: 0 !important;
+}
+
+.list-card.list-grid thead th,
+.register-phone-table thead th,
+.register-matrix thead th,
+.recon-table-card thead th,
+.recon-phone-list table thead th,
+.party-dir-table thead th,
+.party-txn-table thead th {
+  z-index: 8;
+  background: var(--color-table-header, var(--color-card));
+}
+
+.register-phone-list .list-card.register-phone-table,
+.register-phone-list .register-phone-table {
+  max-height: none !important;
+  overflow: visible !important;
+}
+.register-phone-list .list-grid {
+  max-height: none !important;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.register-phone-table thead th,
+.recon-phone-list table thead th {
+  position: sticky;
+  top: 0;
+}
+
+.register-phone-table .col-check,
+.recon-phone-list .col-check {
+  width: var(--list-check-col) !important;
+  min-width: var(--list-check-col) !important;
+  max-width: var(--list-check-col) !important;
+  overflow: hidden !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  text-align: center;
+  vertical-align: middle;
+}
+
+/* Phone: column width / auto-fit off. Desktop List keeps drag + double-click. */
+@media (max-width: 767px) {
+  .col-resize-handle,
+  thead .col-resize-handle,
+  .list-grid thead .col-resize-handle,
+  .register-matrix thead .col-resize-handle,
+  .register-phone-table .col-resize-handle,
+  .party-dir-table thead .col-resize-handle,
+  .party-txn-table thead .col-resize-handle,
+  .recon-phone-list .col-resize-handle,
+  .list-card thead .col-resize-handle {
+    display: none !important;
+    pointer-events: none !important;
+    width: 0 !important;
+    min-width: 0 !important;
+  }
+}
+
+
 
 
 

@@ -1,6 +1,14 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.8.
+Re-verified in code 2026-09-08. Updated for v3.63.9.
+
+## Fixed in v3.63.9
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| 1 | Med | Register desk opened in Grid because `readPhoneLayout(..., "grid")` ignored desk | Shared `defaultListLayout()` — Grid on phone, List on desk. Saved View still wins |
+| 2 | Low | Banks Actions reused sort-header cluster (looked like a sort/filter control) | `ActionsHeader` is a label + resize only; first col (Nickname) stays sortable |
+| 3 | Low | `useListView` painted the device default then swapped after reading localStorage | Sync read on first paint (same pattern as column widths) |
 
 ## Fixed in v3.63.8
 

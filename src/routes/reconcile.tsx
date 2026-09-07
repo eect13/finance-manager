@@ -82,7 +82,7 @@ function ReconcilePage() {
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | "in" | "out">("all");
   const [phoneLayout, setPhoneLayout] = useState<PhoneLayout>(() =>
-    readPhoneLayout(RECONCILE_PHONE_LAYOUT_KEY, isPhoneUi() ? "grid" : "list"),
+    readPhoneLayout(RECONCILE_PHONE_LAYOUT_KEY),
   );
   const fontSize = data.settings.registerFontSize ?? 12;
   const [fee, setFee] = useState("");

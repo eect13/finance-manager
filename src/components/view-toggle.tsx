@@ -1,24 +1,25 @@
 import { useEffect, useState } from "react";
 import { LayoutGrid, List } from "lucide-react";
-import { isPhoneUi, type PhoneLayout } from "@/lib/phone-layout";
+import { defaultListLayout, type PhoneLayout } from "@/lib/phone-layout";
 import { cn } from "@/lib/utils";
 
 export type ListView = PhoneLayout;
 
+function readListView(storageKey: string): ListView {
+  try {
+    const saved = localStorage.getItem(storageKey);
+    if (saved === "list" || saved === "grid") return saved;
+  } catch {
+    /* private mode */
+  }
+  return defaultListLayout();
+}
+
 export function useListView(key: string): [ListView, (next: ListView) => void] {
   const storageKey = `finance-manager-${key}-view-v82`;
-  const [view, setView] = useState<ListView>(() => (isPhoneUi() ? "grid" : "list"));
+  const [view, setView] = useState<ListView>(() => readListView(storageKey));
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(storageKey);
-      if (saved === "list" || saved === "grid") {
-        setView(saved);
-        return;
-      }
-      if (isPhoneUi()) setView("grid");
-    } catch {
-      /* private mode */
-    }
+    setView(readListView(storageKey));
   }, [storageKey]);
   function change(next: ListView) {
     setView(next);

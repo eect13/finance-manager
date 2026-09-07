@@ -6051,13 +6051,17 @@ thead button.sort-header-label:hover {
 }
 .list-grid thead th.col-actions .sort-header-main,
 .list-grid thead th[data-col="actions"] .sort-header-main,
-.list-grid thead th.col-actions .sort-header-label {
+.list-grid thead th.col-actions .sort-header-label,
+.list-grid thead th.col-actions .actions-header-title,
+.list-grid thead th[data-col="actions"] .actions-header-title {
   pointer-events: none;
   cursor: default;
+  color: var(--color-table-title) !important;
 }
 .list-grid thead th.col-actions .sort-header-dir,
 .list-grid thead th[data-col="actions"] .sort-header-dir,
-.list-grid thead th.col-actions button.sort-header-main {
+.list-grid thead th.col-actions button.sort-header-main,
+.list-grid thead th[data-col="actions"] button.sort-header-main {
   display: none !important;
 }
 
@@ -6404,6 +6408,12 @@ thead button.sort-header-label:hover {
     pointer-events: auto !important;
   }
 }
+
+/* =============================================================================
+   v3.63.9 — Actions title is a label (no sort/filter cluster). Layout default
+   is Grid on phone, List on desk (`defaultListLayout`).
+   ============================================================================= */
+
 
 
 

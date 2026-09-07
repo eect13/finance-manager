@@ -179,7 +179,7 @@ function RegisterPage() {
   const [uiReady, setUiReady] = useState(false);
   const [dragOn, setDragOn] = useState(false);
   const [phoneLayout, setPhoneLayout] = useState<PhoneLayout>(() =>
-    readPhoneLayout(REGISTER_PHONE_LAYOUT_KEY, "grid"),
+    readPhoneLayout(REGISTER_PHONE_LAYOUT_KEY),
   );
   const phone = usePhoneUi();
   const [dragging, setDragging] = useState<string | null>(null);

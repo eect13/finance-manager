@@ -1,4 +1,4 @@
-# Finance Manager v3.63.8
+# Finance Manager v3.63.9
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -26,6 +26,11 @@ Unzip the repo (a second unzip named `finance-manager-main (1)` is fine) so `dep
 Vite is installed with the packages — no global `vite` command. `.npmrc` has `legacy-peer-deps=true`.
 
 After the Windows installer: **delete the leftover white shortcut** and pin the new one — shortcut and taskbar both use the navy pillars tile.
+
+## What's new in v3.63.9
+
+- **Layout default**: Grid (cards) on a phone, List (table) on the desk — Register now matches Banks, Invoices, and Reconcile. A saved View choice still wins.
+- **Banks Actions**: last column is a title only. No sort, no filter, no align menu. Nickname (first column) still sorts.
 
 ## What's new in v3.63.8
 

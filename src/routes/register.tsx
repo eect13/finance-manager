@@ -690,7 +690,7 @@ function RegisterPage() {
               <>
                 <ColumnChips
                   cols={cols}
-                  onToggle={(id) => setRegisterCols((current) => toggleRegisterCol(current, id))}
+                  onToggle={(id) => setRegisterCols((current) => toggleRegisterCol(current, id as typeof REGISTER_COLS[number]["id"]))}
                   onShowAll={() => setRegisterCols(() => ({ ...DEFAULT_REGISTER_COLS }))}
                 />
                 <p className="mt-2 text-[0.7rem] text-muted-foreground">

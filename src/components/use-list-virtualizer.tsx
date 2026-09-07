@@ -1,5 +1,5 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { useEffect, useLayoutEffect, useState, type RefObject } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
 import { getWorkspaceScrollElement } from "@/lib/workspace-scroll";
 
 /** ListCard (capped overflow-y) is the Y scroller; otherwise workspace, like Register. */
@@ -19,7 +19,8 @@ function resolveScrollParent(node: HTMLElement | null): HTMLElement | null {
  * Register-style windowing for ListCard / in-flow tables. Do not use on Register.
  * Live node when that node is the Y scroller; otherwise workspace so first paint
  * is not empty. Measure only when count / size / scroller change — never on virt
- * identity (that loops).
+ * identity (that loops). getItemKey and estimateSize are read from refs so
+ * parent identity changes do not rebuild the range.
  */
 export function useListVirtualizer(
   count: number,
@@ -29,6 +30,10 @@ export function useListVirtualizer(
   enabled = true,
 ) {
   const [scrollEl, setScrollEl] = useState<HTMLElement | null>(null);
+  const keyRef = useRef(getItemKey);
+  keyRef.current = getItemKey;
+  const sizeRef = useRef(estimateSize);
+  sizeRef.current = estimateSize;
   useLayoutEffect(() => {
     const node = scrollRef.current;
     setScrollEl((prev) => (prev === node ? prev : node));
@@ -37,9 +42,9 @@ export function useListVirtualizer(
     count,
     enabled,
     getScrollElement: () => resolveScrollParent(scrollEl ?? scrollRef.current),
-    estimateSize: () => estimateSize,
+    estimateSize: () => sizeRef.current,
     overscan: 12,
-    getItemKey,
+    getItemKey: (index) => keyRef.current(index),
   });
   useEffect(() => {
     if (!enabled) return;

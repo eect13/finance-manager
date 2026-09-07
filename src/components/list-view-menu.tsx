@@ -14,12 +14,14 @@ export function ListViewMenu({
   lead,
   extra,
   hiddenCount,
+  onFitAll,
 }: {
   layout?: ListView;
   onLayout?: (next: ListView) => void;
   lead?: ReactNode;
   extra?: ReactNode;
   hiddenCount?: number;
+  onFitAll?: () => void;
 }) {
   const phone = isNarrowUi();
   const [open, setOpen] = useState(false);
@@ -42,6 +44,15 @@ export function ListViewMenu({
         </div>
       ) : null}
       {extra}
+      {onFitAll ? (
+        <button
+          type="button"
+          className="mt-2 text-sm font-medium text-foreground"
+          onClick={onFitAll}
+        >
+          Auto-fit columns
+        </button>
+      ) : null}
       <label className="mt-3 mb-1 flex flex-col gap-1.5">
         <span className="text-xs font-medium text-muted-foreground">Type size {fontSize}px</span>
         <input

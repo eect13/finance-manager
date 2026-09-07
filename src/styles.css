@@ -3262,10 +3262,12 @@ body.printing [data-radix-popper-content-wrapper]:has(.print-paper-menu) {
     padding-bottom: 0.35rem !important;
   }
 
-  /* Phone tables: hide resize handles; let the row scroll horizontally */
+  /* Phone tables: keep auto-fit handle (tap to fit). Drag stays mouse-only. */
   .col-resize-handle {
-    display: none !important;
-    pointer-events: none !important;
+    display: block !important;
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+    width: 22px;
   }
   .page-scroll-x {
     overflow-x: auto !important;
@@ -6449,6 +6451,105 @@ thead button.sort-header-label:hover {
   background: var(--color-table-hover, var(--color-muted));
   background-color: var(--color-table-hover, var(--color-muted));
 }
+
+/* =============================================================================
+   v3.63.12 — View chips hide list columns; phone auto-fit handle stays tappable
+   ============================================================================= */
+
+[data-hide-date] [data-col="date"],
+[data-hide-date] col[data-col="date"],
+[data-hide-type] [data-col="type"],
+[data-hide-type] col[data-col="type"],
+[data-hide-number] [data-col="number"],
+[data-hide-number] col[data-col="number"],
+[data-hide-payee] [data-col="payee"],
+[data-hide-payee] col[data-col="payee"],
+[data-hide-memo] [data-col="memo"],
+[data-hide-memo] col[data-col="memo"],
+[data-hide-bank] [data-col="bank"],
+[data-hide-bank] col[data-col="bank"],
+[data-hide-payment] [data-col="payment"],
+[data-hide-payment] col[data-col="payment"],
+[data-hide-deposit] [data-col="deposit"],
+[data-hide-deposit] col[data-col="deposit"],
+[data-hide-balance] [data-col="balance"],
+[data-hide-balance] col[data-col="balance"],
+[data-hide-status] [data-col="status"],
+[data-hide-status] col[data-col="status"],
+[data-hide-customer] [data-col="customer"],
+[data-hide-customer] col[data-col="customer"],
+[data-hide-due] [data-col="due"],
+[data-hide-due] col[data-col="due"],
+[data-hide-total] [data-col="total"],
+[data-hide-total] col[data-col="total"],
+[data-hide-vendor] [data-col="vendor"],
+[data-hide-vendor] col[data-col="vendor"],
+[data-hide-amount] [data-col="amount"],
+[data-hide-amount] col[data-col="amount"],
+[data-hide-from] [data-col="from"],
+[data-hide-from] col[data-col="from"],
+[data-hide-kind] [data-col="kind"],
+[data-hide-kind] col[data-col="kind"],
+[data-hide-issued] [data-col="issued"],
+[data-hide-issued] col[data-col="issued"],
+[data-hide-post] [data-col="post"],
+[data-hide-post] col[data-col="post"],
+[data-hide-nickname] [data-col="nickname"],
+[data-hide-nickname] col[data-col="nickname"],
+[data-hide-name] [data-col="name"],
+[data-hide-name] col[data-col="name"],
+[data-hide-book] [data-col="book"],
+[data-hide-book] col[data-col="book"],
+[data-hide-pending] [data-col="pending"],
+[data-hide-pending] col[data-col="pending"],
+[data-hide-title] [data-col="title"],
+[data-hide-title] col[data-col="title"],
+[data-hide-rate] [data-col="rate"],
+[data-hide-rate] col[data-col="rate"],
+[data-hide-description] [data-col="description"],
+[data-hide-description] col[data-col="description"],
+[data-hide-source] [data-col="source"],
+[data-hide-source] col[data-col="source"],
+[data-hide-debit] [data-col="debit"],
+[data-hide-debit] col[data-col="debit"],
+[data-hide-credit] [data-col="credit"],
+[data-hide-credit] col[data-col="credit"],
+[data-hide-code] [data-col="code"],
+[data-hide-code] col[data-col="code"],
+[data-hide-days] [data-col="days"],
+[data-hide-days] col[data-col="days"],
+[data-hide-contact] [data-col="contact"],
+[data-hide-contact] col[data-col="contact"],
+[data-hide-email] [data-col="email"],
+[data-hide-email] col[data-col="email"],
+[data-hide-phone] [data-col="phone"],
+[data-hide-phone] col[data-col="phone"],
+[data-hide-open] [data-col="open"],
+[data-hide-open] col[data-col="open"],
+[data-hide-party] [data-col="party"],
+[data-hide-party] col[data-col="party"],
+[data-hide-age] [data-col="age"],
+[data-hide-age] col[data-col="age"],
+[data-hide-account] [data-col="account"],
+[data-hide-account] col[data-col="account"] {
+  display: none !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  overflow: hidden !important;
+}
+
+@media (max-width: 767px) {
+  .col-resize-handle {
+    display: block !important;
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+    width: 22px;
+  }
+}
+
 
 
 

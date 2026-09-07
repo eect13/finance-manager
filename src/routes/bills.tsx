@@ -27,6 +27,7 @@ import { useColWidths } from "@/components/use-col-widths";
 import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
 import { useListVirtualizer, VirtPad } from "@/components/use-list-virtualizer";
+import { useColVisible, visibleTableWidth, viewColumnExtra } from "@/components/column-chips";
 import { cn } from "@/lib/utils";
 import { useRowDrag } from "@/components/use-row-drag";
 import { Button } from "@/components/ui/button";
@@ -71,6 +72,17 @@ const BILL_SORT = [
   { value: "due:asc", label: "Due · soonest" },
   { value: "balance:desc", label: "Balance high–low" },
 ];
+
+const BILL_CHIPS = [
+  { id: "number", label: "Number" },
+  { id: "vendor", label: "Vendor" },
+  { id: "date", label: "Date" },
+  { id: "due", label: "Due" },
+  { id: "amount", label: "Amount" },
+  { id: "balance", label: "Balance" },
+  { id: "status", label: "Status" },
+] as const;
+const BILL_VIS_IDS = BILL_CHIPS.map((c) => c.id);
 
 function BillsPage() {
   const data = useFinanceData();
@@ -138,6 +150,7 @@ function BillsPage() {
 
   const paying = data.bills.find((b) => b.id === payId);
   const cols = useColWidths("finance-manager-bills-cols", BILL_COLS);
+  const vis = useColVisible("finance-manager-bills-vis", BILL_VIS_IDS);
   const gridRef = useRef<HTMLDivElement>(null);
   const openBill = useCallback((id: string) => openTxn("bill", id), []);
   const colAligns = useColAligns("finance-manager-bills-col-aligns", Object.keys(BILL_COLS) as Array<keyof typeof BILL_COLS>);
@@ -150,6 +163,12 @@ function BillsPage() {
     const table = gridRef.current?.querySelector("table");
     if (!table) return;
     cols.setWidth(id, fitColumnWidth({ table, selector: `td[data-col="${id}"]`, header: label }));
+  }
+  function fitAll() {
+    (Object.keys(BILL_COLS) as Array<keyof typeof BILL_COLS>).forEach((id) => {
+      if (vis.on[id] === false) return;
+      fit(id, BILL_CHIPS.find((c) => c.id === id)?.label ?? "Actions");
+    });
   }
 
   return (
@@ -210,7 +229,13 @@ function BillsPage() {
             period.reset();
           }}
         />
-        <ListViewMenu layout={view} onLayout={setView} />
+        <ListViewMenu
+          layout={view}
+          onLayout={setView}
+          hiddenCount={vis.hiddenCount}
+          extra={viewColumnExtra(BILL_CHIPS, vis)}
+          onFitAll={fitAll}
+        />
       </ListToolbar>
 
       {view === "grid" ? (
@@ -231,12 +256,12 @@ function BillsPage() {
           })}
         />
       ) : (
-      <ListCard ref={pointer.bindContainer(gridRef)} tabIndex={0} className="doc-list outline-none">
-        <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
+      <ListCard ref={pointer.bindContainer(gridRef)} tabIndex={0} className="doc-list outline-none" {...vis.hideAttrs}>
+        <table ref={cols.tableRef} className="text-sm" style={listTableStyle(visibleTableWidth(cols.widths, vis.on))}>
           <colgroup>
             {dragEnabled ? <col style={{ width: 44 }} /> : null}
             {(Object.keys(BILL_COLS) as Array<keyof typeof BILL_COLS>).map((id) => (
-              <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id])} />
+              <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id], vis.on[id] !== false)} data-col={id} />
             ))}
           </colgroup>
           <thead>

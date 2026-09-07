@@ -32,6 +32,7 @@ export function ColResize({
 }) {
   const coarse =
     typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
+  const tapRef = useRef<{ x: number; y: number; id: number } | null>(null);
   return (
     <span
       role="separator"
@@ -39,7 +40,7 @@ export function ColResize({
       aria-label={coarse ? "Auto-fit column" : "Resize column"}
       title={
         coarse
-          ? "Double-tap to auto-fit (drag resize is for mouse)"
+          ? "Tap to auto-fit (drag resize is for mouse)"
           : "Drag to resize · double-click to auto-fit"
       }
       className="col-resize-handle no-print"
@@ -50,7 +51,11 @@ export function ColResize({
       }}
       onPointerDown={(e) => {
         if (e.detail > 1) return;
-        if (e.pointerType === "touch") return;
+        if (e.pointerType === "touch" || e.pointerType === "pen") {
+          tapRef.current = { x: e.clientX, y: e.clientY, id: e.pointerId };
+          e.stopPropagation();
+          return;
+        }
         e.preventDefault();
         e.stopPropagation();
         const startX = e.clientX;
@@ -82,6 +87,20 @@ export function ColResize({
         }
         window.addEventListener("pointermove", move);
         window.addEventListener("pointerup", up);
+      }}
+      onPointerUp={(e) => {
+        const tap = tapRef.current;
+        tapRef.current = null;
+        if (!tap || tap.id !== e.pointerId) return;
+        const dx = e.clientX - tap.x;
+        const dy = e.clientY - tap.y;
+        if (dx * dx + dy * dy > 64) return;
+        e.preventDefault();
+        e.stopPropagation();
+        onFit?.();
+      }}
+      onPointerCancel={() => {
+        tapRef.current = null;
       }}
     />
   );
@@ -270,6 +289,18 @@ export function SortHeader({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="min-w-44">
             <DropdownMenuLabel>{label}</DropdownMenuLabel>
+            {onFit ? (
+              <>
+                <DropdownMenuItem
+                  onClick={() => {
+                    onFit();
+                  }}
+                >
+                  Auto-fit
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+              </>
+            ) : null}
             {onAlign ? (
               <>
                 <DropdownMenuSeparator />

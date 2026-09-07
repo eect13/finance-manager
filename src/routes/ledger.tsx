@@ -18,6 +18,7 @@ import { useColWidths } from "@/components/use-col-widths";
 import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
 import { useListVirtualizer, VirtPad } from "@/components/use-list-virtualizer";
+import { useColVisible, visibleTableWidth, viewColumnExtra } from "@/components/column-chips";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ledgerRows } from "@/lib/finance/export";
@@ -37,6 +38,7 @@ function LedgerPage() {
   const tb = trialBalance(data);
   const [query, setQuery] = useState("");
   const [view, setView] = useListView("ledger");
+  const [tab, setTab] = useState("journal");
   const [source, setSource] = useState<"all" | JournalEntry["sourceType"]>("all");
   const period = useListPeriod("all");
 
@@ -61,6 +63,8 @@ function LedgerPage() {
     [],
   );
   const sort = useEntrySort(filtered, "date", getters, "desc");
+  const jVis = useColVisible("finance-manager-journal-vis", JRN_VIS_IDS);
+  const aVis = useColVisible("finance-manager-accounts-vis", ACCT_VIS_IDS);
   const printRows = sort.sorted.map((e) => {
     const debit = e.lines.reduce((s, l) => s + l.debit, 0);
     return {
@@ -86,7 +90,7 @@ function LedgerPage() {
         </>
       }
     >
-      <Tabs defaultValue="journal">
+      <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="mb-3">
           <TabsTrigger value="journal">Journal</TabsTrigger>
           <TabsTrigger value="accounts">Chart of accounts</TabsTrigger>
@@ -138,7 +142,12 @@ function LedgerPage() {
                 period.reset();
               }}
             />
-            <ListViewMenu layout={view} onLayout={setView} />
+            <ListViewMenu
+              layout={view}
+              onLayout={setView}
+              hiddenCount={jVis.hiddenCount}
+              extra={viewColumnExtra(JRN_CHIPS, jVis)}
+            />
           </ListToolbar>
           {view === "grid" ? (
             <DocCards
@@ -153,11 +162,14 @@ function LedgerPage() {
               }))}
             />
           ) : (
-            <JournalTable entries={sort.sorted} currency={settings.currency} sort={sort} />
+            <JournalTable entries={sort.sorted} currency={settings.currency} sort={sort} vis={jVis} />
           )}
         </TabsContent>
         <TabsContent value="accounts">
-          <AccountsTable accounts={accounts} currency={settings.currency} data={data} />
+          <div className="mb-3 flex justify-end no-print">
+            <ListViewMenu hiddenCount={aVis.hiddenCount} extra={viewColumnExtra(ACCT_CHIPS, aVis)} />
+          </div>
+          <AccountsTable accounts={accounts} currency={settings.currency} data={data} vis={aVis} />
           <p className="mt-3 text-xs text-muted-foreground">
             Trial balance debit {tb.reduce((s, r) => s + r.debit, 0) / 100} / credit{" "}
             {tb.reduce((s, r) => s + r.credit, 0) / 100} (in {settings.currency} units).
@@ -185,15 +197,25 @@ const JRN_COLS = {
   debit: 128,
   credit: 128,
 } as const;
+const JRN_CHIPS = [
+  { id: "date", label: "Date" },
+  { id: "description", label: "Description" },
+  { id: "source", label: "Source" },
+  { id: "debit", label: "Debit" },
+  { id: "credit", label: "Credit" },
+] as const;
+const JRN_VIS_IDS = JRN_CHIPS.map((c) => c.id);
 
 function JournalTable({
   entries,
   currency,
   sort,
+  vis,
 }: {
   entries: JournalEntry[];
   currency: string;
   sort: EntrySort<JournalEntry>;
+  vis: ReturnType<typeof useColVisible>;
 }) {
   const cols = useColWidths("finance-manager-journal-cols", JRN_COLS);
   const colAligns = useColAligns("finance-manager-journal-col-aligns", Object.keys(JRN_COLS) as Array<keyof typeof JRN_COLS>);
@@ -213,11 +235,11 @@ function JournalTable({
     return <p className="px-4 py-8 text-center text-sm text-muted-foreground">No journal entries yet.</p>;
   }
   return (
-    <ListCard ref={pointer.bindContainer(gridRef)} tabIndex={0} className="outline-none">
-      <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
+    <ListCard ref={pointer.bindContainer(gridRef)} tabIndex={0} className="outline-none" {...vis.hideAttrs}>
+      <table ref={cols.tableRef} className="text-sm" style={listTableStyle(visibleTableWidth(cols.widths, vis.on))}>
         <colgroup>
           {(Object.keys(JRN_COLS) as Array<keyof typeof JRN_COLS>).map((id) => (
-            <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id])} />
+            <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id], vis.on[id] !== false)} data-col={id} />
           ))}
         </colgroup>
         <thead>
@@ -267,15 +289,24 @@ const ACCT_COLS = {
   type: 120,
   balance: 140,
 } as const;
+const ACCT_CHIPS = [
+  { id: "code", label: "Code" },
+  { id: "name", label: "Account" },
+  { id: "type", label: "Type" },
+  { id: "balance", label: "Balance" },
+] as const;
+const ACCT_VIS_IDS = ACCT_CHIPS.map((c) => c.id);
 
 function AccountsTable({
   accounts,
   currency,
   data,
+  vis,
 }: {
   accounts: Account[];
   currency: string;
   data: ReturnType<typeof useFinanceData>;
+  vis: ReturnType<typeof useColVisible>;
 }) {
   const cols = useColWidths("finance-manager-accounts-cols", ACCT_COLS);
   const colAligns = useColAligns("finance-manager-accounts-col-aligns", Object.keys(ACCT_COLS) as Array<keyof typeof ACCT_COLS>);
@@ -301,11 +332,11 @@ function AccountsTable({
     cols.setWidth(id, fitColumnWidth({ table, selector: `td[data-col="${id}"]`, header: label }));
   }
   return (
-    <ListCard ref={pointer.bindContainer(gridRef)} tabIndex={0} className="outline-none">
-      <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
+    <ListCard ref={pointer.bindContainer(gridRef)} tabIndex={0} className="outline-none" {...vis.hideAttrs}>
+      <table ref={cols.tableRef} className="text-sm" style={listTableStyle(visibleTableWidth(cols.widths, vis.on))}>
         <colgroup>
           {(Object.keys(ACCT_COLS) as Array<keyof typeof ACCT_COLS>).map((id) => (
-            <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id])} />
+            <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id], vis.on[id] !== false)} data-col={id} />
           ))}
         </colgroup>
         <thead>

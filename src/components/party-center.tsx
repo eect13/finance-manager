@@ -49,6 +49,7 @@ import { SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
 import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
+import { useColVisible, visibleTableWidth, viewColumnExtra } from "@/components/column-chips";
 import { ListToolbar } from "@/components/filter-pills";
 import { ListFilters, applySortValue, useListPeriod, type FilterSelect } from "@/components/list-filters";
 import { ListCard, listColClass, listColWidthStyle, listTableStyle } from "@/components/list-table";
@@ -66,6 +67,17 @@ const TXN_COLS = {
   balance: 120,
   status: 112,
 } as const;
+const TXN_CHIPS = [
+  { id: "date", label: "Date" },
+  { id: "type", label: "Type" },
+  { id: "number", label: "No." },
+  { id: "memo", label: "Memo" },
+  { id: "amount", label: "Amount" },
+  { id: "open", label: "Open" },
+  { id: "balance", label: "Balance" },
+  { id: "status", label: "Status" },
+] as const;
+const TXN_VIS_IDS = TXN_CHIPS.map((c) => c.id);
 
 const TXN_SORT = [
   { value: "date:desc", label: "Date · newest" },
@@ -134,6 +146,7 @@ export function PartyTxnTable({
   const pointer = useTableKeyboardFocus({ ids, onOpen: openRow });
   const wrapRef = useRef<HTMLDivElement>(null);
   const cols = useColWidths("finance-manager-party-txn-cols", TXN_COLS);
+  const vis = useColVisible("finance-manager-party-txn-vis", TXN_VIS_IDS);
   const listVirt = useListVirtualizer(sort.sorted.length, wrapRef, (index) => {
     const row = sort.sorted[index];
     return row ? `${row.openKind}-${row.id}` : index;
@@ -165,6 +178,16 @@ export function PartyTxnTable({
             period.reset();
           }}
         />
+        <ListViewMenu
+          hiddenCount={vis.hiddenCount}
+          extra={viewColumnExtra(TXN_CHIPS, vis)}
+          onFitAll={() => {
+            (Object.keys(TXN_COLS) as Array<keyof typeof TXN_COLS>).forEach((id) => {
+              if (vis.on[id] === false) return;
+              fit(id, TXN_CHIPS.find((c) => c.id === id)?.label ?? id);
+            });
+          }}
+        />
       </ListToolbar>
       {sort.sorted.length === 0 ? (
         <p className="px-4 py-8 text-center text-sm text-muted-foreground">{query.trim() ? "No transactions match." : empty}</p>
@@ -173,11 +196,12 @@ export function PartyTxnTable({
           ref={pointer.bindContainer(wrapRef)}
           className="party-txn-table outline-none"
           tabIndex={0}
+          {...vis.hideAttrs}
         >
-          <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
+          <table ref={cols.tableRef} className="text-sm" style={listTableStyle(visibleTableWidth(cols.widths, vis.on))}>
             <colgroup>
               {(Object.keys(TXN_COLS) as Array<keyof typeof TXN_COLS>).map((id) => (
-                <col key={id} className={cn(`col-txn-${id}`, listColClass(id))} style={listColWidthStyle(id, cols.widths[id])} />
+                <col key={id} className={cn(`col-txn-${id}`, listColClass(id))} style={listColWidthStyle(id, cols.widths[id], vis.on[id] !== false)} data-col={id} />
               ))}
             </colgroup>
             <thead>
@@ -559,6 +583,14 @@ const DIR_COLS = {
   phone: 128,
   balance: 128,
 } as const;
+const DIR_CHIPS = [
+  { id: "name", label: "Name" },
+  { id: "contact", label: "Contact" },
+  { id: "email", label: "Email" },
+  { id: "phone", label: "Phone" },
+  { id: "balance", label: "Open" },
+] as const;
+const DIR_VIS_IDS = DIR_CHIPS.map((c) => c.id);
 
 function PartyDirectoryTable({
   kindLabel,
@@ -568,6 +600,7 @@ function PartyDirectoryTable({
   onOpen,
   onHighlight,
   currency,
+  vis,
 }: {
   kindLabel: string;
   list: PartyDirRow[];
@@ -577,6 +610,7 @@ function PartyDirectoryTable({
   /** Focus sync only — must not reset detail tabs (unlike onSelect/pick). */
   onHighlight: (id: string) => void;
   currency: string;
+  vis: ReturnType<typeof useColVisible>;
 }) {
   const cols = useColWidths(`finance-manager-${kindLabel}-dir-cols`, DIR_COLS);
   const gridRef = useRef<HTMLDivElement>(null);
@@ -613,11 +647,12 @@ function PartyDirectoryTable({
       tabIndex={0}
       className="party-dir-table list-grid min-w-0 max-w-full outline-none"
       onMouseDown={pointer.containerProps.onMouseDown}
+      {...vis.hideAttrs}
     >
-      <table ref={cols.tableRef} className="text-sm" style={{ width: cols.tableWidth, minWidth: cols.tableWidth }}>
+      <table ref={cols.tableRef} className="text-sm" style={{ width: visibleTableWidth(cols.widths, vis.on), minWidth: visibleTableWidth(cols.widths, vis.on) }}>
         <colgroup>
           {(Object.keys(DIR_COLS) as Array<keyof typeof DIR_COLS>).map((id) => (
-            <col key={id} className={cn(`col-dir-${id}`, "col-fit")} style={{ width: cols.widths[id], minWidth: cols.widths[id] }} />
+            <col key={id} className={cn(`col-dir-${id}`, "col-fit")} style={vis.on[id] === false ? { width: 0, minWidth: 0 } : { width: cols.widths[id], minWidth: cols.widths[id] }} data-col={id} />
           ))}
         </colgroup>
         <thead>
@@ -772,6 +807,7 @@ function PartySplit({
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [view, setView] = useListView(`${kindLabel}-dir`);
+  const dirVis = useColVisible(`finance-manager-${kindLabel}-dir-vis`, DIR_VIS_IDS);
   const [balFilter, setBalFilter] = useState<"all" | "open" | "zero">("all");
   const [detailTab, setDetailTab] = useState("transactions");
   const tapOpens = useTapOpens();
@@ -826,7 +862,12 @@ function PartySplit({
           ]}
           onClear={() => setBalFilter("all")}
         />
-        <ListViewMenu layout={view} onLayout={setView} />
+        <ListViewMenu
+          layout={view}
+          onLayout={setView}
+          hiddenCount={dirVis.hiddenCount}
+          extra={viewColumnExtra(DIR_CHIPS, dirVis)}
+        />
         {selectedId ? (
           <Button variant="outline" className="no-print w-fit" onClick={hideDetail}>
             <PanelRightClose />
@@ -849,7 +890,7 @@ function PartySplit({
               )}
             </>
           ) : (
-            <PartyDirectoryTable kindLabel={kindLabel} list={visible} selectedId={selectedId} onSelect={pick} onOpen={tapOpens ? pick : openDetails} onHighlight={highlight} currency={currency} />
+            <PartyDirectoryTable kindLabel={kindLabel} list={visible} selectedId={selectedId} onSelect={pick} onOpen={tapOpens ? pick : openDetails} onHighlight={highlight} currency={currency} vis={dirVis} />
           )}
         </aside>
         <section className={cn("party-pane-detail min-w-0 rounded-3xl bg-card elevation", !mobileOpen && "is-list")}>

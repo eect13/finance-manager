@@ -27,6 +27,7 @@ import { useColWidths } from "@/components/use-col-widths";
 import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
 import { useListVirtualizer, VirtPad } from "@/components/use-list-virtualizer";
+import { useColVisible, visibleTableWidth, viewColumnExtra } from "@/components/column-chips";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -67,6 +68,17 @@ const CHK_SORT = [
   { value: "payee:asc", label: "Payee A–Z" },
   { value: "amount:desc", label: "Amount high–low" },
 ];
+
+const CHK_CHIPS = [
+  { id: "number", label: "Number" },
+  { id: "payee", label: "Payee" },
+  { id: "bank", label: "Bank" },
+  { id: "issued", label: "Issued" },
+  { id: "post", label: "Post" },
+  { id: "amount", label: "Amount" },
+  { id: "status", label: "Status" },
+] as const;
+const CHK_VIS_IDS = CHK_CHIPS.map((c) => c.id);
 
 function ChecksPage() {
   const data = useFinanceData();
@@ -120,6 +132,7 @@ function ChecksPage() {
   );
   const sort = useEntrySort(filtered, "issued", getters, "desc");
   const cols = useColWidths("finance-manager-checks-cols", CHK_COLS);
+  const vis = useColVisible("finance-manager-checks-vis", CHK_VIS_IDS);
   const gridRef = useRef<HTMLDivElement>(null);
   const openCheck = useCallback((id: string) => openTxn("check", id), []);
   const colAligns = useColAligns("finance-manager-checks-col-aligns", Object.keys(CHK_COLS) as Array<keyof typeof CHK_COLS>);
@@ -132,6 +145,12 @@ function ChecksPage() {
     const table = gridRef.current?.querySelector("table");
     if (!table) return;
     cols.setWidth(id, fitColumnWidth({ table, selector: `td[data-col="${id}"]`, header: label }));
+  }
+  function fitAll() {
+    (Object.keys(CHK_COLS) as Array<keyof typeof CHK_COLS>).forEach((id) => {
+      if (vis.on[id] === false) return;
+      fit(id, CHK_CHIPS.find((c) => c.id === id)?.label ?? "Actions");
+    });
   }
 
   return (
@@ -199,7 +218,13 @@ function ChecksPage() {
             period.reset();
           }}
         />
-        <ListViewMenu layout={view} onLayout={setView} />
+        <ListViewMenu
+          layout={view}
+          onLayout={setView}
+          hiddenCount={vis.hiddenCount}
+          extra={viewColumnExtra(CHK_CHIPS, vis)}
+          onFitAll={fitAll}
+        />
       </ListToolbar>
 
       {view === "grid" ? (
@@ -218,11 +243,11 @@ function ChecksPage() {
           }))}
         />
       ) : (
-      <ListCard ref={pointer.bindContainer(gridRef)} tabIndex={0} className="outline-none">
-        <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
+      <ListCard ref={pointer.bindContainer(gridRef)} tabIndex={0} className="outline-none" {...vis.hideAttrs}>
+        <table ref={cols.tableRef} className="text-sm" style={listTableStyle(visibleTableWidth(cols.widths, vis.on))}>
           <colgroup>
             {(Object.keys(CHK_COLS) as Array<keyof typeof CHK_COLS>).map((id) => (
-              <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id])} />
+              <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id], vis.on[id] !== false)} data-col={id} />
             ))}
           </colgroup>
           <thead>

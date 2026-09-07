@@ -29,6 +29,7 @@ import { useColWidths } from "@/components/use-col-widths";
 import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
 import { useListVirtualizer, VirtPad } from "@/components/use-list-virtualizer";
+import { useColVisible, visibleTableWidth, viewColumnExtra } from "@/components/column-chips";
 import { cn } from "@/lib/utils";
 import { useRowDrag } from "@/components/use-row-drag";
 import { Button } from "@/components/ui/button";
@@ -72,6 +73,16 @@ const RCP_SORT = [
   { value: "from:asc", label: "Payee A–Z" },
   { value: "amount:desc", label: "Amount high–low" },
 ];
+
+const RCP_CHIPS = [
+  { id: "number", label: "Number" },
+  { id: "date", label: "Date" },
+  { id: "from", label: "From" },
+  { id: "kind", label: "Kind" },
+  { id: "amount", label: "Amount" },
+  { id: "status", label: "Status" },
+] as const;
+const RCP_VIS_IDS = RCP_CHIPS.map((c) => c.id);
 
 function ReceiptsPage() {
   const data = useFinanceData();
@@ -136,6 +147,7 @@ function ReceiptsPage() {
     reorderReceipts,
   );
   const cols = useColWidths("finance-manager-receipts-cols", RCP_COLS);
+  const vis = useColVisible("finance-manager-receipts-vis", RCP_VIS_IDS);
   const gridRef = useRef<HTMLDivElement>(null);
   const openReceipt = useCallback((id: string) => openTxn("receipt", id), []);
   const colAligns = useColAligns("finance-manager-receipts-col-aligns", Object.keys(RCP_COLS) as Array<keyof typeof RCP_COLS>);
@@ -148,6 +160,12 @@ function ReceiptsPage() {
     const table = gridRef.current?.querySelector("table");
     if (!table) return;
     cols.setWidth(id, fitColumnWidth({ table, selector: `td[data-col="${id}"]`, header: label }));
+  }
+  function fitAll() {
+    (Object.keys(RCP_COLS) as Array<keyof typeof RCP_COLS>).forEach((id) => {
+      if (vis.on[id] === false) return;
+      fit(id, RCP_CHIPS.find((c) => c.id === id)?.label ?? "Actions");
+    });
   }
 
   const posted = data.receipts.filter((r) => r.status === "posted");
@@ -246,7 +264,13 @@ function ReceiptsPage() {
             period.reset();
           }}
         />
-        <ListViewMenu layout={view} onLayout={setView} />
+        <ListViewMenu
+          layout={view}
+          onLayout={setView}
+          hiddenCount={vis.hiddenCount}
+          extra={viewColumnExtra(RCP_CHIPS, vis)}
+          onFitAll={fitAll}
+        />
       </ListToolbar>
 
       {view === "grid" ? (
@@ -266,12 +290,12 @@ function ReceiptsPage() {
           })}
         />
       ) : (
-      <ListCard ref={pointer.bindContainer(gridRef)} tabIndex={0} className="doc-list outline-none">
-        <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
+      <ListCard ref={pointer.bindContainer(gridRef)} tabIndex={0} className="doc-list outline-none" {...vis.hideAttrs}>
+        <table ref={cols.tableRef} className="text-sm" style={listTableStyle(visibleTableWidth(cols.widths, vis.on))}>
           <colgroup>
             {dragEnabled ? <col style={{ width: 44 }} /> : null}
             {(Object.keys(RCP_COLS) as Array<keyof typeof RCP_COLS>).map((id) => (
-              <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id])} />
+              <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id], vis.on[id] !== false)} data-col={id} />
             ))}
           </colgroup>
           <thead>

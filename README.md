@@ -1,4 +1,4 @@
-# Finance Manager v3.63.11
+# Finance Manager v3.63.12
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -26,6 +26,12 @@ Unzip the repo (a second unzip named `finance-manager-main (1)` is fine) so `dep
 Vite is installed with the packages — no global `vite` command. `.npmrc` has `legacy-peer-deps=true`.
 
 After the Windows installer: **delete the leftover white shortcut** and pin the new one — shortcut and taskbar both use the navy pillars tile.
+
+## What's new in v3.63.12
+
+- **Phone auto-fit**: column-edge handles stay tappable under 768px (tap to auto-fit). Drag resize stays mouse-only. View also has Auto-fit columns on lists that already fit.
+- **View column chips**: hide Date, Customer, and the rest on Invoices, Bills, Receipts, Checks, Banks, Employees, Ledger, Customers/Vendors, Reconcile, and Reports — same idea as Register. Actions and the Reconcile tick stay on.
+- **List virtualizer**: item keys are read from a ref so parent identity changes do not rebuild the visible range. Register internals are unchanged.
 
 ## What's new in v3.63.11
 

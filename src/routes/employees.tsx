@@ -20,6 +20,7 @@ import { useColWidths } from "@/components/use-col-widths";
 import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
 import { useListVirtualizer, VirtPad } from "@/components/use-list-virtualizer";
+import { useColVisible, visibleTableWidth, viewColumnExtra } from "@/components/column-chips";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -52,6 +53,15 @@ const EMP_SORT = [
   { value: "hireDate:asc", label: "Hired · oldest" },
   { value: "status:asc", label: "Status" },
 ];
+
+const EMP_CHIPS = [
+  { id: "name", label: "Name" },
+  { id: "title", label: "Title" },
+  { id: "rate", label: "Rate" },
+  { id: "bank", label: "Bank" },
+  { id: "status", label: "Status" },
+] as const;
+const EMP_VIS_IDS = EMP_CHIPS.map((c) => c.id);
 
 type FormState = {
   name: string;
@@ -136,6 +146,7 @@ function EmployeesPage() {
 
   const sort = useEntrySort(filtered, "name", getters, "asc");
   const cols = useColWidths("finance-manager-employees-cols", EMP_COLS);
+  const vis = useColVisible("finance-manager-employees-vis", EMP_VIS_IDS);
   const colAligns = useColAligns("finance-manager-employees-col-aligns", Object.keys(EMP_COLS) as Array<keyof typeof EMP_COLS>);
   const pointer = useTableKeyboardFocus({
     ids: sort.sorted.map((e) => e.id),
@@ -150,6 +161,12 @@ function EmployeesPage() {
     const table = gridRef.current?.querySelector("table");
     if (!table) return;
     cols.setWidth(id, fitColumnWidth({ table, selector: `td[data-col="${id}"]`, header: label }));
+  }
+  function fitAll() {
+    (Object.keys(EMP_COLS) as Array<keyof typeof EMP_COLS>).forEach((id) => {
+      if (vis.on[id] === false) return;
+      fit(id, EMP_CHIPS.find((c) => c.id === id)?.label ?? "Actions");
+    });
   }
   const activeCount = (data.employees ?? []).filter((e) => e.active).length;
 
@@ -305,7 +322,13 @@ function EmployeesPage() {
             sort.set("name", "asc");
           }}
         />
-        <ListViewMenu layout={view} onLayout={setView} />
+        <ListViewMenu
+          layout={view}
+          onLayout={setView}
+          hiddenCount={vis.hiddenCount}
+          extra={viewColumnExtra(EMP_CHIPS, vis)}
+          onFitAll={fitAll}
+        />
       </ListToolbar>
 
       {view === "grid" ? (
@@ -327,11 +350,11 @@ function EmployeesPage() {
           }))}
         />
       ) : (
-      <ListCard ref={pointer.bindContainer(gridRef)} tabIndex={0} className="outline-none">
-        <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
+      <ListCard ref={pointer.bindContainer(gridRef)} tabIndex={0} className="outline-none" {...vis.hideAttrs}>
+        <table ref={cols.tableRef} className="text-sm" style={listTableStyle(visibleTableWidth(cols.widths, vis.on))}>
           <colgroup>
             {(Object.keys(EMP_COLS) as Array<keyof typeof EMP_COLS>).map((id) => (
-              <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id])} />
+              <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id], vis.on[id] !== false)} data-col={id} />
             ))}
           </colgroup>
           <thead>

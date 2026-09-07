@@ -12,6 +12,8 @@ import { SortHeader } from "@/components/sort-header";
 import { listColClass, listColWidthStyle, listTableStyle } from "@/components/list-table";
 import { useColWidths } from "@/components/use-col-widths";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
+import { useColVisible, visibleTableWidth, viewColumnExtra } from "@/components/column-chips";
+import { ListViewMenu } from "@/components/list-view-menu";
 import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
 import { useListVirtualizer, VirtPad } from "@/components/use-list-virtualizer";
 import { cn } from "@/lib/utils";
@@ -29,12 +31,35 @@ import { useFinanceData } from "@/lib/finance/store";
 
 export const Route = createFileRoute("/reports")({ component: ReportsPage });
 
+const AGE_CHIPS = [
+  { id: "party", label: "Party" },
+  { id: "number", label: "No." },
+  { id: "due", label: "Due" },
+  { id: "age", label: "Age" },
+  { id: "amount", label: "Open" },
+] as const;
+const AGE_VIS_IDS = AGE_CHIPS.map((c) => c.id);
+const TB_CHIPS = [
+  { id: "account", label: "Account" },
+  { id: "debit", label: "Debit" },
+  { id: "credit", label: "Credit" },
+] as const;
+const TB_VIS_IDS = TB_CHIPS.map((c) => c.id);
+const PL_CHIPS = [
+  { id: "account", label: "Account" },
+  { id: "amount", label: "Amount" },
+] as const;
+const PL_VIS_IDS = PL_CHIPS.map((c) => c.id);
+
 function ReportsPage() {
   const data = useFinanceData();
   const settings = data.settings;
   const [asOf, setAsOf] = useState(todayIso());
   const [query, setQuery] = useState("");
   const [tab, setTab] = useState("aging");
+  const ageVis = useColVisible("finance-manager-aging-vis", AGE_VIS_IDS);
+  const tbVis = useColVisible("finance-manager-tb-vis", TB_VIS_IDS);
+  const plVis = useColVisible("finance-manager-pl-vis", PL_VIS_IDS);
   const tb = useMemo(() => trialBalance(data, asOf), [data, asOf]);
   const pl = useMemo(() => incomeStatement(data, asOf), [data, asOf]);
   const debit = tb.reduce((s, r) => s + r.debit, 0);
@@ -86,24 +111,30 @@ function ReportsPage() {
           <TabsTrigger value="vat">VAT</TabsTrigger>
         </TabsList>
         <TabsContent value="aging">
-          <ListToolbar query={query} onQuery={setQuery} placeholder="Search party or number" label="Search aging" />
+          <ListToolbar query={query} onQuery={setQuery} placeholder="Search party or number" label="Search aging">
+            <ListViewMenu hiddenCount={ageVis.hiddenCount} extra={viewColumnExtra(AGE_CHIPS, ageVis)} />
+          </ListToolbar>
           <div className="reports-aging">
-            <AgingTable title="Receivables" kind="invoice" rows={arVisible} currency={settings.currency} />
-            <AgingTable title="Payables" kind="bill" rows={apVisible} currency={settings.currency} />
+            <AgingTable title="Receivables" kind="invoice" rows={arVisible} currency={settings.currency} vis={ageVis} />
+            <AgingTable title="Payables" kind="bill" rows={apVisible} currency={settings.currency} vis={ageVis} />
           </div>
         </TabsContent>
         <TabsContent value="tb">
-          <ListToolbar query={query} onQuery={setQuery} placeholder="Search account" label="Search trial balance" />
+          <ListToolbar query={query} onQuery={setQuery} placeholder="Search account" label="Search trial balance">
+            <ListViewMenu hiddenCount={tbVis.hiddenCount} extra={viewColumnExtra(TB_CHIPS, tbVis)} />
+          </ListToolbar>
           <p className="mb-3 text-sm text-muted-foreground">
             Debits <Money amount={debit} currency={settings.currency} /> · Credits{" "}
             <Money amount={credit} currency={settings.currency} />
             {debit !== credit ? " — out of balance." : ""}
           </p>
-          <TrialTable rows={tbVisible} currency={settings.currency} />
+          <TrialTable rows={tbVisible} currency={settings.currency} vis={tbVis} />
         </TabsContent>
         <TabsContent value="pl">
-          <ListToolbar query={query} onQuery={setQuery} placeholder="Search account" label="Search profit and loss" />
-          <PlTable rows={plVisible} net={pl.net} currency={settings.currency} />
+          <ListToolbar query={query} onQuery={setQuery} placeholder="Search account" label="Search profit and loss">
+            <ListViewMenu hiddenCount={plVis.hiddenCount} extra={viewColumnExtra(PL_CHIPS, plVis)} />
+          </ListToolbar>
+          <PlTable rows={plVisible} net={pl.net} currency={settings.currency} vis={plVis} />
         </TabsContent>
         <TabsContent value="vat">
           <VatPanel asOf={asOf} currency={settings.currency} />
@@ -119,11 +150,13 @@ function AgingTable({
   kind,
   rows,
   currency,
+  vis,
 }: {
   title: string;
   kind: "invoice" | "bill";
   rows: AgingRow[];
   currency: string;
+  vis: ReturnType<typeof useColVisible>;
 }) {
   const totals = agingTotals(rows);
   const grand = rows.reduce((s, r) => s + r.amount, 0);
@@ -177,11 +210,12 @@ function AgingTable({
           if (t?.closest("input, textarea, select, button, a, [role='checkbox']")) return;
           (e.currentTarget as HTMLElement).focus({ preventScroll: true });
         }}
+        {...vis.hideAttrs}
       >
-        <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
+        <table ref={cols.tableRef} className="text-sm" style={listTableStyle(visibleTableWidth(cols.widths, vis.on))}>
           <colgroup>
             {(Object.keys(AGE_COLS) as Array<keyof typeof AGE_COLS>).map((id) => (
-              <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id])} />
+              <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id], vis.on[id] !== false)} data-col={id} />
             ))}
           </colgroup>
           <thead>
@@ -253,7 +287,7 @@ const TB_COLS = {
   credit: 176,
 } as const;
 
-function TrialTable({ rows, currency }: { rows: TbRow[]; currency: string }) {
+function TrialTable({ rows, currency, vis }: { rows: TbRow[]; currency: string; vis: ReturnType<typeof useColVisible> }) {
   const cols = useColWidths("finance-manager-tb-cols", TB_COLS);
   const colAligns = useColAligns("finance-manager-tb-col-aligns", Object.keys(TB_COLS) as Array<keyof typeof TB_COLS>);
   const gridRef = useRef<HTMLDivElement>(null);
@@ -285,11 +319,12 @@ function TrialTable({ rows, currency }: { rows: TbRow[]; currency: string }) {
         if (t?.closest("input, textarea, select, button, a, [role='checkbox']")) return;
         (e.currentTarget as HTMLElement).focus({ preventScroll: true });
       }}
+      {...vis.hideAttrs}
     >
-      <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
+      <table ref={cols.tableRef} className="text-sm" style={listTableStyle(visibleTableWidth(cols.widths, vis.on))}>
         <colgroup>
           {(Object.keys(TB_COLS) as Array<keyof typeof TB_COLS>).map((id) => (
-            <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id])} />
+            <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id], vis.on[id] !== false)} data-col={id} />
           ))}
         </colgroup>
         <thead>
@@ -337,7 +372,7 @@ const PL_COLS = {
   amount: 176,
 } as const;
 
-function PlTable({ rows, net, currency }: { rows: PlRow[]; net: number; currency: string }) {
+function PlTable({ rows, net, currency, vis }: { rows: PlRow[]; net: number; currency: string; vis: ReturnType<typeof useColVisible> }) {
   const cols = useColWidths("finance-manager-pl-cols", PL_COLS);
   const colAligns = useColAligns("finance-manager-pl-col-aligns", Object.keys(PL_COLS) as Array<keyof typeof PL_COLS>);
   const gridRef = useRef<HTMLDivElement>(null);
@@ -368,11 +403,12 @@ function PlTable({ rows, net, currency }: { rows: PlRow[]; net: number; currency
         if (t?.closest("input, textarea, select, button, a, [role='checkbox']")) return;
         (e.currentTarget as HTMLElement).focus({ preventScroll: true });
       }}
+      {...vis.hideAttrs}
     >
-      <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
+      <table ref={cols.tableRef} className="text-sm" style={listTableStyle(visibleTableWidth(cols.widths, vis.on))}>
         <colgroup>
           {(Object.keys(PL_COLS) as Array<keyof typeof PL_COLS>).map((id) => (
-            <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id])} />
+            <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id], vis.on[id] !== false)} data-col={id} />
           ))}
         </colgroup>
         <thead>

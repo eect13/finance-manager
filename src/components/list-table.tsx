@@ -26,7 +26,8 @@ export function listColClass(id: string) {
 }
 
 /** Inline width for <col>: every list column is a stored px width (drag/auto-fit apply). */
-export function listColWidthStyle(_id: string, width: number): CSSProperties | undefined {
+export function listColWidthStyle(_id: string, width: number, visible = true): CSSProperties | undefined {
+  if (!visible) return { width: 0, minWidth: 0, overflow: "hidden" };
   return { width, minWidth: width };
 }
 

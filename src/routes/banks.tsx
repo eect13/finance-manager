@@ -32,6 +32,7 @@ import { ActionsHeader, SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
 import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
+import { useColVisible, visibleTableWidth, viewColumnExtra } from "@/components/column-chips";
 import { CsvButton } from "@/components/export-menu";
 import { useListView } from "@/components/view-toggle";
 import { useListVirtualizer, VirtPad } from "@/components/use-list-virtualizer";
@@ -62,6 +63,16 @@ const BANK_SORT = [
   { value: "book:desc", label: "Book high–low" },
   { value: "pending:desc", label: "Pending high–low" },
 ];
+
+const BANK_CHIPS = [
+  { id: "nickname", label: "Nickname" },
+  { id: "name", label: "Bank" },
+  { id: "number", label: "Number" },
+  { id: "status", label: "Status" },
+  { id: "book", label: "Book" },
+  { id: "pending", label: "Pending" },
+] as const;
+const BANK_VIS_IDS = BANK_CHIPS.map((c) => c.id);
 
 function BanksPage() {
   const data = useFinanceData();
@@ -119,6 +130,7 @@ function BanksPage() {
   const sort = useEntrySort(visible, "nickname", getters, "asc");
   const sorted = sort.sorted;
   const cols = useColWidths("finance-manager-banks-cols", BANK_COLS);
+  const vis = useColVisible("finance-manager-banks-vis", BANK_VIS_IDS);
   const colAligns = useColAligns("finance-manager-banks-col-aligns", Object.keys(BANK_COLS) as Array<keyof typeof BANK_COLS>);
   const pointer = useTableKeyboardFocus({
     ids: sorted.map((b) => b.id),
@@ -130,6 +142,12 @@ function BanksPage() {
     const table = gridRef.current?.querySelector("table");
     if (!table) return;
     cols.setWidth(id, fitColumnWidth({ table, selector: `td[data-col="${id}"]`, header: label }));
+  }
+  function fitAll() {
+    (Object.keys(BANK_COLS) as Array<keyof typeof BANK_COLS>).forEach((id) => {
+      if (vis.on[id] === false) return;
+      fit(id, BANK_CHIPS.find((c) => c.id === id)?.label ?? "Actions");
+    });
   }
   const printRows = sorted.map((b) => ({
     nickname: b.nickname,
@@ -193,7 +211,13 @@ function BanksPage() {
           onSort={(v) => applySortValue(sort.set, v)}
           onClear={() => setStatusFilter("all")}
         />
-        <ListViewMenu layout={view} onLayout={setView} />
+        <ListViewMenu
+          layout={view}
+          onLayout={setView}
+          hiddenCount={vis.hiddenCount}
+          extra={viewColumnExtra(BANK_CHIPS, vis)}
+          onFitAll={fitAll}
+        />
       </ListToolbar>
       {view === "grid" ? (
       <div className="item-cards">
@@ -225,11 +249,11 @@ function BanksPage() {
           })}
       </div>
       ) : (
-        <ListCard ref={pointer.bindContainer(gridRef)} tabIndex={0} className="outline-none">
-          <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
+        <ListCard ref={pointer.bindContainer(gridRef)} tabIndex={0} className="outline-none" {...vis.hideAttrs}>
+          <table ref={cols.tableRef} className="text-sm" style={listTableStyle(visibleTableWidth(cols.widths, vis.on))}>
             <colgroup>
               {(Object.keys(BANK_COLS) as Array<keyof typeof BANK_COLS>).map((id) => (
-                <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id])} />
+                <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id], vis.on[id] !== false)} data-col={id} />
               ))}
             </colgroup>
             <thead>

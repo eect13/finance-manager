@@ -9,6 +9,7 @@ import { DateInput } from "@/components/date-input";
 import { ListToolbar } from "@/components/filter-pills";
 import { ListFilters, applySortValue } from "@/components/list-filters";
 import { ListCard, listColClass, listColWidthStyle, listTableStyle} from "@/components/list-table";
+import { useColVisible, visibleTableWidth, viewColumnExtra } from "@/components/column-chips";
 import { Field } from "@/components/field";
 import { Money } from "@/components/money";
 import { ReconPrint } from "@/components/period-print";
@@ -50,6 +51,15 @@ const RECON_COLS = {
   payment: 128,
   deposit: 128,
 } as const;
+const RECON_CHIPS = [
+  { id: "date", label: "Date" },
+  { id: "type", label: "Type" },
+  { id: "payee", label: "Payee" },
+  { id: "days", label: "Days" },
+  { id: "payment", label: "Payment" },
+  { id: "deposit", label: "Deposit" },
+] as const;
+const RECON_VIS_IDS = RECON_CHIPS.map((c) => c.id);
 
 
 function reconDefaultCols() {
@@ -97,6 +107,7 @@ function ReconcilePage() {
   const [printLast, setPrintLast] = useState(false);
   const gridRef = useRef<HTMLDivElement>(null);
   const cols = useColWidths("finance-manager-recon-cols-v2", reconDefaultCols(), { min: 36 });
+  const vis = useColVisible("finance-manager-recon-vis", RECON_VIS_IDS);
   const colAligns = useColAligns(
     "finance-manager-recon-col-aligns",
     Object.keys(RECON_COLS) as Array<keyof typeof RECON_COLS>,
@@ -478,6 +489,14 @@ function ReconcilePage() {
             setPhoneLayout(next);
             writePhoneLayout(RECONCILE_PHONE_LAYOUT_KEY, next);
           }}
+          hiddenCount={vis.hiddenCount}
+          extra={viewColumnExtra(RECON_CHIPS, vis)}
+          onFitAll={() => {
+            (Object.keys(RECON_COLS) as Array<keyof typeof RECON_COLS>).forEach((id) => {
+              if (vis.on[id] === false) return;
+              fit(id, RECON_CHIPS.find((c) => c.id === id)?.label ?? id);
+            });
+          }}
         />
       </ListToolbar>
 
@@ -499,6 +518,7 @@ function ReconcilePage() {
         onToggle={toggle}
         toggleAll={toggleAll}
         fit={fit}
+        vis={vis}
       />
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -574,6 +594,7 @@ function ReconcileLines({
   onToggle,
   toggleAll,
   fit,
+  vis,
 }: {
   lines: CashLine[];
   ticked: Set<string>;
@@ -601,6 +622,7 @@ function ReconcileLines({
   onToggle: (line: CashLine, on?: boolean) => void;
   toggleAll: (on: boolean) => void;
   fit: (id: ReconColId, label: string) => void;
+  vis: ReturnType<typeof useColVisible>;
 }) {
   const narrow = isNarrowUi();
   const cardMode = narrow || phoneLayout === "grid";
@@ -644,7 +666,7 @@ function ReconcileLines({
             Nothing uncleared on or before this date.
           </p>
         ) : phoneLayout === "list" ? (
-          <div className="list-card list-grid register-phone-table min-w-0">
+          <div className="list-card list-grid register-phone-table min-w-0" {...vis.hideAttrs}>
             <table style={{ width: "max-content", minWidth: "100%" }}>
               <thead>
                 <tr className="border-b border-border text-muted-foreground">
@@ -791,12 +813,13 @@ function ReconcileLines({
       }}
       tabIndex={0}
       className="recon-table-card outline-none"
+      {...vis.hideAttrs}
     >
-      <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
+      <table ref={cols.tableRef} className="text-sm" style={listTableStyle(visibleTableWidth(cols.widths, vis.on))}>
         <colgroup>
           <col className="col-check no-print" style={{ width: cols.widths.check, minWidth: cols.widths.check }} />
           {(Object.keys(RECON_COLS) as Array<keyof typeof RECON_COLS>).map((id) => (
-            <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id])} />
+            <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id], vis.on[id] !== false)} data-col={id} />
           ))}
         </colgroup>
         <thead>

@@ -1,6 +1,14 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.11.
+Re-verified in code 2026-09-08. Updated for v3.63.12.
+
+## Fixed in v3.63.12
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| 1 | Med | Phone hid resize handles under 768px so auto-fit never fired (iOS often skips dblclick) | 22px tappable handle; tap-to-fit on touch/pen; Auto-fit in the column menu and View |
+| 2 | Med | Only Register View could hide columns | `useColVisible` + chips on invoices, bills, receipts, checks, banks, employees, ledger, party dir/history, reconcile, reports aging/TB/P&L. Actions/check stay. Last remaining chip cannot hide. |
+| 3 | Low | `useListVirtualizer` `getItemKey` identity followed the parent closure | Key (and size) read from a ref so range keys stay stable |
 
 ## Fixed in v3.63.11
 
@@ -216,7 +224,7 @@ Re-verified in code 2026-09-05 (Asia/Manila). Updated for v3.62.47. UI direction
 | N | Low | Register virtualizer | Uses `getWorkspaceScrollElement()` (`main[data-workspace-scroll]`). Full AppShell ref still optional. |
 | O | Low | Nested dialogs | Post **Delete** opens `ConfirmDelete` (both Dialog z-50). Sibling order puts confirm on top today; a dedicated higher z on confirm would be safer than relying on DOM order. |
 | P | Info | `actions.ts` | Still `@ts-nocheck` restored from production build — types live via `typeof` in store. Prefer small surgical fixes over a rewrite. |
-| Q | Low | List virtualization | Banks, party dir/history, Reports aging/TB/P&L, chart of accounts, plus invoices/bills/receipts/checks/ledger/employees. Reconcile is one virt (Register-style). | Improved (v3.63.11) |
+| Q | Low | List virtualization | Banks, party dir/history, Reports aging/TB/P&L, chart of accounts, plus invoices/bills/receipts/checks/ledger/employees. Reconcile is one virt (Register-style). `getItemKey` via ref (v3.63.12). | Improved (v3.63.11–12) |
 | R | Low | Party combo stacking | `party-combo` list is `absolute z-50` (not portaled). Fine inside dialogs; would clip inside `overflow: hidden` sheets. |
 
 ## Areas of improvement

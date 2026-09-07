@@ -94,8 +94,14 @@ export function invoiceSubtotal(lines: { quantity: number; unitPrice: number }[]
   return lines.reduce((sum, line) => sum + Math.round(line.quantity * line.unitPrice), 0);
 }
 
+/** Tax % field on an existing doc: Settings on, or this document already has a rate. */
+export function taxFieldVisible(taxEnabled: boolean, taxRate = 0) {
+  return taxEnabled || taxRate > 0;
+}
+
 export function invoiceTax(subtotal: number, taxRate: number, taxEnabled: boolean): number {
-  if (!taxEnabled || taxRate <= 0) return 0;
+  if (taxRate <= 0) return 0;
+  if (!taxEnabled) return 0;
   return Math.round((subtotal * taxRate) / 100);
 }
 

@@ -851,6 +851,8 @@ export function removeBillPayment(data: FinanceData, paymentId): FinanceData {
 export function removeCashLine(data: FinanceData, line): FinanceData {
   if (!line.sourceId || line.kind === "opening") throw new Error("This line cannot be deleted.");
   assertUnlocked(data, line.kind, line.sourceId);
+  const date = cashLineDate(data, line.kind, line.sourceId);
+  if (date) assertOpenPeriod(data, date);
   if (line.kind === "check") return removeCheck(data, line.sourceId);
   if (line.kind === "receipt" || line.kind === "payment") return removeReceipt(data, line.sourceId);
   if (line.kind === "bill-payment") return removeBillPayment(data, line.sourceId);
@@ -865,13 +867,9 @@ export function removeCashLines(data: FinanceData, lines): {
   // Deduplicate transfer (and any) dual-sides by kind:sourceId.
   const unique = [];
   const seen = new Set();
-  let dupes = 0;
   for (const line of lines) {
     const key = `${line.kind}:${line.sourceId}`;
-    if (seen.has(key)) {
-      dupes += 1;
-      continue;
-    }
+    if (seen.has(key)) continue;
     seen.add(key);
     unique.push(line);
   }
@@ -901,7 +899,7 @@ export function removeCashLines(data: FinanceData, lines): {
     next = removeCashLine(next, line);
   }
   next = { ...next, registerOrder: pruneRegisterOrder(next) };
-  return { data: next, deleted: unique.length + dupes, failed: 0 };
+  return { data: next, deleted: unique.length, failed: 0 };
 }
 export function reorderBills(data: FinanceData, ids): FinanceData {
   return {

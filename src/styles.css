@@ -611,7 +611,7 @@
   .list-grid th.col-actions,
   .list-grid td.col-actions {
     white-space: nowrap;
-    text-align: right;
+    text-align: center;
     vertical-align: middle;
     overflow: visible;
     min-width: var(--list-actions-min);
@@ -638,7 +638,7 @@
 
   .list-grid td.col-actions > div {
     flex-wrap: nowrap !important;
-    justify-content: flex-end;
+    justify-content: center;
   }
 
   .list-grid thead tr,
@@ -3964,7 +3964,7 @@ html.tauri-android .app-header-inner {
   .list-card.list-grid td.col-actions,
   .list-card.list-grid th.col-actions {
     white-space: nowrap !important;
-    overflow: hidden !important;
+    overflow: visible !important;
   }
   /* Memo/payee/description may wrap at word boundaries only, with a floor width */
   .list-card.list-grid td[data-col="payee"],
@@ -4592,7 +4592,7 @@ body.is-phone-move-dragging {
   max-width: none;
   white-space: nowrap;
   vertical-align: middle;
-  text-align: right;
+  text-align: center;
   padding-left: var(--list-actions-px) !important;
   padding-right: var(--list-actions-px) !important;
   overflow: visible;
@@ -4602,7 +4602,7 @@ body.is-phone-move-dragging {
 .list-grid td.col-actions > div {
   width: auto;
   max-width: 100%;
-  justify-content: flex-end;
+  justify-content: center;
   flex-wrap: nowrap !important;
 }
 
@@ -4684,7 +4684,7 @@ body.is-phone-move-dragging {
   padding-right: var(--list-actions-px) !important;
   box-sizing: border-box;
   vertical-align: middle;
-  text-align: right;
+  text-align: center;
   overflow: visible;
 }
 
@@ -6410,13 +6410,45 @@ thead button.sort-header-label:hover {
 }
 
 /* =============================================================================
-   v3.63.9 — Actions title is a label (no sort/filter cluster). Layout default
-   is Grid on phone, List on desk (`defaultListLayout`).
+   v3.63.10 — Actions title + Delete centered like other titles; unlayered
+   stacking for radix poppers; Grid cards use the same --color-table paper.
    ============================================================================= */
 
+.list-grid thead th.col-actions,
+.list-grid thead th[data-col="actions"],
+.list-grid tbody td.col-actions,
+.list-grid tbody td[data-col="actions"] {
+  text-align: center;
+}
+.list-grid thead th.col-actions .sort-header-row,
+.list-grid thead th.col-actions .sort-header-cluster,
+.list-grid thead th.col-actions .actions-header-title {
+  justify-content: center;
+  text-align: center;
+}
+.list-grid td.col-actions > div,
+.list-grid td[data-col="actions"] > div {
+  justify-content: center;
+  margin-inline: auto;
+}
 
+/* Tailwind z-[200] loses to unlayered .dialog-sheet (z-60). */
+[data-radix-popper-content-wrapper] {
+  z-index: 120 !important;
+}
 
-
+.item-card,
+.party-card-row {
+  background: var(--color-table, var(--color-card));
+  background-color: var(--color-table, var(--color-card));
+  box-shadow: none;
+  border: 1px solid var(--color-table-divider, var(--color-border));
+}
+.item-card:hover,
+.party-card-row:hover {
+  background: var(--color-table-hover, var(--color-muted));
+  background-color: var(--color-table-hover, var(--color-muted));
+}
 
 
 

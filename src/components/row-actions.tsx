@@ -3,7 +3,7 @@ import { MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { stopOpen } from "@/lib/finance/open-record";
-import { usePhoneUi } from "@/lib/phone-layout";
+import { useNarrowUi } from "@/lib/phone-layout";
 
 export type RowMenuItem = {
   label: string;
@@ -79,7 +79,7 @@ export function RowActions({
   primaryAsItem?: RowMenuItem;
   items?: RowMenuItem[];
 }) {
-  const phone = usePhoneUi();
+  const phone = useNarrowUi();
   const rootRef = useRef<HTMLDivElement>(null);
   const [narrow, setNarrow] = useState(true);
   const [primaryNarrow, setPrimaryNarrow] = useState(true);
@@ -128,7 +128,7 @@ export function RowActions({
   return (
     <div
       ref={rootRef}
-      className="flex w-full min-w-0 flex-nowrap items-center justify-end gap-1"
+      className="flex w-full min-w-0 flex-nowrap items-center justify-center gap-1"
       onClick={stopOpen}
       onPointerDown={stopOpen}
     >

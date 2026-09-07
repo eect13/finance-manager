@@ -213,7 +213,7 @@ function ForecastPage() {
                             signed
                           />
                         </td>
-                        <td className="col-actions px-4 py-2 text-right">
+                        <td className="col-actions px-4 py-2">
                           <Button size="sm" variant="ghost" onClick={() => removeBudget(item.id)}>
                             Remove
                           </Button>

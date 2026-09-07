@@ -20,6 +20,7 @@ import {
   readPhoneLayout,
   writePhoneLayout,
   type PhoneLayout,
+  isNarrowUi,
   isPhoneUi,
 } from "@/lib/phone-layout";
 import { SortHeader, ColResize } from "@/components/sort-header";
@@ -144,7 +145,7 @@ function ReconcilePage() {
     count: sort.sorted.length,
     getScrollElement: () => deskScrollEl ?? getWorkspaceScrollElement(),
     estimateSize: () => 48,
-    overscan: 16,
+    overscan: 8,
     getItemKey: (index) => sort.sorted[index]?.id ?? index,
   });
   useEffect(() => {
@@ -498,7 +499,7 @@ function ReconcilePage() {
         />
       </ListToolbar>
 
-      {isPhoneUi() || phoneLayout === "grid" ? (
+      {isNarrowUi() || phoneLayout === "grid" ? (
         <div
           className={cn("recon-phone-list", phoneLayout === "list" && "is-list")}
           data-layout={phoneLayout}

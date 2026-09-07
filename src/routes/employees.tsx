@@ -387,7 +387,7 @@ function EmployeesPage() {
                         {e.active ? "Active" : "Inactive"}
                       </span>
                     </td>
-                    <td className="col-actions text-right" data-col="actions">
+                    <td className="col-actions" data-col="actions">
                       <RowActions
                         primary={
                           <Button size="sm" variant="outline" disabled={!e.active} onClick={() => openPay(e)}>

@@ -96,7 +96,7 @@ export function invoiceRows(data: FinanceData): Array<Record<string, string | nu
         Date: formatDate(inv.date),
         Due: formatDate(inv.dueDate),
         Subtotal: invoiceSubtotal(inv.lines) / 100,
-        Tax: invoiceTax(invoiceSubtotal(inv.lines), inv.taxRate, data.settings.taxEnabled) / 100,
+        Tax: invoiceTax(invoiceSubtotal(inv.lines), inv.taxRate, inv.taxRate > 0) / 100,
         Total: total / 100,
         Balance: invoiceBalance(data, inv.id) / 100,
         Status: titleCase(inv.status),

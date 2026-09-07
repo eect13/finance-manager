@@ -3,16 +3,35 @@ import { useEffect, useState } from "react";
 export type PhoneLayout = "grid" | "list";
 
 const PHONE_UI_MQ = "(max-width: 767px), ((hover: none) and (pointer: coarse))";
+const NARROW_UI_MQ = "(max-width: 767px)";
 
-/** Sync phone/coarse check (col defaults, one-shot layout). Prefer usePhoneUi in React trees. */
+function useMedia(query: string, initial: () => boolean) {
+  const [on, setOn] = useState(initial);
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const apply = () => setOn(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, [query]);
+  return on;
+}
+
+/** Phone chrome (⋯, bottom sheets). Includes hybrid coarse laptops. */
 export function isPhoneUi() {
   if (typeof window === "undefined") return false;
   return window.matchMedia(PHONE_UI_MQ).matches;
 }
 
-/** Grid on phone / coarse; List on desk. Saved localStorage wins over this. */
+/** Narrow viewport only — desk List at 768px+ even on a touch laptop. */
+export function isNarrowUi() {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia(NARROW_UI_MQ).matches;
+}
+
+/** Grid under 768px; List on desk. Saved localStorage wins over this. */
 export function defaultListLayout(): PhoneLayout {
-  return isPhoneUi() ? "grid" : "list";
+  return isNarrowUi() ? "grid" : "list";
 }
 
 export function readPhoneLayout(key: string, fallback: PhoneLayout = defaultListLayout()): PhoneLayout {
@@ -38,13 +57,9 @@ export const REGISTER_PHONE_LAYOUT_KEY = "finance-manager-register-phone-layout"
 export const RECONCILE_PHONE_LAYOUT_KEY = "finance-manager-reconcile-phone-layout";
 
 export function usePhoneUi() {
-  const [phone, setPhone] = useState(() => isPhoneUi());
-  useEffect(() => {
-    const mq = window.matchMedia(PHONE_UI_MQ);
-    const apply = () => setPhone(mq.matches);
-    apply();
-    mq.addEventListener("change", apply);
-    return () => mq.removeEventListener("change", apply);
-  }, []);
-  return phone;
+  return useMedia(PHONE_UI_MQ, isPhoneUi);
+}
+
+export function useNarrowUi() {
+  return useMedia(NARROW_UI_MQ, isNarrowUi);
 }

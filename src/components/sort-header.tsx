@@ -375,7 +375,11 @@ export function ActionsHeader({
       onPointerLeave={onFit ? () => clearLongPress() : undefined}
     >
       <div className="sort-header-row h-full">
-        <span className="actions-header-title sort-header-title min-h-11 text-sm">Actions</span>
+        <div className="sort-header-cluster">
+          <span className="sort-header-main sort-header-label actions-header-title min-h-11 text-sm">
+            <span className="sort-header-title">Actions</span>
+          </span>
+        </div>
       </div>
       <ColResize width={width} onWidth={onWidth} onFit={onFit} />
     </th>

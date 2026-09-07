@@ -196,8 +196,9 @@ function SettingsPage() {
     })),
   );
   const [newOpen, setNewOpen] = useState(false);
-  const [dropId, setDropId] = useState<string | null>(null);
-  const [restoring, setRestoring] = useState(false);
+  const [booksConfirm, setBooksConfirm] = useState<
+    { kind: "blank" } | { kind: "reload" } | { kind: "restore" } | { kind: "drop"; id: string } | null
+  >(null);
   const [localStamp, setLocalStamp] = useState<string | null>(null);
 
   useEffect(() => {
@@ -329,7 +330,7 @@ function SettingsPage() {
                     ) : null}
                     {on ? <span className="ml-1 font-normal text-muted-foreground">· open</span> : null}
                   </button>
-                  <Button size="sm" variant="ghost" onClick={() => setDropId(id)}>
+                  <Button size="sm" variant="ghost" onClick={() => setBooksConfirm({ kind: "drop", id })}>
                     Remove
                   </Button>
                 </div>
@@ -506,7 +507,7 @@ function SettingsPage() {
             <Button variant="outline" onClick={() => fileRef.current?.click()}>
               Open company file
             </Button>
-            <Button variant="outline" onClick={() => setRestoring(true)} disabled={!localStamp}>
+            <Button variant="outline" onClick={() => setBooksConfirm({ kind: "restore" })} disabled={!localStamp}>
               Restore last local copy
             </Button>
             <input
@@ -561,26 +562,14 @@ function SettingsPage() {
             </OptionsDescMore>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                startFresh();
-                toast.success("Blank books. Add a bank to begin.");
-              }}
-            >
+            <Button variant="outline" onClick={() => setBooksConfirm({ kind: "blank" })}>
               Start blank
             </Button>
-            <Button
-              variant="outline"
-              onClick={() => {
-                resetDemo();
-                toast.success("Pacific Harbor sample is open.");
-              }}
-            >
+            <Button variant="outline" onClick={() => setBooksConfirm({ kind: "reload" })}>
               Reload sample
             </Button>
             {order.includes(SAMPLE_COMPANY_ID) ? (
-              <Button variant="ghost" onClick={() => setDropId(SAMPLE_COMPANY_ID)}>
+              <Button variant="ghost" onClick={() => setBooksConfirm({ kind: "drop", id: SAMPLE_COMPANY_ID })}>
                 Remove sample
               </Button>
             ) : null}
@@ -589,54 +578,75 @@ function SettingsPage() {
       </div>
       <NewCompanyDialog open={newOpen} onClose={() => setNewOpen(false)} onCreate={addCompany} />
       <ConfirmDelete
-        open={Boolean(dropId)}
-        title={dropId === SAMPLE_COMPANY_ID ? "Remove the sample company?" : "Remove this company?"}
-        body={
-          dropId === SAMPLE_COMPANY_ID
-            ? order.length <= 1
-              ? "Deletes Pacific Harbor from this browser and opens a blank company. Restore last local copy or Reload sample brings it back."
-              : "Deletes Pacific Harbor from this browser. Other companies stay. Restore last local copy or Reload sample brings the demo back."
-            : order.length <= 1
-              ? "Deletes this file from the browser. A blank company takes its place. Restore last local copy can bring it back."
-              : "Deletes its banks and books from this browser. Other companies stay. Restore last local copy can bring it back."
+        open={booksConfirm !== null}
+        title={
+          booksConfirm?.kind === "blank"
+            ? "Start blank books?"
+            : booksConfirm?.kind === "reload"
+              ? "Reload the sample company?"
+              : booksConfirm?.kind === "restore"
+                ? "Restore last local copy?"
+                : booksConfirm?.kind === "drop" && booksConfirm.id === SAMPLE_COMPANY_ID
+                  ? "Remove the sample company?"
+                  : "Remove this company?"
         }
-        confirmLabel="Remove"
-        requirePhrase="DELETE"
-        onClose={() => setDropId(null)}
-        onConfirm={() => {
-          if (!dropId) return;
-          try {
-            removeCompany(dropId);
-            setDropId(null);
-            toast.success("Company removed.");
-          } catch (err) {
-            toast.error(err instanceof Error ? err.message : "Could not remove.");
-          }
-        }}
-      />
-      <ConfirmDelete
-        open={restoring}
-        title="Restore last local copy?"
         body={
-          localStamp
-            ? `Replaces the open company with the snapshot from ${new Date(localStamp).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}. If you removed this file, it comes back. A downloaded JSON is not required.`
-            : "This browser has not saved a local copy yet."
+          booksConfirm?.kind === "blank"
+            ? "Clears the open company. Banks and entries in this file go away. Other companies stay. Restore last local copy can bring it back."
+            : booksConfirm?.kind === "reload"
+              ? "Replaces the open company with Pacific Harbor sample data. Unsaved work in this file is lost."
+              : booksConfirm?.kind === "restore"
+                ? localStamp
+                  ? `Replaces the open company with the snapshot from ${new Date(localStamp).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}. If you removed this file, it comes back. A downloaded JSON is not required.`
+                  : "This browser has not saved a local copy yet."
+                : booksConfirm?.kind === "drop" && booksConfirm.id === SAMPLE_COMPANY_ID
+                  ? order.length <= 1
+                    ? "Deletes Pacific Harbor from this browser and opens a blank company. Restore last local copy or Reload sample brings it back."
+                    : "Deletes Pacific Harbor from this browser. Other companies stay. Restore last local copy or Reload sample brings the demo back."
+                  : order.length <= 1
+                    ? "Deletes this file from the browser. A blank company takes its place. Restore last local copy can bring it back."
+                    : "Deletes its banks and books from this browser. Other companies stay. Restore last local copy can bring it back."
         }
-        confirmLabel="Restore"
-        requirePhrase="RESTORE"
-        onClose={() => setRestoring(false)}
+        confirmLabel={
+          booksConfirm?.kind === "blank"
+            ? "Start blank"
+            : booksConfirm?.kind === "reload"
+              ? "Reload sample"
+              : booksConfirm?.kind === "restore"
+                ? "Restore"
+                : "Remove"
+        }
+        requirePhrase={
+          booksConfirm?.kind === "drop"
+            ? "DELETE"
+            : booksConfirm?.kind === "restore"
+              ? "RESTORE"
+              : undefined
+        }
+        onClose={() => setBooksConfirm(null)}
         onConfirm={async () => {
+          if (!booksConfirm) return;
           try {
-            const result = await restoreLocalCopy();
-            setRestoring(false);
-            toast.success(
-              result.revived
-                ? `Restored ${result.name} from the last local copy.`
-                : `Restored ${result.name} to the last local copy.`,
-            );
+            if (booksConfirm.kind === "blank") {
+              startFresh();
+              toast.success("Blank books. Add a bank to begin.");
+            } else if (booksConfirm.kind === "reload") {
+              resetDemo();
+              toast.success("Pacific Harbor sample is open.");
+            } else if (booksConfirm.kind === "restore") {
+              const result = await restoreLocalCopy();
+              toast.success(
+                result.revived
+                  ? `Restored ${result.name} from the last local copy.`
+                  : `Restored ${result.name} to the last local copy.`,
+              );
+            } else {
+              removeCompany(booksConfirm.id);
+              toast.success("Company removed.");
+            }
+            setBooksConfirm(null);
           } catch (err) {
-            setRestoring(false);
-            toast.error(err instanceof Error ? err.message : "Could not restore.");
+            toast.error(err instanceof Error ? err.message : "Could not finish.");
           }
         }}
       />
@@ -826,7 +836,7 @@ function RecurringCard() {
                           <td className={cn("px-4 py-2", alignClass(colAligns.aligns.amount ?? "center"))} data-col="amount" data-align={colAligns.aligns.amount ?? "center"}>
                             <Money amount={item.amount} currency={data.settings.currency} />
                           </td>
-                          <td className="col-actions px-4 py-2 text-right">
+                          <td className="col-actions px-4 py-2">
                             <Button
                               size="sm"
                               variant={item.nextDate <= todayIso() ? "default" : "ghost"}

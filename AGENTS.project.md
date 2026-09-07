@@ -11,9 +11,10 @@ This conversation belongs to a Grok project. Project files at `/workspace/artifa
 - **Resize handles on desk:** hide `.col-resize-handle` only under 768px. Do not hide on `(pointer: coarse)` — hybrid Windows laptops still have a mouse. Drag on mouse/pen; touch double-taps to auto-fit.
 - **Table titles match Banks:** thead is a bottom rule only — no vertical inset borders on column titles.
 - **Reconcile List** must bind a live scroll element (ListCard ref as state, fallback workspace). Desk default layout is list, same as Banks/Register. Do not leave `getScrollElement: () => gridRef.current` on a ref that is null while Grid is showing.
-- **Layout default:** Grid on phone / coarse (`isPhoneUi`), List on desk. Use `defaultListLayout()` / `readPhoneLayout(key)` — never hardcode `"grid"` as the desk fallback. Saved localStorage wins.
-- **Actions last col:** `ActionsHeader` only — no sort, no filter, no align menu. First-col titles (Nickname, Number, …) stay sortable. Do not reuse `SortHeader` / `sort-header-main` as a button on Actions.
-- **Plain table paper:** `--color-table` / `--color-table-header` / `--color-table-divider`. No emoji. Hide Book cash from header. Reports aging stacked.
-- **Stacking:** unlayered CSS (Tailwind `z-[80]` loses to `.dialog-sheet { z-index: 60 }`). Confirm overlay 70 / sheet 80. `[data-party-list] { z-index: 90; pointer-events: auto }`.
+- **Layout default:** Grid under 768px (`isNarrowUi`), List on desk — even on a coarse/touch laptop. Use `defaultListLayout()` / `readPhoneLayout(key)`. Saved localStorage wins. Register/Reconcile desk table only when `!isNarrowUi()` and layout is List. Keep `isPhoneUi()` for ⋯ / safe-area chrome.
+- **Actions last col:** `ActionsHeader` only — no sort, no filter, no align menu. Title and row actions (Delete / Collect / Pay) are centered like other titles. First-col titles stay sortable.
+- **Plain table paper:** `--color-table` / `--color-table-header` / `--color-table-divider`. No emoji. Hide Book cash from header. Reports aging stacked. Grid cards use the same paper (no raised elevation).
+- **Stacking:** unlayered CSS (Tailwind `z-[80]` / `z-[200]` lose to `.dialog-sheet { z-index: 60 }`). Confirm overlay 70 / sheet 80. `[data-party-list] { z-index: 90; pointer-events: auto }`. Radix popper wrapper z-index 120.
+- **Confirm:** dimmer-click does not dismiss when a phrase is required (Cancel / X still close). One Settings confirm for blank / reload / restore / remove.
 - **Desktop = Tauri 2.** Windows one-click must work when the unzip folder has parentheses. Taskbar and shortcut are the navy opaque tile. No auth. Preview `0.0.0.0:8080`.
 - **Git:** Eric Emerson Tan `<eric@local>`. Push `origin main`. Do not stage `.grok/`, `attachments/`, `screenshots/`.

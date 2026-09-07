@@ -1,4 +1,4 @@
-# Finance Manager v3.63.9
+# Finance Manager v3.63.10
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -26,6 +26,14 @@ Unzip the repo (a second unzip named `finance-manager-main (1)` is fine) so `dep
 Vite is installed with the packages — no global `vite` command. `.npmrc` has `legacy-peer-deps=true`.
 
 After the Windows installer: **delete the leftover white shortcut** and pin the new one — shortcut and taskbar both use the navy pillars tile.
+
+## What's new in v3.63.10
+
+- **Actions centered**: Banks (and other lists) Actions title matches Nickname; Delete / Collect / Pay sit in the middle of the column.
+- **Confirms**: Start blank and Reload sample ask first. Dimmer-click does not skip a DELETE/RESTORE phrase. Options uses one confirm, not two stacked.
+- **Tax on existing docs**: Tax % and invoice tax still show when Settings tax is off if that document already has a rate. Input VAT on Reports was already the 1300 balance.
+- **Desk on a touch laptop**: List table from 768px wide, even when the pointer is coarse. Grid is the default only under 768px.
+- **Lists first paint**: invoices, bills, and the rest bind the live scroll node (same idea as Reconcile). Grid cards use the same table paper.
 
 ## What's new in v3.63.9
 

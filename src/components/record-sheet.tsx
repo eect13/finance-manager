@@ -36,6 +36,7 @@ import {
   customerOpenBalance,
   invoiceBalance,
   invoiceTotal,
+  taxFieldVisible,
   vendorOpenBalance,
 } from "@/lib/finance/ledger";
 import type { OpenKind } from "@/lib/finance/open-record";
@@ -154,7 +155,7 @@ function InvoiceBody({ id, onClose }: { id: string; onClose: () => void }) {
         <Field label="Notes">
           <Input value={edit.notes} disabled={invoice.status === "void"} onChange={(e) => setEdit({ ...edit, notes: e.target.value })} />
         </Field>
-        {data.settings.taxEnabled ? (
+        {taxFieldVisible(data.settings.taxEnabled, invoice.taxRate) ? (
           <Field label="Tax %">
             <Input
               value={edit.taxRate}

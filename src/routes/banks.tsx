@@ -262,7 +262,7 @@ function BanksPage() {
                     <td className={cn("px-4 py-3 text-muted-foreground", alignClass(colAligns.aligns.status ?? "center"))} data-col="status" data-align={colAligns.aligns.status ?? "center"}>{bank.archived ? "Closed" : "Active"}</td>
                     <td className={cn("px-4 py-3", alignClass(colAligns.aligns.book ?? "center"))} data-col="book" data-align={colAligns.aligns.book ?? "center"}><Money amount={book} currency={settings.currency} /></td>
                     <td className={cn("px-4 py-3", alignClass(colAligns.aligns.pending ?? "center"))} data-col="pending" data-align={colAligns.aligns.pending ?? "center"}><Money amount={pending} currency={settings.currency} /></td>
-                    <td className="col-actions text-right" data-col="actions" onClick={stopOpen} onDoubleClick={stopOpen} onPointerDown={stopOpen}>
+                    <td className="col-actions" data-col="actions" onClick={stopOpen} onDoubleClick={stopOpen} onPointerDown={stopOpen}>
                       <RowDeleteButton onDelete={() => setDeletingId(bank.id)} />
                     </td>
                   </tr>

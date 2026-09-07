@@ -1,6 +1,19 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.9.
+Re-verified in code 2026-09-08. Updated for v3.63.10.
+
+## Fixed in v3.63.10
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| 1 | Med | Start blank / Reload sample had no confirm | One Settings confirm: blank, reload, restore, remove |
+| 2 | Med | Confirm dimmer-click dismissed even with DELETE phrase | Overlay / Escape do not dismiss when a phrase is required |
+| 3 | Med | Tailwind `z-[200]` menus lost to unlayered `.dialog-sheet` | Unlayered `[data-radix-popper-content-wrapper] { z-index: 120 }` |
+| 4 | Low | Tax % / printed tax hid when Settings tax was off | Show when `taxEnabled` or the document already has a rate |
+| 5 | Low | Settings mounted two ConfirmDeletes (Remove + Restore) | One `booksConfirm` state |
+| 6 | Low | Hybrid coarse laptops took the phone Register/Reconcile branch | Desk table from 768px (`isNarrowUi`); `isPhoneUi` stays for ⋯ |
+| 7 | Low | Bulk delete could include a closed-period line | `assertOpenPeriod` on `removeCashLine`; toast is unique deletes |
+| 9 | Low | Grid cards were raised tiles vs List paper | `.item-card` uses `--color-table` hairline |
 
 ## Fixed in v3.63.9
 
@@ -188,13 +201,13 @@ Re-verified in code 2026-09-05 (Asia/Manila). Updated for v3.62.47. UI direction
 | --- | --- | --- | --- |
 | I | Low | Cash-sale line drift | Register amount edit on a taxed cash sale rebuilds the journal and rescales `receipt.lines`. | Fixed (v3.63.0) |
 | J | Low | a11y labels | Field auto-wires `htmlFor` and first-control id; Select still uses click-to-focus. | Improved (v3.63.0) |
-| K | Low | Tax % visibility | Invoice/receipt Tax % fields hide when Settings tax is off, even if the document still carries historical `taxRate > 0` (totals remain correct). Matches “Settings seeds new docs” but can surprise editors. |
+| K | Low | Tax % visibility | Edit/print show Tax % when the document has a rate even if Settings tax is off. New docs still seed 0. | Fixed (v3.63.10) |
 | L | Info | Dead / unused | `src/lib/multiplayer/p2p.ts` exported but unused by app routes (multi-device still aspirational). |
-| M | Low | `removeCashLines` | Per-line failures are swallowed (`catch {}`). If a closed-period line is mixed into a bulk delete, the toast can still say N deleted while some remain. Return the actual deleted count. |
+| M | Low | `removeCashLines` | All-or-nothing; `assertOpenPeriod` on each line; toast is unique deletes. | Fixed (v3.63.10) |
 | N | Low | Register virtualizer | Uses `getWorkspaceScrollElement()` (`main[data-workspace-scroll]`). Full AppShell ref still optional. |
 | O | Low | Nested dialogs | Post **Delete** opens `ConfirmDelete` (both Dialog z-50). Sibling order puts confirm on top today; a dedicated higher z on confirm would be safer than relying on DOM order. |
 | P | Info | `actions.ts` | Still `@ts-nocheck` restored from production build — types live via `typeof` in store. Prefer small surgical fixes over a rewrite. |
-| Q | Low | List virtualization | Only the register uses `@tanstack/react-virtual`. Invoices/bills/receipts/checks/ledger/employees paint every row. Fine at sample size (~1k docs); will hitch on fat files. |
+| Q | Low | List virtualization | Receipts/Invoices/Bills/Checks/Ledger/Employees use `useListVirtualizer` with live scroll + workspace fallback. | Improved (v3.63.10) |
 | R | Low | Party combo stacking | `party-combo` list is `absolute z-50` (not portaled). Fine inside dialogs; would clip inside `overflow: hidden` sheets. |
 
 ## Areas of improvement

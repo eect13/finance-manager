@@ -33,9 +33,19 @@ export function ConfirmDelete({
   }, [open]);
   const ready = !requirePhrase || phrase.trim() === requirePhrase;
 
+  function blockDismiss(event: { preventDefault: () => void }) {
+    if (requirePhrase) event.preventDefault();
+  }
+
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="confirm-delete-sheet" overlayClassName="confirm-delete-overlay">
+      <DialogContent
+        className="confirm-delete-sheet"
+        overlayClassName="confirm-delete-overlay"
+        onPointerDownOutside={blockDismiss}
+        onInteractOutside={blockDismiss}
+        onEscapeKeyDown={blockDismiss}
+      >
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{body}</DialogDescription>

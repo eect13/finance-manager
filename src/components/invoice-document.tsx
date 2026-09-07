@@ -1,5 +1,5 @@
 import { formatDate, formatMoney } from "@/lib/finance/format";
-import { invoiceSubtotal, invoiceTax, invoiceTotal } from "@/lib/finance/ledger";
+import { invoiceSubtotal, invoiceTax, invoiceTotal, taxFieldVisible } from "@/lib/finance/ledger";
 import type { Customer, Invoice, Settings } from "@/lib/finance/types";
 
 function contactLine(address?: string, phone?: string, email?: string) {
@@ -17,7 +17,8 @@ export function InvoiceDocument({
   settings: Settings;
 }) {
   const sub = invoiceSubtotal(invoice.lines);
-  const tax = invoiceTax(sub, invoice.taxRate, settings.taxEnabled);
+  const showTax = taxFieldVisible(settings.taxEnabled, invoice.taxRate);
+  const tax = invoiceTax(sub, invoice.taxRate, showTax);
   const total = invoiceTotal(
     {
       settings,
@@ -95,7 +96,7 @@ export function InvoiceDocument({
           <span className="text-muted-foreground">Subtotal</span>
           <span className="tabular-nums">{formatMoney(sub, settings.currency)}</span>
         </div>
-        {settings.taxEnabled ? (
+        {showTax ? (
           <div>
             <span className="text-muted-foreground">Tax {invoice.taxRate}%</span>
             <span className="tabular-nums">{formatMoney(tax, settings.currency)}</span>

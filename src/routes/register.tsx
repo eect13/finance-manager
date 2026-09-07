@@ -11,6 +11,7 @@ import { DragHandle } from "@/components/drag-handle";
 import { usePhoneMoveDrag } from "@/components/use-phone-move-drag";
 import {
   REGISTER_PHONE_LAYOUT_KEY,
+  isNarrowUi,
   isPhoneUi,
   readPhoneLayout,
   writePhoneLayout,
@@ -996,6 +997,7 @@ function RegisterTable({
   const colAlignIds = useMemo(() => REGISTER_COLS.map((c) => c.id) as Array<(typeof REGISTER_COLS)[number]["id"]>, []);
   const colAligns = useColAligns("finance-manager-register-col-aligns", colAlignIds);
   const phone = isPhoneUi();
+  const narrow = isNarrowUi();
   const cardMode = phoneLayout === "grid";
   function requestSort(column: string) {
     if (dragOn) {
@@ -1007,7 +1009,7 @@ function RegisterTable({
   const virtualizer = useVirtualizer({
     count: lines.length,
     getScrollElement: () => getWorkspaceScrollElement(),
-    estimateSize: () => (cardMode ? (phone ? 168 : 148) : phone ? 52 : 44),
+    estimateSize: () => (cardMode ? (narrow ? 168 : 148) : narrow ? 52 : 44),
     overscan: cardMode ? 8 : 12,
     getItemKey: (index) => lines[index]?.id ?? index,
     gap: cardMode ? 8 : 0,
@@ -1112,7 +1114,7 @@ function RegisterTable({
 
   // Grid cards (phone + desk) and phone List honor View column chips + --register-font.
   // Desk List keeps the classic matrix table below.
-  if (cardMode || phone) {
+  if (cardMode || narrow) {
     const listMode = !cardMode; // phone list only when not grid
     const visibleCols = REGISTER_COLS.filter((col) => cols[col.id]);
     const phoneListMinWidth =
@@ -1388,7 +1390,7 @@ function RegisterTable({
       <div
         ref={kbBindContainer()}
         tabIndex={0}
-        className={cn("register-phone-list outline-none", !phone && "register-desk-grid")}
+        className={cn("register-phone-list outline-none", !narrow && "register-desk-grid")}
         data-layout="grid"
         onMouseDown={(e) => {
           const t = e.target as HTMLElement | null;

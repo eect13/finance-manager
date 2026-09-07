@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import type { ListView } from "@/components/view-toggle";
-import { isPhoneUi } from "@/lib/phone-layout";
+import { isNarrowUi } from "@/lib/phone-layout";
 import { useFinanceData, useFinanceStore } from "@/lib/finance/store";
 
 export function ListViewMenu({
@@ -21,7 +21,7 @@ export function ListViewMenu({
   extra?: ReactNode;
   hiddenCount?: number;
 }) {
-  const phone = isPhoneUi();
+  const phone = isNarrowUi();
   const [open, setOpen] = useState(false);
   const data = useFinanceData();
   const updateSettings = useFinanceStore((s) => s.updateSettings);

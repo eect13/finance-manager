@@ -1,5 +1,6 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { useEffect, type RefObject } from "react";
+import { useEffect, useLayoutEffect, useState, type RefObject } from "react";
+import { getWorkspaceScrollElement } from "@/lib/workspace-scroll";
 
 /** Desk/phone doc lists scroll inside ListCard. Do not use on Register. */
 export function useListVirtualizer(
@@ -8,16 +9,21 @@ export function useListVirtualizer(
   getItemKey: (index: number) => string | number,
   estimateSize = 48,
 ) {
+  const [scrollEl, setScrollEl] = useState<HTMLElement | null>(null);
+  useLayoutEffect(() => {
+    const node = scrollRef.current;
+    setScrollEl((prev) => (prev === node ? prev : node));
+  });
   const virt = useVirtualizer({
     count,
-    getScrollElement: () => scrollRef.current,
+    getScrollElement: () => scrollEl ?? scrollRef.current ?? getWorkspaceScrollElement(),
     estimateSize: () => estimateSize,
-    overscan: 16,
+    overscan: 8,
     getItemKey,
   });
   useEffect(() => {
     virt.measure();
-  }, [count, virt]);
+  }, [count, estimateSize, scrollEl, virt]);
   const items = virt.getVirtualItems();
   const first = items[0];
   const last = items[items.length - 1];

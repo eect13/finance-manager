@@ -50,7 +50,7 @@ export function ColResize({
       }}
       onPointerDown={(e) => {
         if (e.detail > 1) return;
-        if (typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches) return;
+        if (e.pointerType === "touch") return;
         e.preventDefault();
         e.stopPropagation();
         const startX = e.clientX;

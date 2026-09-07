@@ -1,6 +1,15 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-07. Updated for v3.63.7.
+Re-verified in code 2026-09-08. Updated for v3.63.8.
+
+## Fixed in v3.63.8
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| 1 | High | Customers/Vendors Name header was `position: static`, so the absolute resize handle sat at the page edge — could not drag or auto-fit Name | Name `th` is freeze-top `sticky` with `left: auto`; handle stays on Name\|Contact |
+| 2 | Med | `(pointer: coarse)` hid resize handles on hybrid laptops | Handles show from 768px up; drag is mouse/pen, touch double-taps to fit |
+| 3 | Low | Party directory titles had vertical inset borders; Banks titles are a bottom rule only | Thead matches Banks |
+| 4 | Med | Reconcile List virtualizer used `gridRef.current` while Grid was showing (null scroller), so rows were missing until a later re-render | Live scroll node + workspace fallback; desk default is List |
 
 ## Fixed in v3.63.7
 

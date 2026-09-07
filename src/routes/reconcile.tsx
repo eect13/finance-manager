@@ -82,7 +82,7 @@ function ReconcilePage() {
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | "in" | "out">("all");
   const [phoneLayout, setPhoneLayout] = useState<PhoneLayout>(() =>
-    readPhoneLayout(RECONCILE_PHONE_LAYOUT_KEY, "grid"),
+    readPhoneLayout(RECONCILE_PHONE_LAYOUT_KEY, isPhoneUi() ? "grid" : "list"),
   );
   const fontSize = data.settings.registerFontSize ?? 12;
   const [fee, setFee] = useState("");
@@ -90,6 +90,7 @@ function ReconcilePage() {
   const [undoing, setUndoing] = useState(false);
   const [printLast, setPrintLast] = useState(false);
   const gridRef = useRef<HTMLDivElement>(null);
+  const [deskScrollEl, setDeskScrollEl] = useState<HTMLElement | null>(null);
   const cols = useColWidths("finance-manager-recon-cols-v2", reconDefaultCols(), { min: 36 });
   const colAligns = useColAligns(
     "finance-manager-recon-col-aligns",
@@ -137,10 +138,11 @@ function ReconcilePage() {
     getItemKey: (index) => sort.sorted[index]?.id ?? index,
     gap: phoneGrid ? 8 : 0,
   });
-  // Desk table rows scroll inside ListCard (max-height). Phone keeps workspace scroll.
+  // Desk table rows scroll inside ListCard. Bind the live node so the first
+  // paint is not an empty virtualizer (gridRef is null until ListCard mounts).
   const deskVirt = useVirtualizer({
     count: sort.sorted.length,
-    getScrollElement: () => gridRef.current,
+    getScrollElement: () => deskScrollEl ?? getWorkspaceScrollElement(),
     estimateSize: () => 48,
     overscan: 16,
     getItemKey: (index) => sort.sorted[index]?.id ?? index,
@@ -150,7 +152,7 @@ function ReconcilePage() {
     deskVirt.measure();
     // Remeasure when layout or type size changes variable card / row heights.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phoneLayout, fontSize, sort.sorted.length]);
+  }, [phoneLayout, fontSize, sort.sorted.length, deskScrollEl]);
   const phoneVItems = phoneVirt.getVirtualItems();
   const phoneFirst = phoneVItems[0];
   const phoneLast = phoneVItems[phoneVItems.length - 1];
@@ -748,7 +750,14 @@ function ReconcilePage() {
           )}
         </div>
       ) : (
-      <ListCard ref={pointer.bindContainer(gridRef)} tabIndex={0} className="recon-table-card outline-none">
+      <ListCard
+        ref={(el) => {
+          pointer.bindContainer(gridRef)(el);
+          setDeskScrollEl((prev) => (prev === el ? prev : el));
+        }}
+        tabIndex={0}
+        className="recon-table-card outline-none"
+      >
         <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
           <colgroup>
             <col className="col-check no-print" style={{ width: cols.widths.check, minWidth: cols.widths.check }} />

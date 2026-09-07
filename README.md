@@ -1,4 +1,4 @@
-# Finance Manager v3.63.7
+# Finance Manager v3.63.8
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -26,6 +26,12 @@ Unzip the repo (a second unzip named `finance-manager-main (1)` is fine) so `dep
 Vite is installed with the packages — no global `vite` command. `.npmrc` has `legacy-peer-deps=true`.
 
 After the Windows installer: **delete the leftover white shortcut** and pin the new one — shortcut and taskbar both use the navy pillars tile.
+
+## What's new in v3.63.8
+
+- **Customers / Vendors Name resize**: the auto-fit/drag handle sits on the Name|Contact edge again (it had been painted at the far right of the page). Double-click auto-fit works on that handle. Desk keeps the handles even on a touch-capable laptop.
+- **Column titles match Banks**: header row is a bottom rule only — no vertical borders on the titles.
+- **Reconcile List**: rows show with the list instead of sitting empty for a few seconds. Desk opens in List like Banks.
 
 ## What's new in v3.63.7
 

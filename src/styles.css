@@ -4808,9 +4808,9 @@ body.is-phone-move-dragging {
   background-image: none;
 }
 
-/* Party directory: Name is a normal column (not a freeze pane). */
-.party-dir-table th[data-col="name"],
-.party-dir-table td[data-col="name"] {
+/* Party directory: Name is a normal column (not a left freeze pane).
+   Header stays positioned so the absolute resize handle sits on Name|Contact. */
+.party-dir-table tbody td[data-col="name"] {
   position: static;
   left: auto;
   z-index: auto;
@@ -4820,7 +4820,8 @@ body.is-phone-move-dragging {
 }
 
 .party-dir-table thead th[data-col="name"] {
-  z-index: auto;
+  z-index: 4;
+  left: auto;
   background: var(--color-table-header, var(--color-table));
   background-color: var(--color-table-header, var(--color-table));
 }
@@ -6180,7 +6181,9 @@ thead button.sort-header-label:hover {
   white-space: nowrap;
 }
 
-.party-dir-table thead th:not(:last-child),
+.party-dir-table thead th:not(:last-child) {
+  box-shadow: 0 1px 0 var(--color-table-divider, var(--color-border));
+}
 .party-dir-table tbody td:not(:last-child) {
   box-shadow: inset -1px 0 0 var(--color-table-divider, color-mix(in oklab, var(--color-border) 80%, transparent));
 }
@@ -6316,8 +6319,16 @@ thead button.sort-header-label:hover {
   background-color: var(--color-table-header, var(--color-table)) !important;
 }
 
-.party-dir-table th[data-col="name"],
-.party-dir-table td[data-col="name"] {
+.party-dir-table thead th[data-col="name"] {
+  /* sticky = freeze-top like Banks; left:auto = not a left freeze pane.
+     Never static — absolute .col-resize-handle would paint at the page edge. */
+  position: sticky !important;
+  top: 0 !important;
+  left: auto !important;
+  z-index: 4 !important;
+  overflow: visible;
+}
+.party-dir-table tbody td[data-col="name"] {
   position: static !important;
   left: auto !important;
   z-index: auto !important;
@@ -6336,7 +6347,6 @@ thead button.sort-header-label:hover {
 
 .party-dir-table thead th {
   overflow: visible !important;
-  position: relative;
 }
 
 .party-dir-table col.col-dir-name,
@@ -6367,6 +6377,34 @@ thead button.sort-header-label:hover {
     grid-template-columns: minmax(22rem, 34rem) minmax(0, 1fr);
   }
 }
+
+/* =============================================================================
+   v3.63.8 — Customers/Vendors Name resize handle sits on the column (not the
+   page edge). Table titles match Banks (bottom rule only). Desk keeps resize
+   handles even on hybrid/touch laptops.
+   ============================================================================= */
+
+.party-dir-table thead th,
+.party-dir-table thead th:not(:last-child),
+.party-dir-table thead th[data-col="name"] {
+  box-shadow: 0 1px 0 var(--color-table-divider, var(--color-border));
+}
+
+.party-dir-table thead th[data-col="name"] {
+  position: sticky !important;
+  top: 0 !important;
+  left: auto !important;
+  z-index: 4 !important;
+  overflow: visible !important;
+}
+
+@media (min-width: 768px) {
+  .col-resize-handle {
+    display: block !important;
+    pointer-events: auto !important;
+  }
+}
+
 
 
 

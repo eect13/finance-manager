@@ -130,7 +130,7 @@ function InvoicesPage() {
     ids: sort.sorted.map((i) => i.id),
     onOpen: openInvoice,
   });
-  const listVirt = useListVirtualizer(sort.sorted.length, gridRef, (index) => sort.sorted[index]?.id ?? index);
+  const listVirt = useListVirtualizer(sort.sorted.length, gridRef, (index) => sort.sorted[index]?.id ?? index, 48, view === "list");
 
   function fit(id: keyof typeof INV_COLS, label: string) {
     const table = gridRef.current?.querySelector("table");

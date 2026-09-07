@@ -145,7 +145,7 @@ function BillsPage() {
     ids: sort.sorted.map((b) => b.id),
     onOpen: openBill,
   });
-  const listVirt = useListVirtualizer(sort.sorted.length, gridRef, (index) => sort.sorted[index]?.id ?? index);
+  const listVirt = useListVirtualizer(sort.sorted.length, gridRef, (index) => sort.sorted[index]?.id ?? index, 48, view === "list");
   function fit(id: keyof typeof BILL_COLS, label: string) {
     const table = gridRef.current?.querySelector("table");
     if (!table) return;

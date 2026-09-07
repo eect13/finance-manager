@@ -1,6 +1,15 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.10.
+Re-verified in code 2026-09-08. Updated for v3.63.11.
+
+## Fixed in v3.63.11
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| 1 | Med | Reconcile lagged on scroll: phoneVirt + deskVirt both subscribed; page re-rendered on every tick | One virt in a list child; desk binds live ListCard (workspace fallback); phone/grid uses workspace |
+| 2 | Med | `daysOutstanding` twice per desk row; `bills.find` inside the row map | Days once; bill-payment id map |
+| 3 | Low | `useListVirtualizer` measure effect depended on `virt` identity (can loop) | Measure on count / size / scroller only; overscan 12; disable while Grid is showing |
+| 4 | Low | Banks, party dir/history, chart of accounts, Reports aging/TB/P&L painted every row | Same `useListVirtualizer` pad-row window as invoices |
 
 ## Fixed in v3.63.10
 
@@ -207,13 +216,13 @@ Re-verified in code 2026-09-05 (Asia/Manila). Updated for v3.62.47. UI direction
 | N | Low | Register virtualizer | Uses `getWorkspaceScrollElement()` (`main[data-workspace-scroll]`). Full AppShell ref still optional. |
 | O | Low | Nested dialogs | Post **Delete** opens `ConfirmDelete` (both Dialog z-50). Sibling order puts confirm on top today; a dedicated higher z on confirm would be safer than relying on DOM order. |
 | P | Info | `actions.ts` | Still `@ts-nocheck` restored from production build — types live via `typeof` in store. Prefer small surgical fixes over a rewrite. |
-| Q | Low | List virtualization | Receipts/Invoices/Bills/Checks/Ledger/Employees use `useListVirtualizer` with live scroll + workspace fallback. | Improved (v3.63.10) |
+| Q | Low | List virtualization | Banks, party dir/history, Reports aging/TB/P&L, chart of accounts, plus invoices/bills/receipts/checks/ledger/employees. Reconcile is one virt (Register-style). | Improved (v3.63.11) |
 | R | Low | Party combo stacking | `party-combo` list is `absolute z-50` (not portaled). Fine inside dialogs; would clip inside `overflow: hidden` sheets. |
 
 ## Areas of improvement
 
 1. **IndexedDB / size** — Cap audit further; optional purge of closed detail; avoid dual full backup copies; chunked multi-company blobs.
-2. **List virtualization** — Extend register’s `@tanstack/react-virtual` to invoices/bills/receipts/checks/ledger/employees when lists grow.
+2. **List virtualization** — Register pattern (`@tanstack/react-virtual`, pad rows, one scroller) is on the large lists. Close checklist, Settings recurring, Forecast budget, VAT panel, and record-sheet lines stay unwindowed (tiny).
 3. **Code-split** — Lazy TanStack routes + Vite `manualChunks` for reports/close/reconcile/seed.
 4. **Tauri / Android** — Validate WebView IDB persistence; share/save company JSON; cold-start via splits. Solo APK path improved in v3.59; still needs SDK+NDK installed.
 5. **Payroll depth** — Pay periods, withholdings, link checks to `employeeId`, batch pay run, block delete when pay history exists (partially done for employee delete).

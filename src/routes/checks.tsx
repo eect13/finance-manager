@@ -127,7 +127,7 @@ function ChecksPage() {
     ids: sort.sorted.map((c) => c.id),
     onOpen: openCheck,
   });
-  const listVirt = useListVirtualizer(sort.sorted.length, gridRef, (index) => sort.sorted[index]?.id ?? index);
+  const listVirt = useListVirtualizer(sort.sorted.length, gridRef, (index) => sort.sorted[index]?.id ?? index, 48, view === "list");
   function fit(id: keyof typeof CHK_COLS, label: string) {
     const table = gridRef.current?.querySelector("table");
     if (!table) return;

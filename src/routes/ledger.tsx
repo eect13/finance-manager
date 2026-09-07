@@ -294,6 +294,7 @@ function AccountsTable({
     ids: sort.sorted.map((a) => a.id),
     onOpen: () => {},
   });
+  const listVirt = useListVirtualizer(sort.sorted.length, gridRef, (index) => sort.sorted[index]?.id ?? index);
   function fit(id: keyof typeof ACCT_COLS, label: string) {
     const table = gridRef.current?.querySelector("table");
     if (!table) return;
@@ -316,23 +317,39 @@ function AccountsTable({
           </tr>
         </thead>
         <tbody>
-          {sort.sorted.map((account) => (
-            <tr
-              key={account.id}
-              className="border-b border-border/70 last:border-0"
-              data-focused={pointer.activeId === account.id ? "true" : undefined}
-              data-row-id={account.id}
-              aria-current={pointer.activeId === account.id ? "true" : undefined}
-              onClick={() => pointer.setActiveId(account.id)}
-            >
-              <td className={cn("px-4 py-3 tabular-nums", alignClass(colAligns.aligns.code ?? "center"))} data-col="code" data-align={colAligns.aligns.code ?? "center"}>{account.code}</td>
-              <td className={cn("px-4 py-3", alignClass(colAligns.aligns.name ?? "center"))} data-col="name" data-align={colAligns.aligns.name ?? "center"}>{account.name}</td>
-              <td className={cn("px-4 py-3 capitalize text-muted-foreground", alignClass(colAligns.aligns.type ?? "center"))} data-col="type" data-align={colAligns.aligns.type ?? "center"}>{account.type}</td>
-              <td className={cn("px-4 py-3", alignClass(colAligns.aligns.balance ?? "center"))} data-col="balance" data-align={colAligns.aligns.balance ?? "center"}>
-                <Money amount={accountBalance(data, account.id)} currency={currency} />
+          {sort.sorted.length === 0 ? (
+            <tr>
+              <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">
+                No accounts yet.
               </td>
             </tr>
-          ))}
+          ) : (
+            <>
+              <VirtPad height={listVirt.padTop} colSpan={4} />
+              {listVirt.items.map((v) => {
+                const account = sort.sorted[v.index];
+                if (!account) return null;
+                return (
+                  <tr
+                    key={account.id}
+                    className="border-b border-border/70 last:border-0"
+                    data-focused={pointer.activeId === account.id ? "true" : undefined}
+                    data-row-id={account.id}
+                    aria-current={pointer.activeId === account.id ? "true" : undefined}
+                    onClick={() => pointer.setActiveId(account.id)}
+                  >
+                    <td className={cn("px-4 py-3 tabular-nums", alignClass(colAligns.aligns.code ?? "center"))} data-col="code" data-align={colAligns.aligns.code ?? "center"}>{account.code}</td>
+                    <td className={cn("px-4 py-3", alignClass(colAligns.aligns.name ?? "center"))} data-col="name" data-align={colAligns.aligns.name ?? "center"}>{account.name}</td>
+                    <td className={cn("px-4 py-3 capitalize text-muted-foreground", alignClass(colAligns.aligns.type ?? "center"))} data-col="type" data-align={colAligns.aligns.type ?? "center"}>{account.type}</td>
+                    <td className={cn("px-4 py-3", alignClass(colAligns.aligns.balance ?? "center"))} data-col="balance" data-align={colAligns.aligns.balance ?? "center"}>
+                      <Money amount={accountBalance(data, account.id)} currency={currency} />
+                    </td>
+                  </tr>
+                );
+              })}
+              <VirtPad height={listVirt.padBottom} colSpan={4} />
+            </>
+          )}
         </tbody>
       </table>
     </ListCard>

@@ -143,7 +143,7 @@ function ReceiptsPage() {
     ids: sort.sorted.map((r) => r.id),
     onOpen: openReceipt,
   });
-  const listVirt = useListVirtualizer(sort.sorted.length, gridRef, (index) => sort.sorted[index]?.id ?? index);
+  const listVirt = useListVirtualizer(sort.sorted.length, gridRef, (index) => sort.sorted[index]?.id ?? index, 48, view === "list");
   function fit(id: keyof typeof RCP_COLS, label: string) {
     const table = gridRef.current?.querySelector("table");
     if (!table) return;

@@ -13,6 +13,7 @@ import { listColClass, listColWidthStyle, listTableStyle } from "@/components/li
 import { useColWidths } from "@/components/use-col-widths";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
 import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
+import { useListVirtualizer, VirtPad } from "@/components/use-list-virtualizer";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -151,6 +152,7 @@ function AgingTable({
     ids: sort.sorted.map((r) => r.id),
     onOpen: (id) => openTxn(kind, id),
   });
+  const listVirt = useListVirtualizer(sort.sorted.length, gridRef, (index) => sort.sorted[index]?.id ?? index);
   function fit(id: keyof typeof AGE_COLS, label: string) {
     const table = gridRef.current?.querySelector("table");
     if (!table) return;
@@ -199,25 +201,33 @@ function AgingTable({
                 </td>
               </tr>
             ) : (
-              sort.sorted.map((row) => (
-                <tr
-                  key={row.id}
-                  className="border-b border-border/70 last:border-0"
-                  data-focused={pointer.activeId === row.id ? "true" : undefined}
-                  data-row-id={row.id}
-                  aria-current={pointer.activeId === row.id ? "true" : undefined}
-                  {...openProps(kind, row.id)}
-                  onClick={() => pointer.setActiveId(row.id)}
-                >
-                  <td className={cn("px-3 py-2", alignClass(colAligns.aligns.party ?? "center"))} data-col="party" data-align={colAligns.aligns.party ?? "center"}>{row.party}</td>
-                  <td className={cn("px-3 py-2 whitespace-nowrap", alignClass(colAligns.aligns.number ?? "center"))} data-col="number" data-align={colAligns.aligns.number ?? "center"}>{row.number}</td>
-                  <td className={cn("px-3 py-2 whitespace-nowrap", alignClass(colAligns.aligns.due ?? "center"))} data-col="due" data-align={colAligns.aligns.due ?? "center"}>{formatDate(row.dueDate)}</td>
-                  <td className={cn("px-3 py-2 whitespace-nowrap", alignClass(colAligns.aligns.age ?? "center"))} data-col="age" data-align={colAligns.aligns.age ?? "center"}>{AGE_LABEL[row.bucket]}</td>
-                  <td className={cn("px-3 py-2 whitespace-nowrap", alignClass(colAligns.aligns.amount ?? "center"))} data-col="amount" data-align={colAligns.aligns.amount ?? "center"}>
-                    <Money amount={row.amount} currency={currency} />
-                  </td>
-                </tr>
-              ))
+              <>
+                <VirtPad height={listVirt.padTop} colSpan={5} />
+                {listVirt.items.map((v) => {
+                  const row = sort.sorted[v.index];
+                  if (!row) return null;
+                  return (
+                    <tr
+                      key={row.id}
+                      className="border-b border-border/70 last:border-0"
+                      data-focused={pointer.activeId === row.id ? "true" : undefined}
+                      data-row-id={row.id}
+                      aria-current={pointer.activeId === row.id ? "true" : undefined}
+                      {...openProps(kind, row.id)}
+                      onClick={() => pointer.setActiveId(row.id)}
+                    >
+                      <td className={cn("px-3 py-2", alignClass(colAligns.aligns.party ?? "center"))} data-col="party" data-align={colAligns.aligns.party ?? "center"}>{row.party}</td>
+                      <td className={cn("px-3 py-2 whitespace-nowrap", alignClass(colAligns.aligns.number ?? "center"))} data-col="number" data-align={colAligns.aligns.number ?? "center"}>{row.number}</td>
+                      <td className={cn("px-3 py-2 whitespace-nowrap", alignClass(colAligns.aligns.due ?? "center"))} data-col="due" data-align={colAligns.aligns.due ?? "center"}>{formatDate(row.dueDate)}</td>
+                      <td className={cn("px-3 py-2 whitespace-nowrap", alignClass(colAligns.aligns.age ?? "center"))} data-col="age" data-align={colAligns.aligns.age ?? "center"}>{AGE_LABEL[row.bucket]}</td>
+                      <td className={cn("px-3 py-2 whitespace-nowrap", alignClass(colAligns.aligns.amount ?? "center"))} data-col="amount" data-align={colAligns.aligns.amount ?? "center"}>
+                        <Money amount={row.amount} currency={currency} />
+                      </td>
+                    </tr>
+                  );
+                })}
+                <VirtPad height={listVirt.padBottom} colSpan={5} />
+              </>
             )}
             <tr>
               <td className="px-3 py-2 font-medium" colSpan={4}>
@@ -259,6 +269,7 @@ function TrialTable({ rows, currency }: { rows: TbRow[]; currency: string }) {
   const pointer = useTableKeyboardFocus({
     ids: sort.sorted.map((r) => r.account.id),
   });
+  const listVirt = useListVirtualizer(sort.sorted.length, gridRef, (index) => sort.sorted[index]?.account.id ?? index);
   function fit(id: keyof typeof TB_COLS, label: string) {
     const table = gridRef.current?.querySelector("table");
     if (!table) return;
@@ -289,26 +300,32 @@ function TrialTable({ rows, currency }: { rows: TbRow[]; currency: string }) {
           </tr>
         </thead>
         <tbody>
-          {sort.sorted.map((row) => (
-            <tr
-              key={row.account.id}
-              className="border-b border-border/70 last:border-0"
-              data-focused={pointer.activeId === row.account.id ? "true" : undefined}
-              data-row-id={row.account.id}
-              aria-current={pointer.activeId === row.account.id ? "true" : undefined}
-              onClick={() => pointer.setActiveId(row.account.id)}
-            >
-              <td className={cn("px-4 py-2", alignClass(colAligns.aligns.account ?? "center"))} data-col="account" data-align={colAligns.aligns.account ?? "center"}>
-                <span className="text-muted-foreground">{row.account.code}</span> {row.account.name}
-              </td>
-              <td className={cn("px-4 py-2 whitespace-nowrap", alignClass(colAligns.aligns.debit ?? "center"))} data-col="debit" data-align={colAligns.aligns.debit ?? "center"}>
-                {row.debit ? <Money amount={row.debit} currency={currency} /> : ""}
-              </td>
-              <td className={cn("px-4 py-2 whitespace-nowrap", alignClass(colAligns.aligns.credit ?? "center"))} data-col="credit" data-align={colAligns.aligns.credit ?? "center"}>
-                {row.credit ? <Money amount={row.credit} currency={currency} /> : ""}
-              </td>
-            </tr>
-          ))}
+          <VirtPad height={listVirt.padTop} colSpan={3} />
+          {listVirt.items.map((v) => {
+            const row = sort.sorted[v.index];
+            if (!row) return null;
+            return (
+              <tr
+                key={row.account.id}
+                className="border-b border-border/70 last:border-0"
+                data-focused={pointer.activeId === row.account.id ? "true" : undefined}
+                data-row-id={row.account.id}
+                aria-current={pointer.activeId === row.account.id ? "true" : undefined}
+                onClick={() => pointer.setActiveId(row.account.id)}
+              >
+                <td className={cn("px-4 py-2", alignClass(colAligns.aligns.account ?? "center"))} data-col="account" data-align={colAligns.aligns.account ?? "center"}>
+                  <span className="text-muted-foreground">{row.account.code}</span> {row.account.name}
+                </td>
+                <td className={cn("px-4 py-2 whitespace-nowrap", alignClass(colAligns.aligns.debit ?? "center"))} data-col="debit" data-align={colAligns.aligns.debit ?? "center"}>
+                  {row.debit ? <Money amount={row.debit} currency={currency} /> : ""}
+                </td>
+                <td className={cn("px-4 py-2 whitespace-nowrap", alignClass(colAligns.aligns.credit ?? "center"))} data-col="credit" data-align={colAligns.aligns.credit ?? "center"}>
+                  {row.credit ? <Money amount={row.credit} currency={currency} /> : ""}
+                </td>
+              </tr>
+            );
+          })}
+          <VirtPad height={listVirt.padBottom} colSpan={3} />
         </tbody>
       </table>
     </div>
@@ -335,6 +352,7 @@ function PlTable({ rows, net, currency }: { rows: PlRow[]; net: number; currency
   const pointer = useTableKeyboardFocus({
     ids: sort.sorted.map((r) => r.account.id),
   });
+  const listVirt = useListVirtualizer(sort.sorted.length, gridRef, (index) => sort.sorted[index]?.account.id ?? index);
   function fit(id: keyof typeof PL_COLS, label: string) {
     const table = gridRef.current?.querySelector("table");
     if (!table) return;
@@ -364,27 +382,33 @@ function PlTable({ rows, net, currency }: { rows: PlRow[]; net: number; currency
           </tr>
         </thead>
         <tbody>
-          {sort.sorted.map((row) => (
-            <tr
-              key={row.account.id}
-              className="border-b border-border/70 last:border-0"
-              data-focused={pointer.activeId === row.account.id ? "true" : undefined}
-              data-row-id={row.account.id}
-              aria-current={pointer.activeId === row.account.id ? "true" : undefined}
-              onClick={() => pointer.setActiveId(row.account.id)}
-            >
-              <td className={cn("px-4 py-2", alignClass(colAligns.aligns.account ?? "center"))} data-col="account" data-align={colAligns.aligns.account ?? "center"}>
-                <span className="text-muted-foreground">{row.account.code}</span> {row.account.name}
-              </td>
-              <td className={cn("px-4 py-2 whitespace-nowrap", alignClass(colAligns.aligns.amount ?? "center"))} data-col="amount" data-align={colAligns.aligns.amount ?? "center"}>
-                <Money
-                  amount={row.account.type === "expense" ? -row.amount : row.amount}
-                  currency={currency}
-                  signed
-                />
-              </td>
-            </tr>
-          ))}
+          <VirtPad height={listVirt.padTop} colSpan={2} />
+          {listVirt.items.map((v) => {
+            const row = sort.sorted[v.index];
+            if (!row) return null;
+            return (
+              <tr
+                key={row.account.id}
+                className="border-b border-border/70 last:border-0"
+                data-focused={pointer.activeId === row.account.id ? "true" : undefined}
+                data-row-id={row.account.id}
+                aria-current={pointer.activeId === row.account.id ? "true" : undefined}
+                onClick={() => pointer.setActiveId(row.account.id)}
+              >
+                <td className={cn("px-4 py-2", alignClass(colAligns.aligns.account ?? "center"))} data-col="account" data-align={colAligns.aligns.account ?? "center"}>
+                  <span className="text-muted-foreground">{row.account.code}</span> {row.account.name}
+                </td>
+                <td className={cn("px-4 py-2 whitespace-nowrap", alignClass(colAligns.aligns.amount ?? "center"))} data-col="amount" data-align={colAligns.aligns.amount ?? "center"}>
+                  <Money
+                    amount={row.account.type === "expense" ? -row.amount : row.amount}
+                    currency={currency}
+                    signed
+                  />
+                </td>
+              </tr>
+            );
+          })}
+          <VirtPad height={listVirt.padBottom} colSpan={2} />
           <tr>
             <td className="px-4 py-3 font-medium">Net income</td>
             <td className={cn("px-4 py-3 font-medium whitespace-nowrap", alignClass(colAligns.aligns.amount ?? "center"))} data-col="amount" data-align={colAligns.aligns.amount ?? "center"}>

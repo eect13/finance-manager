@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, memo, type Ref, type RefObject } from "react";
 import { Printer } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
@@ -70,6 +70,11 @@ function openKindFor(line: CashLine): "check" | "receipt" | "bill" | "journal" {
   return "journal";
 }
 
+function openIdFor(line: CashLine, billByPayment: Map<string, string>) {
+  if (line.kind === "bill-payment") return billByPayment.get(line.sourceId) ?? line.sourceId;
+  return line.sourceId;
+}
+
 function ReconcilePage() {
   const data = useFinanceData();
   const finishRecon = useFinanceStore((s) => s.finishRecon);
@@ -91,7 +96,6 @@ function ReconcilePage() {
   const [undoing, setUndoing] = useState(false);
   const [printLast, setPrintLast] = useState(false);
   const gridRef = useRef<HTMLDivElement>(null);
-  const [deskScrollEl, setDeskScrollEl] = useState<HTMLElement | null>(null);
   const cols = useColWidths("finance-manager-recon-cols-v2", reconDefaultCols(), { min: 36 });
   const colAligns = useColAligns(
     "finance-manager-recon-col-aligns",
@@ -130,45 +134,28 @@ function ReconcilePage() {
     [statementDate],
   );
   const sort = useEntrySort(uncleared, "date", getters, "asc", true);
-  const phoneGrid = phoneLayout === "grid";
-  const phoneVirt = useVirtualizer({
-    count: sort.sorted.length,
-    getScrollElement: () => getWorkspaceScrollElement(),
-    estimateSize: () => (phoneGrid ? 148 : 56),
-    overscan: phoneGrid ? 8 : 12,
-    getItemKey: (index) => sort.sorted[index]?.id ?? index,
-    gap: phoneGrid ? 8 : 0,
-  });
-  // Desk table rows scroll inside ListCard. Bind the live node so the first
-  // paint is not an empty virtualizer (gridRef is null until ListCard mounts).
-  const deskVirt = useVirtualizer({
-    count: sort.sorted.length,
-    getScrollElement: () => deskScrollEl ?? getWorkspaceScrollElement(),
-    estimateSize: () => 48,
-    overscan: 8,
-    getItemKey: (index) => sort.sorted[index]?.id ?? index,
-  });
-  useEffect(() => {
-    phoneVirt.measure();
-    deskVirt.measure();
-    // Remeasure when layout or type size changes variable card / row heights.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phoneLayout, fontSize, sort.sorted.length, deskScrollEl]);
-  const phoneVItems = phoneVirt.getVirtualItems();
-  const phoneFirst = phoneVItems[0];
-  const phoneLast = phoneVItems[phoneVItems.length - 1];
-  const phonePadTop = phoneFirst ? phoneFirst.start : 0;
-  const phonePadBottom = phoneLast ? Math.max(0, phoneVirt.getTotalSize() - phoneLast.end) : 0;
-  const deskVItems = deskVirt.getVirtualItems();
-  const deskFirst = deskVItems[0];
-  const deskLast = deskVItems[deskVItems.length - 1];
-  const deskPadTop = deskFirst ? deskFirst.start : 0;
-  const deskPadBottom = deskLast ? Math.max(0, deskVirt.getTotalSize() - deskLast.end) : 0;
-  const selected = allUncleared.filter((line) => ticked.has(lineKey(line)));
+  const billByPayment = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const bill of data.bills) {
+      for (const pay of bill.payments) map.set(pay.id, bill.id);
+    }
+    return map;
+  }, [data.bills]);
+  const selected = useMemo(
+    () => allUncleared.filter((line) => ticked.has(lineKey(line))),
+    [allUncleared, ticked],
+  );
   const statementEnding = parseAmountToCents(ending);
   const difference = reconDifference(beginning, statementEnding, selected);
-  const clearedIn = selected.reduce((s, l) => s + l.deposit, 0);
-  const clearedOut = selected.reduce((s, l) => s + l.payment, 0);
+  const { clearedIn, clearedOut } = useMemo(() => {
+    let inn = 0;
+    let out = 0;
+    for (const line of selected) {
+      inn += line.deposit;
+      out += line.payment;
+    }
+    return { clearedIn: inn, clearedOut: out };
+  }, [selected]);
   const explain = useMemo(() => reconExplain(allUncleared, ticked, lineKey), [allUncleared, ticked]);
   const last = lastReconForBank(data, effectiveBankId);
   const book = useMemo(
@@ -197,12 +184,7 @@ function ReconcilePage() {
     onOpen: (id) => {
       const line = sort.sorted.find((l) => l.id === id);
       if (!line) return;
-      const kind = openKindFor(line);
-      const targetId =
-        line.kind === "bill-payment"
-          ? (data.bills.find((b) => b.payments.some((p) => p.id === line.sourceId))?.id ?? line.sourceId)
-          : line.sourceId;
-      openTxn(kind, targetId);
+      openTxn(openKindFor(line), openIdFor(line, billByPayment));
     },
     onToggle: (id) => {
       const line = sort.sorted.find((l) => l.id === id);
@@ -499,438 +481,25 @@ function ReconcilePage() {
         />
       </ListToolbar>
 
-      {isNarrowUi() || phoneLayout === "grid" ? (
-        <div
-          className={cn("recon-phone-list", phoneLayout === "list" && "is-list")}
-          data-layout={phoneLayout}
-          style={{ ["--register-font" as string]: `${data.settings.registerFontSize ?? 12}px` }}
-        >
-          <div className="mb-2 flex items-center justify-between gap-2 no-print">
-            <span className="inline-flex items-center gap-1">
-              <ShopTick checked={allOn} indeterminate={someOn} onChange={toggleAll} label="Select all" />
-              <span className="text-xs text-muted-foreground">Tick cleared</span>
-            </span>
-            <span className="text-xs text-muted-foreground">{sort.sorted.length} uncleared</span>
-          </div>
-          {sort.sorted.length === 0 ? (
-            <p className="phone-empty text-sm text-muted-foreground">
-              Nothing uncleared on or before this date.
-            </p>
-          ) : phoneLayout === "list" ? (
-            <div className="list-card list-grid register-phone-table min-w-0">
-              <table style={{ width: "max-content", minWidth: "100%" }}>
-                <thead>
-                  <tr className="border-b border-border text-muted-foreground">
-                    <th className="w-10 px-2 py-2 no-print whitespace-nowrap" aria-label="Cleared" />
-                    <SortHeader
-                      compact
-                      label="Date"
-                      column="date"
-                      sortKey={sort.key}
-                      dir={sort.dir}
-                      onToggle={sort.toggle}
-                      align={colAligns.aligns.date ?? "center"}
-                      onAlign={(a) => colAligns.setAlign("date", a)}
-                      className="whitespace-nowrap px-2"
-                    />
-                    <SortHeader
-                      compact
-                      label="Payee"
-                      column="payee"
-                      sortKey={sort.key}
-                      dir={sort.dir}
-                      onToggle={sort.toggle}
-                      align={colAligns.aligns.payee ?? "center"}
-                      onAlign={(a) => colAligns.setAlign("payee", a)}
-                      className="min-w-[10rem] whitespace-nowrap px-2"
-                      fill
-                    />
-                    <SortHeader
-                      compact
-                      label="Amount"
-                      column="payment"
-                      sortable={false}
-                      sortKey={sort.key}
-                      dir={sort.dir}
-                      onToggle={sort.toggle}
-                      align={colAligns.aligns.payment ?? "center"}
-                      onAlign={(a) => colAligns.setAlign("payment", a)}
-                      className="whitespace-nowrap px-2"
-                    />
-                    <SortHeader
-                      compact
-                      label="Days"
-                      column="days"
-                      sortKey={sort.key}
-                      dir={sort.dir}
-                      onToggle={sort.toggle}
-                      align={colAligns.aligns.days ?? "center"}
-                      onAlign={(a) => colAligns.setAlign("days", a)}
-                      className="whitespace-nowrap px-2"
-                    />
-                  </tr>
-                </thead>
-                <tbody>
-                  {phonePadTop > 0 ? (
-                    <tr aria-hidden>
-                      <td colSpan={5} style={{ height: phonePadTop, padding: 0, border: 0 }} />
-                    </tr>
-                  ) : null}
-                  {phoneVItems.map((item) => {
-                    const line = sort.sorted[item.index];
-                    if (!line) return null;
-                    const on = ticked.has(lineKey(line));
-                    const days = daysOutstanding(line.date, statementDate);
-                    const openId =
-                      line.kind === "bill-payment"
-                        ? (data.bills.find((b) => b.payments.some((p) => p.id === line.sourceId))?.id ??
-                          line.sourceId)
-                        : line.sourceId;
-                    return (
-                      <tr
-                        key={line.id}
-                        ref={phoneVirt.measureElement}
-                        data-index={item.index}
-                        data-selected={on ? "true" : undefined}
-                        className="border-b border-border/70 last:border-0 touch-manipulation"
-                        {...openProps(openKindFor(line), openId, { click: true })}
-                      >
-                        <td
-                          className="px-2 py-2.5 no-print"
-                          onClick={(e) => e.stopPropagation()}
-                          onPointerDown={(e) => e.stopPropagation()}
-                        >
-                          <ShopTick checked={on} onChange={(next) => toggle(line, next)} label="Cleared" />
-                        </td>
-                        <td className={cn("whitespace-nowrap px-2 py-2.5 text-muted-foreground tabular-nums", alignClass(colAligns.aligns.date ?? "center"))} data-col="date" data-align={colAligns.aligns.date ?? "center"}>
-                          {formatDate(line.date)}
-                        </td>
-                        <td className={cn("min-w-[10rem] whitespace-normal px-2 py-3", alignClass(colAligns.aligns.payee ?? "center"))} data-col="payee" data-align={colAligns.aligns.payee ?? "center"}>
-                          <p className="font-medium break-words">{line.party}</p>
-                          <p className="mt-0.5 break-words text-muted-foreground">
-                            {KIND_LABEL[line.kind]}
-                            {line.number ? ` · ${line.number}` : ""}
-                            {line.memo?.trim() ? ` · ${line.memo}` : ""}
-                          </p>
-                        </td>
-                        <td className={cn("whitespace-nowrap px-2 py-2.5 tabular-nums", alignClass(colAligns.aligns.payment ?? "center"))} data-col="payment" data-align={colAligns.aligns.payment ?? "center"}>
-                          {line.payment ? (
-                            <Money amount={line.payment} currency={data.settings.currency} className="text-debit" />
-                          ) : line.deposit ? (
-                            <Money amount={line.deposit} currency={data.settings.currency} className="text-credit" />
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-                        </td>
-                        <td
-                          className={cn(
-                            "whitespace-nowrap px-2 py-2.5 tabular-nums",
-                            alignClass(colAligns.aligns.days ?? "center"),
-                            days > 90 && "text-debit",
-                          )}
-                          data-col="days"
-                          data-align={colAligns.aligns.days ?? "center"}
-                        >
-                          {days ? `${days}d` : "—"}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                  {phonePadBottom > 0 ? (
-                    <tr aria-hidden>
-                      <td colSpan={5} style={{ height: phonePadBottom, padding: 0, border: 0 }} />
-                    </tr>
-                  ) : null}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <ul className="flex flex-col">
-              {phonePadTop > 0 ? (
-                <li
-                  aria-hidden
-                  style={{
-                    height: phonePadTop,
-                    margin: 0,
-                    padding: 0,
-                    border: 0,
-                    overflow: "hidden",
-                    listStyle: "none",
-                  }}
-                />
-              ) : null}
-              {phoneVItems.map((item) => {
-                const line = sort.sorted[item.index];
-                if (!line) return null;
-                const on = ticked.has(lineKey(line));
-                const days = daysOutstanding(line.date, statementDate);
-                const openId =
-                  line.kind === "bill-payment"
-                    ? (data.bills.find((b) => b.payments.some((p) => p.id === line.sourceId))?.id ??
-                      line.sourceId)
-                    : line.sourceId;
-                return (
-                  <li key={line.id} ref={phoneVirt.measureElement} data-index={item.index}>
-                      <div
-                        data-selected={on ? "true" : undefined}
-                        className="recon-phone-card flex items-start gap-2 rounded-2xl border border-border/40 bg-card px-3 py-3 touch-manipulation shadow-none"
-                        {...openProps(openKindFor(line), openId, { click: true })}
-                      >
-                        <div
-                          className="shrink-0 pt-0.5"
-                          onClick={(e) => e.stopPropagation()}
-                          onPointerDown={(e) => e.stopPropagation()}
-                        >
-                          <ShopTick checked={on} onChange={(next) => toggle(line, next)} label="Cleared" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-baseline justify-between gap-2">
-                            <p className="phone-card-party min-w-0 break-words font-medium">{line.party}</p>
-                            <p className="phone-card-date shrink-0 text-muted-foreground tabular-nums">
-                              {formatDate(line.date)}
-                            </p>
-                          </div>
-                          <p className="phone-card-meta mt-0.5 text-muted-foreground">
-                            {KIND_LABEL[line.kind]}
-                            {line.number ? ` · ${line.number}` : ""}
-                            {days ? (
-                              <span className={cn(" · ", days > 90 && "text-debit")}>{days}d outstanding</span>
-                            ) : null}
-                          </p>
-                          <div className="phone-card-memo mt-1">
-                            <p className="phone-card-label text-muted-foreground">Memo</p>
-                            <p className="break-words text-muted-foreground/90">
-                              {line.memo?.trim() ? line.memo : "—"}
-                            </p>
-                          </div>
-                          <div className="phone-card-money mt-1.5 grid grid-cols-2 gap-2 tabular-nums">
-                            <div>
-                              <p className="phone-card-label text-muted-foreground">Payment</p>
-                              {line.payment ? (
-                                <Money
-                                  amount={line.payment}
-                                  currency={data.settings.currency}
-                                  className="text-debit"
-                                />
-                              ) : (
-                                <span className="text-muted-foreground">—</span>
-                              )}
-                            </div>
-                            <div className="text-right">
-                              <p className="phone-card-label text-muted-foreground">Deposit</p>
-                              {line.deposit ? (
-                                <Money
-                                  amount={line.deposit}
-                                  currency={data.settings.currency}
-                                  className="text-credit"
-                                />
-                              ) : (
-                                <span className="text-muted-foreground">—</span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                  </li>
-                );
-              })}
-              {phonePadBottom > 0 ? (
-                <li
-                  aria-hidden
-                  style={{
-                    height: phonePadBottom,
-                    margin: 0,
-                    padding: 0,
-                    border: 0,
-                    overflow: "hidden",
-                    listStyle: "none",
-                  }}
-                />
-              ) : null}
-            </ul>
-          )}
-        </div>
-      ) : (
-      <ListCard
-        ref={(el) => {
-          pointer.bindContainer(gridRef)(el);
-          setDeskScrollEl((prev) => (prev === el ? prev : el));
-        }}
-        tabIndex={0}
-        className="recon-table-card outline-none"
-      >
-        <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
-          <colgroup>
-            <col className="col-check no-print" style={{ width: cols.widths.check, minWidth: cols.widths.check }} />
-            {(Object.keys(RECON_COLS) as Array<keyof typeof RECON_COLS>).map((id) => (
-              <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id])} />
-            ))}
-          </colgroup>
-          <thead>
-            <tr className="border-b border-border text-muted-foreground">
-              <th className="col-check no-print relative" style={{ width: cols.widths.check, minWidth: cols.widths.check }}>
-                <span className="register-check-cell">
-                  <ShopTick
-                    checked={allOn}
-                    indeterminate={someOn}
-                    onChange={toggleAll}
-                    label="Select all"
-                  />
-                </span>
-                <ColResize
-                  width={cols.widths.check}
-                  onWidth={(n) => cols.setWidth("check", n)}
-                  onFit={() => fit("check", " ")}
-                />
-              </th>
-              <SortHeader
-                label="Date"
-                column="date"
-                sortKey={sort.key}
-                dir={sort.dir}
-                onToggle={sort.toggle}
-                width={cols.widths.date}
-                onWidth={(n) => cols.setWidth("date", n)}
-                onFit={() => fit("date", "Date")}
-              
-                align={colAligns.aligns.date ?? "center"}
-                onAlign={(a) => colAligns.setAlign("date", a)}
-              />
-              <SortHeader
-                label="Type"
-                column="type"
-                sortKey={sort.key}
-                dir={sort.dir}
-                onToggle={sort.toggle}
-                width={cols.widths.type}
-                onWidth={(n) => cols.setWidth("type", n)}
-                onFit={() => fit("type", "Type")}
-                align={colAligns.aligns.type ?? "center"}
-                onAlign={(a) => colAligns.setAlign("type", a)}
-              />
-              <SortHeader
-                label="Payee"
-                column="payee"
-                sortKey={sort.key}
-                dir={sort.dir}
-                onToggle={sort.toggle}
-                width={cols.widths.payee}
-                onWidth={(n) => cols.setWidth("payee", n)}
-                onFit={() => fit("payee", "Payee")}
-                align={colAligns.aligns.payee ?? "center"}
-                onAlign={(a) => colAligns.setAlign("payee", a)}
-                fill
-              />
-              <SortHeader
-                label="Days"
-                column="days"
-                sortKey={sort.key}
-                dir={sort.dir}
-                onToggle={sort.toggle}
-                width={cols.widths.days}
-                onWidth={(n) => cols.setWidth("days", n)}
-                onFit={() => fit("days", "Days")}
-                align={colAligns.aligns.days ?? "center"}
-                onAlign={(a) => colAligns.setAlign("days", a)}
-              />
-              <SortHeader
-                label="Payment"
-                column="payment"
-                sortKey={sort.key}
-                dir={sort.dir}
-                onToggle={sort.toggle}
-                width={cols.widths.payment}
-                onWidth={(n) => cols.setWidth("payment", n)}
-                onFit={() => fit("payment", "Payment")}
-                align={colAligns.aligns.payment ?? "center"}
-                onAlign={(a) => colAligns.setAlign("payment", a)}
-              />
-              <SortHeader
-                label="Deposit"
-                column="deposit"
-                sortKey={sort.key}
-                dir={sort.dir}
-                onToggle={sort.toggle}
-                width={cols.widths.deposit}
-                onWidth={(n) => cols.setWidth("deposit", n)}
-                onFit={() => fit("deposit", "Deposit")}
-                align={colAligns.aligns.deposit ?? "center"}
-                onAlign={(a) => colAligns.setAlign("deposit", a)}
-              />
-            </tr>
-          </thead>
-          <tbody>
-            {sort.sorted.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="px-3 py-8 text-center text-muted-foreground">
-                  Nothing uncleared on or before this date.
-                </td>
-              </tr>
-            ) : (
-              <>
-                {deskPadTop > 0 ? (
-                  <tr aria-hidden>
-                    <td colSpan={7} style={{ height: deskPadTop, padding: 0, border: 0 }} />
-                  </tr>
-                ) : null}
-                {deskVItems.map((item) => {
-                  const line = sort.sorted[item.index];
-                  if (!line) return null;
-                  const on = ticked.has(lineKey(line));
-                  return (
-                    <tr
-                      key={line.id}
-                      ref={deskVirt.measureElement}
-                      data-index={item.index}
-                      className="border-b border-border/70 last:border-0"
-                      data-selected={on ? "true" : undefined}
-                      data-focused={pointer.activeId === line.id ? "true" : undefined}
-                      data-row-id={line.id}
-                      aria-current={pointer.activeId === line.id ? "true" : undefined}
-                      onClick={() => {
-                        pointer.setActiveId(line.id);
-                      }}
-                      {...openProps(
-                        openKindFor(line),
-                        line.kind === "bill-payment"
-                          ? (data.bills.find((b) => b.payments.some((p) => p.id === line.sourceId))?.id ?? line.sourceId)
-                          : line.sourceId,
-                      )}
-                    >
-                      <td
-                        className="col-check no-print"
-                        onClick={(e) => e.stopPropagation()}
-                        onPointerDown={(e) => e.stopPropagation()}
-                        onDoubleClick={(e) => e.stopPropagation()}
-                      >
-                        <span className="register-check-cell">
-                          <ShopTick checked={on} onChange={(next) => toggle(line, next)} label="Cleared" />
-                        </span>
-                      </td>
-                      <td className={cn("px-4 py-3 whitespace-nowrap", alignClass(colAligns.aligns.date ?? "center"))} data-col="date" data-align={colAligns.aligns.date ?? "center"}>{formatDate(line.date)}</td>
-                      <td className={cn("px-4 py-3", alignClass(colAligns.aligns.type ?? "center"))} data-col="type" data-align={colAligns.aligns.type ?? "center"}>{KIND_LABEL[line.kind]}</td>
-                      <td className={cn("px-4 py-3", alignClass(colAligns.aligns.payee ?? "center"))} data-col="payee" data-align={colAligns.aligns.payee ?? "center"}>{line.party}</td>
-                      <td className={cn("px-4 py-3", alignClass(colAligns.aligns.days ?? "center"), daysOutstanding(line.date, statementDate) > 90 && "text-debit")} data-col="days" data-align={colAligns.aligns.days ?? "center"}>{daysOutstanding(line.date, statementDate) || ""}</td>
-                      <td className={cn("px-4 py-3", alignClass(colAligns.aligns.payment ?? "center"))} data-col="payment" data-align={colAligns.aligns.payment ?? "center"}>
-                        {line.payment ? <Money amount={line.payment} currency={data.settings.currency} /> : ""}
-                      </td>
-                      <td className={cn("px-4 py-3", alignClass(colAligns.aligns.deposit ?? "center"))} data-col="deposit" data-align={colAligns.aligns.deposit ?? "center"}>
-                        {line.deposit ? <Money amount={line.deposit} currency={data.settings.currency} /> : ""}
-                      </td>
-                    </tr>
-                  );
-                })}
-                {deskPadBottom > 0 ? (
-                  <tr aria-hidden>
-                    <td colSpan={7} style={{ height: deskPadBottom, padding: 0, border: 0 }} />
-                  </tr>
-                ) : null}
-              </>
-            )}
-          </tbody>
-        </table>
-      </ListCard>
-      )}
+      <ReconcileLines
+        lines={sort.sorted}
+        ticked={ticked}
+        statementDate={statementDate}
+        currency={data.settings.currency}
+        fontSize={fontSize}
+        phoneLayout={phoneLayout}
+        billByPayment={billByPayment}
+        allOn={allOn}
+        someOn={someOn}
+        sort={sort}
+        colAligns={colAligns}
+        cols={cols}
+        pointer={pointer}
+        gridRef={gridRef}
+        onToggle={toggle}
+        toggleAll={toggleAll}
+        fit={fit}
+      />
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <div className="flex flex-wrap items-end gap-2">
@@ -984,3 +553,614 @@ function ReconcilePage() {
     </AppShell>
   );
 }
+
+type ReconColId = "check" | keyof typeof RECON_COLS;
+
+function ReconcileLines({
+  lines,
+  ticked,
+  statementDate,
+  currency,
+  fontSize,
+  phoneLayout,
+  billByPayment,
+  allOn,
+  someOn,
+  sort,
+  colAligns,
+  cols,
+  pointer,
+  gridRef,
+  onToggle,
+  toggleAll,
+  fit,
+}: {
+  lines: CashLine[];
+  ticked: Set<string>;
+  statementDate: string;
+  currency: string;
+  fontSize: number;
+  phoneLayout: PhoneLayout;
+  billByPayment: Map<string, string>;
+  allOn: boolean;
+  someOn: boolean;
+  sort: { key: string; dir: "asc" | "desc"; toggle: (column: string) => void };
+  colAligns: { aligns: Record<keyof typeof RECON_COLS, "left" | "center" | "right">; setAlign: (id: keyof typeof RECON_COLS, a: "left" | "center" | "right") => void };
+  cols: {
+    tableRef: (node: HTMLTableElement | null) => void;
+    tableWidth: number;
+    widths: Record<ReconColId, number>;
+    setWidth: (id: ReconColId, n: number) => void;
+  };
+  pointer: {
+    activeId: string | null;
+    setActiveId: (id: string) => void;
+    bindContainer: <T extends HTMLElement>(outer?: Ref<T> | null) => (node: T | null) => void;
+  };
+  gridRef: RefObject<HTMLDivElement | null>;
+  onToggle: (line: CashLine, on?: boolean) => void;
+  toggleAll: (on: boolean) => void;
+  fit: (id: ReconColId, label: string) => void;
+}) {
+  const narrow = isNarrowUi();
+  const cardMode = narrow || phoneLayout === "grid";
+  const [listScrollEl, setListScrollEl] = useState<HTMLElement | null>(null);
+  const virt = useVirtualizer({
+    count: lines.length,
+    getScrollElement: () =>
+      cardMode ? getWorkspaceScrollElement() : (listScrollEl ?? getWorkspaceScrollElement()),
+    estimateSize: () => (cardMode ? (narrow ? 168 : 148) : narrow ? 52 : 44),
+    overscan: cardMode ? 8 : 12,
+    getItemKey: (index) => lines[index]?.id ?? index,
+    gap: cardMode ? 8 : 0,
+  });
+  useEffect(() => {
+    virt.measure();
+    // Remeasure when layout or type size changes variable card / row heights.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phoneLayout, fontSize, lines.length, listScrollEl, cardMode]);
+  const vItems = virt.getVirtualItems();
+  const first = vItems[0];
+  const last = vItems[vItems.length - 1];
+  const padTop = first ? first.start : 0;
+  const padBottom = last ? Math.max(0, virt.getTotalSize() - last.end) : 0;
+
+  if (cardMode) {
+    return (
+      <div
+        className={cn("recon-phone-list", phoneLayout === "list" && "is-list")}
+        data-layout={phoneLayout}
+        style={{ ["--register-font" as string]: `${fontSize}px` }}
+      >
+        <div className="mb-2 flex items-center justify-between gap-2 no-print">
+          <span className="inline-flex items-center gap-1">
+            <ShopTick checked={allOn} indeterminate={someOn} onChange={toggleAll} label="Select all" />
+            <span className="text-xs text-muted-foreground">Tick cleared</span>
+          </span>
+          <span className="text-xs text-muted-foreground">{lines.length} uncleared</span>
+        </div>
+        {lines.length === 0 ? (
+          <p className="phone-empty text-sm text-muted-foreground">
+            Nothing uncleared on or before this date.
+          </p>
+        ) : phoneLayout === "list" ? (
+          <div className="list-card list-grid register-phone-table min-w-0">
+            <table style={{ width: "max-content", minWidth: "100%" }}>
+              <thead>
+                <tr className="border-b border-border text-muted-foreground">
+                  <th className="w-10 px-2 py-2 no-print whitespace-nowrap" aria-label="Cleared" />
+                  <SortHeader
+                    compact
+                    label="Date"
+                    column="date"
+                    sortKey={sort.key}
+                    dir={sort.dir}
+                    onToggle={sort.toggle}
+                    align={colAligns.aligns.date ?? "center"}
+                    onAlign={(a) => colAligns.setAlign("date", a)}
+                    className="whitespace-nowrap px-2"
+                  />
+                  <SortHeader
+                    compact
+                    label="Payee"
+                    column="payee"
+                    sortKey={sort.key}
+                    dir={sort.dir}
+                    onToggle={sort.toggle}
+                    align={colAligns.aligns.payee ?? "center"}
+                    onAlign={(a) => colAligns.setAlign("payee", a)}
+                    className="min-w-[10rem] whitespace-nowrap px-2"
+                    fill
+                  />
+                  <SortHeader
+                    compact
+                    label="Amount"
+                    column="payment"
+                    sortable={false}
+                    sortKey={sort.key}
+                    dir={sort.dir}
+                    onToggle={sort.toggle}
+                    align={colAligns.aligns.payment ?? "center"}
+                    onAlign={(a) => colAligns.setAlign("payment", a)}
+                    className="whitespace-nowrap px-2"
+                  />
+                  <SortHeader
+                    compact
+                    label="Days"
+                    column="days"
+                    sortKey={sort.key}
+                    dir={sort.dir}
+                    onToggle={sort.toggle}
+                    align={colAligns.aligns.days ?? "center"}
+                    onAlign={(a) => colAligns.setAlign("days", a)}
+                    className="whitespace-nowrap px-2"
+                  />
+                </tr>
+              </thead>
+              <tbody>
+                {padTop > 0 ? (
+                  <tr aria-hidden>
+                    <td colSpan={5} style={{ height: padTop, padding: 0, border: 0 }} />
+                  </tr>
+                ) : null}
+                {vItems.map((item) => {
+                  const line = lines[item.index];
+                  if (!line) return null;
+                  return (
+                    <ReconPhoneListRow
+                      key={line.id}
+                      index={item.index}
+                      line={line}
+                      on={ticked.has(lineKey(line))}
+                      days={daysOutstanding(line.date, statementDate)}
+                      currency={currency}
+                      openId={openIdFor(line, billByPayment)}
+                      dateAlign={colAligns.aligns.date ?? "center"}
+                      payeeAlign={colAligns.aligns.payee ?? "center"}
+                      amountAlign={colAligns.aligns.payment ?? "center"}
+                      daysAlign={colAligns.aligns.days ?? "center"}
+                      measureRef={virt.measureElement}
+                      onToggle={onToggle}
+                    />
+                  );
+                })}
+                {padBottom > 0 ? (
+                  <tr aria-hidden>
+                    <td colSpan={5} style={{ height: padBottom, padding: 0, border: 0 }} />
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <ul className="flex flex-col">
+            {padTop > 0 ? (
+              <li
+                aria-hidden
+                style={{
+                  height: padTop,
+                  margin: 0,
+                  padding: 0,
+                  border: 0,
+                  overflow: "hidden",
+                  listStyle: "none",
+                }}
+              />
+            ) : null}
+            {vItems.map((item) => {
+              const line = lines[item.index];
+              if (!line) return null;
+              return (
+                <ReconPhoneCard
+                  key={line.id}
+                  index={item.index}
+                  line={line}
+                  on={ticked.has(lineKey(line))}
+                  days={daysOutstanding(line.date, statementDate)}
+                  currency={currency}
+                  openId={openIdFor(line, billByPayment)}
+                  measureRef={virt.measureElement}
+                  onToggle={onToggle}
+                />
+              );
+            })}
+            {padBottom > 0 ? (
+              <li
+                aria-hidden
+                style={{
+                  height: padBottom,
+                  margin: 0,
+                  padding: 0,
+                  border: 0,
+                  overflow: "hidden",
+                  listStyle: "none",
+                }}
+              />
+            ) : null}
+          </ul>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <ListCard
+      ref={(el) => {
+        pointer.bindContainer(gridRef)(el);
+        setListScrollEl((prev) => (prev === el ? prev : el));
+      }}
+      tabIndex={0}
+      className="recon-table-card outline-none"
+    >
+      <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
+        <colgroup>
+          <col className="col-check no-print" style={{ width: cols.widths.check, minWidth: cols.widths.check }} />
+          {(Object.keys(RECON_COLS) as Array<keyof typeof RECON_COLS>).map((id) => (
+            <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id])} />
+          ))}
+        </colgroup>
+        <thead>
+          <tr className="border-b border-border text-muted-foreground">
+            <th className="col-check no-print relative" style={{ width: cols.widths.check, minWidth: cols.widths.check }}>
+              <span className="register-check-cell">
+                <ShopTick
+                  checked={allOn}
+                  indeterminate={someOn}
+                  onChange={toggleAll}
+                  label="Select all"
+                />
+              </span>
+              <ColResize
+                width={cols.widths.check}
+                onWidth={(n) => cols.setWidth("check", n)}
+                onFit={() => fit("check", " ")}
+              />
+            </th>
+            <SortHeader
+              label="Date"
+              column="date"
+              sortKey={sort.key}
+              dir={sort.dir}
+              onToggle={sort.toggle}
+              width={cols.widths.date}
+              onWidth={(n) => cols.setWidth("date", n)}
+              onFit={() => fit("date", "Date")}
+              align={colAligns.aligns.date ?? "center"}
+              onAlign={(a) => colAligns.setAlign("date", a)}
+            />
+            <SortHeader
+              label="Type"
+              column="type"
+              sortKey={sort.key}
+              dir={sort.dir}
+              onToggle={sort.toggle}
+              width={cols.widths.type}
+              onWidth={(n) => cols.setWidth("type", n)}
+              onFit={() => fit("type", "Type")}
+              align={colAligns.aligns.type ?? "center"}
+              onAlign={(a) => colAligns.setAlign("type", a)}
+            />
+            <SortHeader
+              label="Payee"
+              column="payee"
+              sortKey={sort.key}
+              dir={sort.dir}
+              onToggle={sort.toggle}
+              width={cols.widths.payee}
+              onWidth={(n) => cols.setWidth("payee", n)}
+              onFit={() => fit("payee", "Payee")}
+              align={colAligns.aligns.payee ?? "center"}
+              onAlign={(a) => colAligns.setAlign("payee", a)}
+              fill
+            />
+            <SortHeader
+              label="Days"
+              column="days"
+              sortKey={sort.key}
+              dir={sort.dir}
+              onToggle={sort.toggle}
+              width={cols.widths.days}
+              onWidth={(n) => cols.setWidth("days", n)}
+              onFit={() => fit("days", "Days")}
+              align={colAligns.aligns.days ?? "center"}
+              onAlign={(a) => colAligns.setAlign("days", a)}
+            />
+            <SortHeader
+              label="Payment"
+              column="payment"
+              sortKey={sort.key}
+              dir={sort.dir}
+              onToggle={sort.toggle}
+              width={cols.widths.payment}
+              onWidth={(n) => cols.setWidth("payment", n)}
+              onFit={() => fit("payment", "Payment")}
+              align={colAligns.aligns.payment ?? "center"}
+              onAlign={(a) => colAligns.setAlign("payment", a)}
+            />
+            <SortHeader
+              label="Deposit"
+              column="deposit"
+              sortKey={sort.key}
+              dir={sort.dir}
+              onToggle={sort.toggle}
+              width={cols.widths.deposit}
+              onWidth={(n) => cols.setWidth("deposit", n)}
+              onFit={() => fit("deposit", "Deposit")}
+              align={colAligns.aligns.deposit ?? "center"}
+              onAlign={(a) => colAligns.setAlign("deposit", a)}
+            />
+          </tr>
+        </thead>
+        <tbody>
+          {lines.length === 0 ? (
+            <tr>
+              <td colSpan={7} className="px-3 py-8 text-center text-muted-foreground">
+                Nothing uncleared on or before this date.
+              </td>
+            </tr>
+          ) : (
+            <>
+              {padTop > 0 ? (
+                <tr aria-hidden>
+                  <td colSpan={7} style={{ height: padTop, padding: 0, border: 0 }} />
+                </tr>
+              ) : null}
+              {vItems.map((item) => {
+                const line = lines[item.index];
+                if (!line) return null;
+                return (
+                  <ReconDeskRow
+                    key={line.id}
+                    index={item.index}
+                    line={line}
+                    on={ticked.has(lineKey(line))}
+                    days={daysOutstanding(line.date, statementDate)}
+                    currency={currency}
+                    openId={openIdFor(line, billByPayment)}
+                    active={pointer.activeId === line.id}
+                    dateAlign={colAligns.aligns.date ?? "center"}
+                    typeAlign={colAligns.aligns.type ?? "center"}
+                    payeeAlign={colAligns.aligns.payee ?? "center"}
+                    daysAlign={colAligns.aligns.days ?? "center"}
+                    paymentAlign={colAligns.aligns.payment ?? "center"}
+                    depositAlign={colAligns.aligns.deposit ?? "center"}
+                    measureRef={virt.measureElement}
+                    onActivate={pointer.setActiveId}
+                    onToggle={onToggle}
+                  />
+                );
+              })}
+              {padBottom > 0 ? (
+                <tr aria-hidden>
+                  <td colSpan={7} style={{ height: padBottom, padding: 0, border: 0 }} />
+                </tr>
+              ) : null}
+            </>
+          )}
+        </tbody>
+      </table>
+    </ListCard>
+  );
+}
+
+const ReconDeskRow = memo(function ReconDeskRow({
+  index,
+  line,
+  on,
+  days,
+  currency,
+  openId,
+  active,
+  dateAlign,
+  typeAlign,
+  payeeAlign,
+  daysAlign,
+  paymentAlign,
+  depositAlign,
+  measureRef,
+  onActivate,
+  onToggle,
+}: {
+  index: number;
+  line: CashLine;
+  on: boolean;
+  days: number;
+  currency: string;
+  openId: string;
+  active: boolean;
+  dateAlign: "left" | "center" | "right";
+  typeAlign: "left" | "center" | "right";
+  payeeAlign: "left" | "center" | "right";
+  daysAlign: "left" | "center" | "right";
+  paymentAlign: "left" | "center" | "right";
+  depositAlign: "left" | "center" | "right";
+  measureRef: (el: HTMLElement | null) => void;
+  onActivate: (id: string) => void;
+  onToggle: (line: CashLine, on?: boolean) => void;
+}) {
+  return (
+    <tr
+      ref={measureRef}
+      data-index={index}
+      className="border-b border-border/70 last:border-0"
+      data-selected={on ? "true" : undefined}
+      data-focused={active ? "true" : undefined}
+      data-row-id={line.id}
+      aria-current={active ? "true" : undefined}
+      onClick={() => onActivate(line.id)}
+      {...openProps(openKindFor(line), openId)}
+    >
+      <td
+        className="col-check no-print"
+        onClick={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
+        onDoubleClick={(e) => e.stopPropagation()}
+      >
+        <span className="register-check-cell">
+          <ShopTick checked={on} onChange={(next) => onToggle(line, next)} label="Cleared" />
+        </span>
+      </td>
+      <td className={cn("px-4 py-3 whitespace-nowrap", alignClass(dateAlign))} data-col="date" data-align={dateAlign}>{formatDate(line.date)}</td>
+      <td className={cn("px-4 py-3", alignClass(typeAlign))} data-col="type" data-align={typeAlign}>{KIND_LABEL[line.kind]}</td>
+      <td className={cn("px-4 py-3", alignClass(payeeAlign))} data-col="payee" data-align={payeeAlign}>{line.party}</td>
+      <td className={cn("px-4 py-3", alignClass(daysAlign), days > 90 && "text-debit")} data-col="days" data-align={daysAlign}>{days || ""}</td>
+      <td className={cn("px-4 py-3", alignClass(paymentAlign))} data-col="payment" data-align={paymentAlign}>
+        {line.payment ? <Money amount={line.payment} currency={currency} /> : ""}
+      </td>
+      <td className={cn("px-4 py-3", alignClass(depositAlign))} data-col="deposit" data-align={depositAlign}>
+        {line.deposit ? <Money amount={line.deposit} currency={currency} /> : ""}
+      </td>
+    </tr>
+  );
+});
+
+const ReconPhoneListRow = memo(function ReconPhoneListRow({
+  index,
+  line,
+  on,
+  days,
+  currency,
+  openId,
+  dateAlign,
+  payeeAlign,
+  amountAlign,
+  daysAlign,
+  measureRef,
+  onToggle,
+}: {
+  index: number;
+  line: CashLine;
+  on: boolean;
+  days: number;
+  currency: string;
+  openId: string;
+  dateAlign: "left" | "center" | "right";
+  payeeAlign: "left" | "center" | "right";
+  amountAlign: "left" | "center" | "right";
+  daysAlign: "left" | "center" | "right";
+  measureRef: (el: HTMLElement | null) => void;
+  onToggle: (line: CashLine, on?: boolean) => void;
+}) {
+  return (
+    <tr
+      ref={measureRef}
+      data-index={index}
+      data-selected={on ? "true" : undefined}
+      className="border-b border-border/70 last:border-0 touch-manipulation"
+      {...openProps(openKindFor(line), openId, { click: true })}
+    >
+      <td
+        className="px-2 py-2.5 no-print"
+        onClick={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        <ShopTick checked={on} onChange={(next) => onToggle(line, next)} label="Cleared" />
+      </td>
+      <td className={cn("whitespace-nowrap px-2 py-2.5 text-muted-foreground tabular-nums", alignClass(dateAlign))} data-col="date" data-align={dateAlign}>
+        {formatDate(line.date)}
+      </td>
+      <td className={cn("min-w-[10rem] whitespace-normal px-2 py-3", alignClass(payeeAlign))} data-col="payee" data-align={payeeAlign}>
+        <p className="font-medium break-words">{line.party}</p>
+        <p className="mt-0.5 break-words text-muted-foreground">
+          {KIND_LABEL[line.kind]}
+          {line.number ? ` · ${line.number}` : ""}
+          {line.memo?.trim() ? ` · ${line.memo}` : ""}
+        </p>
+      </td>
+      <td className={cn("whitespace-nowrap px-2 py-2.5 tabular-nums", alignClass(amountAlign))} data-col="payment" data-align={amountAlign}>
+        {line.payment ? (
+          <Money amount={line.payment} currency={currency} className="text-debit" />
+        ) : line.deposit ? (
+          <Money amount={line.deposit} currency={currency} className="text-credit" />
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        )}
+      </td>
+      <td
+        className={cn("whitespace-nowrap px-2 py-2.5 tabular-nums", alignClass(daysAlign), days > 90 && "text-debit")}
+        data-col="days"
+        data-align={daysAlign}
+      >
+        {days ? `${days}d` : "—"}
+      </td>
+    </tr>
+  );
+});
+
+const ReconPhoneCard = memo(function ReconPhoneCard({
+  index,
+  line,
+  on,
+  days,
+  currency,
+  openId,
+  measureRef,
+  onToggle,
+}: {
+  index: number;
+  line: CashLine;
+  on: boolean;
+  days: number;
+  currency: string;
+  openId: string;
+  measureRef: (el: HTMLElement | null) => void;
+  onToggle: (line: CashLine, on?: boolean) => void;
+}) {
+  return (
+    <li ref={measureRef} data-index={index}>
+      <div
+        data-selected={on ? "true" : undefined}
+        className="recon-phone-card flex items-start gap-2 rounded-2xl border border-border/40 bg-card px-3 py-3 touch-manipulation shadow-none"
+        {...openProps(openKindFor(line), openId, { click: true })}
+      >
+        <div
+          className="shrink-0 pt-0.5"
+          onClick={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          <ShopTick checked={on} onChange={(next) => onToggle(line, next)} label="Cleared" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-baseline justify-between gap-2">
+            <p className="phone-card-party min-w-0 break-words font-medium">{line.party}</p>
+            <p className="phone-card-date shrink-0 text-muted-foreground tabular-nums">
+              {formatDate(line.date)}
+            </p>
+          </div>
+          <p className="phone-card-meta mt-0.5 text-muted-foreground">
+            {KIND_LABEL[line.kind]}
+            {line.number ? ` · ${line.number}` : ""}
+            {days ? (
+              <span className={cn(" · ", days > 90 && "text-debit")}>{days}d outstanding</span>
+            ) : null}
+          </p>
+          <div className="phone-card-memo mt-1">
+            <p className="phone-card-label text-muted-foreground">Memo</p>
+            <p className="break-words text-muted-foreground/90">
+              {line.memo?.trim() ? line.memo : "—"}
+            </p>
+          </div>
+          <div className="phone-card-money mt-1.5 grid grid-cols-2 gap-2 tabular-nums">
+            <div>
+              <p className="phone-card-label text-muted-foreground">Payment</p>
+              {line.payment ? (
+                <Money amount={line.payment} currency={currency} className="text-debit" />
+              ) : (
+                <span className="text-muted-foreground">—</span>
+              )}
+            </div>
+            <div className="text-right">
+              <p className="phone-card-label text-muted-foreground">Deposit</p>
+              {line.deposit ? (
+                <Money amount={line.deposit} currency={currency} className="text-credit" />
+              ) : (
+                <span className="text-muted-foreground">—</span>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </li>
+  );
+});
+

@@ -34,6 +34,7 @@ import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
 import { CsvButton } from "@/components/export-menu";
 import { useListView } from "@/components/view-toggle";
+import { useListVirtualizer, VirtPad } from "@/components/use-list-virtualizer";
 import { bankRows } from "@/lib/finance/export";
 import { fitColumnWidth } from "@/lib/finance/fit-column";
 import { formatMoney, parseAmountToCents, todayIso } from "@/lib/finance/format";
@@ -124,6 +125,7 @@ function BanksPage() {
     onOpen: (id) => openTxn("bank", id),
   });
   const gridRef = useRef<HTMLDivElement>(null);
+  const listVirt = useListVirtualizer(sorted.length, gridRef, (index) => sorted[index]?.id ?? index, 48, view === "list");
   function fit(id: keyof typeof BANK_COLS, label: string) {
     const table = gridRef.current?.querySelector("table");
     if (!table) return;
@@ -242,32 +244,46 @@ function BanksPage() {
               </tr>
             </thead>
             <tbody>
-              {sorted.map((bank) => {
-                const book = books[bank.id] ?? 0;
-                const pending = pendingMap[bank.id] ?? 0;
-                return (
-                  <tr
-                    key={bank.id}
-                    className="border-b border-border/70 last:border-0"
-                    data-focused={pointer.activeId === bank.id ? "true" : undefined}
-                    data-row-id={bank.id}
-                    aria-current={pointer.activeId === bank.id ? "true" : undefined}
-                    {...openProps("bank", bank.id)}
-                    onClick={() => pointer.setActiveId(bank.id)}
-                    style={bank.archived ? { opacity: 0.55 } : undefined}
-                  >
-                    <td className={cn("px-4 py-3 font-medium", alignClass(colAligns.aligns.nickname ?? "center"))} data-col="nickname" data-align={colAligns.aligns.nickname ?? "center"}>{bank.nickname}</td>
-                    <td className={cn("px-4 py-3 text-muted-foreground", alignClass(colAligns.aligns.name ?? "center"))} data-col="name" data-align={colAligns.aligns.name ?? "center"}>{bank.name}</td>
-                    <td className={cn("px-4 py-3 text-muted-foreground", alignClass(colAligns.aligns.number ?? "center"))} data-col="number" data-align={colAligns.aligns.number ?? "center"}>{bank.accountNumber}</td>
-                    <td className={cn("px-4 py-3 text-muted-foreground", alignClass(colAligns.aligns.status ?? "center"))} data-col="status" data-align={colAligns.aligns.status ?? "center"}>{bank.archived ? "Closed" : "Active"}</td>
-                    <td className={cn("px-4 py-3", alignClass(colAligns.aligns.book ?? "center"))} data-col="book" data-align={colAligns.aligns.book ?? "center"}><Money amount={book} currency={settings.currency} /></td>
-                    <td className={cn("px-4 py-3", alignClass(colAligns.aligns.pending ?? "center"))} data-col="pending" data-align={colAligns.aligns.pending ?? "center"}><Money amount={pending} currency={settings.currency} /></td>
-                    <td className="col-actions" data-col="actions" onClick={stopOpen} onDoubleClick={stopOpen} onPointerDown={stopOpen}>
-                      <RowDeleteButton onDelete={() => setDeletingId(bank.id)} />
-                    </td>
-                  </tr>
-                );
-              })}
+              {sorted.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                    {banks.length === 0 ? "No banks yet." : "No banks match this search or filter."}
+                  </td>
+                </tr>
+              ) : (
+                <>
+                  <VirtPad height={listVirt.padTop} colSpan={7} />
+                  {listVirt.items.map((v) => {
+                    const bank = sorted[v.index];
+                    if (!bank) return null;
+                    const book = books[bank.id] ?? 0;
+                    const pending = pendingMap[bank.id] ?? 0;
+                    return (
+                      <tr
+                        key={bank.id}
+                        className="border-b border-border/70 last:border-0"
+                        data-focused={pointer.activeId === bank.id ? "true" : undefined}
+                        data-row-id={bank.id}
+                        aria-current={pointer.activeId === bank.id ? "true" : undefined}
+                        {...openProps("bank", bank.id)}
+                        onClick={() => pointer.setActiveId(bank.id)}
+                        style={bank.archived ? { opacity: 0.55 } : undefined}
+                      >
+                        <td className={cn("px-4 py-3 font-medium", alignClass(colAligns.aligns.nickname ?? "center"))} data-col="nickname" data-align={colAligns.aligns.nickname ?? "center"}>{bank.nickname}</td>
+                        <td className={cn("px-4 py-3 text-muted-foreground", alignClass(colAligns.aligns.name ?? "center"))} data-col="name" data-align={colAligns.aligns.name ?? "center"}>{bank.name}</td>
+                        <td className={cn("px-4 py-3 text-muted-foreground", alignClass(colAligns.aligns.number ?? "center"))} data-col="number" data-align={colAligns.aligns.number ?? "center"}>{bank.accountNumber}</td>
+                        <td className={cn("px-4 py-3 text-muted-foreground", alignClass(colAligns.aligns.status ?? "center"))} data-col="status" data-align={colAligns.aligns.status ?? "center"}>{bank.archived ? "Closed" : "Active"}</td>
+                        <td className={cn("px-4 py-3", alignClass(colAligns.aligns.book ?? "center"))} data-col="book" data-align={colAligns.aligns.book ?? "center"}><Money amount={book} currency={settings.currency} /></td>
+                        <td className={cn("px-4 py-3", alignClass(colAligns.aligns.pending ?? "center"))} data-col="pending" data-align={colAligns.aligns.pending ?? "center"}><Money amount={pending} currency={settings.currency} /></td>
+                        <td className="col-actions" data-col="actions" onClick={stopOpen} onDoubleClick={stopOpen} onPointerDown={stopOpen}>
+                          <RowDeleteButton onDelete={() => setDeletingId(bank.id)} />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  <VirtPad height={listVirt.padBottom} colSpan={7} />
+                </>
+              )}
             </tbody>
           </table>
         </ListCard>

@@ -54,6 +54,7 @@ import { ListFilters, applySortValue, useListPeriod, type FilterSelect } from "@
 import { ListCard, listColClass, listColWidthStyle, listTableStyle } from "@/components/list-table";
 import { ListViewMenu } from "@/components/list-view-menu";
 import { useListView } from "@/components/view-toggle";
+import { useListVirtualizer, VirtPad } from "@/components/use-list-virtualizer";
 
 const TXN_COLS = {
   date: 108,
@@ -133,6 +134,10 @@ export function PartyTxnTable({
   const pointer = useTableKeyboardFocus({ ids, onOpen: openRow });
   const wrapRef = useRef<HTMLDivElement>(null);
   const cols = useColWidths("finance-manager-party-txn-cols", TXN_COLS);
+  const listVirt = useListVirtualizer(sort.sorted.length, wrapRef, (index) => {
+    const row = sort.sorted[index];
+    return row ? `${row.openKind}-${row.id}` : index;
+  });
 
   function fit(id: keyof typeof TXN_COLS, label: string) {
     const table = wrapRef.current?.querySelector("table");
@@ -191,7 +196,10 @@ export function PartyTxnTable({
               </tr>
             </thead>
             <tbody>
-              {sort.sorted.map((row) => {
+              <VirtPad height={listVirt.padTop} colSpan={8} />
+              {listVirt.items.map((v) => {
+                const row = sort.sorted[v.index];
+                if (!row) return null;
                 const key = `${row.openKind}-${row.id}`;
                 return (
                   <tr
@@ -230,6 +238,7 @@ export function PartyTxnTable({
                   </tr>
                 );
               })}
+              <VirtPad height={listVirt.padBottom} colSpan={8} />
             </tbody>
           </table>
         </ListCard>
@@ -585,6 +594,7 @@ function PartyDirectoryTable({
   const ids = useMemo(() => sort.sorted.map((row) => row.id), [sort.sorted]);
   const colAligns = useColAligns(`finance-manager-${kindLabel}-dir-col-aligns`, Object.keys(DIR_COLS) as Array<keyof typeof DIR_COLS>);
   const pointer = useTableKeyboardFocus({ ids, onOpen, onActive: onHighlight });
+  const listVirt = useListVirtualizer(sort.sorted.length, gridRef, (index) => sort.sorted[index]?.id ?? index);
 
   useEffect(() => {
     if (selectedId) pointer.setActiveId(selectedId);
@@ -627,38 +637,46 @@ function PartyDirectoryTable({
               </td>
             </tr>
           ) : (
-            sort.sorted.map((row) => (
-              <tr
-                key={row.id}
-                className="cursor-pointer border-b border-border/70 last:border-0"
-                data-selected={selectedId === row.id ? "true" : undefined}
-                data-focused={pointer.activeId === row.id ? "true" : undefined}
-                data-row-id={row.id}
-                aria-current={pointer.activeId === row.id ? "true" : undefined}
-                onClick={() => {
-                  pointer.setActiveId(row.id);
-                  onSelect(row.id);
-                }}
-                onDoubleClick={(e) => {
-                  e.preventDefault();
-                  onOpen(row.id);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && e.currentTarget === e.target) {
-                    e.preventDefault();
-                    onOpen(row.id);
-                  }
-                }}
-              >
-                <td className={cn("px-4 py-3 font-medium", alignClass(colAligns.aligns.name ?? "center"))} data-col="name" data-align={colAligns.aligns.name ?? "center"}>{row.title}</td>
-                <td className={cn("px-4 py-3 text-muted-foreground", alignClass(colAligns.aligns.contact ?? "center"))} data-col="contact" data-align={colAligns.aligns.contact ?? "center"}>{row.contact || "—"}</td>
-                <td className={cn("px-4 py-3 text-muted-foreground truncate", alignClass(colAligns.aligns.email ?? "center"))} data-col="email" data-align={colAligns.aligns.email ?? "center"} title={row.email || undefined}>{row.email || "—"}</td>
-                <td className={cn("px-4 py-3 text-muted-foreground", alignClass(colAligns.aligns.phone ?? "center"))} data-col="phone" data-align={colAligns.aligns.phone ?? "center"}>{row.phone || "—"}</td>
-                <td className={cn("px-4 py-3", alignClass(colAligns.aligns.balance ?? "center"))} data-col="balance" data-align={colAligns.aligns.balance ?? "center"}>
-                  <Money amount={row.balance} currency={currency} />
-                </td>
-              </tr>
-            ))
+            <>
+              <VirtPad height={listVirt.padTop} colSpan={5} />
+              {listVirt.items.map((v) => {
+                const row = sort.sorted[v.index];
+                if (!row) return null;
+                return (
+                  <tr
+                    key={row.id}
+                    className="cursor-pointer border-b border-border/70 last:border-0"
+                    data-selected={selectedId === row.id ? "true" : undefined}
+                    data-focused={pointer.activeId === row.id ? "true" : undefined}
+                    data-row-id={row.id}
+                    aria-current={pointer.activeId === row.id ? "true" : undefined}
+                    onClick={() => {
+                      pointer.setActiveId(row.id);
+                      onSelect(row.id);
+                    }}
+                    onDoubleClick={(e) => {
+                      e.preventDefault();
+                      onOpen(row.id);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && e.currentTarget === e.target) {
+                        e.preventDefault();
+                        onOpen(row.id);
+                      }
+                    }}
+                  >
+                    <td className={cn("px-4 py-3 font-medium", alignClass(colAligns.aligns.name ?? "center"))} data-col="name" data-align={colAligns.aligns.name ?? "center"}>{row.title}</td>
+                    <td className={cn("px-4 py-3 text-muted-foreground", alignClass(colAligns.aligns.contact ?? "center"))} data-col="contact" data-align={colAligns.aligns.contact ?? "center"}>{row.contact || "—"}</td>
+                    <td className={cn("px-4 py-3 text-muted-foreground truncate", alignClass(colAligns.aligns.email ?? "center"))} data-col="email" data-align={colAligns.aligns.email ?? "center"} title={row.email || undefined}>{row.email || "—"}</td>
+                    <td className={cn("px-4 py-3 text-muted-foreground", alignClass(colAligns.aligns.phone ?? "center"))} data-col="phone" data-align={colAligns.aligns.phone ?? "center"}>{row.phone || "—"}</td>
+                    <td className={cn("px-4 py-3", alignClass(colAligns.aligns.balance ?? "center"))} data-col="balance" data-align={colAligns.aligns.balance ?? "center"}>
+                      <Money amount={row.balance} currency={currency} />
+                    </td>
+                  </tr>
+                );
+              })}
+              <VirtPad height={listVirt.padBottom} colSpan={5} />
+            </>
           )}
         </tbody>
       </table>

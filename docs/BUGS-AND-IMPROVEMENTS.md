@@ -1,6 +1,12 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.33.
+Re-verified in code 2026-09-08. Updated for v3.63.34.
+
+## Fixed in v3.63.34
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| O1 | Low | Party txn / Aging DocCards rebuilt row objects every render | `useMemo` on Grid row arrays |
 
 ## Fixed in v3.63.33
 

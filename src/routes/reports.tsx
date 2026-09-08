@@ -253,22 +253,24 @@ function AgingTable({
       </p>
     </>
   );
+  const ageGridRows = useMemo(
+    () =>
+      sort.sorted.map((row) => ({
+        id: row.id,
+        title: row.party,
+        meta: [row.number, formatDate(row.dueDate), AGE_LABEL[row.bucket]].filter(Boolean).join(" · "),
+        amount: row.amount,
+        currency,
+        onOpen: () => openTxn(kind, row.id),
+      })),
+    [sort.sorted, currency, kind],
+  );
   if (layout === "grid") {
     return (
       <section>
         {heading}
         <div className="space-y-3">
-          <DocCards
-            empty="Nothing open."
-            rows={sort.sorted.map((row) => ({
-              id: row.id,
-              title: row.party,
-              meta: [row.number, formatDate(row.dueDate), AGE_LABEL[row.bucket]].filter(Boolean).join(" · "),
-              amount: row.amount,
-              currency,
-              onOpen: () => openTxn(kind, row.id),
-            }))}
-          />
+          <DocCards empty="Nothing open." rows={ageGridRows} />
           {rows.length > 0 ? (
             <div className="item-card flex items-center justify-between gap-3">
               <span className="item-card-title font-medium">Total</span>

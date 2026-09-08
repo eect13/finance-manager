@@ -1,4 +1,4 @@
-# Finance Manager v3.63.33
+# Finance Manager v3.63.34
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 

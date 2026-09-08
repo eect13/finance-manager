@@ -160,6 +160,25 @@ export function PartyTxnTable({
     cols.setWidth(id, fitColumnWidth({ table, selector: `td[data-col="${id}"]`, header: label }));
   }
 
+  const txnGridRows = useMemo(
+    () =>
+      sort.sorted.map((row) => ({
+        id: `${row.openKind}-${row.id}`,
+        title: `${row.type} ${row.number}`,
+        meta: row.memo
+          ? `${formatRegisterDate(row.date)} · ${row.memo}`
+          : formatRegisterDate(row.date),
+        amount: row.amount,
+        amountClassName: row.openKind === "receipt" || row.openKind === "check" ? "text-credit" : undefined,
+        open: row.open || null,
+        balance: row.balance,
+        currency,
+        status: <TxnBadge row={row} />,
+        onOpen: () => openTxn(row.openKind, row.id),
+      })),
+    [sort.sorted, currency],
+  );
+
   return (
     <div>
       <ListToolbar query={query} onQuery={setQuery} placeholder="Search date, type, number, memo" label="Search transactions">
@@ -200,23 +219,7 @@ export function PartyTxnTable({
       {sort.sorted.length === 0 ? (
         <p className="px-4 py-8 text-center text-sm text-muted-foreground">{query.trim() ? "No transactions match." : empty}</p>
       ) : view === "grid" ? (
-        <DocCards
-          empty={empty}
-          rows={sort.sorted.map((row) => ({
-            id: `${row.openKind}-${row.id}`,
-            title: `${row.type} ${row.number}`,
-            meta: row.memo
-              ? `${formatRegisterDate(row.date)} · ${row.memo}`
-              : formatRegisterDate(row.date),
-            amount: row.amount,
-            amountClassName: row.openKind === "receipt" || row.openKind === "check" ? "text-credit" : undefined,
-            open: row.open || null,
-            balance: row.balance,
-            currency,
-            status: <TxnBadge row={row} />,
-            onOpen: () => openTxn(row.openKind, row.id),
-          }))}
-        />
+        <DocCards empty={empty} rows={txnGridRows} />
       ) : (
         <ListCard
           ref={pointer.bindContainer(wrapRef)}

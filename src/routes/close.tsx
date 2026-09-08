@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Printer } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
@@ -225,6 +225,19 @@ function ClosePage() {
   );
 }
 
+
+function useTapOpens() {
+  const [tap, setTap] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(hover: none)");
+    const sync = () => setTap(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+  return tap;
+}
+
 const CHECK_COLS = { check: 200, status: 136, detail: 360 } as const;
 
 function ChecklistTable({
@@ -251,6 +264,7 @@ function ChecklistTable({
   );
   const sort = useEntrySort(items, "status", getters, "asc");
   const navigate = useNavigate();
+  const tapOpens = useTapOpens();
   const openCheck = useCallback(
     (id: string) => {
       const item = items.find((i) => i.id === id);
@@ -273,34 +287,52 @@ function ChecklistTable({
         {sort.sorted.length === 0 ? (
           <p className="px-4 py-6 text-center text-muted-foreground">Nothing in this filter.</p>
         ) : (
-          sort.sorted.map((item) => (
-            <div
-              key={item.id}
-              className="border-b border-border/70 px-4 py-3 last:border-0"
-              data-row-id={item.id}
-            >
-              <div className="flex items-baseline justify-between gap-3">
-                <p className="min-w-0 font-medium">{item.label}</p>
-                <p className="shrink-0 text-muted-foreground">{item.ok ? "Clear" : "Blocked"}</p>
+          sort.sorted.map((item) => {
+            const open = item.href ? () => navigate({ to: item.href! }) : undefined;
+            return (
+              <div
+                key={item.id}
+                className={cn(
+                  "border-b border-border/70 px-4 py-3 last:border-0",
+                  open && "cursor-pointer hover:bg-accent/40",
+                )}
+                data-row-id={item.id}
+                role={open ? "button" : undefined}
+                tabIndex={open ? 0 : undefined}
+                title={open ? "Tap to open" : undefined}
+                onClick={open}
+                onKeyDown={
+                  open
+                    ? (e) => {
+                        if (e.key !== "Enter" || e.currentTarget !== e.target) return;
+                        e.preventDefault();
+                        open();
+                      }
+                    : undefined
+                }
+              >
+                <div className="flex items-baseline justify-between gap-3">
+                  <p className="min-w-0 font-medium">{item.label}</p>
+                  <p className="shrink-0 text-muted-foreground">{item.ok ? "Clear" : "Blocked"}</p>
+                </div>
+                <div className="mt-1 flex min-w-0 flex-wrap items-center gap-2">
+                  <span className="min-w-0 break-words text-muted-foreground">{item.detail}</span>
+                  {item.id === "recurring" && !item.ok && onPostDue ? (
+                    <Button
+                      size="sm"
+                      className="shrink-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onPostDue();
+                      }}
+                    >
+                      {dueLabel || "Post due"}
+                    </Button>
+                  ) : null}
+                </div>
               </div>
-              <div className="mt-1 flex min-w-0 flex-wrap items-center gap-2">
-                <span className="min-w-0 break-words text-muted-foreground">
-                  {item.href ? (
-                    <Link to={item.href} className="underline-offset-2 hover:underline">
-                      {item.detail}
-                    </Link>
-                  ) : (
-                    item.detail
-                  )}
-                </span>
-                {item.id === "recurring" && !item.ok && onPostDue ? (
-                  <Button size="sm" className="shrink-0" onClick={onPostDue}>
-                    {dueLabel || "Post due"}
-                  </Button>
-                ) : null}
-              </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     );
@@ -341,11 +373,27 @@ function ChecklistTable({
             sort.sorted.map((item) => (
               <tr
                 key={item.id}
-                className="border-b border-border/70 last:border-0"
+                className={cn("border-b border-border/70 last:border-0", item.href && "cursor-pointer")}
                 data-focused={pointer.activeId === item.id ? "true" : undefined}
                 data-row-id={item.id}
                 aria-current={pointer.activeId === item.id ? "true" : undefined}
-                onClick={() => pointer.setActiveId(item.id)}
+                title={
+                  item.href
+                    ? tapOpens
+                      ? "Tap to open"
+                      : "Double-tap, double-click, or press Enter to open"
+                    : undefined
+                }
+                onClick={(e) => {
+                  pointer.setActiveId(item.id);
+                  if (item.href && tapOpens) {
+                    e.preventDefault();
+                    navigate({ to: item.href });
+                  }
+                }}
+                onDoubleClick={() => {
+                  if (item.href) navigate({ to: item.href });
+                }}
               >
                 <td className={cn("px-4 py-3 font-medium", alignClass(colAligns.aligns.check ?? "center"))} data-col="check" data-align={colAligns.aligns.check ?? "center"}>{item.label}</td>
                 <td className={cn("px-4 py-3", alignClass(colAligns.aligns.status ?? "center"))} data-col="status" data-align={colAligns.aligns.status ?? "center"}>{item.ok ? "Clear" : "Blocked"}</td>
@@ -353,7 +401,7 @@ function ChecklistTable({
                   <div className="flex w-full min-w-0 flex-wrap items-center justify-center gap-2">
                     <span className="min-w-0">
                       {item.href ? (
-                        <Link to={item.href} className="underline-offset-2 hover:underline">
+                        <Link to={item.href} className="underline-offset-2 hover:underline" onClick={(e) => e.stopPropagation()}>
                           {item.detail}
                         </Link>
                       ) : (
@@ -361,7 +409,14 @@ function ChecklistTable({
                       )}
                     </span>
                     {item.id === "recurring" && !item.ok && onPostDue ? (
-                      <Button size="sm" className="shrink-0" onClick={onPostDue}>
+                      <Button
+                        size="sm"
+                        className="shrink-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onPostDue();
+                        }}
+                      >
                         {dueLabel || "Post due"}
                       </Button>
                     ) : null}

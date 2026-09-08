@@ -1,6 +1,13 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.27.
+Re-verified in code 2026-09-08. Updated for v3.63.28.
+
+## Fixed in v3.63.28
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| P3 | Med | Close Grid only linked the detail text | Whole card (label included) opens when `href` is set |
+| R4 | Med (UX) | Close List had no dblclick/tap open | Row title + dblclick / tap-to-open (hover:none) / Enter like other lists |
 
 ## Fixed in v3.63.27
 

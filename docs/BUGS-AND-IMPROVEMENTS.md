@@ -1,6 +1,12 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.29.
+Re-verified in code 2026-09-08. Updated for v3.63.30.
+
+## Fixed in v3.63.30
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| P4 | Low | Employees Grid virt estimate (140) short for cards with Pay/Edit/Delete | Bump `estimateSize` to 176 |
 
 ## Fixed in v3.63.29
 

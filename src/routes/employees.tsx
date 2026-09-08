@@ -390,7 +390,7 @@ function EmployeesPage() {
               : "No employees match this search or filter."
           }
           getId={(e) => e.id}
-          estimateSize={140}
+          estimateSize={176}
         >
           {(e) => {
             const bank = data.banks.find((b) => b.id === e.bankId);

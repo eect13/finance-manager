@@ -1,4 +1,4 @@
-# Finance Manager v3.63.16
+# Finance Manager v3.63.17
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -26,6 +26,12 @@ Unzip the repo (a second unzip named `finance-manager-main (1)` is fine) so `dep
 Vite is installed with the packages — no global `vite` command. `.npmrc` has `legacy-peer-deps=true`.
 
 After the Windows installer: **delete the leftover white shortcut** and pin the new one — shortcut and taskbar both use the navy pillars tile.
+
+## What's new in v3.63.17
+
+- **Grid cards window:** Invoices, bills, receipts, checks, banks, employees, ledger, and the directory only paint the cards on screen. Register and Reconcile already did. Phone stays one card per row; desk is two then three as the pane widens.
+- **PH statutory payroll:** SSS, PhilHealth, Pag-IBIG, and TRAIN withholding are on by default (2026 tables). A pay run posts the period slice — twice a month is half, weekly is 12/52 of monthly. Reports → Payroll shows remittance balances. Not a BIR filing.
+- **Close, Forecast, Recurring** window like the other lists.
 
 ## What's new in v3.63.16
 

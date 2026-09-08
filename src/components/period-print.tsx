@@ -4,6 +4,7 @@ import { AGE_LABEL, AGE_ORDER, agingTotals, apAging, arAging } from "@/lib/finan
 import { monthStartIso } from "@/lib/finance/close";
 import { formatDate, formatMoney } from "@/lib/finance/format";
 import { fiscalStartOn, incomeStatement, trialBalance, vatBalances } from "@/lib/finance/ledger";
+import { payrollRemittance } from "@/lib/finance/ph-payroll";
 import { customerStatement, type CustomerStatement } from "@/lib/finance/statement";
 import type { CashLine } from "@/lib/finance/register";
 import { KIND_LABEL } from "@/lib/finance/register";
@@ -408,12 +409,39 @@ export function PeriodPackPrint({
   );
 }
 
-export function ReportsPrint({ asOf, tab }: { asOf: string; tab: "aging" | "tb" | "pl" | "vat" }) {
+export function ReportsPrint({ asOf, tab }: { asOf: string; tab: "aging" | "tb" | "pl" | "vat" | "payroll" }) {
   const data = useFinanceData();
   const mounted = usePrintPortal();
   if (!mounted) return null;
   const currency = data.settings.currency;
   const money = (n: number) => formatMoney(n, currency);
+  if (tab === "payroll") {
+    const pay = payrollRemittance(data, asOf);
+    return createPortal(
+      <PrintFrame>
+        <article className="print-sheet">
+          <SheetHead title="Payroll remittance" subtitle={`As of ${formatDate(asOf)}`} />
+          <table className="register-print-table">
+            <thead>
+              <tr>
+                <th>Account</th>
+                <th className="col-money">Balance</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>SSS Payable (2211)</td><td className="col-money">{money(pay.sss)}</td></tr>
+              <tr><td>PhilHealth Payable (2212)</td><td className="col-money">{money(pay.philhealth)}</td></tr>
+              <tr><td>Pag-IBIG Payable (2213)</td><td className="col-money">{money(pay.pagibig)}</td></tr>
+              <tr><td>Withholding Tax Payable (2214)</td><td className="col-money">{money(pay.wht)}</td></tr>
+              <tr><td>Other withholdings (2210)</td><td className="col-money">{money(pay.other)}</td></tr>
+              <tr><td>Employer contributions (5310)</td><td className="col-money">{money(pay.employer)}</td></tr>
+            </tbody>
+          </table>
+        </article>
+      </PrintFrame>,
+      document.body,
+    );
+  }
   if (tab === "vat") {
     const vat = vatBalances(data, asOf);
     return createPortal(

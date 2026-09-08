@@ -130,6 +130,7 @@ export function normalizeBooks(raw: unknown): FinanceData {
         ? e.payPeriod
         : "monthly"
     ) as Employee["payPeriod"],
+    statutory: e.statutory !== false,
     active: e.active !== false,
     notes: e.notes ?? "",
     sortOrder: typeof e.sortOrder === "number" ? e.sortOrder : i,
@@ -242,6 +243,21 @@ function ensureSystemAccounts(accounts: Account[]): Account[] {
       ...next,
       { id: "acct-2210", code: "2210", name: "Payroll Withholdings", type: "liability", system: true },
     ];
+  }
+  if (!next.some((a) => a.code === "2211")) {
+    next = [...next, { id: "acct-2211", code: "2211", name: "SSS Payable", type: "liability", system: true }];
+  }
+  if (!next.some((a) => a.code === "2212")) {
+    next = [...next, { id: "acct-2212", code: "2212", name: "PhilHealth Payable", type: "liability", system: true }];
+  }
+  if (!next.some((a) => a.code === "2213")) {
+    next = [...next, { id: "acct-2213", code: "2213", name: "Pag-IBIG Payable", type: "liability", system: true }];
+  }
+  if (!next.some((a) => a.code === "2214")) {
+    next = [...next, { id: "acct-2214", code: "2214", name: "Withholding Tax Payable", type: "liability", system: true }];
+  }
+  if (!next.some((a) => a.code === "5310")) {
+    next = [...next, { id: "acct-5310", code: "5310", name: "Employer contributions", type: "expense", system: true }];
   }
   return next;
 }

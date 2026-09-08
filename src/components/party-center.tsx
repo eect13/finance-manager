@@ -54,6 +54,7 @@ import { ListToolbar } from "@/components/filter-pills";
 import { ListFilters, applySortValue, useListPeriod, type FilterSelect } from "@/components/list-filters";
 import { ListCard, listColClass, listColWidthStyle, listTableStyle } from "@/components/list-table";
 import { ListViewMenu } from "@/components/list-view-menu";
+import { CardGrid } from "@/components/doc-cards";
 import { useListView } from "@/components/view-toggle";
 import { useListVirtualizer, VirtPad } from "@/components/use-list-virtualizer";
 
@@ -735,34 +736,33 @@ function PartyDirectoryCards({
   currency: string;
 }) {
   return (
-    <div className="party-dir-cards" aria-label={`${kindLabel}s`}>
-      {list.length === 0 ? (
-        <p className="px-4 py-8 text-center text-sm text-muted-foreground">No {kindLabel}s yet.</p>
-      ) : (
-        list.map((item) => {
-          const on = item.id === selectedId;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              className={cn(
-                "party-card-row text-left",
-                on && "bg-primary/10",
-              )}
-              onClick={() => onSelect(item.id)}
-              onDoubleClick={(e) => {
-                e.preventDefault();
-                onOpen(item.id);
-              }}
-            >
-              <span className="item-card-title block truncate font-medium">{item.title}</span>
-              <span className="item-card-meta mt-1 block truncate text-muted-foreground">{item.subtitle}</span>
-              <Money amount={item.balance} currency={currency} className="item-card-amount mt-1 font-medium tabular-nums" />
-            </button>
-          );
-        })
-      )}
-    </div>
+    <CardGrid
+      items={list}
+      empty={`No ${kindLabel}s yet.`}
+      getId={(item) => item.id}
+      estimateSize={90}
+      compact={Boolean(selectedId)}
+      className="party-dir-cards"
+    >
+      {(item) => {
+        const on = item.id === selectedId;
+        return (
+          <button
+            type="button"
+            className={cn("party-card-row text-left", on && "bg-primary/10")}
+            onClick={() => onSelect(item.id)}
+            onDoubleClick={(e) => {
+              e.preventDefault();
+              onOpen(item.id);
+            }}
+          >
+            <span className="item-card-title block truncate font-medium">{item.title}</span>
+            <span className="item-card-meta mt-1 block truncate text-muted-foreground">{item.subtitle}</span>
+            <Money amount={item.balance} currency={currency} className="item-card-amount mt-1 font-medium tabular-nums" />
+          </button>
+        );
+      }}
+    </CardGrid>
   );
 }
 

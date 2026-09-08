@@ -14,6 +14,7 @@ import { listColClass, listColWidthStyle, listTableStyle} from "@/components/lis
 import { useColWidths } from "@/components/use-col-widths";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
 import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
+import { useListVirtualizer, VirtPad } from "@/components/use-list-virtualizer";
 import { Button } from "@/components/ui/button";
 import { closeChecklist, closeTotals, monthEndIso, type CloseCheck } from "@/lib/finance/close";
 import { fitColumnWidth } from "@/lib/finance/fit-column";
@@ -255,6 +256,7 @@ function ChecklistTable({
     ids: sort.sorted.map((i) => i.id),
     onOpen: openCheck,
   });
+  const listVirt = useListVirtualizer(sort.sorted.length, gridRef, (index) => sort.sorted[index]?.id ?? index);
   function fit(id: keyof typeof CHECK_COLS, label: string) {
     const table = gridRef.current?.querySelector("table");
     if (!table) return;
@@ -264,13 +266,14 @@ function ChecklistTable({
     <div
       ref={pointer.bindContainer(gridRef)}
       tabIndex={0}
-      className="list-card list-grid outline-none"
+      className="list-card outline-none"
       onMouseDown={(e) => {
         const t = e.target as HTMLElement | null;
         if (t?.closest("input, textarea, select, button, a, [role='checkbox']")) return;
         (e.currentTarget as HTMLElement).focus({ preventScroll: true });
       }}
     >
+      <div className="list-grid">
       <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
         <colgroup>
           {(Object.keys(CHECK_COLS) as Array<keyof typeof CHECK_COLS>).map((id) => (
@@ -292,7 +295,12 @@ function ChecklistTable({
               </td>
             </tr>
           ) : (
-            sort.sorted.map((item) => (
+            <>
+              <VirtPad height={listVirt.padTop} colSpan={3} />
+              {listVirt.items.map((v) => {
+                const item = sort.sorted[v.index];
+                if (!item) return null;
+                return (
               <tr
                 key={item.id}
                 className="border-b border-border/70 last:border-0"
@@ -322,10 +330,14 @@ function ChecklistTable({
                   </div>
                 </td>
               </tr>
-            ))
+                );
+              })}
+              <VirtPad height={listVirt.padBottom} colSpan={3} />
+            </>
           )}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }
@@ -354,6 +366,7 @@ function SnapshotTable({
   const pointer = useTableKeyboardFocus({
     ids: sort.sorted.map((b) => b.bankId),
   });
+  const listVirt = useListVirtualizer(sort.sorted.length, gridRef, (index) => sort.sorted[index]?.bankId ?? index);
   function fit(id: keyof typeof SNAP_COLS, label: string) {
     const table = gridRef.current?.querySelector("table");
     if (!table) return;
@@ -363,13 +376,14 @@ function SnapshotTable({
     <div
       ref={pointer.bindContainer(gridRef)}
       tabIndex={0}
-      className="list-card list-grid outline-none"
+      className="list-card outline-none"
       onMouseDown={(e) => {
         const t = e.target as HTMLElement | null;
         if (t?.closest("input, textarea, select, button, a, [role='checkbox']")) return;
         (e.currentTarget as HTMLElement).focus({ preventScroll: true });
       }}
     >
+      <div className="list-grid">
       <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
         <colgroup>
           {(Object.keys(SNAP_COLS) as Array<keyof typeof SNAP_COLS>).map((id) => (
@@ -384,7 +398,12 @@ function SnapshotTable({
           </tr>
         </thead>
         <tbody>
-          {sort.sorted.map((b) => (
+          <>
+          <VirtPad height={listVirt.padTop} colSpan={3} />
+          {listVirt.items.map((v) => {
+            const b = sort.sorted[v.index];
+            if (!b) return null;
+            return (
             <tr
               key={b.bankId}
               className="border-b border-border/70 last:border-0"
@@ -399,9 +418,13 @@ function SnapshotTable({
               </td>
               <td className={cn("px-4 py-3", alignClass(colAligns.aligns.statement ?? "center"))} data-col="statement" data-align={colAligns.aligns.statement ?? "center"}>{b.lastStatementDate ? formatDate(b.lastStatementDate) : "—"}</td>
             </tr>
-          ))}
+            );
+          })}
+          <VirtPad height={listVirt.padBottom} colSpan={3} />
+          </>
         </tbody>
       </table>
+      </div>
     </div>
   );
 }
@@ -448,6 +471,7 @@ function AuditTable({ rows }: { rows: AuditEvent[] }) {
   const pointer = useTableKeyboardFocus({
     ids: sort.sorted.map((e) => e.id),
   });
+  const listVirt = useListVirtualizer(sort.sorted.length, gridRef, (index) => sort.sorted[index]?.id ?? index);
   function fit(id: keyof typeof AUDIT_COLS, label: string) {
     const table = gridRef.current?.querySelector("table");
     if (!table) return;
@@ -466,14 +490,15 @@ function AuditTable({ rows }: { rows: AuditEvent[] }) {
       <div
         ref={pointer.bindContainer(gridRef)}
         tabIndex={0}
-        className="list-card list-grid outline-none"
+        className="list-card outline-none"
         onMouseDown={(e) => {
           const t = e.target as HTMLElement | null;
           if (t?.closest("input, textarea, select, button, a, [role='checkbox']")) return;
           (e.currentTarget as HTMLElement).focus({ preventScroll: true });
         }}
       >
-        <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
+        <div className="list-grid">
+      <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
           <colgroup>
             {(Object.keys(AUDIT_COLS) as Array<keyof typeof AUDIT_COLS>).map((id) => (
               <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id])} />
@@ -497,7 +522,12 @@ function AuditTable({ rows }: { rows: AuditEvent[] }) {
                 </td>
               </tr>
             ) : (
-              sort.sorted.map((ev) => (
+              <>
+              <VirtPad height={listVirt.padTop} colSpan={6} />
+              {listVirt.items.map((v) => {
+                const ev = sort.sorted[v.index];
+                if (!ev) return null;
+                return (
                 <tr
                   key={ev.id}
                   className="border-b border-border/70 last:border-0"
@@ -513,10 +543,14 @@ function AuditTable({ rows }: { rows: AuditEvent[] }) {
                   <td className={cn("px-4 py-3", alignClass(colAligns.aligns.old ?? "center"))} data-col="old" data-align={colAligns.aligns.old ?? "center"}>{ev.old}</td>
                   <td className={cn("px-4 py-3", alignClass(colAligns.aligns.next ?? "center"))} data-col="next" data-align={colAligns.aligns.next ?? "center"}>{ev.new}</td>
                 </tr>
-              ))
+                );
+              })}
+              <VirtPad height={listVirt.padBottom} colSpan={6} />
+              </>
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

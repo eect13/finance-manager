@@ -35,6 +35,7 @@ import { useColAligns, alignClass } from "@/components/use-col-aligns";
 import { useColVisible, visibleTableWidth, viewColumnExtra } from "@/components/column-chips";
 import { CsvButton } from "@/components/export-menu";
 import { useListView } from "@/components/view-toggle";
+import { CardGrid } from "@/components/doc-cards";
 import { useListVirtualizer, VirtPad } from "@/components/use-list-virtualizer";
 import { bankRows } from "@/lib/finance/export";
 import { fitColumnWidth } from "@/lib/finance/fit-column";
@@ -220,13 +221,12 @@ function BanksPage() {
         />
       </ListToolbar>
       {view === "grid" ? (
-      <div className="item-cards">
-        {sorted.map((bank) => {
+      <CardGrid items={sorted} empty="No banks yet." getId={(bank) => bank.id}>
+        {(bank) => {
             const book = books[bank.id] ?? 0;
             const pending = pendingMap[bank.id] ?? 0;
             return (
               <button
-                key={bank.id}
                 type="button"
                 className="item-card"
                 {...openProps("bank", bank.id, { click: true })}
@@ -246,8 +246,8 @@ function BanksPage() {
                 </span>
               </button>
             );
-          })}
-      </div>
+          }}
+      </CardGrid>
       ) : (
         <ListCard ref={pointer.bindContainer(gridRef)} tabIndex={0} className="outline-none" {...vis.hideAttrs}>
           <table ref={cols.tableRef} className="text-sm" style={listTableStyle(visibleTableWidth(cols.widths, vis.on))}>

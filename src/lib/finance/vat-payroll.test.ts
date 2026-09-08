@@ -2,6 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { normalizeBooks } from "./normalize.ts";
 import { createBill, createCashSale, payEmployee, payEmployees, updateReceipt } from "./actions.ts";
+import { computePhPayroll } from "./ph-payroll.ts";
 import { mergeBooks, visibleCsv } from "./export.ts";
 import { invoiceSubtotal } from "./ledger.ts";
 import type { FinanceData } from "./types.ts";
@@ -43,6 +44,7 @@ function books(): FinanceData {
         bankId: "bank-op",
         hireDate: "2026-01-01",
         payPeriod: "weekly",
+        statutory: false,
         active: true,
         notes: "",
         sortOrder: 0,
@@ -159,6 +161,7 @@ describe("pay run and merge", () => {
       bankId: "bank-op",
       hireDate: "2026-01-01",
       payPeriod: "monthly",
+      statutory: false,
       active: true,
       notes: "",
       sortOrder: 1,
@@ -169,6 +172,47 @@ describe("pay run and merge", () => {
     const check = data.checks.at(-1)!;
     assert.equal(check.employeeId, "emp-sal");
     assert.equal(check.amount, 50000);
+  });
+
+  it("statutory paycheck splits SSS PhilHealth Pag-IBIG TRAIN and employer cost", () => {
+    const start = books();
+    start.employees.push({
+      id: "emp-stat",
+      name: "Salary Cate",
+      title: "Clerk",
+      email: "",
+      phone: "",
+      payType: "salary",
+      rate: 4_500_000,
+      bankId: "bank-op",
+      hireDate: "2026-01-01",
+      payPeriod: "monthly",
+      statutory: true,
+      active: true,
+      notes: "",
+      sortOrder: 2,
+    });
+    const next = payEmployee(start, { employeeId: "emp-stat", amount: 4_500_000, date: "2026-09-01", bankId: "bank-op", statutory: true });
+    const expect = computePhPayroll({ gross: 4_500_000, period: "monthly", statutory: true });
+    const check = next.checks.at(-1)!;
+    assert.equal(check.amount, expect.net);
+    const journal = next.journals.find((j) => j.id === check.journalId)!;
+    const sss = next.accounts.find((a) => a.code === "2211")!;
+    const phil = next.accounts.find((a) => a.code === "2212")!;
+    const pag = next.accounts.find((a) => a.code === "2213")!;
+    const wht = next.accounts.find((a) => a.code === "2214")!;
+    const er = next.accounts.find((a) => a.code === "5310")!;
+    assert.equal(journal.lines.find((l) => l.accountId === "acc-pay")?.debit, 4_500_000);
+    assert.equal(journal.lines.find((l) => l.accountId === er.id)?.debit, expect.employerCost);
+    assert.equal(journal.lines.find((l) => l.accountId === "acc-op")?.credit, expect.net);
+    assert.equal(journal.lines.find((l) => l.accountId === sss.id)?.credit, expect.sssEe + expect.sssEr + expect.sssEc);
+    assert.equal(journal.lines.find((l) => l.accountId === phil.id)?.credit, expect.philEe + expect.philEr);
+    assert.equal(journal.lines.find((l) => l.accountId === pag.id)?.credit, expect.pagEe + expect.pagEr);
+    assert.equal(journal.lines.find((l) => l.accountId === wht.id)?.credit, expect.bir);
+    assert.equal(
+      journal.lines.reduce((s, l) => s + l.debit, 0),
+      journal.lines.reduce((s, l) => s + l.credit, 0),
+    );
   });
 
   it("mergeBooks adds incoming-only rows and keeps local", () => {

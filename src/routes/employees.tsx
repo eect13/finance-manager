@@ -26,8 +26,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { fitColumnWidth } from "@/lib/finance/fit-column";
-import { parseAmountToCents, todayIso } from "@/lib/finance/format";
+import { formatMoney, parseAmountToCents, todayIso } from "@/lib/finance/format";
+import { computePhPayroll, periodPayAmount } from "@/lib/finance/ph-payroll";
 import { useEntrySort } from "@/lib/finance/sort";
 import { EMPTY_EMPLOYEE, type Employee, type PayPeriod, type PayType } from "@/lib/finance/types";
 import { useFinanceData, useFinanceStore } from "@/lib/finance/store";
@@ -75,6 +77,7 @@ type FormState = {
   payPeriod: PayPeriod;
   notes: string;
   active: boolean;
+  statutory: boolean;
 };
 
 function toForm(e?: Employee | null): FormState {
@@ -91,6 +94,7 @@ function toForm(e?: Employee | null): FormState {
       payPeriod: "monthly",
       notes: "",
       active: true,
+      statutory: true,
     };
   }
   return {
@@ -105,6 +109,7 @@ function toForm(e?: Employee | null): FormState {
     payPeriod: e.payPeriod ?? "monthly",
     notes: e.notes,
     active: e.active,
+    statutory: e.statutory !== false,
   };
 }
 
@@ -187,6 +192,7 @@ function EmployeesPage() {
   const [runOpen, setRunOpen] = useState(false);
   const [runDate, setRunDate] = useState(todayIso());
   const [runBankId, setRunBankId] = useState("");
+  const [payStatutory, setPayStatutory] = useState(true);
 
   const editing = editId ? (data.employees ?? []).find((e) => e.id === editId) : null;
   const payingEmp = payId ? (data.employees ?? []).find((e) => e.id === payId) : null;
@@ -224,6 +230,7 @@ function EmployeesPage() {
         payPeriod: form.payPeriod,
         notes: form.notes,
         active: form.active,
+        statutory: form.statutory,
       };
       if (editing) {
         updateEmployee(editing.id, payload);
@@ -244,7 +251,9 @@ function EmployeesPage() {
     setPayBankId(e.bankId || banks[0]?.id || "");
     setPayHours("");
     setPayWithholding("");
-    setPayAmount(e.payType === "salary" && e.rate ? String(e.rate / 100) : "");
+    setPayStatutory(e.statutory !== false);
+    const periodAmt = periodPayAmount(e.rate, e.payPeriod ?? "monthly", e.payType);
+    setPayAmount(e.payType === "salary" && periodAmt ? String(periodAmt / 100) : "");
   }
 
   function runPay() {
@@ -257,6 +266,7 @@ function EmployeesPage() {
         withholding: parseAmountToCents(payWithholding),
         date: payDate,
         bankId: payBankId,
+        statutory: payStatutory,
       });
       toast.success("Paycheck posted to the register.");
       setPayId(null);
@@ -482,7 +492,7 @@ function EmployeesPage() {
           <DialogHeader>
             <DialogTitle>{editing ? editing.name : "New employee"}</DialogTitle>
             <DialogDescription>
-              Roster details for paychecks. Hourly rate is per hour; salary is monthly. Optional withholding is entered when you post pay.
+              Roster details for paychecks. Hourly rate is per hour; salary is monthly. PH statutory (SSS, PhilHealth, Pag-IBIG, TRAIN) is on by default.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -542,6 +552,12 @@ function EmployeesPage() {
             <Field label="Notes">
               <Input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
             </Field>
+            <Field label="PH statutory (2026)">
+              <div className="flex h-10 items-center gap-2">
+                <Switch checked={form.statutory} onCheckedChange={(v) => setForm({ ...form, statutory: v })} />
+                <span className="text-sm text-muted-foreground">SSS, PhilHealth, Pag-IBIG, TRAIN</span>
+              </div>
+            </Field>
             <Field label="Status">
               <Select value={form.active ? "active" : "inactive"} onValueChange={(v) => setForm({ ...form, active: v === "active" })}>
                 <SelectTrigger>
@@ -568,7 +584,7 @@ function EmployeesPage() {
           <DialogHeader>
             <DialogTitle>Post paycheck</DialogTitle>
             <DialogDescription>
-              Writes a check to the employee from the selected bank (Payroll expense). Hourly pay is hours × rate. Optional withholding is a liability, not a tax engine.
+              Writes a check from the selected bank. Hourly is hours × rate. PH statutory computes SSS, PhilHealth, Pag-IBIG, and TRAIN withholding for this period.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3">
@@ -597,9 +613,25 @@ function EmployeesPage() {
             <Field label={payingEmp?.payType === "hourly" ? "Gross" : "Amount"}>
               <Input inputMode="decimal" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} />
             </Field>
-            <Field label="Withholding (optional)">
+            <Field label="PH statutory (2026)">
+              <div className="flex h-10 items-center gap-2">
+                <Switch checked={payStatutory} onCheckedChange={setPayStatutory} />
+                <span className="text-sm text-muted-foreground">SSS, PhilHealth, Pag-IBIG, TRAIN</span>
+              </div>
+            </Field>
+            <Field label="Other deduction">
               <Input inputMode="decimal" value={payWithholding} onChange={(e) => setPayWithholding(e.target.value)} />
             </Field>
+            {payingEmp ? (
+              <PayPreview
+                emp={payingEmp}
+                amount={payAmount}
+                hours={payHours}
+                extra={payWithholding}
+                statutory={payStatutory}
+                currency={data.settings.currency}
+              />
+            ) : null}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setPayId(null)}>
@@ -615,7 +647,7 @@ function EmployeesPage() {
           <DialogHeader>
             <DialogTitle>Pay all active</DialogTitle>
             <DialogDescription>
-              Posts a paycheck for each active salaried employee at their rate. Hourly people are skipped — they need hours on a single paycheck. Not a statutory tax engine.
+              Posts a period paycheck for each active salaried employee (weekly is 12/52 of monthly, twice a month is half). Hourly people need hours on a single slip. PH statutory is taken from each employee.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3">
@@ -654,5 +686,56 @@ function EmployeesPage() {
         }}
       />
     </AppShell>
+  );
+}
+
+function PayPreview({
+  emp,
+  amount,
+  hours,
+  extra,
+  statutory,
+  currency,
+}: {
+  emp: Employee;
+  amount: string;
+  hours: string;
+  extra: string;
+  statutory: boolean;
+  currency: string;
+}) {
+  const h = Number(hours);
+  const gross =
+    emp.payType === "hourly" && Number.isFinite(h) && h > 0
+      ? Math.round(h * emp.rate)
+      : parseAmountToCents(amount);
+  const parts = computePhPayroll({
+    gross,
+    period: emp.payPeriod ?? "monthly",
+    statutory,
+    extra: parseAmountToCents(extra),
+  });
+  const row = (label: string, cents: number) =>
+    cents ? (
+      <div className="flex justify-between gap-3 text-sm">
+        <span className="text-muted-foreground">{label}</span>
+        <span className="tabular-nums">{formatMoney(cents, currency)}</span>
+      </div>
+    ) : null;
+  return (
+    <div className="rounded-xl border border-border px-3 py-2.5">
+      <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">This paycheck</p>
+      {row("Gross", gross)}
+      {row("SSS", parts.sssEe)}
+      {row("PhilHealth", parts.philEe)}
+      {row("Pag-IBIG", parts.pagEe)}
+      {row("Withholding tax", parts.bir)}
+      {row("Other", parts.extra)}
+      <div className="mt-2 flex justify-between gap-3 text-sm font-medium">
+        <span>Net</span>
+        <span className="tabular-nums">{formatMoney(parts.net, currency)}</span>
+      </div>
+      {row("Employer contributions", parts.employerCost)}
+    </div>
   );
 }

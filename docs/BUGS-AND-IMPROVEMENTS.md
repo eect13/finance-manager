@@ -1,6 +1,16 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.16.
+Re-verified in code 2026-09-08. Updated for v3.63.17.
+
+## Fixed in v3.63.17
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| 1 | Med | Grid cards painted every invoice / customer / bank | `CardGrid` windows with lanes (phone 1-col, desk 2 then 3). Register/Reconcile virt unchanged |
+| 2 | Med | Close / Forecast / Recurring painted every row | Pad-row `useListVirtualizer`; Close splits `list-card` / `list-grid` |
+| 3 | Med | Pay all active posted the full monthly salary on weekly / semimonthly | `periodPayAmount` (12/52, 12/26, half) |
+| 4 | Low | Payroll was extra-withholding only | 2026 SSS / PhilHealth / Pag-IBIG / TRAIN; employer 5310; payables 2211–2214; Reports → Payroll |
+| 5 | Low | `actions.ts` sat under `@ts-nocheck`; dead `p2p.ts` | Typed; create bags stay `AnyIn`. P2P deleted. Route code-splitting on |
 
 ## Fixed in v3.63.16
 
@@ -250,22 +260,22 @@ Re-verified in code 2026-09-05 (Asia/Manila). Updated for v3.62.47. UI direction
 | I | Low | Cash-sale line drift | Register amount edit on a taxed cash sale rebuilds the journal and rescales `receipt.lines`. | Fixed (v3.63.0) |
 | J | Low | a11y labels | Field auto-wires `htmlFor` and first-control id; Select still uses click-to-focus. | Improved (v3.63.0) |
 | K | Low | Tax % visibility | Edit/print show Tax % when the document has a rate even if Settings tax is off. New docs still seed 0. | Fixed (v3.63.10) |
-| L | Info | Dead / unused | `src/lib/multiplayer/p2p.ts` still unused. Multi-device is company-file merge by id (Settings → Bring in from another device). | Improved (v3.63.13) |
+| L | Info | Dead / unused | `src/lib/multiplayer/p2p.ts` deleted in v3.63.17. Multi-device is company-file merge by id (Settings → Bring in from another device). | Fixed (v3.63.17) |
 | M | Low | `removeCashLines` | All-or-nothing; `assertOpenPeriod` on each line; toast is unique deletes. | Fixed (v3.63.10) |
 | N | Low | Register virtualizer | Uses `getWorkspaceScrollElement()` (`main[data-workspace-scroll]`). Full AppShell ref still optional. |
 | O | Low | Nested dialogs | Post **Delete** opens `ConfirmDelete` (both Dialog z-50). Sibling order puts confirm on top today; a dedicated higher z on confirm would be safer than relying on DOM order. |
-| P | Info | `actions.ts` | Still `@ts-nocheck` restored from production build — types live via `typeof` in store. Prefer small surgical fixes over a rewrite. |
-| Q | Low | List virtualization | Banks, party dir/history, Reports aging/TB/P&L, chart of accounts, plus invoices/bills/receipts/checks/ledger/employees. Reconcile virt matches Register (workspace + scrollMargin; nested card only if it is the Y scroller). | Improved (v3.63.13) |
+| P | Info | `actions.ts` | `@ts-nocheck` removed in v3.63.17. Create bags stay `AnyIn` so Quick Add extra keys type-check. | Fixed (v3.63.17) |
+| Q | Low | List virtualization | Banks, party dir/history, Reports aging/TB/P&L, chart of accounts, invoices/bills/receipts/checks/ledger/employees, Close/Forecast/Recurring, plus Grid cards (`CardGrid`). Register/Reconcile virt unchanged. | Improved (v3.63.17) |
 | R | Low | Party combo stacking | `party-combo` list is `absolute z-50` (not portaled). Fine inside dialogs; would clip inside `overflow: hidden` sheets. |
 
 ## Areas of improvement
 
 1. **IndexedDB / size** — Cap audit further; optional purge of closed detail; avoid dual full backup copies; chunked multi-company blobs.
-2. **List virtualization** — Register pattern (`@tanstack/react-virtual`, pad rows, one scroller) is on the large lists. Close checklist, Settings recurring, Forecast budget, VAT panel, and record-sheet lines stay unwindowed (tiny).
-3. **Code-split** — Lazy TanStack routes + Vite `manualChunks` for reports/close/reconcile/seed.
+2. **List virtualization** — Register pattern is on the large lists, Close/Forecast/Recurring, and Grid cards. VAT panel and record-sheet lines stay unwindowed (tiny).
+3. **Code-split** — `tanstackStart({ router: { autoCodeSplitting: true } })` in v3.63.17. Optional `manualChunks` still open.
 4. **Tauri / Android** — Validate WebView IDB persistence; share/save company JSON; cold-start via splits. Solo APK path improved in v3.59; still needs SDK+NDK installed.
-5. **Payroll depth** — Pay periods, `employeeId` on checks, and batch salary run shipped (v3.63.13). No SSS/PhilHealth/Pag-IBIG engine.
-6. **Multi-device** — Company-file merge by id (local wins, incoming-only rows added). Open still replaces. P2P stub unused.
+5. **Payroll depth** — 2026 SSS/PhilHealth/Pag-IBIG/TRAIN + period slice + Reports Payroll in v3.63.17. Not a BIR annualization / 1601-C filing engine.
+6. **Multi-device** — Company-file merge by id (local wins, incoming-only rows added). Open still replaces. P2P stub deleted.
 7. **Purchase VAT** — Input VAT on bills + VAT payable/receivable reports.
 8. **Invoice edit UX** — Surface tax as document field clearly so Settings toggle never feels like it rewrites history (partially: Tax % on create/edit when tax enabled).
 9. **“All dates” copy** — Align README (“through today”) with code (`to: ""`) or cap `dateTo` at `todayIso()`.
@@ -282,5 +292,5 @@ Re-verified in code 2026-09-05 (Asia/Manila). Updated for v3.62.47. UI direction
 - **Select stacking**: Select/Popover at `z-[200]`; Dialog/Sheet at `z-50` — selects inside dialogs work. Date calendar at **5000** so Close sticky and dialogs cannot cover it.
 - **Local dates**: `todayIso()` uses local `getFullYear/Month/Date` (not UTC `toISOString` slice) — correct for PH/local books.
 - **Backup version**: `COMPANY_FILE_VERSION = 14` and store persist `version: 14`; `employees` in export tables — prior high bug remains fixed.
-- **actions.ts** is `@ts-nocheck` restored from production build — types live via `typeof` in store; prefer small surgical fixes over large rewrites.
+- **actions.ts** is typed (v3.63.17); create bags stay `AnyIn` so Quick Add extra keys type-check.
 - **Close sticky**: professional summary strip (date + AR + AP + TB) with page-background so the checklist can scroll underneath. Calendar is a floating control, not a child of that strip’s stacking context.

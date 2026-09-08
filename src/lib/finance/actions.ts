@@ -1,4 +1,3 @@
-// @ts-nocheck — restored from the last production build (types live in store.ts via typeof)
 import { newId } from "./ids";
 import { formatMoney, todayIso } from "./format";
 import {
@@ -12,9 +11,26 @@ import {
   invoiceSubtotal,
 } from "./ledger";
 import type {
+  AccountType,
+  Bank,
+  Bill,
+  BudgetItem,
+  CheckRecord,
+  CheckStatus,
+  Customer,
+  Employee,
   FinanceData,
+  Invoice,
+  InvoiceLine,
+  InvoiceStatus,
+  JournalEntry,
+  Receipt,
+  ReceiptMethod,
   RecurringItem,
+  Settings,
+  Vendor,
 } from "./types";
+import { computePhPayroll, periodPayAmount, PH_PAYROLL_CODES } from "./ph-payroll";
 import { applyRegisterOrderPlacement, cashBook, pruneRegisterOrder, type ArrangePlace, type CashLineKind } from "./register";
 import { methodNeedsReference, methodLabel } from "./methods";
 import {
@@ -48,7 +64,11 @@ function assertOpenPeriod(data: FinanceData, date: string) {
   }
 }
 
-export function addBank(data: FinanceData, input): FinanceData {
+/** Call-site bags (Quick Add, register, sheets) pass extra keys. */
+type AnyIn = Record<string, any>;
+type CashPick = { kind: string; sourceId: string; bankId?: string; fromBankId?: string; recon?: string; date?: string };
+
+export function addBank(data: FinanceData, input: AnyIn): FinanceData {
   const bankId = input.id || newId();
   const accountId = newId();
   const codeBase = 1e3 + data.banks.length * 10;
@@ -100,7 +120,7 @@ export function addBank(data: FinanceData, input): FinanceData {
     }
   };
 }
-export function addAccount(data: FinanceData, input): FinanceData {
+export function addAccount(data: FinanceData, input: AnyIn): FinanceData {
   const name = String(input.name || "").trim();
   if (!name) throw new Error("Name the account.");
   const type = input.type || "expense";
@@ -117,7 +137,7 @@ export function addAccount(data: FinanceData, input): FinanceData {
     ],
   };
 }
-export function updateBank(data: FinanceData, id, patch): FinanceData {
+export function updateBank(data: FinanceData, id: string, patch: Partial<Bank>): FinanceData {
   return {
     ...data,
     banks: data.banks.map((b) => b.id === id ? {
@@ -126,7 +146,7 @@ export function updateBank(data: FinanceData, id, patch): FinanceData {
     } : b)
   };
 }
-export function removeBank(data: FinanceData, id): FinanceData {
+export function removeBank(data: FinanceData, id: string): FinanceData {
   const bank = data.banks.find((b) => b.id === id);
   if (!bank) throw new Error("Bank not found");
   if (data.checks.some((c) => c.bankId === id)) throw new Error("This bank still has checks. Delete those first.");
@@ -146,7 +166,7 @@ export function removeBank(data: FinanceData, id): FinanceData {
     }
   };
 }
-export function addCustomer(data: FinanceData, input): FinanceData {
+export function addCustomer(data: FinanceData, input: AnyIn): FinanceData {
   const sortOrder = data.customers.length;
   return {
     ...data,
@@ -154,10 +174,10 @@ export function addCustomer(data: FinanceData, input): FinanceData {
       ...input,
       id: input.id ?? newId(),
       sortOrder: input.sortOrder ?? sortOrder
-    }]
+    } as Customer]
   };
 }
-export function updateCustomer(data: FinanceData, id, patch): FinanceData {
+export function updateCustomer(data: FinanceData, id: string, patch: Partial<Customer>): FinanceData {
   return {
     ...data,
     customers: data.customers.map((c) => c.id === id ? {
@@ -166,7 +186,7 @@ export function updateCustomer(data: FinanceData, id, patch): FinanceData {
     } : c)
   };
 }
-export function removeCustomer(data: FinanceData, id): FinanceData {
+export function removeCustomer(data: FinanceData, id: string): FinanceData {
   if (data.invoices.some((i) => i.customerId === id && i.status !== "void")) throw new Error("This customer has invoices. Keep the record for the books.");
   if (data.receipts.some((r) => r.customerId === id && r.status !== "void")) throw new Error("This customer has receipts. Keep the record for the books.");
   return {
@@ -174,13 +194,13 @@ export function removeCustomer(data: FinanceData, id): FinanceData {
     customers: data.customers.filter((c) => c.id !== id)
   };
 }
-export function reorderCustomers(data: FinanceData, ids): FinanceData {
+export function reorderCustomers(data: FinanceData, ids: string[]): FinanceData {
   return {
     ...data,
     customers: applyOrder(data.customers, ids)
   };
 }
-export function addVendor(data: FinanceData, input): FinanceData {
+export function addVendor(data: FinanceData, input: AnyIn): FinanceData {
   const sortOrder = data.vendors.length;
   return {
     ...data,
@@ -188,10 +208,10 @@ export function addVendor(data: FinanceData, input): FinanceData {
       ...input,
       id: input.id ?? newId(),
       sortOrder: input.sortOrder ?? sortOrder
-    }]
+    } as Vendor]
   };
 }
-export function updateVendor(data: FinanceData, id, patch): FinanceData {
+export function updateVendor(data: FinanceData, id: string, patch: Partial<Vendor>): FinanceData {
   return {
     ...data,
     vendors: data.vendors.map((v) => v.id === id ? {
@@ -200,7 +220,7 @@ export function updateVendor(data: FinanceData, id, patch): FinanceData {
     } : v)
   };
 }
-export function removeVendor(data: FinanceData, id): FinanceData {
+export function removeVendor(data: FinanceData, id: string): FinanceData {
   if (data.bills.some((b) => b.vendorId === id && b.status !== "void")) throw new Error("This vendor has bills. Keep the record for the books.");
   if (data.checks.some((c) => c.vendorId === id && c.status !== "voided" && c.status !== "bounced")) {
     throw new Error("This vendor has checks. Keep the record for the books.");
@@ -210,15 +230,15 @@ export function removeVendor(data: FinanceData, id): FinanceData {
     vendors: data.vendors.filter((v) => v.id !== id)
   };
 }
-export function reorderVendors(data: FinanceData, ids): FinanceData {
+export function reorderVendors(data: FinanceData, ids: string[]): FinanceData {
   return {
     ...data,
     vendors: applyOrder(data.vendors, ids)
   };
 }
-function applyOrder(items, ids) {
+function applyOrder<T extends { id: string; sortOrder: number }>(items: T[], ids: string[]): T[] {
   const map = new Map(items.map((item) => [item.id, item]));
-  const ordered = [];
+  const ordered: T[] = [];
   for (const id of ids) {
     const item = map.get(id);
     if (item) {
@@ -235,7 +255,7 @@ function applyOrder(items, ids) {
   });
   return ordered;
 }
-export function issueCheck(data: FinanceData, input): FinanceData {
+export function issueCheck(data: FinanceData, input: AnyIn): FinanceData {
   assertOpenPeriod(data, input.issueDate);
   const bank = data.banks.find((b) => b.id === input.bankId);
   if (!bank) throw new Error("Bank not found");
@@ -290,7 +310,7 @@ export function issueCheck(data: FinanceData, input): FinanceData {
     }
   };
 }
-export function setCheckStatus(data: FinanceData, id, status, date = todayIso()): FinanceData {
+export function setCheckStatus(data: FinanceData, id: string, status: CheckStatus, date = todayIso()): FinanceData {
   const check = data.checks.find((c) => c.id === id);
   if (!check) throw new Error("Check not found");
   if (check.recon === "reconciled") throw new Error("This line is reconciled. Unlock it first.");
@@ -324,7 +344,7 @@ export function setCheckStatus(data: FinanceData, id, status, date = todayIso())
     } : c)
   };
 }
-export function removeCheck(data: FinanceData, id): FinanceData {
+export function removeCheck(data: FinanceData, id: string): FinanceData {
   const check = data.checks.find((c) => c.id === id);
   if (!check) throw new Error("Check not found");
   return dropJournalsAndReversals({
@@ -332,11 +352,11 @@ export function removeCheck(data: FinanceData, id): FinanceData {
     checks: data.checks.filter((c) => c.id !== id)
   }, [check.journalId, check.reversalJournalId]);
 }
-export function createInvoice(data: FinanceData, input): FinanceData {
+export function createInvoice(data: FinanceData, input: AnyIn): FinanceData {
   assertOpenPeriod(data, input.date);
   const customer = data.customers.find((c) => c.id === input.customerId);
   if (!customer) throw new Error("Customer not found");
-  const lines = input.lines.filter((l) => l.description.trim() && l.quantity > 0).map((l) => ({
+  const lines = input.lines.filter((l: any) => l.description.trim() && l.quantity > 0).map((l: any) => ({
     ...l,
     id: newId(),
     unitPrice: Math.round(l.unitPrice)
@@ -348,7 +368,7 @@ export function createInvoice(data: FinanceData, input): FinanceData {
   const sub = invoiceSubtotal(lines);
   const total = sub + invoiceTax(sub, taxRate, taxRate > 0);
   const status = input.status ?? "sent";
-  let journalId;
+  let journalId = "";
   const journals = [...data.journals];
   if (status === "sent" && total > 0) {
     const ar = data.accounts.find((a) => a.code === "1200");
@@ -395,10 +415,10 @@ export function createInvoice(data: FinanceData, input): FinanceData {
     }
   };
 }
-function nextReceiptNumber(data: FinanceData, date) {
+function nextReceiptNumber(data: FinanceData, date: string) {
   return `RCPT-${date.slice(0, 4)}-${String(data.nextNumbers.receipt).padStart(3, "0")}`;
 }
-export function recordInvoicePayment(data: FinanceData, input): FinanceData {
+export function recordInvoicePayment(data: FinanceData, input: AnyIn): FinanceData {
   assertOpenPeriod(data, input.date);
   const invoice = data.invoices.find((i) => i.id === input.invoiceId);
   if (!invoice) throw new Error("Invoice not found");
@@ -475,7 +495,7 @@ export function recordInvoicePayment(data: FinanceData, input): FinanceData {
       payments,
       status
     } : i),
-    receipts: [...data.receipts, receipt],
+    receipts: [...data.receipts, receipt as Receipt],
     journals: [...data.journals, journal],
     nextNumbers: {
       ...data.nextNumbers,
@@ -483,7 +503,7 @@ export function recordInvoicePayment(data: FinanceData, input): FinanceData {
     }
   };
 }
-export function applyCustomerPayments(data: FinanceData, input): FinanceData {
+export function applyCustomerPayments(data: FinanceData, input: AnyIn): FinanceData {
   assertOpenPeriod(data, input.date);
   let next = data;
   for (const app of input.applications) {
@@ -500,7 +520,7 @@ export function applyCustomerPayments(data: FinanceData, input): FinanceData {
   }
   return next;
 }
-export function voidInvoice(data: FinanceData, id, date = todayIso()): FinanceData {
+export function voidInvoice(data: FinanceData, id: string, date = todayIso()): FinanceData {
   const invoice = data.invoices.find((i) => i.id === id);
   if (!invoice) throw new Error("Invoice not found");
   if (invoice.status === "void") return data;
@@ -526,7 +546,7 @@ export function voidInvoice(data: FinanceData, id, date = todayIso()): FinanceDa
     journals
   };
 }
-export function removeInvoice(data: FinanceData, id): FinanceData {
+export function removeInvoice(data: FinanceData, id: string): FinanceData {
   const invoice = data.invoices.find((i) => i.id === id);
   if (!invoice) throw new Error("Invoice not found");
   const related = data.receipts.filter((r) => r.invoiceId === id);
@@ -541,7 +561,7 @@ export function removeInvoice(data: FinanceData, id): FinanceData {
     receipts: data.receipts.filter((r) => r.invoiceId !== id)
   }, ids);
 }
-export function createCashSale(data: FinanceData, input): FinanceData {
+export function createCashSale(data: FinanceData, input: AnyIn): FinanceData {
   assertOpenPeriod(data, input.date);
   const bank = data.banks.find((b) => b.id === input.bankId);
   if (!bank) throw new Error("Bank not found");
@@ -550,7 +570,7 @@ export function createCashSale(data: FinanceData, input): FinanceData {
   const method = input.method ?? "cash";
   const checkNumber = input.checkNumber?.trim() ?? "";
   if (methodNeedsReference(method) && !checkNumber) throw new Error(`Enter the ${methodLabel(method).toLowerCase()} reference.`);
-  const lines = input.lines.filter((l) => l.description.trim() && l.quantity > 0).map((l) => ({
+  const lines = input.lines.filter((l: any) => l.description.trim() && l.quantity > 0).map((l: any) => ({
     ...l,
     id: newId(),
     unitPrice: Math.round(l.unitPrice)
@@ -605,7 +625,7 @@ export function createCashSale(data: FinanceData, input): FinanceData {
   };
   return {
     ...data,
-    receipts: [...data.receipts, receipt],
+    receipts: [...data.receipts, receipt as Receipt],
     journals: [...data.journals, journal],
     nextNumbers: {
       ...data.nextNumbers,
@@ -613,7 +633,7 @@ export function createCashSale(data: FinanceData, input): FinanceData {
     }
   };
 }
-export function voidReceipt(data: FinanceData, id, date = todayIso()): FinanceData {
+export function voidReceipt(data: FinanceData, id: string, date = todayIso()): FinanceData {
   const receipt = data.receipts.find((r) => r.id === id);
   if (!receipt) throw new Error("Receipt not found");
   if (receipt.status === "void") return data;
@@ -656,7 +676,7 @@ export function voidReceipt(data: FinanceData, id, date = todayIso()): FinanceDa
     journals: [...data.journals, reversal]
   };
 }
-export function removeReceipt(data: FinanceData, id): FinanceData {
+export function removeReceipt(data: FinanceData, id: string): FinanceData {
   const receipt = data.receipts.find((r) => r.id === id);
   if (!receipt) throw new Error("Receipt not found");
   let invoices = data.invoices;
@@ -688,13 +708,13 @@ export function removeReceipt(data: FinanceData, id): FinanceData {
     receipts: data.receipts.filter((r) => r.id !== id)
   }, [receipt.journalId, receipt.reversalJournalId]);
 }
-export function reorderReceipts(data: FinanceData, ids): FinanceData {
+export function reorderReceipts(data: FinanceData, ids: string[]): FinanceData {
   return {
     ...data,
     receipts: applyOrder(data.receipts, ids)
   };
 }
-export function createBill(data: FinanceData, input): FinanceData {
+export function createBill(data: FinanceData, input: AnyIn): FinanceData {
   assertOpenPeriod(data, input.date);
   const vendor = data.vendors.find((v) => v.id === input.vendorId);
   if (!vendor) throw new Error("Vendor not found");
@@ -744,7 +764,7 @@ export function createBill(data: FinanceData, input): FinanceData {
   };
   return {
     ...data,
-    bills: [...data.bills, bill],
+    bills: [...data.bills, bill as Bill],
     journals: [...data.journals, journal],
     nextNumbers: {
       ...data.nextNumbers,
@@ -752,7 +772,7 @@ export function createBill(data: FinanceData, input): FinanceData {
     }
   };
 }
-export function payBill(data: FinanceData, input): FinanceData {
+export function payBill(data: FinanceData, input: AnyIn): FinanceData {
   assertOpenPeriod(data, input.date);
   const bill = data.bills.find((b) => b.id === input.billId);
   if (!bill) throw new Error("Bill not found");
@@ -787,7 +807,7 @@ export function payBill(data: FinanceData, input): FinanceData {
     amount,
     bankId: bank.id,
     journalId: journal.id,
-    recon: "pending"
+    recon: "pending" as const
   }];
   const status = payments.reduce((s, p) => s + p.amount, 0) >= bill.amount ? "paid" : "partial";
   return {
@@ -796,11 +816,11 @@ export function payBill(data: FinanceData, input): FinanceData {
       ...bill,
       payments,
       status
-    } : b),
+    } as Bill : b),
     journals: [...data.journals, journal]
   };
 }
-export function voidBill(data: FinanceData, id, date = todayIso()): FinanceData {
+export function voidBill(data: FinanceData, id: string, date = todayIso()): FinanceData {
   const bill = data.bills.find((b) => b.id === id);
   if (!bill) throw new Error("Bill not found");
   if (bill.status === "void") return data;
@@ -822,7 +842,7 @@ export function voidBill(data: FinanceData, id, date = todayIso()): FinanceData 
     journals
   };
 }
-export function removeBill(data: FinanceData, id): FinanceData {
+export function removeBill(data: FinanceData, id: string): FinanceData {
   const bill = data.bills.find((b) => b.id === id);
   if (!bill) throw new Error("Bill not found");
   const ids = [bill.journalId, ...bill.payments.map((p) => p.journalId)];
@@ -831,7 +851,7 @@ export function removeBill(data: FinanceData, id): FinanceData {
     bills: data.bills.filter((b) => b.id !== id)
   }, ids);
 }
-export function removeBillPayment(data: FinanceData, paymentId): FinanceData {
+export function removeBillPayment(data: FinanceData, paymentId: string): FinanceData {
   const bill = data.bills.find((b) => b.payments.some((p) => p.id === paymentId));
   if (!bill) throw new Error("Vendor payment not found");
   const pay = bill.payments.find((p) => p.id === paymentId);
@@ -848,7 +868,7 @@ export function removeBillPayment(data: FinanceData, paymentId): FinanceData {
     } : b)
   }, [pay.journalId]);
 }
-export function removeCashLine(data: FinanceData, line): FinanceData {
+export function removeCashLine(data: FinanceData, line: CashPick): FinanceData {
   if (!line.sourceId || line.kind === "opening") throw new Error("This line cannot be deleted.");
   assertUnlocked(data, line.kind, line.sourceId);
   const date = cashLineDate(data, line.kind, line.sourceId);
@@ -859,14 +879,14 @@ export function removeCashLine(data: FinanceData, line): FinanceData {
   if (line.kind === "deposit" || line.kind === "expense" || line.kind === "transfer") return dropJournalsAndReversals(data, [line.sourceId]);
   throw new Error("This line cannot be deleted.");
 }
-export function removeCashLines(data: FinanceData, lines): {
+export function removeCashLines(data: FinanceData, lines: CashPick[]): {
   data: FinanceData;
   deleted: number;
   failed: number;
 } {
   // Deduplicate transfer (and any) dual-sides by kind:sourceId.
-  const unique = [];
-  const seen = new Set();
+  const unique: CashPick[] = [];
+  const seen = new Set<string>();
   for (const line of lines) {
     const key = `${line.kind}:${line.sourceId}`;
     if (seen.has(key)) continue;
@@ -879,7 +899,7 @@ export function removeCashLines(data: FinanceData, lines): {
   // Caller (store set updater) must pass the current books — never a stale UI copy.
   // Any failure aborts with zero deletes — all-or-nothing; no partial writes.
   let failCount = 0;
-  let firstError = null;
+  let firstError: unknown = null;
   for (const line of unique) {
     try {
       removeCashLine(data, line);
@@ -901,13 +921,13 @@ export function removeCashLines(data: FinanceData, lines): {
   next = { ...next, registerOrder: pruneRegisterOrder(next) };
   return { data: next, deleted: unique.length, failed: 0 };
 }
-export function reorderBills(data: FinanceData, ids): FinanceData {
+export function reorderBills(data: FinanceData, ids: string[]): FinanceData {
   return {
     ...data,
     bills: applyOrder(data.bills, ids)
   };
 }
-export function addDeposit(data: FinanceData, input): FinanceData {
+export function addDeposit(data: FinanceData, input: AnyIn): FinanceData {
   assertOpenPeriod(data, input.date);
   const bank = data.banks.find((b) => b.id === input.bankId);
   if (!bank) throw new Error("Bank not found");
@@ -933,7 +953,7 @@ export function addDeposit(data: FinanceData, input): FinanceData {
     journals: [...data.journals, journal]
   };
 }
-export function addExpense(data: FinanceData, input): FinanceData {
+export function addExpense(data: FinanceData, input: AnyIn): FinanceData {
   assertOpenPeriod(data, input.date);
   const bank = data.banks.find((b) => b.id === input.bankId);
   if (!bank) throw new Error("Bank not found");
@@ -957,11 +977,13 @@ export function addExpense(data: FinanceData, input): FinanceData {
     journals: [...data.journals, journal]
   };
 }
-export function transferBanks(data: FinanceData, input): FinanceData {
+export function transferBanks(data: FinanceData, input: AnyIn): FinanceData {
   assertOpenPeriod(data, input.date);
-  if (input.fromId === input.toId) throw new Error("Pick two different banks");
-  const from = data.banks.find((b) => b.id === input.fromId);
-  const to = data.banks.find((b) => b.id === input.toId);
+  const fromId = String(input.fromId || input.fromBankId || "");
+  const toId = String(input.toId || input.toBankId || "");
+  if (fromId === toId) throw new Error("Pick two different banks");
+  const from = data.banks.find((b) => b.id === fromId);
+  const to = data.banks.find((b) => b.id === toId);
   if (!from || !to) throw new Error("Bank not found");
   const journal = {
     ...makeJournal({
@@ -978,14 +1000,14 @@ export function transferBanks(data: FinanceData, input): FinanceData {
         credit: input.amount
       }]
     }),
-    reconByBank: { [from.id]: "pending", [to.id]: "pending" },
+    reconByBank: { [from.id]: "pending" as const, [to.id]: "pending" as const },
   };
   return {
     ...data,
     journals: [...data.journals, journal]
   };
 }
-export function upsertBudget(data: FinanceData, item): FinanceData {
+export function upsertBudget(data: FinanceData, item: Omit<BudgetItem, "id"> & { id?: string }): FinanceData {
   if (item.id) return {
     ...data,
     budgetItems: data.budgetItems.map((b) => b.id === item.id ? {
@@ -1002,13 +1024,13 @@ export function upsertBudget(data: FinanceData, item): FinanceData {
     }]
   };
 }
-export function removeBudget(data: FinanceData, id): FinanceData {
+export function removeBudget(data: FinanceData, id: string): FinanceData {
   return {
     ...data,
     budgetItems: data.budgetItems.filter((b) => b.id !== id)
   };
 }
-export function rescheduleCashLine(data: FinanceData, input): FinanceData {
+export function rescheduleCashLine(data: FinanceData, input: CashPick & { date: string; kind: string }): FinanceData {
   assertOpenPeriod(data, input.date);
   assertUnlocked(data, input.kind, input.sourceId);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(input.date)) throw new Error("Pick a valid date.");
@@ -1068,7 +1090,7 @@ export function arrangeCashLine(
     orderChanged,
   };
 }
-function setJournalDate(data: FinanceData, journalId, date) {
+function setJournalDate(data: FinanceData, journalId: string, date: string) {
   return {
     ...data,
     journals: data.journals.map((j) => j.id === journalId ? {
@@ -1077,7 +1099,7 @@ function setJournalDate(data: FinanceData, journalId, date) {
     } : j)
   };
 }
-function rescheduleCheck(data: FinanceData, id, date) {
+function rescheduleCheck(data: FinanceData, id: string, date: string) {
   const check = data.checks.find((c) => c.id === id);
   if (!check) throw new Error("Check not found");
   if (check.status === "voided" || check.status === "bounced") throw new Error("Voided checks stay on their original date.");
@@ -1093,7 +1115,7 @@ function rescheduleCheck(data: FinanceData, id, date) {
     } : c)
   };
 }
-function rescheduleReceipt(data: FinanceData, id, date) {
+function rescheduleReceipt(data: FinanceData, id: string, date: string) {
   const receipt = data.receipts.find((r) => r.id === id);
   if (!receipt) throw new Error("Receipt not found");
   if (receipt.status === "void") throw new Error("Voided receipts stay on their original date.");
@@ -1120,7 +1142,7 @@ function rescheduleReceipt(data: FinanceData, id, date) {
     } : r)
   };
 }
-function rescheduleBillPayment(data: FinanceData, paymentId, date) {
+function rescheduleBillPayment(data: FinanceData, paymentId: string, date: string) {
   const bill = data.bills.find((b) => b.payments.some((p) => p.id === paymentId));
   if (!bill) throw new Error("Payment not found");
   const payment = bill.payments.find((p) => p.id === paymentId);
@@ -1138,7 +1160,7 @@ function rescheduleBillPayment(data: FinanceData, paymentId, date) {
     } : b)
   };
 }
-function dropJournalsAndReversals(data: FinanceData, ids) {
+function dropJournalsAndReversals(data: FinanceData, ids: Array<string | undefined>) {
   const drop = new Set(ids.filter((id) => Boolean(id)));
   if (drop.size === 0) return data;
   for (const journal of data.journals) if (journal.sourceType === "reversal" && journal.sourceId && drop.has(journal.sourceId)) drop.add(journal.id);
@@ -1147,7 +1169,7 @@ function dropJournalsAndReversals(data: FinanceData, ids) {
     journals: data.journals.filter((j) => !drop.has(j.id))
   };
 }
-function patchJournalAmount(data: FinanceData, journalId, input) {
+function patchJournalAmount(data: FinanceData, journalId: string, input: AnyIn) {
   return {
     ...data,
     journals: data.journals.map((journal) => {
@@ -1180,7 +1202,7 @@ function patchJournalAmount(data: FinanceData, journalId, input) {
     })
   };
 }
-export function updateCheck(data: FinanceData, id, patch): FinanceData {
+export function updateCheck(data: FinanceData, id: string, patch: Partial<CheckRecord>): FinanceData {
   const check = data.checks.find((c) => c.id === id);
   if (!check) throw new Error("Check not found");
   if (check.status === "voided" || check.status === "bounced") throw new Error("Voided checks cannot be edited. Delete them to re-enter.");
@@ -1219,7 +1241,7 @@ export function updateCheck(data: FinanceData, id, patch): FinanceData {
     } : c)
   };
 }
-export function updateReceipt(data: FinanceData, id, patch): FinanceData {
+export function updateReceipt(data: FinanceData, id: string, patch: Partial<Receipt> & { amount?: number }): FinanceData {
   const receipt = data.receipts.find((r) => r.id === id);
   if (!receipt) throw new Error("Receipt not found");
   if (receipt.status === "void") throw new Error("Voided receipts cannot be edited. Delete them to re-enter.");
@@ -1345,7 +1367,7 @@ export function updateReceipt(data: FinanceData, id, patch): FinanceData {
     } : r)
   };
 }
-export function updateBillRecord(data: FinanceData, id, patch): FinanceData {
+export function updateBillRecord(data: FinanceData, id: string, patch: Partial<Bill>): FinanceData {
   const bill = data.bills.find((b) => b.id === id);
   if (!bill) throw new Error("Bill not found");
   if (bill.status === "void") throw new Error("Voided bills cannot be edited.");
@@ -1416,7 +1438,7 @@ export function updateBillRecord(data: FinanceData, id, patch): FinanceData {
     } : b)
   };
 }
-export function updateJournalEntry(data: FinanceData, id, patch): FinanceData {
+export function updateJournalEntry(data: FinanceData, id: string, patch: AnyIn): FinanceData {
   const journal = data.journals.find((j) => j.id === id);
   if (!journal) throw new Error("Entry not found");
   if (journal.sourceType !== "deposit" && journal.sourceType !== "expense" && journal.sourceType !== "transfer") throw new Error("Open the source document to edit this line.");
@@ -1428,7 +1450,7 @@ export function updateJournalEntry(data: FinanceData, id, patch): FinanceData {
     amount
   });
 }
-export function updateInvoiceRecord(data: FinanceData, id, patch): FinanceData {
+export function updateInvoiceRecord(data: FinanceData, id: string, patch: AnyIn): FinanceData {
   const invoice = data.invoices.find((i) => i.id === id);
   if (!invoice) throw new Error("Invoice not found");
   if (invoice.status === "void") throw new Error("Voided invoices cannot be edited.");
@@ -1437,7 +1459,7 @@ export function updateInvoiceRecord(data: FinanceData, id, patch): FinanceData {
   const notes = patch.notes ?? invoice.notes;
   let lines = invoice.lines;
   if (patch.lines) {
-    lines = patch.lines.filter((l) => l.description?.trim() && l.quantity > 0).map((l, i) => ({
+    lines = patch.lines.filter((l: any) => l.description?.trim() && l.quantity > 0).map((l: any, i: number) => ({
       id: l.id || invoice.lines[i]?.id || newId(),
       description: String(l.description).trim(),
       quantity: l.quantity,
@@ -1500,7 +1522,7 @@ export function updateInvoiceRecord(data: FinanceData, id, patch): FinanceData {
     } : i)
   };
 }
-export function updateSettings(data: FinanceData, patch): FinanceData {
+export function updateSettings(data: FinanceData, patch: Partial<Settings>): FinanceData {
   return {
     ...data,
     settings: {
@@ -1509,7 +1531,7 @@ export function updateSettings(data: FinanceData, patch): FinanceData {
     }
   };
 }
-export function reassignCashBank(data: FinanceData, input): FinanceData {
+export function reassignCashBank(data: FinanceData, input: AnyIn): FinanceData {
   if (input.kind === "opening") throw new Error("Opening balance stays on its banks.");
   assertUnlocked(data, input.kind, input.sourceId);
   const bank = data.banks.find((b) => b.id === input.bankId);
@@ -1520,13 +1542,13 @@ export function reassignCashBank(data: FinanceData, input): FinanceData {
   if (input.kind === "deposit" || input.kind === "expense" || input.kind === "transfer") return reassignJournalBank(data, input.sourceId, input.bankId, input.fromBankId);
   throw new Error("This line cannot move banks.");
 }
-export function reassignCashBanks(data: FinanceData, lines, bankId): FinanceData {
+export function reassignCashBanks(data: FinanceData, lines: CashPick[], bankId: string): FinanceData {
   return lines.reduce((acc, line) => reassignCashBank(acc, {
     ...line,
     bankId
   }), data);
 }
-function reassignBillPayment(data: FinanceData, paymentId, bankId) {
+function reassignBillPayment(data: FinanceData, paymentId: string, bankId: string) {
   const bank = data.banks.find((b) => b.id === bankId);
   if (!bank) throw new Error("Bank not found");
   const bill = data.bills.find((b) => b.payments.some((p) => p.id === paymentId));
@@ -1546,7 +1568,7 @@ function reassignBillPayment(data: FinanceData, paymentId, bankId) {
     } : b)
   };
 }
-function reassignJournalBank(data: FinanceData, journalId, toBankId, fromBankId) {
+function reassignJournalBank(data: FinanceData, journalId: string, toBankId: string, fromBankId?: string) {
   const journal = data.journals.find((j) => j.id === journalId);
   if (!journal) throw new Error("Entry not found");
   const toBank = data.banks.find((b) => b.id === toBankId);
@@ -1579,7 +1601,7 @@ function reassignJournalBank(data: FinanceData, journalId, toBankId, fromBankId)
   };
 }
 
-function cashReconOf(data: FinanceData, kind, sourceId, bankId?: string): "pending" | "cleared" | "reconciled" {
+function cashReconOf(data: FinanceData, kind: string, sourceId: string, bankId?: string): "pending" | "cleared" | "reconciled" {
   if (kind === "check") return data.checks.find((c) => c.id === sourceId)?.recon ?? "pending";
   if (kind === "receipt" || kind === "payment") return data.receipts.find((r) => r.id === sourceId)?.recon ?? "pending";
   if (kind === "bill-payment") {
@@ -1601,13 +1623,13 @@ function cashReconOf(data: FinanceData, kind, sourceId, bankId?: string): "pendi
   return "pending";
 }
 
-function assertUnlocked(data: FinanceData, kind, sourceId, bankId?: string) {
+function assertUnlocked(data: FinanceData, kind: string, sourceId: string, bankId?: string) {
   if (cashReconOf(data, kind, sourceId, bankId) === "reconciled") {
     throw new Error("This line is reconciled. Unlock it first.");
   }
 }
 
-export function setCashRecon(data: FinanceData, input): FinanceData {
+export function setCashRecon(data: FinanceData, input: AnyIn): FinanceData {
   if (input.recon === "reconciled") {
     throw new Error("Mark reconciled from Reconcile → Finish statement.");
   }
@@ -1620,7 +1642,7 @@ export function setCashRecon(data: FinanceData, input): FinanceData {
   return applyCashRecon(data, input);
 }
 
-function cashLineDate(data: FinanceData, kind, sourceId): string {
+function cashLineDate(data: FinanceData, kind: string, sourceId: string): string {
   if (kind === "check") return data.checks.find((c) => c.id === sourceId)?.issueDate ?? "";
   if (kind === "receipt" || kind === "payment") return data.receipts.find((r) => r.id === sourceId)?.date ?? "";
   if (kind === "bill-payment") {
@@ -1635,7 +1657,7 @@ function cashLineDate(data: FinanceData, kind, sourceId): string {
   return "";
 }
 
-function applyCashRecon(data: FinanceData, input): FinanceData {
+function applyCashRecon(data: FinanceData, input: AnyIn): FinanceData {
   const recon = input.recon === "cleared" || input.recon === "reconciled" ? input.recon : "pending";
   if (input.kind === "check") {
     const check = data.checks.find((c) => c.id === input.sourceId);
@@ -2163,7 +2185,7 @@ export function postDueRecurring(
 
 
 
-export function addEmployee(data: FinanceData, input): FinanceData {
+export function addEmployee(data: FinanceData, input: AnyIn): FinanceData {
   const name = String(input.name ?? "").trim();
   if (!name) throw new Error("Enter an employee name.");
   const employee = {
@@ -2172,7 +2194,7 @@ export function addEmployee(data: FinanceData, input): FinanceData {
     title: String(input.title ?? "").trim(),
     email: String(input.email ?? "").trim(),
     phone: String(input.phone ?? "").trim(),
-    payType: input.payType === "hourly" ? "hourly" : "salary",
+    payType: (input.payType === "hourly" ? "hourly" : "salary") as Employee["payType"],
     rate: Math.round(Number(input.rate) || 0),
     bankId: String(input.bankId ?? ""),
     hireDate: String(input.hireDate ?? ""),
@@ -2180,14 +2202,15 @@ export function addEmployee(data: FinanceData, input): FinanceData {
       input.payPeriod === "weekly" || input.payPeriod === "biweekly" || input.payPeriod === "semimonthly"
         ? input.payPeriod
         : "monthly",
+    statutory: input.statutory !== false,
     active: input.active !== false,
     notes: String(input.notes ?? ""),
     sortOrder: (data.employees ?? []).length,
   };
-  return { ...data, employees: [...(data.employees ?? []), employee] };
+  return { ...data, employees: [...(data.employees ?? []), employee as Employee] };
 }
 
-export function updateEmployee(data: FinanceData, id, patch): FinanceData {
+export function updateEmployee(data: FinanceData, id: string, patch: Partial<Employee>): FinanceData {
   if (!(data.employees ?? []).some((e) => e.id === id)) throw new Error("Employee not found");
   if (patch.name !== undefined && !String(patch.name).trim()) throw new Error("Enter a name.");
   const next = {
@@ -2212,6 +2235,7 @@ export function updateEmployee(data: FinanceData, id, patch): FinanceData {
           patch.payPeriod === "monthly"
             ? patch.payPeriod
             : e.payPeriod ?? "monthly",
+        statutory: patch.statutory !== undefined ? Boolean(patch.statutory) : e.statutory !== false,
         active: patch.active !== undefined ? Boolean(patch.active) : e.active,
         notes: patch.notes !== undefined ? String(patch.notes) : e.notes,
       };
@@ -2231,7 +2255,7 @@ export function updateEmployee(data: FinanceData, id, patch): FinanceData {
   return next;
 }
 
-export function removeEmployee(data: FinanceData, id): FinanceData {
+export function removeEmployee(data: FinanceData, id: string): FinanceData {
   if (!(data.employees ?? []).some((e) => e.id === id)) throw new Error("Employee not found");
   const marker = `Employee payee (${id})`;
   const linked = data.vendors.find((v) => (v.notes || "").includes(marker));
@@ -2248,7 +2272,16 @@ export function removeEmployee(data: FinanceData, id): FinanceData {
   return { ...data, employees: data.employees.filter((e) => e.id !== id) };
 }
 
-export function payEmployee(data: FinanceData, input): FinanceData {
+export function payEmployee(data: FinanceData, input: {
+  employeeId: string;
+  amount?: number;
+  hours?: number;
+  withholding?: number;
+  date?: string;
+  bankId?: string;
+  memo?: string;
+  statutory?: boolean;
+}): FinanceData {
   const employee = (data.employees ?? []).find((e) => e.id === input.employeeId);
   if (!employee) throw new Error("Employee not found");
   if (!employee.active) throw new Error("Employee is inactive.");
@@ -2261,9 +2294,11 @@ export function payEmployee(data: FinanceData, input): FinanceData {
     amount = Math.round(hours * employee.rate);
   }
   if (amount <= 0) throw new Error("Enter a paycheck amount.");
-  const withholding = Math.max(0, Math.round(Number(input.withholding) || 0));
-  if (withholding >= amount) throw new Error("Withholding must be less than gross pay.");
-  const net = amount - withholding;
+  const extra = Math.max(0, Math.round(Number(input.withholding) || 0));
+  const statutory = input.statutory ?? employee.statutory !== false;
+  const period = employee.payPeriod ?? "monthly";
+  const parts = computePhPayroll({ gross: amount, period, statutory, extra });
+  if (parts.net <= 0) throw new Error("Deductions must be less than gross pay.");
   const date = input.date || todayIso();
   const payroll = data.accounts.find((a) => a.code === "5300") ?? data.accounts.find((a) => a.type === "expense");
   if (!payroll) throw new Error("Payroll expense account missing.");
@@ -2291,11 +2326,12 @@ export function payEmployee(data: FinanceData, input): FinanceData {
       email: employee.email || vendor.email,
       phone: employee.phone || vendor.phone,
     });
-    vendor = working.vendors.find((v) => v.id === vendor.id)!;
+    const keepId = vendor.id;
+    vendor = working.vendors.find((v) => v.id === keepId)!;
   }
   const hoursBit = employee.payType === "hourly" && Number.isFinite(hours) && hours > 0 ? ` · ${hours}h` : "";
   const memo = input.memo?.trim() || `Payroll — ${employee.title || "employee"}${hoursBit}`;
-  if (withholding <= 0) {
+  if (!statutory && extra <= 0) {
     const posted = issueCheck(working, {
       bankId: bank.id,
       vendorId: vendor.id,
@@ -2313,22 +2349,41 @@ export function payEmployee(data: FinanceData, input): FinanceData {
       checks: posted.checks.map((c) => (c.id === last.id ? { ...c, employeeId: employee.id } : c)),
     };
   }
-  const withholdAcct = working.accounts.find((a) => a.code === "2210");
-  if (!withholdAcct) throw new Error("Payroll withholdings account missing.");
+  function acct(code: string, label: string) {
+    const found = working.accounts.find((a) => a.code === code);
+    if (!found) throw new Error(`${label} account missing.`);
+    return found;
+  }
   assertOpenPeriod(working, date);
   const nextNum = working.nextNumbers.check[bank.id] ?? 1;
   const checkNumber = String(nextNum).padStart(4, "0");
   const id = newId();
+  const lines: Array<{ accountId: string; debit: number; credit: number; memo?: string }> = [
+    { accountId: payroll.id, debit: amount, credit: 0, memo },
+  ];
+  if (parts.employerCost > 0) {
+    const er = acct(PH_PAYROLL_CODES.employer, "Employer contributions");
+    lines.push({ accountId: er.id, debit: parts.employerCost, credit: 0, memo: "Employer SSS / PhilHealth / Pag-IBIG" });
+  }
+  lines.push({ accountId: bank.accountId, debit: 0, credit: parts.net });
+  const credit = (code: string, label: string, cents: number, memoLine: string) => {
+    if (cents <= 0) return;
+    const a = acct(code, label);
+    lines.push({ accountId: a.id, debit: 0, credit: cents, memo: memoLine });
+  };
+  if (statutory) {
+    credit(PH_PAYROLL_CODES.sss, "SSS Payable", parts.sssEe + parts.sssEr + parts.sssEc, "SSS");
+    credit(PH_PAYROLL_CODES.philhealth, "PhilHealth Payable", parts.philEe + parts.philEr, "PhilHealth");
+    credit(PH_PAYROLL_CODES.pagibig, "Pag-IBIG Payable", parts.pagEe + parts.pagEr, "Pag-IBIG");
+    credit(PH_PAYROLL_CODES.wht, "Withholding Tax Payable", parts.bir, "Withholding tax");
+  }
+  credit(PH_PAYROLL_CODES.other, "Payroll Withholdings", parts.extra, "Other withholding");
   const journal = makeJournal({
     date,
     description: `Check ${checkNumber} — ${employee.name}`,
     sourceType: "check",
     sourceId: id,
-    lines: [
-      { accountId: payroll.id, debit: amount, credit: 0, memo },
-      { accountId: bank.accountId, debit: 0, credit: net },
-      { accountId: withholdAcct.id, debit: 0, credit: withholding, memo: "Withholding" },
-    ],
+    lines,
   });
   const deb = journal.lines.reduce((s, l) => s + l.debit, 0);
   const cred = journal.lines.reduce((s, l) => s + l.credit, 0);
@@ -2342,7 +2397,7 @@ export function payEmployee(data: FinanceData, input): FinanceData {
       payee: employee.name,
       issueDate: date,
       postDate: date,
-      amount: net,
+      amount: parts.net,
       status: "pending",
       recon: "pending",
       memo,
@@ -2373,7 +2428,7 @@ const PERIOD_LABEL = {
 /** Post paychecks for every active salary employee. Hourly staff need hours — skip those. */
 export function payEmployees(
   data: FinanceData,
-  input: { date?: string; bankId?: string; withholding?: number },
+  input: { date?: string; bankId?: string; withholding?: number; statutory?: boolean },
 ): { data: FinanceData; posted: number; skippedHourly: number } {
   const date = input.date || todayIso();
   const active = (data.employees ?? []).filter((e) => e.active);
@@ -2386,18 +2441,20 @@ export function payEmployees(
       continue;
     }
     if (emp.rate <= 0) continue;
-    const period = PERIOD_LABEL[emp.payPeriod ?? "monthly"] ?? "monthly";
+    const period = emp.payPeriod ?? "monthly";
+    const amount = periodPayAmount(emp.rate, period, emp.payType);
+    if (amount <= 0) continue;
     working = payEmployee(working, {
       employeeId: emp.id,
-      amount: emp.rate,
+      amount,
       date,
       bankId: input.bankId || emp.bankId,
       withholding: input.withholding,
-      memo: `Payroll — ${period} — ${emp.title || "employee"}`,
+      statutory: input.statutory ?? emp.statutory !== false,
+      memo: `Payroll — ${PERIOD_LABEL[period] ?? "monthly"} — ${emp.title || "employee"}`,
     });
     posted += 1;
   }
   if (posted === 0 && skippedHourly === 0) throw new Error("No active salaried employees to pay.");
   return { data: working, posted, skippedHourly };
 }
-

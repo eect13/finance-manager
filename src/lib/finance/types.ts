@@ -417,6 +417,8 @@ export interface Employee {
   hireDate: string;
   /** How often this person is paid. Used by Pay all active. */
   payPeriod: PayPeriod;
+  /** PH 2026 SSS / PhilHealth / Pag-IBIG / TRAIN withholding. Default on. */
+  statutory: boolean;
   active: boolean;
   notes: string;
   sortOrder: number;
@@ -432,6 +434,7 @@ export const EMPTY_EMPLOYEE: Omit<Employee, "id"> = {
   bankId: "",
   hireDate: "",
   payPeriod: "monthly",
+  statutory: true,
   active: true,
   notes: "",
   sortOrder: 0,

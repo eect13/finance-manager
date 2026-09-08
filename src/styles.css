@@ -6840,18 +6840,17 @@ button.party-card-row {
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* v3.63.17 — Grid card windowing (absolute lanes). Register/Reconcile virt unchanged. */
+.item-cards-virt {
+  display: block !important;
+  position: relative;
+  min-height: 0;
+}
+.item-card-virt {
+  box-sizing: border-box;
+}
+.item-card-virt > .item-card,
+.item-card-virt > .party-card-row,
+.item-card-virt > button {
+  width: 100%;
+}

@@ -12,6 +12,7 @@ import { ActionsHeader, SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
 import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
+import { useListVirtualizer, VirtPad } from "@/components/use-list-virtualizer";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -83,6 +84,7 @@ function ForecastPage() {
   const pointer = useTableKeyboardFocus({
     ids: budgetSort.sorted.map((i) => i.id),
   });
+  const listVirt = useListVirtualizer(budgetSort.sorted.length, budgetRef, (index) => budgetSort.sorted[index]?.id ?? index);
 
   return (
     <AppShell
@@ -194,7 +196,12 @@ function ForecastPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {budgetSort.sorted.map((item) => (
+                    <>
+                    <VirtPad height={listVirt.padTop} colSpan={5} />
+                    {listVirt.items.map((v) => {
+                      const item = budgetSort.sorted[v.index];
+                      if (!item) return null;
+                      return (
                       <tr
                         key={item.id}
                         className="border-b border-border/70 last:border-0"
@@ -219,7 +226,10 @@ function ForecastPage() {
                           </Button>
                         </td>
                       </tr>
-                    ))}
+                      );
+                    })}
+                    <VirtPad height={listVirt.padBottom} colSpan={5} />
+                    </>
                   </tbody>
                 </table>
               </div>

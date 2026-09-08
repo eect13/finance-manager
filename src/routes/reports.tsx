@@ -24,6 +24,7 @@ import { trialBalanceRows } from "@/lib/finance/export";
 import { fitColumnWidth } from "@/lib/finance/fit-column";
 import { formatDate, todayIso } from "@/lib/finance/format";
 import { incomeStatement, trialBalance, vatBalances } from "@/lib/finance/ledger";
+import { payrollRemittance } from "@/lib/finance/ph-payroll";
 import type { Account } from "@/lib/finance/types";
 import { openProps, openTxn } from "@/lib/finance/open-record";
 import { useEntrySort } from "@/lib/finance/sort";
@@ -87,7 +88,7 @@ function ReportsPage() {
   return (
     <AppShell
       title="Reports"
-      description="Trial balance, profit and loss, VAT, and 30/60/90 aging as of a date."
+      description="Trial balance, profit and loss, VAT, payroll remittance, and 30/60/90 aging as of a date."
       wide
       actions={
         <>
@@ -109,6 +110,7 @@ function ReportsPage() {
           <TabsTrigger value="tb">Trial balance</TabsTrigger>
           <TabsTrigger value="pl">Profit and loss</TabsTrigger>
           <TabsTrigger value="vat">VAT</TabsTrigger>
+          <TabsTrigger value="payroll">Payroll</TabsTrigger>
         </TabsList>
         <TabsContent value="aging">
           <ListToolbar query={query} onQuery={setQuery} placeholder="Search party or number" label="Search aging">
@@ -139,8 +141,11 @@ function ReportsPage() {
         <TabsContent value="vat">
           <VatPanel asOf={asOf} currency={settings.currency} />
         </TabsContent>
+        <TabsContent value="payroll">
+          <PayrollPanel asOf={asOf} currency={settings.currency} />
+        </TabsContent>
       </Tabs>
-      <ReportsPrint asOf={asOf} tab={tab === "tb" || tab === "pl" || tab === "vat" ? tab : "aging"} />
+      <ReportsPrint asOf={asOf} tab={tab === "tb" || tab === "pl" || tab === "vat" || tab === "payroll" ? tab : "aging"} />
     </AppShell>
   );
 }
@@ -492,6 +497,43 @@ function VatPanel({ asOf, currency }: { asOf: string; currency: string }) {
       </table>
       <p className="px-4 py-3 text-xs text-muted-foreground">
         Output from taxed invoices and cash sales, input from taxed bills. Amount on a bill is VAT-inclusive when Tax % is set. Not a BIR return.
+      </p>
+    </div>
+  );
+}
+
+
+function PayrollPanel({ asOf, currency }: { asOf: string; currency: string }) {
+  const data = useFinanceData();
+  const p = payrollRemittance(data, asOf);
+  const row = (label: string, amount: number) => (
+    <tr className="border-b border-border/70 last:border-0">
+      <td className="px-4 py-3">{label}</td>
+      <td className="px-4 py-3">
+        <Money amount={amount} currency={currency} />
+      </td>
+    </tr>
+  );
+  return (
+    <div className="list-grid list-scroll overflow-auto rounded-2xl table-paper elevation outline-none">
+      <table className="text-sm" style={{ width: "100%" }}>
+        <thead>
+          <tr className="border-b border-border text-muted-foreground">
+            <th className="px-4 py-3 text-center font-medium">Account</th>
+            <th className="px-4 py-3 text-center font-medium">Balance</th>
+          </tr>
+        </thead>
+        <tbody>
+          {row("SSS Payable (2211)", p.sss)}
+          {row("PhilHealth Payable (2212)", p.philhealth)}
+          {row("Pag-IBIG Payable (2213)", p.pagibig)}
+          {row("Withholding Tax Payable (2214)", p.wht)}
+          {row("Other withholdings (2210)", p.other)}
+          {row("Employer contributions (5310)", p.employer)}
+        </tbody>
+      </table>
+      <p className="px-4 py-3 text-xs text-muted-foreground">
+        2026 PH statutory from posted paychecks. Remit SSS, PhilHealth, Pag-IBIG, and BIR 1601-C from these balances. Not a government filing.
       </p>
     </div>
   );

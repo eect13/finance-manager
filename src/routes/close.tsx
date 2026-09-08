@@ -14,12 +14,12 @@ import { listColClass, listColWidthStyle, listTableStyle} from "@/components/lis
 import { useColWidths } from "@/components/use-col-widths";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
 import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
-import { useListVirtualizer, VirtPad } from "@/components/use-list-virtualizer";
 import { Button } from "@/components/ui/button";
 import { closeChecklist, closeTotals, monthEndIso, type CloseCheck } from "@/lib/finance/close";
 import { fitColumnWidth } from "@/lib/finance/fit-column";
 import { formatDate } from "@/lib/finance/format";
 import { auditRows, exportCsv } from "@/lib/finance/export";
+import { useNarrowUi } from "@/lib/phone-layout";
 import { useEntrySort } from "@/lib/finance/sort";
 import { useFinanceData, useFinanceStore } from "@/lib/finance/store";
 import type { AuditEvent } from "@/lib/finance/types";
@@ -256,11 +256,49 @@ function ChecklistTable({
     ids: sort.sorted.map((i) => i.id),
     onOpen: openCheck,
   });
-  const listVirt = useListVirtualizer(sort.sorted.length, gridRef, (index) => sort.sorted[index]?.id ?? index);
+  const narrow = useNarrowUi();
   function fit(id: keyof typeof CHECK_COLS, label: string) {
     const table = gridRef.current?.querySelector("table");
     if (!table) return;
     cols.setWidth(id, fitColumnWidth({ table, selector: `td[data-col="${id}"]`, header: label }));
+  }
+  if (narrow) {
+    return (
+      <div className="list-card overflow-hidden">
+        {sort.sorted.length === 0 ? (
+          <p className="px-4 py-6 text-center text-muted-foreground">Nothing in this filter.</p>
+        ) : (
+          sort.sorted.map((item) => (
+            <div
+              key={item.id}
+              className="border-b border-border/70 px-4 py-3 last:border-0"
+              data-row-id={item.id}
+            >
+              <div className="flex items-baseline justify-between gap-3">
+                <p className="min-w-0 font-medium">{item.label}</p>
+                <p className="shrink-0 text-muted-foreground">{item.ok ? "Clear" : "Blocked"}</p>
+              </div>
+              <div className="mt-1 flex min-w-0 flex-wrap items-center gap-2">
+                <span className="min-w-0 break-words text-muted-foreground">
+                  {item.href ? (
+                    <Link to={item.href} className="underline-offset-2 hover:underline">
+                      {item.detail}
+                    </Link>
+                  ) : (
+                    item.detail
+                  )}
+                </span>
+                {item.id === "recurring" && !item.ok && onPostDue ? (
+                  <Button size="sm" className="shrink-0" onClick={onPostDue}>
+                    {dueLabel || "Post due"}
+                  </Button>
+                ) : null}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    );
   }
   return (
     <div
@@ -295,12 +333,7 @@ function ChecklistTable({
               </td>
             </tr>
           ) : (
-            <>
-              <VirtPad height={listVirt.padTop} colSpan={3} />
-              {listVirt.items.map((v) => {
-                const item = sort.sorted[v.index];
-                if (!item) return null;
-                return (
+            sort.sorted.map((item) => (
               <tr
                 key={item.id}
                 className="border-b border-border/70 last:border-0"
@@ -330,10 +363,7 @@ function ChecklistTable({
                   </div>
                 </td>
               </tr>
-                );
-              })}
-              <VirtPad height={listVirt.padBottom} colSpan={3} />
-            </>
+            ))
           )}
         </tbody>
       </table>
@@ -366,7 +396,6 @@ function SnapshotTable({
   const pointer = useTableKeyboardFocus({
     ids: sort.sorted.map((b) => b.bankId),
   });
-  const listVirt = useListVirtualizer(sort.sorted.length, gridRef, (index) => sort.sorted[index]?.bankId ?? index);
   function fit(id: keyof typeof SNAP_COLS, label: string) {
     const table = gridRef.current?.querySelector("table");
     if (!table) return;
@@ -398,12 +427,7 @@ function SnapshotTable({
           </tr>
         </thead>
         <tbody>
-          <>
-          <VirtPad height={listVirt.padTop} colSpan={3} />
-          {listVirt.items.map((v) => {
-            const b = sort.sorted[v.index];
-            if (!b) return null;
-            return (
+          {sort.sorted.map((b) => (
             <tr
               key={b.bankId}
               className="border-b border-border/70 last:border-0"
@@ -418,10 +442,7 @@ function SnapshotTable({
               </td>
               <td className={cn("px-4 py-3", alignClass(colAligns.aligns.statement ?? "center"))} data-col="statement" data-align={colAligns.aligns.statement ?? "center"}>{b.lastStatementDate ? formatDate(b.lastStatementDate) : "—"}</td>
             </tr>
-            );
-          })}
-          <VirtPad height={listVirt.padBottom} colSpan={3} />
-          </>
+          ))}
         </tbody>
       </table>
       </div>
@@ -471,7 +492,6 @@ function AuditTable({ rows }: { rows: AuditEvent[] }) {
   const pointer = useTableKeyboardFocus({
     ids: sort.sorted.map((e) => e.id),
   });
-  const listVirt = useListVirtualizer(sort.sorted.length, gridRef, (index) => sort.sorted[index]?.id ?? index);
   function fit(id: keyof typeof AUDIT_COLS, label: string) {
     const table = gridRef.current?.querySelector("table");
     if (!table) return;
@@ -522,12 +542,7 @@ function AuditTable({ rows }: { rows: AuditEvent[] }) {
                 </td>
               </tr>
             ) : (
-              <>
-              <VirtPad height={listVirt.padTop} colSpan={6} />
-              {listVirt.items.map((v) => {
-                const ev = sort.sorted[v.index];
-                if (!ev) return null;
-                return (
+              sort.sorted.map((ev) => (
                 <tr
                   key={ev.id}
                   className="border-b border-border/70 last:border-0"
@@ -543,10 +558,7 @@ function AuditTable({ rows }: { rows: AuditEvent[] }) {
                   <td className={cn("px-4 py-3", alignClass(colAligns.aligns.old ?? "center"))} data-col="old" data-align={colAligns.aligns.old ?? "center"}>{ev.old}</td>
                   <td className={cn("px-4 py-3", alignClass(colAligns.aligns.next ?? "center"))} data-col="next" data-align={colAligns.aligns.next ?? "center"}>{ev.new}</td>
                 </tr>
-                );
-              })}
-              <VirtPad height={listVirt.padBottom} colSpan={6} />
-              </>
+              ))
             )}
           </tbody>
         </table>

@@ -105,7 +105,7 @@ export function DialogHeader({ className, ...props }: React.ComponentProps<"div"
 }
 
 export function DialogTitle({ className, ...props }: React.ComponentProps<typeof DialogPrimitive.Title>) {
-  return <DialogPrimitive.Title className={cn("font-display text-xl font-medium tracking-tight text-center", className)} {...props} />;
+  return <DialogPrimitive.Title className={cn("font-display text-xl font-medium tracking-tight text-center break-words [overflow-wrap:anywhere] px-8", className)} {...props} />;
 }
 
 export function DialogDescription({ className, ...props }: React.ComponentProps<typeof DialogPrimitive.Description>) {

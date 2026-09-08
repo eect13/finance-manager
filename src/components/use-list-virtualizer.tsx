@@ -2,16 +2,25 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
 import { getWorkspaceScrollElement, listScrollMargin } from "@/lib/workspace-scroll";
 
-/** ListCard (capped overflow-y) is the Y scroller; otherwise workspace, like Register. */
+/** ListCard (capped overflow-y) is the Y scroller; otherwise workspace, like Register.
+ * Walk ancestors — CardGrid lives inside `.party-pane-list` (max-height + overflow auto),
+ * so using only the wrap node bound virt to the workspace and painted a huge empty pad.
+ */
 function resolveScrollParent(node: HTMLElement | null): HTMLElement | null {
   const workspace = getWorkspaceScrollElement();
   if (!node || typeof getComputedStyle === "undefined") return workspace;
-  const style = getComputedStyle(node);
-  const canY = style.overflowY === "auto" || style.overflowY === "scroll";
-  if (!canY) return workspace;
-  const capped = style.maxHeight !== "none" && style.maxHeight !== "";
-  if (capped) return node;
-  if (node.clientHeight > 0 && node.scrollHeight > node.clientHeight + 1) return node;
+  let el: HTMLElement | null = node;
+  while (el && el !== workspace) {
+    const style = getComputedStyle(el);
+    const canY = style.overflowY === "auto" || style.overflowY === "scroll";
+    if (canY) {
+      const maxH = style.maxHeight;
+      const capped = maxH !== "none" && maxH !== "" && Number.parseFloat(maxH) > 0;
+      if (capped) return el;
+      if (el.clientHeight > 0 && el.scrollHeight > el.clientHeight + 1) return el;
+    }
+    el = el.parentElement;
+  }
   return workspace;
 }
 

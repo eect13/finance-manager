@@ -1,6 +1,15 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.17.
+Re-verified in code 2026-09-08. Updated for v3.63.18.
+
+## Fixed in v3.63.18
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| 1 | High | Customers/Vendors phone Grid: huge empty paper, first names missing | CardGrid walks to the capped pane (or uncaps Grid so the page scrolls). Same empty-pad class as Reconcile. |
+| 2 | High | Close phone table showed only Detail; Check/Status clipped | Phone stacks each check. Split list-card/list-grid overflow uncap. Tiny Close lists paint all rows (no virt pad). |
+| 3 | Med | Invoice/journal sheet overflowed the phone (title + Debit clipped) | Title wraps; inner table `min-w-0` + side-scroll; sheet no longer grows with max-content tables |
+| 4 | Med | Register phone card Out/In/Balance 3-col clipped Pending/bank | Out/In 2-col; Balance full width below |
 
 ## Fixed in v3.63.17
 

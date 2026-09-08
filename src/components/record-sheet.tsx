@@ -942,7 +942,7 @@ function JournalLineTable({
     cols.setWidth(id, fitColumnWidth({ table, selector: `td[data-col="${id}"]`, header: label }));
   }
   return (
-    <div ref={wrapRef} className="list-grid overflow-x-auto">
+    <div ref={wrapRef} className="list-grid min-w-0 max-w-full overflow-x-auto">
       <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
         <colgroup>
           {(Object.keys(JL_COLS) as Array<keyof typeof JL_COLS>).map((id) => (

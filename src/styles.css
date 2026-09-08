@@ -6854,3 +6854,43 @@ button.party-card-row {
 .item-card-virt > button {
   width: 100%;
 }
+
+/* v3.63.18 — phone empty Grid pad, Close clip, sheet overflow, register money */
+.party-center[data-view="grid"] .party-pane-list {
+  overflow: visible !important;
+  max-height: none !important;
+  padding: 0.75rem;
+}
+.close-page .list-card {
+  overflow: visible !important;
+  max-height: none !important;
+}
+.close-page .list-grid {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: visible !important;
+}
+@media (max-width: 767px) {
+  .close-meta {
+    grid-template-columns: 1fr 1fr;
+  }
+  .register-phone-card .phone-card-money {
+    grid-template-columns: 1fr 1fr !important;
+  }
+  .register-phone-card .phone-card-money > *:nth-child(3) {
+    grid-column: 1 / -1;
+  }
+  .dialog-sheet .list-grid {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: visible;
+  }
+}
+.dialog-sheet [data-slot="dialog-title"] {
+  overflow-wrap: anywhere;
+  padding-inline: 2rem;
+}

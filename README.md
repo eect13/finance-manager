@@ -1,4 +1,4 @@
-# Finance Manager v3.63.17
+# Finance Manager v3.63.18
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -26,6 +26,13 @@ Unzip the repo (a second unzip named `finance-manager-main (1)` is fine) so `dep
 Vite is installed with the packages — no global `vite` command. `.npmrc` has `legacy-peer-deps=true`.
 
 After the Windows installer: **delete the leftover white shortcut** and pin the new one — shortcut and taskbar both use the navy pillars tile.
+
+## What's new in v3.63.18
+
+- **Customers / Vendors phone Grid**: cards start at the top of the pane. Windowing had treated the page as the scroller while the directory is a nested box, so the first names sat under a blank card.
+- **Close on a phone**: each check is a stacked row (name, Clear/Blocked, detail). The wide table was clipping to the last column.
+- **Record sheet**: long titles wrap; journal lines side-scroll inside the sheet instead of stretching it off the screen.
+- **Register phone cards**: Out / In share a row; Balance wraps underneath so Pending and the bank stay on the card.
 
 ## What's new in v3.63.17
 

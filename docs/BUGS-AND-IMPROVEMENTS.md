@@ -1,6 +1,12 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.25.
+Re-verified in code 2026-09-08. Updated for v3.63.26.
+
+## Fixed in v3.63.26
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| P2 | Med | Employees + Reports showed column chips / hiddenCount / onFitAll on Grid | Gate those View extras on `layout === "list"` (party txn already correct) |
 
 ## Fixed in v3.63.25
 

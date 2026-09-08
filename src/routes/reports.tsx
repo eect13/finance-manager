@@ -126,8 +126,8 @@ function ReportsPage() {
             <ListViewMenu
               layout={ageView}
               onLayout={setAgeView}
-              hiddenCount={ageVis.hiddenCount}
-              extra={viewColumnExtra(AGE_CHIPS, ageVis)}
+              hiddenCount={ageView === "list" ? ageVis.hiddenCount : undefined}
+              extra={ageView === "list" ? viewColumnExtra(AGE_CHIPS, ageVis) : undefined}
               onFitAll={ageView === "list" ? () => { ageFitAr.current?.(); ageFitAp.current?.(); } : undefined}
             />
           </ListToolbar>
@@ -141,8 +141,8 @@ function ReportsPage() {
             <ListViewMenu
               layout={tbView}
               onLayout={setTbView}
-              hiddenCount={tbVis.hiddenCount}
-              extra={viewColumnExtra(TB_CHIPS, tbVis)}
+              hiddenCount={tbView === "list" ? tbVis.hiddenCount : undefined}
+              extra={tbView === "list" ? viewColumnExtra(TB_CHIPS, tbVis) : undefined}
               onFitAll={tbView === "list" ? () => { tbFit.current?.(); } : undefined}
             />
           </ListToolbar>
@@ -158,8 +158,8 @@ function ReportsPage() {
             <ListViewMenu
               layout={plView}
               onLayout={setPlView}
-              hiddenCount={plVis.hiddenCount}
-              extra={viewColumnExtra(PL_CHIPS, plVis)}
+              hiddenCount={plView === "list" ? plVis.hiddenCount : undefined}
+              extra={plView === "list" ? viewColumnExtra(PL_CHIPS, plVis) : undefined}
               onFitAll={plView === "list" ? () => { plFit.current?.(); } : undefined}
             />
           </ListToolbar>

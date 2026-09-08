@@ -375,9 +375,9 @@ function EmployeesPage() {
         <ListViewMenu
           layout={view}
           onLayout={setView}
-          hiddenCount={vis.hiddenCount}
-          extra={viewColumnExtra(EMP_CHIPS, vis)}
-          onFitAll={fitAll}
+          hiddenCount={view === "list" ? vis.hiddenCount : undefined}
+          extra={view === "list" ? viewColumnExtra(EMP_CHIPS, vis) : undefined}
+          onFitAll={view === "list" ? fitAll : undefined}
         />
       </ListToolbar>
 

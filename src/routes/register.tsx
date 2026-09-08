@@ -1189,7 +1189,7 @@ function RegisterTable({
               onCycleRecon={onCycleRecon}
               onSetCheckStatus={onSetCheckStatus}
               onReceiptAction={onReceiptAction}
-              className="phone-card-chip inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1"
+              className="phone-card-chip inline-flex h-8 min-h-8 items-center gap-1 rounded-lg border border-border px-2"
             />
           );
         default:
@@ -1607,7 +1607,7 @@ function RegisterTable({
                                 onCycleRecon={onCycleRecon}
                                 onSetCheckStatus={onSetCheckStatus}
                                 onReceiptAction={onReceiptAction}
-                                className="phone-card-chip inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1"
+                                className="phone-card-chip inline-flex h-8 min-h-8 items-center gap-1 rounded-lg border border-border px-2"
                               />
                             ) : null}
                             {line.reassignable ? (

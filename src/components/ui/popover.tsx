@@ -18,8 +18,9 @@ export function PopoverContent({
       <PopoverPrimitive.Content
         align={align}
         sideOffset={sideOffset}
+        collisionPadding={8}
         className={cn(
-          "z-[200] w-72 overflow-y-auto rounded-xl bg-popover p-3 text-popover-foreground elevation outline-none",
+          "z-[200] w-72 max-w-[calc(100vw-16px)] overflow-y-auto rounded-xl bg-popover p-3 text-popover-foreground elevation outline-none",
           className,
         )}
         {...props}

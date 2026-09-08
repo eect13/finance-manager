@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject }
 import { createPortal } from "react-dom";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { onViewportChange, placeFixedPopover } from "@/lib/place-fixed";
 
 export function PartyCombo({
   items,
@@ -34,7 +35,7 @@ export function PartyCombo({
   const [query, setQuery] = useState(valueName);
   const [open, setOpen] = useState(false);
   const [hi, setHi] = useState(0);
-  const [box, setBox] = useState({ top: 0, left: 0, width: 280 });
+  const [box, setBox] = useState({ top: 0, left: 0, width: 280, maxHeight: 224 });
 
   useEffect(() => {
     if (!open) setQuery(valueName);
@@ -66,42 +67,31 @@ export function PartyCombo({
   function layout() {
     const el = wrapRef.current;
     if (!el) return;
-    const r = el.getBoundingClientRect();
-    const height = 224;
-    const spaceBelow = window.innerHeight - r.bottom - 8;
-    const spaceAbove = r.top - 8;
-    let top = r.bottom + 4;
-    if (spaceBelow < 120 && spaceAbove > spaceBelow) {
-      top = Math.max(8, r.top - height - 4);
-    }
-    setBox({ top, left: r.left, width: Math.max(r.width, 160) });
+    setBox(placeFixedPopover(el.getBoundingClientRect(), { height: 224 }));
   }
 
   useLayoutEffect(() => {
     if (!open) return;
     layout();
-    function onScroll() {
-      layout();
-    }
-    window.addEventListener("resize", onScroll);
-    window.addEventListener("scroll", onScroll, true);
-    return () => {
-      window.removeEventListener("resize", onScroll);
-      window.removeEventListener("scroll", onScroll, true);
-    };
+    return onViewportChange(layout);
   }, [open]);
 
   return (
-    <div ref={wrapRef} className="relative">
+    <div ref={wrapRef} className="relative w-full min-w-0">
       <Input
         ref={inputRef}
         id={id}
         value={open ? query : valueName}
         disabled={disabled}
         autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="off"
+        spellCheck={false}
         placeholder={placeholder}
         className={cn(invalid && "border-destructive")}
         aria-label={label}
+        aria-autocomplete="list"
+        aria-expanded={open}
         onFocus={(e) => {
           setOpen(true);
           setQuery(valueName);
@@ -147,8 +137,16 @@ export function PartyCombo({
         ? createPortal(
             <ul
               data-party-list
-              className="fixed max-h-40 overflow-y-auto rounded-xl bg-popover p-1 elevation sm:max-h-56"
-              style={{ top: box.top, left: box.left, width: box.width, zIndex: 90, pointerEvents: "auto" }}
+              className="fixed overflow-y-auto rounded-xl bg-popover p-1 elevation"
+              style={{
+                top: box.top,
+                left: box.left,
+                width: box.width,
+                maxHeight: box.maxHeight,
+                zIndex: 90,
+                pointerEvents: "auto",
+                boxSizing: "border-box",
+              }}
             >
               {matches.map((item, i) => (
                 <li key={item.id}>

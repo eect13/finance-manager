@@ -30,11 +30,12 @@ export function SelectContent({ className, children, ...props }: React.Component
     <SelectPrimitive.Portal>
       <SelectPrimitive.Content
         className={cn(
-          "z-[200] max-h-72 min-w-40 overflow-hidden rounded-xl bg-popover text-popover-foreground elevation",
+          "z-[200] max-h-72 min-w-40 max-w-[calc(100vw-16px)] overflow-hidden rounded-xl bg-popover text-popover-foreground elevation",
           className,
         )}
         position="popper"
         sideOffset={6}
+        collisionPadding={8}
         {...props}
       >
         <SelectPrimitive.Viewport className="p-1">{children}</SelectPrimitive.Viewport>

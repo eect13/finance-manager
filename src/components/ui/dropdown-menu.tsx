@@ -15,7 +15,8 @@ export function DropdownMenuContent({
     <DropdownMenuPrimitive.Portal>
       <DropdownMenuPrimitive.Content
         sideOffset={sideOffset}
-        className={cn("z-[200] min-w-44 overflow-hidden rounded-xl bg-popover p-1 text-popover-foreground elevation", className)}
+        collisionPadding={8}
+        className={cn("z-[200] min-w-44 max-w-[calc(100vw-16px)] overflow-hidden rounded-xl bg-popover p-1 text-popover-foreground elevation", className)}
         {...props}
       />
     </DropdownMenuPrimitive.Portal>

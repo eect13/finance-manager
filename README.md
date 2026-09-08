@@ -1,4 +1,4 @@
-# Finance Manager v3.63.18
+# Finance Manager v3.63.19
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -26,6 +26,11 @@ Unzip the repo (a second unzip named `finance-manager-main (1)` is fine) so `dep
 Vite is installed with the packages — no global `vite` command. `.npmrc` has `legacy-peer-deps=true`.
 
 After the Windows installer: **delete the leftover white shortcut** and pin the new one — shortcut and taskbar both use the navy pillars tile.
+
+## What's new in v3.63.19
+
+- **Receive payment (and every other sheet):** bank/customer typeahead and the date calendar stay inside the screen — they were sliding past the sheet when the keyboard was open. Method buttons wrap (three then two on a phone) instead of clipping Card. The sheet sits at the top on a phone so the keyboard does not cover Date and Deposit to.
+- **Register phone cards:** Pending and the bank (Operating) are the same height.
 
 ## What's new in v3.63.18
 

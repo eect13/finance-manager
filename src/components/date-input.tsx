@@ -17,6 +17,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "re
 import { createPortal } from "react-dom";
 import { Input } from "@/components/ui/input";
 import { addDaysIso, isoToTyped, maskTypedDate, todayIso, typedToIso } from "@/lib/finance/format";
+import { onViewportChange, placeFixedPopover } from "@/lib/place-fixed";
 import { cn } from "@/lib/utils";
 
 const WEEKDAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
@@ -55,7 +56,7 @@ export function DateInput({
   const [text, setText] = useState(() => isoToTyped(value));
   const [focused, setFocused] = useState(false);
   const [open, setOpen] = useState(false);
-  const [box, setBox] = useState({ top: 0, left: 0, width: 280 });
+  const [box, setBox] = useState({ top: 0, left: 0, width: 280, maxHeight: 320 });
 
   useEffect(() => {
     if (!focused) setText(isoToTyped(value));
@@ -89,41 +90,13 @@ export function DateInput({
   function layout() {
     const el = wrapRef.current;
     if (!el) return;
-    const r = el.getBoundingClientRect();
-    const width = 280;
-    let left = r.left;
-    if (left + width > window.innerWidth - 8) left = Math.max(8, window.innerWidth - width - 8);
-    if (left < 8) left = 8;
-    const height = 320;
-    const spaceBelow = window.innerHeight - r.bottom - 8;
-    const spaceAbove = r.top - 8;
-    // Prefer below when it fits; otherwise above. When neither fits fully, pick the roomier side
-    // so a date field near the top of a centered dialog does not cover Payee/Amount when above has room.
-    let top: number;
-    if (spaceBelow >= height) {
-      top = r.bottom + 4;
-    } else if (spaceAbove >= height) {
-      top = r.top - height - 4;
-    } else if (spaceAbove > spaceBelow) {
-      top = Math.max(8, r.top - height - 4);
-    } else {
-      top = r.bottom + 4;
-    }
-    setBox({ top, left, width });
+    setBox(placeFixedPopover(el.getBoundingClientRect(), { width: 280, height: 320 }));
   }
 
   useLayoutEffect(() => {
     if (!open) return;
     layout();
-    function onScroll() {
-      layout();
-    }
-    window.addEventListener("resize", onScroll);
-    window.addEventListener("scroll", onScroll, true);
-    return () => {
-      window.removeEventListener("resize", onScroll);
-      window.removeEventListener("scroll", onScroll, true);
-    };
+    return onViewportChange(layout);
   }, [open]);
 
   useEffect(() => {
@@ -156,6 +129,9 @@ export function DateInput({
         type="text"
         inputMode="numeric"
         autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="off"
+        spellCheck={false}
         placeholder="MM/DD/YYYY"
         disabled={disabled}
         tabIndex={tabIndex}
@@ -228,7 +204,15 @@ export function DateInput({
               data-date-cal=""
               role="dialog"
               aria-label="Choose date"
-              style={{ top: box.top, left: box.left, width: box.width, zIndex: 5000 }}
+              style={{
+                top: box.top,
+                left: box.left,
+                width: box.width,
+                maxHeight: box.maxHeight,
+                zIndex: 5000,
+                boxSizing: "border-box",
+                overflow: "auto",
+              }}
             >
               <DateCal value={value} onPick={pick} />
             </div>,

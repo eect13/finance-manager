@@ -1,6 +1,15 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.18.
+Re-verified in code 2026-09-08. Updated for v3.63.19.
+
+## Fixed in v3.63.19
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| 1 | High | Receive payment combo (Operating) overflowed the sheet / screen with keyboard open | `placeFixedPopover` maps layout rect → visualViewport; clamp width/maxHeight. Same for DateInput. Autofill attrs off. |
+| 2 | High | Cash/Check/Card clipped; keyboard covered the centered sheet | Phone `.dialog-sheet` top-aligns + `minmax(0,1fr)`; method row 3-col then 2 |
+| 3 | Med | Register Pending chip shorter than Operating bank select | Both `.phone-card-chip` forced to 2rem (`h-8`) |
+| 4 | Low | Radix Select / menu / popover could paint past the viewport | `collisionPadding={8}` + `max-w-[calc(100vw-16px)]` |
 
 ## Fixed in v3.63.18
 

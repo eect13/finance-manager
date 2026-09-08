@@ -2371,16 +2371,15 @@ body.printing .print-root .no-print {
   .dialog-sheet {
     left: 50%;
     right: auto;
-    top: 50%;
+    top: max(0.5rem, env(safe-area-inset-top, 0px));
     bottom: auto;
     width: calc(100% - 2rem - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
     max-width: 32rem;
-    transform: translate(-50%, -50%);
-    max-height: min(
-      90dvh,
-      calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 1.25rem)
+    transform: translateX(-50%);
+    max-height: calc(
+      100dvh - max(0.5rem, env(safe-area-inset-top, 0px)) - max(0.5rem, env(safe-area-inset-bottom, 0px))
     );
-    overflow-x: hidden;
+    overflow-x: auto;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     padding-bottom: max(1.5rem, env(safe-area-inset-bottom, 0px));
@@ -4882,16 +4881,15 @@ body.is-phone-move-dragging {
 @media (max-width: 767px), ((hover: none) and (pointer: coarse)) {
   .dialog-sheet {
     left: 50% !important;
-    top: 50% !important;
+    top: max(0.5rem, env(safe-area-inset-top, 0px)) !important;
     right: auto !important;
     bottom: auto !important;
-    transform: translate(-50%, -50%) !important;
+    transform: translateX(-50%) !important;
     width: calc(100% - 2rem - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
     max-width: 32rem;
-    max-height: min(
-      90dvh,
-      calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 1.25rem)
-    );
+    max-height: calc(
+      100dvh - max(0.5rem, env(safe-area-inset-top, 0px)) - max(0.5rem, env(safe-area-inset-bottom, 0px))
+    ) !important;
   }
   .dialog-drag-handle {
     cursor: default;
@@ -6894,3 +6892,36 @@ button.party-card-row {
   overflow-wrap: anywhere;
   padding-inline: 2rem;
 }
+
+/* v3.63.19 — combo/calendar stay in the visual viewport; phone sheet top-aligns;
+   Pending chip and bank select share 2rem height. */
+.dialog-sheet {
+  grid-template-columns: minmax(0, 1fr);
+}
+[data-party-list],
+.date-cal-pop {
+  max-width: calc(100vw - 16px);
+  box-sizing: border-box;
+}
+.date-cal-pop {
+  overflow-x: auto;
+  overflow-y: auto;
+}
+.register-phone-card .phone-card-chip,
+.recon-phone-card .phone-card-chip {
+  height: 2rem !important;
+  min-height: 2rem !important;
+  box-sizing: border-box;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+@media (max-width: 767px), ((hover: none) and (pointer: coarse)) {
+  .dialog-sheet {
+    min-width: 0 !important;
+    max-width: min(32rem, calc(100vw - 2rem - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px))) !important;
+  }
+  .pay-methods {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+

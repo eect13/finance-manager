@@ -500,7 +500,7 @@ export function CustomerPayment({
         </Field>
       </div>
 
-      <div className="mt-4 grid grid-cols-5 gap-1">
+      <div className="pay-methods mt-4 grid grid-cols-3 gap-1 sm:grid-cols-5">
           {PAYMENT_METHODS.map((opt) => {
             const Icon = opt.icon;
             const on = form.method === opt.value;
@@ -512,7 +512,7 @@ export function CustomerPayment({
                 disabled={locked}
                 onClick={() => setMethod(opt.value)}
                 className={cn(
-                  "flex min-h-11 flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-center text-xs font-medium",
+                  "flex min-h-11 min-w-0 w-full flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-center text-xs font-medium",
                   on ? "bg-primary text-primary-foreground" : "bg-muted text-foreground hover:bg-accent",
                 )}
               >

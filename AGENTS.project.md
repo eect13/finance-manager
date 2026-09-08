@@ -21,7 +21,7 @@ This conversation belongs to a Grok project. Project files at `/workspace/artifa
 - **Grid windowing:** DocCards, party dir, and banks Grid use `CardGrid` (`useCardVirtualizer` lanes + nearest capped scroller or workspace `scrollMargin`). Party directory Grid uncaps the pane so cards flow with the page. Do not use on Register/Reconcile.
 - **PH statutory payroll:** default ON. Pay run posts `periodPayAmount` (weekly 12/52, semimonthly half). Split 2211–2214 + 5310. Extra still 2210. Reports → Payroll. Not a BIR filing engine.
 - **Plain table paper:** `--color-table` / `--color-table-header` / `--color-table-divider`. No emoji. Hide Book cash from header. Reports aging stacked. Grid cards use the same paper (no raised elevation).
-- **Stacking:** unlayered CSS (Tailwind `z-[80]` / `z-[200]` lose to `.dialog-sheet { z-index: 60 }`). Confirm overlay 70 / sheet 80. `[data-party-list] { z-index: 90; pointer-events: auto }`. Radix popper wrapper z-index 120.
+- **Stacking:** unlayered CSS (Tailwind `z-[80]` / `z-[200]` lose to `.dialog-sheet { z-index: 60 }`). Confirm overlay 70 / sheet 80. `[data-party-list] { z-index: 90; pointer-events: auto }`. Radix popper wrapper z-index 120. Portaled combos/calendars use `placeFixedPopover` (visualViewport). Phone sheets top-align so the keyboard does not cover the form.
 - **Confirm:** dimmer-click does not dismiss when a phrase is required (Cancel / X still close). One Settings confirm for blank / reload / restore / remove.
 - **Desktop = Tauri 2.** Windows one-click must work when the unzip folder has parentheses. Taskbar and shortcut are the navy opaque tile. No auth. Preview `0.0.0.0:8080`.
 - **Git:** Eric Emerson Tan `<eric@local>`. Push `origin main`. Do not stage `.grok/`, `attachments/`, `screenshots/`.

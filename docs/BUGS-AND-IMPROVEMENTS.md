@@ -1,6 +1,17 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.21.
+Re-verified in code 2026-09-08. Updated for v3.63.22.
+
+## Fixed in v3.63.22
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| 1 | Med (UX) | P&L Grid cards were buttons with noop `onOpen` | `CardGrid` non-button tiles (same pattern as TB) |
+| 2 | Med (UX) | Employees Grid was open-only | Pay / Edit / Delete via `RowActions` on cards |
+| 3 | Low | Employees Pay (rate) defaulted center | Default align right; storage key `…-col-aligns-v3` (keeps prior prefs off the old key) |
+| 4 | Low | Aging Grid hid the Total | Total card under Grid (List already had a footer total) |
+| 5 | Med (UX) | TB Grid showed one amount (`debit \|\| credit`) | Debit and Credit both labeled on the card |
+| 6 | Low | TB / P&L Grid keyboard focus/open | Deferred — accounts are not openable; List keeps focus chrome |
 
 ## Fixed in v3.63.21
 

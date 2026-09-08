@@ -24,7 +24,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AGE_LABEL, AGE_ORDER, agingTotals, apAging, arAging, type AgingRow } from "@/lib/finance/aging";
 import { trialBalanceRows } from "@/lib/finance/export";
 import { fitColumnWidth } from "@/lib/finance/fit-column";
-import { formatDate, formatMoney, todayIso } from "@/lib/finance/format";
+import { formatDate, todayIso } from "@/lib/finance/format";
 import { incomeStatement, trialBalance, vatBalances } from "@/lib/finance/ledger";
 import { payrollRemittance } from "@/lib/finance/ph-payroll";
 import type { Account } from "@/lib/finance/types";
@@ -257,17 +257,25 @@ function AgingTable({
     return (
       <section>
         {heading}
-        <DocCards
-          empty="Nothing open."
-          rows={sort.sorted.map((row) => ({
-            id: row.id,
-            title: row.party,
-            meta: [row.number, formatDate(row.dueDate), AGE_LABEL[row.bucket]].filter(Boolean).join(" · "),
-            amount: row.amount,
-            currency,
-            onOpen: () => openTxn(kind, row.id),
-          }))}
-        />
+        <div className="space-y-3">
+          <DocCards
+            empty="Nothing open."
+            rows={sort.sorted.map((row) => ({
+              id: row.id,
+              title: row.party,
+              meta: [row.number, formatDate(row.dueDate), AGE_LABEL[row.bucket]].filter(Boolean).join(" · "),
+              amount: row.amount,
+              currency,
+              onOpen: () => openTxn(kind, row.id),
+            }))}
+          />
+          {rows.length > 0 ? (
+            <div className="item-card flex items-center justify-between gap-3">
+              <span className="item-card-title font-medium">Total</span>
+              <Money amount={grand} currency={currency} className="item-card-amount font-medium tabular-nums" />
+            </div>
+          ) : null}
+        </div>
       </section>
     );
   }
@@ -409,21 +417,24 @@ function TrialTable({
             <span className="item-card-title block min-w-0 break-words font-medium">
               <span className="text-muted-foreground">{row.account.code}</span> {row.account.name}
             </span>
-            <span className="item-card-meta mt-1 block break-words text-muted-foreground">
-              {[
-                row.debit ? `Dr ${formatMoney(row.debit, currency)}` : null,
-                row.credit ? `Cr ${formatMoney(row.credit, currency)}` : null,
-              ]
-                .filter(Boolean)
-                .join(" · ") || "—"}
-            </span>
-            {(row.debit || row.credit) ? (
-              <Money
-                amount={row.debit || row.credit}
-                currency={currency}
-                className="item-card-amount mt-1 font-medium tabular-nums"
-              />
-            ) : null}
+            <div className="item-card-meta mt-1 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 text-muted-foreground">
+              <span className="whitespace-nowrap">
+                Debit{" "}
+                {row.debit ? (
+                  <Money amount={row.debit} currency={currency} className="font-medium text-foreground tabular-nums" />
+                ) : (
+                  "—"
+                )}
+              </span>
+              <span className="whitespace-nowrap">
+                Credit{" "}
+                {row.credit ? (
+                  <Money amount={row.credit} currency={currency} className="font-medium text-foreground tabular-nums" />
+                ) : (
+                  "—"
+                )}
+              </span>
+            </div>
           </div>
         )}
       </CardGrid>
@@ -537,16 +548,21 @@ function PlTable({
   if (layout === "grid") {
     return (
       <div className="space-y-3">
-        <DocCards
-          empty="No income or expense accounts in range."
-          rows={sort.sorted.map((row) => ({
-            id: row.account.id,
-            title: `${row.account.code} ${row.account.name}`,
-            amount: row.account.type === "expense" ? -row.amount : row.amount,
-            currency,
-            onOpen: () => undefined,
-          }))}
-        />
+        <CardGrid items={sort.sorted} empty="No income or expense accounts in range." getId={(r) => r.account.id}>
+          {(row) => (
+            <div className="item-card">
+              <span className="item-card-title block min-w-0 break-words font-medium">
+                <span className="text-muted-foreground">{row.account.code}</span> {row.account.name}
+              </span>
+              <Money
+                amount={row.account.type === "expense" ? -row.amount : row.amount}
+                currency={currency}
+                signed
+                className="item-card-amount mt-1 font-medium tabular-nums"
+              />
+            </div>
+          )}
+        </CardGrid>
         <div className="item-card flex items-center justify-between gap-3">
           <span className="item-card-title font-medium">Net income</span>
           <Money amount={net} currency={currency} signed className="item-card-amount font-medium tabular-nums" />

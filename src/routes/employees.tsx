@@ -7,7 +7,7 @@ import { ConfirmDelete } from "@/components/confirm-delete";
 import { DateInput } from "@/components/date-input";
 import { Field } from "@/components/field";
 import { BankCombo } from "@/components/bank-combo";
-import { DocCards } from "@/components/doc-cards";
+import { CardGrid } from "@/components/doc-cards";
 import { ListViewMenu } from "@/components/list-view-menu";
 import { useListView } from "@/components/view-toggle";
 import { FilterPills, ListToolbar } from "@/components/filter-pills";
@@ -158,7 +158,7 @@ function EmployeesPage() {
   const sort = useEntrySort(filtered, "name", getters, "asc");
   const cols = useColWidths("finance-manager-employees-cols", EMP_COLS);
   const vis = useColVisible("finance-manager-employees-vis", EMP_VIS_IDS);
-  const colAligns = useColAligns("finance-manager-employees-col-aligns-v2", Object.keys(EMP_COLS) as Array<keyof typeof EMP_COLS>, { name: "left" });
+  const colAligns = useColAligns("finance-manager-employees-col-aligns-v3", Object.keys(EMP_COLS) as Array<keyof typeof EMP_COLS>, { name: "left", rate: "right" });
   const pointer = useTableKeyboardFocus({
     ids: sort.sorted.map((e) => e.id),
     onOpen: (id) => {
@@ -382,25 +382,53 @@ function EmployeesPage() {
       </ListToolbar>
 
       {view === "grid" ? (
-        <DocCards
+        <CardGrid
+          items={sort.sorted}
           empty={
             (data.employees ?? []).length === 0
               ? "No employees yet. Add someone to start payroll checks."
               : "No employees match this search or filter."
           }
-          rows={sort.sorted.map((e) => {
+          getId={(e) => e.id}
+          estimateSize={140}
+        >
+          {(e) => {
             const bank = data.banks.find((b) => b.id === e.bankId);
-            return {
-              id: e.id,
-              title: e.name,
-              meta: [e.title, e.payType === "hourly" ? "Hourly" : "Salary", bank?.nickname].filter(Boolean).join(" · "),
-              amount: e.rate,
-              currency: data.settings.currency,
-              status: <Badge variant={e.active ? "default" : "voided"}>{e.active ? "Active" : "Inactive"}</Badge>,
-              onOpen: () => openEdit(e),
-            };
-          })}
-        />
+            return (
+              <div className="item-card text-left">
+                <span className="flex items-start justify-between gap-2">
+                  <button type="button" className="item-card-title block min-w-0 break-words text-left font-medium hover:underline" onClick={() => openEdit(e)}>
+                    {e.name}
+                  </button>
+                  <Badge variant={e.active ? "default" : "voided"}>{e.active ? "Active" : "Inactive"}</Badge>
+                </span>
+                <span className="item-card-meta block break-words text-muted-foreground">
+                  {[e.title, e.payType === "hourly" ? "Hourly" : "Salary", bank?.nickname].filter(Boolean).join(" · ")}
+                </span>
+                <Money amount={e.rate} currency={data.settings.currency} className="item-card-amount mt-1 font-medium tabular-nums" />
+                <span className="item-card-meta text-muted-foreground">{e.payType === "hourly" ? "/ hr" : "/ mo"}</span>
+                <div className="mt-2" onClick={stopOpen} onDoubleClick={stopOpen} onPointerDown={stopOpen}>
+                  <RowActions
+                    primary={
+                      <Button size="sm" variant="outline" disabled={!e.active} onClick={() => openPay(e)}>
+                        Pay
+                      </Button>
+                    }
+                    primaryAsItem={
+                      e.active
+                        ? { label: "Pay", onSelect: () => openPay(e) }
+                        : undefined
+                    }
+                    items={[
+                      { label: "Edit", onSelect: () => openEdit(e) },
+                      { label: "Delete", onSelect: () => setDropId(e.id), danger: true },
+                    ]}
+                  />
+                </div>
+              </div>
+            );
+          }}
+        </CardGrid>
       ) : (
       <ListCard ref={pointer.bindContainer(gridRef)} tabIndex={0} className="outline-none" {...vis.hideAttrs}>
         <table ref={cols.tableRef} className="text-sm" style={listTableStyle(visibleTableWidth(cols.widths, vis.on))}>
@@ -413,7 +441,7 @@ function EmployeesPage() {
             <tr className="border-b border-border text-muted-foreground">
               <SortHeader label="Name" column="name" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.name} onWidth={(n) => cols.setWidth("name", n)} onFit={() => fit("name", "Name")} align={colAligns.aligns.name ?? "left"} onAlign={(a) => colAligns.setAlign("name", a)} fill />
               <SortHeader label="Title" column="title" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.title} onWidth={(n) => cols.setWidth("title", n)} onFit={() => fit("title", "Title")} align={colAligns.aligns.title ?? "center"} onAlign={(a) => colAligns.setAlign("title", a)} />
-              <SortHeader label="Pay" column="rate" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.rate} onWidth={(n) => cols.setWidth("rate", n)} onFit={() => fit("rate", "Pay")} align={colAligns.aligns.rate ?? "center"} onAlign={(a) => colAligns.setAlign("rate", a)} />
+              <SortHeader label="Pay" column="rate" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.rate} onWidth={(n) => cols.setWidth("rate", n)} onFit={() => fit("rate", "Pay")} align={colAligns.aligns.rate ?? "right"} onAlign={(a) => colAligns.setAlign("rate", a)} />
               <SortHeader label="Bank" column="bank" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.bank} onWidth={(n) => cols.setWidth("bank", n)} onFit={() => fit("bank", "Bank")} align={colAligns.aligns.bank ?? "center"} onAlign={(a) => colAligns.setAlign("bank", a)} />
               <SortHeader label="Status" column="status" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.status} onWidth={(n) => cols.setWidth("status", n)} onFit={() => fit("status", "Status")} align={colAligns.aligns.status ?? "center"} onAlign={(a) => colAligns.setAlign("status", a)} />
               <ActionsHeader width={cols.widths.actions} onWidth={(n) => cols.setWidth("actions", n)} onFit={() => fit("actions", "Actions")} />
@@ -453,7 +481,7 @@ function EmployeesPage() {
                       {e.email ? <p className="text-xs text-muted-foreground">{e.email}</p> : null}
                     </td>
                     <td className={cn("px-4 py-3 text-muted-foreground", alignClass(colAligns.aligns.title ?? "center"))} data-col="title" data-align={colAligns.aligns.title ?? "center"}>{e.title || "—"}</td>
-                    <td className={cn("px-4 py-3", alignClass(colAligns.aligns.rate ?? "center"))} data-col="rate" data-align={colAligns.aligns.rate ?? "center"}>
+                    <td className={cn("px-4 py-3", alignClass(colAligns.aligns.rate ?? "right"))} data-col="rate" data-align={colAligns.aligns.rate ?? "right"}>
                       <Money amount={e.rate} currency={data.settings.currency} />
                       <span className="ml-1 text-xs text-muted-foreground">{e.payType === "hourly" ? "/ hr" : "/ mo"}</span>
                     </td>

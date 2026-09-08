@@ -1,6 +1,12 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.31.
+Re-verified in code 2026-09-08. Updated for v3.63.32.
+
+## Fixed in v3.63.32
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| R3 | Low | Close Grid looked like stacked table rows | `item-cards` / `item-card` chrome (title + meta) |
 
 ## Fixed in v3.63.31
 

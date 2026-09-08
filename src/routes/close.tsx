@@ -283,7 +283,7 @@ function ChecklistTable({
   }
   if (layout === "grid") {
     return (
-      <div className="list-card overflow-hidden">
+      <div className="item-cards">
         {sort.sorted.length === 0 ? (
           <p className="px-4 py-6 text-center text-muted-foreground">Nothing in this filter.</p>
         ) : (
@@ -292,10 +292,7 @@ function ChecklistTable({
             return (
               <div
                 key={item.id}
-                className={cn(
-                  "border-b border-border/70 px-4 py-3 last:border-0",
-                  open && "cursor-pointer hover:bg-accent/40",
-                )}
+                className={cn("item-card", open && "cursor-pointer")}
                 data-row-id={item.id}
                 role={open ? "button" : undefined}
                 tabIndex={open ? 0 : undefined}
@@ -311,12 +308,12 @@ function ChecklistTable({
                     : undefined
                 }
               >
-                <div className="flex items-baseline justify-between gap-3">
-                  <p className="min-w-0 font-medium">{item.label}</p>
-                  <p className="shrink-0 text-muted-foreground">{item.ok ? "Clear" : "Blocked"}</p>
+                <div className="flex items-start justify-between gap-2">
+                  <span className="item-card-title block min-w-0 break-words font-medium">{item.label}</span>
+                  <span className="shrink-0 text-muted-foreground">{item.ok ? "Clear" : "Blocked"}</span>
                 </div>
                 <div className="mt-1 flex min-w-0 flex-wrap items-center gap-2">
-                  <span className="min-w-0 break-words text-muted-foreground">{item.detail}</span>
+                  <span className="item-card-meta min-w-0 break-words text-muted-foreground">{item.detail}</span>
                   {item.id === "recurring" && !item.ok && onPostDue ? (
                     <Button
                       size="sm"

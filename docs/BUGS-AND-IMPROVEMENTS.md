@@ -1,6 +1,12 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.28.
+Re-verified in code 2026-09-08. Updated for v3.63.29.
+
+## Fixed in v3.63.29
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| B2 | Docs | Still-open §R said party-combo was `absolute z-50` | Marked Fixed — list is already portaled `fixed` via `placeFixedPopover` |
 
 ## Fixed in v3.63.28
 
@@ -356,7 +362,7 @@ Re-verified in code 2026-09-05 (Asia/Manila). Updated for v3.62.47. UI direction
 | O | Low | Nested dialogs | ConfirmDelete overlay 70 / sheet 80 above Post `.dialog-sheet` 60. | Fixed (v3.63.2 / confirmed v3.63.21) |
 | P | Info | `actions.ts` | `@ts-nocheck` removed in v3.63.17. Create bags stay `AnyIn` so Quick Add extra keys type-check. | Fixed (v3.63.17) |
 | Q | Low | List virtualization | Banks, party dir/history, Reports aging/TB/P&L, chart of accounts, invoices/bills/receipts/checks/ledger/employees, Close/Forecast/Recurring, plus Grid cards (`CardGrid`). Register/Reconcile virt unchanged. | Improved (v3.63.17) |
-| R | Low | Party combo stacking | `party-combo` list is `absolute z-50` (not portaled). Fine inside dialogs; would clip inside `overflow: hidden` sheets. |
+| R | Low | Party combo stacking | Portaled `fixed` list via `placeFixedPopover` / `data-party-list` (same as DateInput). | Fixed (portaled; confirmed v3.63.29) |
 
 ## Areas of improvement
 

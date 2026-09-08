@@ -7025,9 +7025,10 @@ button.party-card-row {
   .dialog-sheet .journal-line-grid td[data-col="credit"],
   .dialog-sheet .journal-line-grid th[data-col="debit"],
   .dialog-sheet .journal-line-grid th[data-col="credit"] {
-    width: 5.75rem;
-    min-width: 5.75rem;
-    max-width: 6.5rem;
+    /* B1 / v3.63.25 — floor for ₱1,000,000.00 without clipping Account */
+    width: 8rem;
+    min-width: 7.5rem;
+    max-width: 8.5rem;
     white-space: nowrap !important;
     overflow: visible !important;
   }

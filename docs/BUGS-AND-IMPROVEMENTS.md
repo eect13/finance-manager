@@ -1,6 +1,12 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.24.
+Re-verified in code 2026-09-08. Updated for v3.63.25.
+
+## Fixed in v3.63.25
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| B1 | High | Journal phone Debit/Credit ~5.75rem clipped ₱1,000,000.00 onto Account | Widen floor to min 7.5rem / width 8rem / max 8.5rem |
 
 ## Fixed in v3.63.24
 

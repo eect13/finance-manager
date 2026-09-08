@@ -1,4 +1,4 @@
-# Finance Manager v3.63.20
+# Finance Manager v3.63.21
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -26,6 +26,11 @@ Unzip the repo (a second unzip named `finance-manager-main (1)` is fine) so `dep
 Vite is installed with the packages — no global `vite` command. `.npmrc` has `legacy-peer-deps=true`.
 
 After the Windows installer: **delete the leftover white shortcut** and pin the new one — shortcut and taskbar both use the navy pillars tile.
+
+## What's new in v3.63.21
+
+- **Reports:** Aging, Trial balance, and P&L get List|Grid like Invoices — cards show party/No./due/age/amount or account + amounts. Auto-fit columns when List is on. VAT and Payroll stay compact tables.
+- **Employees:** Pay/Edit/Delete no longer open the edit sheet; Grid cards show the bank nickname; summary is 2+1 on a phone; Name defaults left; rows hint double-tap to open.
 
 ## What's new in v3.63.20
 

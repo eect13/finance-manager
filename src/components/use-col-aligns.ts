@@ -29,15 +29,21 @@ export function headerJustify(align: ColAlign) {
   return "justify-start";
 }
 
-export function useColAligns<K extends string>(storageKey: string, columnIds: readonly K[]) {
+export function useColAligns<K extends string>(
+  storageKey: string,
+  columnIds: readonly K[],
+  defaults?: Partial<Record<K, ColAlign>>,
+) {
   const idKey = columnIds.join(",");
   const ids = useMemo(() => idKey.split(",") as K[], [idKey]);
+  const defaultsKey = JSON.stringify(defaults ?? {});
 
   const buildDefaults = useCallback(() => {
     const next = {} as Record<K, ColAlign>;
-    for (const id of ids) next[id] = defaultColAlign(id);
+    const preset = (defaults ?? {}) as Partial<Record<K, ColAlign>>;
+    for (const id of ids) next[id] = preset[id] ?? defaultColAlign(id);
     return next;
-  }, [ids]);
+  }, [ids, defaultsKey]);
 
   const [aligns, setAligns] = useState<Record<K, ColAlign>>(buildDefaults);
   const [hydrated, setHydrated] = useState(false);

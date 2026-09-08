@@ -33,6 +33,7 @@ import { formatMoney, parseAmountToCents, todayIso } from "@/lib/finance/format"
 import { computePhPayroll, periodPayAmount } from "@/lib/finance/ph-payroll";
 import { useEntrySort } from "@/lib/finance/sort";
 import { EMPTY_EMPLOYEE, type Employee, type PayPeriod, type PayType } from "@/lib/finance/types";
+import { stopOpen } from "@/lib/finance/open-record";
 import { useFinanceData, useFinanceStore } from "@/lib/finance/store";
 
 export const Route = createFileRoute("/employees")({ component: EmployeesPage });
@@ -157,7 +158,7 @@ function EmployeesPage() {
   const sort = useEntrySort(filtered, "name", getters, "asc");
   const cols = useColWidths("finance-manager-employees-cols", EMP_COLS);
   const vis = useColVisible("finance-manager-employees-vis", EMP_VIS_IDS);
-  const colAligns = useColAligns("finance-manager-employees-col-aligns", Object.keys(EMP_COLS) as Array<keyof typeof EMP_COLS>);
+  const colAligns = useColAligns("finance-manager-employees-col-aligns-v2", Object.keys(EMP_COLS) as Array<keyof typeof EMP_COLS>, { name: "left" });
   const pointer = useTableKeyboardFocus({
     ids: sort.sorted.map((e) => e.id),
     onOpen: (id) => {
@@ -312,7 +313,7 @@ function EmployeesPage() {
         </>
       }
     >
-      <section className="mb-4 grid grid-cols-3 gap-2">
+      <section className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
         <Card>
           <CardContent className="p-3 sm:p-5">
             <p className="eyebrow">Active</p>
@@ -387,15 +388,18 @@ function EmployeesPage() {
               ? "No employees yet. Add someone to start payroll checks."
               : "No employees match this search or filter."
           }
-          rows={sort.sorted.map((e) => ({
-            id: e.id,
-            title: e.name,
-            meta: [e.title, e.payType === "hourly" ? "Hourly" : "Salary"].filter(Boolean).join(" · "),
-            amount: e.rate,
-            currency: data.settings.currency,
-            status: <Badge variant={e.active ? "default" : "voided"}>{e.active ? "Active" : "Inactive"}</Badge>,
-            onOpen: () => openEdit(e),
-          }))}
+          rows={sort.sorted.map((e) => {
+            const bank = data.banks.find((b) => b.id === e.bankId);
+            return {
+              id: e.id,
+              title: e.name,
+              meta: [e.title, e.payType === "hourly" ? "Hourly" : "Salary", bank?.nickname].filter(Boolean).join(" · "),
+              amount: e.rate,
+              currency: data.settings.currency,
+              status: <Badge variant={e.active ? "default" : "voided"}>{e.active ? "Active" : "Inactive"}</Badge>,
+              onOpen: () => openEdit(e),
+            };
+          })}
         />
       ) : (
       <ListCard ref={pointer.bindContainer(gridRef)} tabIndex={0} className="outline-none" {...vis.hideAttrs}>
@@ -407,7 +411,7 @@ function EmployeesPage() {
           </colgroup>
           <thead>
             <tr className="border-b border-border text-muted-foreground">
-              <SortHeader label="Name" column="name" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.name} onWidth={(n) => cols.setWidth("name", n)} onFit={() => fit("name", "Name")} align={colAligns.aligns.name ?? "center"} onAlign={(a) => colAligns.setAlign("name", a)} fill />
+              <SortHeader label="Name" column="name" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.name} onWidth={(n) => cols.setWidth("name", n)} onFit={() => fit("name", "Name")} align={colAligns.aligns.name ?? "left"} onAlign={(a) => colAligns.setAlign("name", a)} fill />
               <SortHeader label="Title" column="title" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.title} onWidth={(n) => cols.setWidth("title", n)} onFit={() => fit("title", "Title")} align={colAligns.aligns.title ?? "center"} onAlign={(a) => colAligns.setAlign("title", a)} />
               <SortHeader label="Pay" column="rate" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.rate} onWidth={(n) => cols.setWidth("rate", n)} onFit={() => fit("rate", "Pay")} align={colAligns.aligns.rate ?? "center"} onAlign={(a) => colAligns.setAlign("rate", a)} />
               <SortHeader label="Bank" column="bank" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.bank} onWidth={(n) => cols.setWidth("bank", n)} onFit={() => fit("bank", "Bank")} align={colAligns.aligns.bank ?? "center"} onAlign={(a) => colAligns.setAlign("bank", a)} />
@@ -438,10 +442,11 @@ function EmployeesPage() {
                     data-focused={pointer.activeId === e.id ? "true" : undefined}
                     data-row-id={e.id}
                     aria-current={pointer.activeId === e.id ? "true" : undefined}
+                    title="Double-tap, double-click, or press Enter to open"
                     onClick={() => pointer.setActiveId(e.id)}
                     onDoubleClick={() => openEdit(e)}
                   >
-                    <td className={cn("px-4 py-3", alignClass(colAligns.aligns.name ?? "center"))} data-col="name" data-align={colAligns.aligns.name ?? "center"}>
+                    <td className={cn("px-4 py-3", alignClass(colAligns.aligns.name ?? "left"))} data-col="name" data-align={colAligns.aligns.name ?? "left"}>
                       <button type="button" className="font-medium hover:underline" onClick={() => openEdit(e)}>
                         {e.name}
                       </button>
@@ -456,7 +461,7 @@ function EmployeesPage() {
                     <td className={cn("px-4 py-3", alignClass(colAligns.aligns.status ?? "center"))} data-col="status" data-align={colAligns.aligns.status ?? "center"}>
                       <Badge variant={e.active ? "default" : "voided"}>{e.active ? "Active" : "Inactive"}</Badge>
                     </td>
-                    <td className="col-actions" data-col="actions">
+                    <td className="col-actions" data-col="actions" onClick={stopOpen} onDoubleClick={stopOpen} onPointerDown={stopOpen}>
                       <RowActions
                         primary={
                           <Button size="sm" variant="outline" disabled={!e.active} onClick={() => openPay(e)}>

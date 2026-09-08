@@ -3,6 +3,7 @@ import { useMemo, useRef, useState } from "react";
 import { Printer } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { DateInput } from "@/components/date-input";
+import { CardGrid, DocCards } from "@/components/doc-cards";
 import { CsvButton } from "@/components/export-menu";
 import { ListToolbar } from "@/components/filter-pills";
 import { ReportsPrint } from "@/components/period-print";
@@ -14,6 +15,7 @@ import { useColWidths } from "@/components/use-col-widths";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
 import { useColVisible, visibleTableWidth, viewColumnExtra } from "@/components/column-chips";
 import { ListViewMenu } from "@/components/list-view-menu";
+import { useListView } from "@/components/view-toggle";
 import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
 import { useListVirtualizer, VirtPad } from "@/components/use-list-virtualizer";
 import { cn } from "@/lib/utils";
@@ -22,7 +24,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AGE_LABEL, AGE_ORDER, agingTotals, apAging, arAging, type AgingRow } from "@/lib/finance/aging";
 import { trialBalanceRows } from "@/lib/finance/export";
 import { fitColumnWidth } from "@/lib/finance/fit-column";
-import { formatDate, todayIso } from "@/lib/finance/format";
+import { formatDate, formatMoney, todayIso } from "@/lib/finance/format";
 import { incomeStatement, trialBalance, vatBalances } from "@/lib/finance/ledger";
 import { payrollRemittance } from "@/lib/finance/ph-payroll";
 import type { Account } from "@/lib/finance/types";
@@ -61,6 +63,13 @@ function ReportsPage() {
   const ageVis = useColVisible("finance-manager-aging-vis", AGE_VIS_IDS);
   const tbVis = useColVisible("finance-manager-tb-vis", TB_VIS_IDS);
   const plVis = useColVisible("finance-manager-pl-vis", PL_VIS_IDS);
+  const [ageView, setAgeView] = useListView("reports-aging");
+  const [tbView, setTbView] = useListView("reports-tb");
+  const [plView, setPlView] = useListView("reports-pl");
+  const ageFitAr = useRef<(() => void) | null>(null);
+  const ageFitAp = useRef<(() => void) | null>(null);
+  const tbFit = useRef<(() => void) | null>(null);
+  const plFit = useRef<(() => void) | null>(null);
   const tb = useMemo(() => trialBalance(data, asOf), [data, asOf]);
   const pl = useMemo(() => incomeStatement(data, asOf), [data, asOf]);
   const debit = tb.reduce((s, r) => s + r.debit, 0);
@@ -114,29 +123,47 @@ function ReportsPage() {
         </TabsList>
         <TabsContent value="aging">
           <ListToolbar query={query} onQuery={setQuery} placeholder="Search party or number" label="Search aging">
-            <ListViewMenu hiddenCount={ageVis.hiddenCount} extra={viewColumnExtra(AGE_CHIPS, ageVis)} />
+            <ListViewMenu
+              layout={ageView}
+              onLayout={setAgeView}
+              hiddenCount={ageVis.hiddenCount}
+              extra={viewColumnExtra(AGE_CHIPS, ageVis)}
+              onFitAll={ageView === "list" ? () => { ageFitAr.current?.(); ageFitAp.current?.(); } : undefined}
+            />
           </ListToolbar>
           <div className="reports-aging">
-            <AgingTable title="Receivables" kind="invoice" rows={arVisible} currency={settings.currency} vis={ageVis} />
-            <AgingTable title="Payables" kind="bill" rows={apVisible} currency={settings.currency} vis={ageVis} />
+            <AgingTable title="Receivables" kind="invoice" rows={arVisible} currency={settings.currency} vis={ageVis} layout={ageView} registerFit={(fn) => { ageFitAr.current = fn; }} />
+            <AgingTable title="Payables" kind="bill" rows={apVisible} currency={settings.currency} vis={ageVis} layout={ageView} registerFit={(fn) => { ageFitAp.current = fn; }} />
           </div>
         </TabsContent>
         <TabsContent value="tb">
           <ListToolbar query={query} onQuery={setQuery} placeholder="Search account" label="Search trial balance">
-            <ListViewMenu hiddenCount={tbVis.hiddenCount} extra={viewColumnExtra(TB_CHIPS, tbVis)} />
+            <ListViewMenu
+              layout={tbView}
+              onLayout={setTbView}
+              hiddenCount={tbVis.hiddenCount}
+              extra={viewColumnExtra(TB_CHIPS, tbVis)}
+              onFitAll={tbView === "list" ? () => { tbFit.current?.(); } : undefined}
+            />
           </ListToolbar>
           <p className="mb-3 text-sm text-muted-foreground">
             Debits <Money amount={debit} currency={settings.currency} /> · Credits{" "}
             <Money amount={credit} currency={settings.currency} />
             {debit !== credit ? " — out of balance." : ""}
           </p>
-          <TrialTable rows={tbVisible} currency={settings.currency} vis={tbVis} />
+          <TrialTable rows={tbVisible} currency={settings.currency} vis={tbVis} layout={tbView} registerFit={(fn) => { tbFit.current = fn; }} />
         </TabsContent>
         <TabsContent value="pl">
           <ListToolbar query={query} onQuery={setQuery} placeholder="Search account" label="Search profit and loss">
-            <ListViewMenu hiddenCount={plVis.hiddenCount} extra={viewColumnExtra(PL_CHIPS, plVis)} />
+            <ListViewMenu
+              layout={plView}
+              onLayout={setPlView}
+              hiddenCount={plVis.hiddenCount}
+              extra={viewColumnExtra(PL_CHIPS, plVis)}
+              onFitAll={plView === "list" ? () => { plFit.current?.(); } : undefined}
+            />
           </ListToolbar>
-          <PlTable rows={plVisible} net={pl.net} currency={settings.currency} vis={plVis} />
+          <PlTable rows={plVisible} net={pl.net} currency={settings.currency} vis={plVis} layout={plView} registerFit={(fn) => { plFit.current = fn; }} />
         </TabsContent>
         <TabsContent value="vat">
           <VatPanel asOf={asOf} currency={settings.currency} />
@@ -156,12 +183,16 @@ function AgingTable({
   rows,
   currency,
   vis,
+  layout,
+  registerFit,
 }: {
   title: string;
   kind: "invoice" | "bill";
   rows: AgingRow[];
   currency: string;
   vis: ReturnType<typeof useColVisible>;
+  layout: "list" | "grid";
+  registerFit?: (fitAll: () => void) => void;
 }) {
   const totals = agingTotals(rows);
   const grand = rows.reduce((s, r) => s + r.amount, 0);
@@ -183,6 +214,13 @@ function AgingTable({
     age: 72,
     amount: 176,
   } as const;
+  const AGE_FIT_LABELS: Record<keyof typeof AGE_COLS, string> = {
+    party: "Party",
+    number: "No.",
+    due: "Due",
+    age: "Age",
+    amount: "Open",
+  };
   const cols = useColWidths(`finance-manager-aging-${kind}-cols`, AGE_COLS);
   const colAligns = useColAligns(`finance-manager-aging-${kind}-col-aligns`, Object.keys(AGE_COLS) as Array<keyof typeof AGE_COLS>);
   const gridRef = useRef<HTMLDivElement>(null);
@@ -190,14 +228,21 @@ function AgingTable({
     ids: sort.sorted.map((r) => r.id),
     onOpen: (id) => openTxn(kind, id),
   });
-  const listVirt = useListVirtualizer(sort.sorted.length, gridRef, (index) => sort.sorted[index]?.id ?? index);
+  const listVirt = useListVirtualizer(sort.sorted.length, gridRef, (index) => sort.sorted[index]?.id ?? index, 48, layout === "list");
   function fit(id: keyof typeof AGE_COLS, label: string) {
     const table = gridRef.current?.querySelector("table");
     if (!table) return;
     cols.setWidth(id, fitColumnWidth({ table, selector: `td[data-col="${id}"]`, header: label }));
   }
-  return (
-    <section>
+  function fitAll() {
+    (Object.keys(AGE_COLS) as Array<keyof typeof AGE_COLS>).forEach((id) => {
+      if (vis.on[id] === false) return;
+      fit(id, AGE_FIT_LABELS[id]);
+    });
+  }
+  registerFit?.(fitAll);
+  const heading = (
+    <>
       <h2 className="font-display mb-2 text-lg font-medium">{title}</h2>
       <p className="mb-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
         {AGE_ORDER.map((bucket) => (
@@ -206,6 +251,29 @@ function AgingTable({
           </span>
         ))}
       </p>
+    </>
+  );
+  if (layout === "grid") {
+    return (
+      <section>
+        {heading}
+        <DocCards
+          empty="Nothing open."
+          rows={sort.sorted.map((row) => ({
+            id: row.id,
+            title: row.party,
+            meta: [row.number, formatDate(row.dueDate), AGE_LABEL[row.bucket]].filter(Boolean).join(" · "),
+            amount: row.amount,
+            currency,
+            onOpen: () => openTxn(kind, row.id),
+          }))}
+        />
+      </section>
+    );
+  }
+  return (
+    <section>
+      {heading}
       <div
         ref={pointer.bindContainer(gridRef)}
         tabIndex={0}
@@ -292,7 +360,19 @@ const TB_COLS = {
   credit: 176,
 } as const;
 
-function TrialTable({ rows, currency, vis }: { rows: TbRow[]; currency: string; vis: ReturnType<typeof useColVisible> }) {
+function TrialTable({
+  rows,
+  currency,
+  vis,
+  layout,
+  registerFit,
+}: {
+  rows: TbRow[];
+  currency: string;
+  vis: ReturnType<typeof useColVisible>;
+  layout: "list" | "grid";
+  registerFit?: (fitAll: () => void) => void;
+}) {
   const cols = useColWidths("finance-manager-tb-cols", TB_COLS);
   const colAligns = useColAligns("finance-manager-tb-col-aligns", Object.keys(TB_COLS) as Array<keyof typeof TB_COLS>);
   const gridRef = useRef<HTMLDivElement>(null);
@@ -308,11 +388,46 @@ function TrialTable({ rows, currency, vis }: { rows: TbRow[]; currency: string; 
   const pointer = useTableKeyboardFocus({
     ids: sort.sorted.map((r) => r.account.id),
   });
-  const listVirt = useListVirtualizer(sort.sorted.length, gridRef, (index) => sort.sorted[index]?.account.id ?? index);
+  const listVirt = useListVirtualizer(sort.sorted.length, gridRef, (index) => sort.sorted[index]?.account.id ?? index, 48, layout === "list");
   function fit(id: keyof typeof TB_COLS, label: string) {
     const table = gridRef.current?.querySelector("table");
     if (!table) return;
     cols.setWidth(id, fitColumnWidth({ table, selector: `td[data-col="${id}"]`, header: label }));
+  }
+  function fitAll() {
+    (Object.keys(TB_COLS) as Array<keyof typeof TB_COLS>).forEach((id) => {
+      if (vis.on[id] === false) return;
+      fit(id, id === "account" ? "Account" : id === "debit" ? "Debit" : "Credit");
+    });
+  }
+  registerFit?.(fitAll);
+  if (layout === "grid") {
+    return (
+      <CardGrid items={sort.sorted} empty="No accounts on the trial balance." getId={(r) => r.account.id}>
+        {(row) => (
+          <div className="item-card">
+            <span className="item-card-title block min-w-0 break-words font-medium">
+              <span className="text-muted-foreground">{row.account.code}</span> {row.account.name}
+            </span>
+            <span className="item-card-meta mt-1 block break-words text-muted-foreground">
+              {[
+                row.debit ? `Dr ${formatMoney(row.debit, currency)}` : null,
+                row.credit ? `Cr ${formatMoney(row.credit, currency)}` : null,
+              ]
+                .filter(Boolean)
+                .join(" · ") || "—"}
+            </span>
+            {(row.debit || row.credit) ? (
+              <Money
+                amount={row.debit || row.credit}
+                currency={currency}
+                className="item-card-amount mt-1 font-medium tabular-nums"
+              />
+            ) : null}
+          </div>
+        )}
+      </CardGrid>
+    );
   }
   return (
     <div
@@ -377,7 +492,21 @@ const PL_COLS = {
   amount: 176,
 } as const;
 
-function PlTable({ rows, net, currency, vis }: { rows: PlRow[]; net: number; currency: string; vis: ReturnType<typeof useColVisible> }) {
+function PlTable({
+  rows,
+  net,
+  currency,
+  vis,
+  layout,
+  registerFit,
+}: {
+  rows: PlRow[];
+  net: number;
+  currency: string;
+  vis: ReturnType<typeof useColVisible>;
+  layout: "list" | "grid";
+  registerFit?: (fitAll: () => void) => void;
+}) {
   const cols = useColWidths("finance-manager-pl-cols", PL_COLS);
   const colAligns = useColAligns("finance-manager-pl-col-aligns", Object.keys(PL_COLS) as Array<keyof typeof PL_COLS>);
   const gridRef = useRef<HTMLDivElement>(null);
@@ -392,11 +521,38 @@ function PlTable({ rows, net, currency, vis }: { rows: PlRow[]; net: number; cur
   const pointer = useTableKeyboardFocus({
     ids: sort.sorted.map((r) => r.account.id),
   });
-  const listVirt = useListVirtualizer(sort.sorted.length, gridRef, (index) => sort.sorted[index]?.account.id ?? index);
+  const listVirt = useListVirtualizer(sort.sorted.length, gridRef, (index) => sort.sorted[index]?.account.id ?? index, 48, layout === "list");
   function fit(id: keyof typeof PL_COLS, label: string) {
     const table = gridRef.current?.querySelector("table");
     if (!table) return;
     cols.setWidth(id, fitColumnWidth({ table, selector: `td[data-col="${id}"]`, header: label }));
+  }
+  function fitAll() {
+    (Object.keys(PL_COLS) as Array<keyof typeof PL_COLS>).forEach((id) => {
+      if (vis.on[id] === false) return;
+      fit(id, id === "account" ? "Account" : "Amount");
+    });
+  }
+  registerFit?.(fitAll);
+  if (layout === "grid") {
+    return (
+      <div className="space-y-3">
+        <DocCards
+          empty="No income or expense accounts in range."
+          rows={sort.sorted.map((row) => ({
+            id: row.account.id,
+            title: `${row.account.code} ${row.account.name}`,
+            amount: row.account.type === "expense" ? -row.amount : row.amount,
+            currency,
+            onOpen: () => undefined,
+          }))}
+        />
+        <div className="item-card flex items-center justify-between gap-3">
+          <span className="item-card-title font-medium">Net income</span>
+          <Money amount={net} currency={currency} signed className="item-card-amount font-medium tabular-nums" />
+        </div>
+      </div>
+    );
   }
   return (
     <div

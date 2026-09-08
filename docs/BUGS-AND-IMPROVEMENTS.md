@@ -1,6 +1,20 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.20.
+Re-verified in code 2026-09-08. Updated for v3.63.21.
+
+## Fixed in v3.63.21
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| R1 | Med (UX) | Reports Aging / TB / P&L had column chips but no List\|Grid | `useListView` + View layout on those tabs; Grid via `DocCards` / `CardGrid` (Aging: party, No., due, age, amount; TB/P&L: account + amounts). VAT / Payroll stay compact tables |
+| R2 | Low | Reports View had no Auto-fit | `onFitAll` when layout is List (fits AR+AP on Aging) |
+| E1 | Med | Employees Pay / Edit / Delete opened the edit sheet | Actions `td` `stopOpen` like Banks / Checks |
+| E2 | Low | Employees Grid hid the pay bank | Bank nickname on card meta |
+| E3 | Low | Employees summary forced `grid-cols-3` on phone | `grid-cols-2 sm:grid-cols-3` (2+1 on narrow) |
+| E4 | Low | Employees Name defaulted center | Name default align left (Status stays center) |
+| E5 | Low | Employees rows had no open hint | Row `title` like `openProps` |
+| D1 | Docs | Still open / Areas lagged statutory PH + VAT | Marked done below |
+| K1 | Low | ConfirmDelete vs Post stacking | Already unlayered overlay 70 / sheet 80 above `.dialog-sheet` 60 (v3.63.2); note O closed |
 
 ## Fixed in v3.63.20
 
@@ -266,7 +280,7 @@ Re-verified in code 2026-09-05 (Asia/Manila). Updated for v3.62.47. UI direction
 | 3 | Low | Invoices list had no empty-state row | Empty / no-match message |
 | 4 | Low | `DropdownMenuContent` stayed at `z-50` while Select/Popover use `z-[200]` | Raised Export (and other) menus to `z-[200]` |
 
-## Still open (known) — re-verified in code 2026-09-05
+## Still open (known) — re-verified in code 2026-09-08
 
 | # | Severity | Area | Notes | Status |
 | --- | --- | --- | --- | --- |
@@ -276,7 +290,7 @@ Re-verified in code 2026-09-05 (Asia/Manila). Updated for v3.62.47. UI direction
 | D | Low | `ensureOutputVat` | Now `ensureSystemAccounts` (2200 / 1300 / 2210). Lookups still use `code`. | Improved (v3.63.0) |
 | E | Low | Debounced persist (~280ms) | `beforeunload` + `pagehide` / `visibilitychange` flush. Crash can still drop a beat. | Improved (v3.63.0) |
 | F | Low | `patchJournalAmount` | Still used for check / payment receipt / untaxed bill / deposit / expense / transfer (2-line). **Do not** use for multi-line VAT. | Still open (safe for 2-line) |
-| G | Med (product) | Thin payroll | Pay period, batch Pay all active (salary), `employeeId` on checks. No 13th month / statutory PH engine. | Improved (v3.63.13) |
+| G | Med (product) | Thin payroll | Pay period, batch Pay all active, `employeeId`. 2026 SSS/PhilHealth/Pag-IBIG/TRAIN + Reports → Payroll (v3.63.17). Not BIR annualization / 1601-C filing / 13th month. | Fixed (statutory; filing still out of scope) |
 | H | — | Android APK | Solo path improved in v3.59 (JDK 17, NDK resolve, symlink fallback, auto-sign). Still needs SDK+NDK on the machine. | Improved (env) |
 
 ## New findings (confirmed) — not yet fixed or deferred
@@ -289,7 +303,7 @@ Re-verified in code 2026-09-05 (Asia/Manila). Updated for v3.62.47. UI direction
 | L | Info | Dead / unused | `src/lib/multiplayer/p2p.ts` deleted in v3.63.17. Multi-device is company-file merge by id (Settings → Bring in from another device). | Fixed (v3.63.17) |
 | M | Low | `removeCashLines` | All-or-nothing; `assertOpenPeriod` on each line; toast is unique deletes. | Fixed (v3.63.10) |
 | N | Low | Register virtualizer | Uses `getWorkspaceScrollElement()` (`main[data-workspace-scroll]`). Full AppShell ref still optional. |
-| O | Low | Nested dialogs | Post **Delete** opens `ConfirmDelete` (both Dialog z-50). Sibling order puts confirm on top today; a dedicated higher z on confirm would be safer than relying on DOM order. |
+| O | Low | Nested dialogs | ConfirmDelete overlay 70 / sheet 80 above Post `.dialog-sheet` 60. | Fixed (v3.63.2 / confirmed v3.63.21) |
 | P | Info | `actions.ts` | `@ts-nocheck` removed in v3.63.17. Create bags stay `AnyIn` so Quick Add extra keys type-check. | Fixed (v3.63.17) |
 | Q | Low | List virtualization | Banks, party dir/history, Reports aging/TB/P&L, chart of accounts, invoices/bills/receipts/checks/ledger/employees, Close/Forecast/Recurring, plus Grid cards (`CardGrid`). Register/Reconcile virt unchanged. | Improved (v3.63.17) |
 | R | Low | Party combo stacking | `party-combo` list is `absolute z-50` (not portaled). Fine inside dialogs; would clip inside `overflow: hidden` sheets. |
@@ -300,9 +314,9 @@ Re-verified in code 2026-09-05 (Asia/Manila). Updated for v3.62.47. UI direction
 2. **List virtualization** — Register pattern is on the large lists, Close/Forecast/Recurring, and Grid cards. VAT panel and record-sheet lines stay unwindowed (tiny).
 3. **Code-split** — `tanstackStart({ router: { autoCodeSplitting: true } })` in v3.63.17. Optional `manualChunks` still open.
 4. **Tauri / Android** — Validate WebView IDB persistence; share/save company JSON; cold-start via splits. Solo APK path improved in v3.59; still needs SDK+NDK installed.
-5. **Payroll depth** — 2026 SSS/PhilHealth/Pag-IBIG/TRAIN + period slice + Reports Payroll in v3.63.17. Not a BIR annualization / 1601-C filing engine.
+5. **Payroll depth** — Statutory PH engine shipped (v3.63.17). Still open: BIR annualization, 1601-C filing export, 13th month.
 6. **Multi-device** — Company-file merge by id (local wins, incoming-only rows added). Open still replaces. P2P stub deleted.
-7. **Purchase VAT** — Input VAT on bills + VAT payable/receivable reports.
+7. **Purchase VAT** — Done (v3.63.0): Input VAT on bills + Reports → VAT. Still open: BIR return export.
 8. **Invoice edit UX** — Surface tax as document field clearly so Settings toggle never feels like it rewrites history (partially: Tax % on create/edit when tax enabled).
 9. **“All dates” copy** — Align README (“through today”) with code (`to: ""`) or cap `dateTo` at `todayIso()`.
 10. **Field `htmlFor` / input ids** — Wire labels for keyboard and screen-reader focus.

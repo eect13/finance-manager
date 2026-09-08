@@ -6992,7 +6992,8 @@ button.party-card-row {
 }
 
 /* v3.63.23 — Close List|Grid; party txn Grid; journal sheet columns fit */
-.dialog-sheet {
+/* v3.63.24 — P1: hug height only on journal sheets (keep tall Post/Receive/Employee) */
+.dialog-sheet:has(.journal-line-grid) {
   align-content: start;
   height: fit-content;
 }

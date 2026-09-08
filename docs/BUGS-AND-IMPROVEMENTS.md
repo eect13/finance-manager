@@ -1,6 +1,12 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.23.
+Re-verified in code 2026-09-08. Updated for v3.63.24.
+
+## Fixed in v3.63.24
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| P1 | Med | Global `.dialog-sheet` hug (`height: fit-content`) could break tall Post/Receive/Employee sheets | Scope hug to `.dialog-sheet:has(.journal-line-grid)` only |
 
 ## Fixed in v3.63.23
 

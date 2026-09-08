@@ -924,7 +924,7 @@ function JournalLineTable({
   const data = useFinanceData();
   const wrapRef = useRef<HTMLDivElement>(null);
   const cols = useColWidths("finance-manager-journal-line-cols", JL_COLS);
-  const colAligns = useColAligns("finance-manager-journal-line-col-aligns", Object.keys(JL_COLS) as Array<keyof typeof JL_COLS>);
+  const colAligns = useColAligns("finance-manager-journal-line-col-aligns-v2", Object.keys(JL_COLS) as Array<keyof typeof JL_COLS>, { debit: "right", credit: "right" });
   const getters = useMemo(
     () => ({
       account: (line: (typeof entry.lines)[number]) => {
@@ -970,8 +970,8 @@ function JournalLineTable({
         <thead>
           <tr className="border-b border-border text-muted-foreground">
             <SortHeader compact label="Account" column="account" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={narrow ? undefined : cols.widths.account} onWidth={narrow ? undefined : (n) => cols.setWidth("account", n)} onFit={narrow ? undefined : () => fit("account", "Account")} align={colAligns.aligns.account ?? "center"} onAlign={(a) => colAligns.setAlign("account", a)} fill />
-            <SortHeader compact label="Debit" column="debit" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={narrow ? undefined : cols.widths.debit} onWidth={narrow ? undefined : (n) => cols.setWidth("debit", n)} onFit={narrow ? undefined : () => fit("debit", "Debit")} align={colAligns.aligns.debit ?? "center"} onAlign={(a) => colAligns.setAlign("debit", a)} />
-            <SortHeader compact label="Credit" column="credit" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={narrow ? undefined : cols.widths.credit} onWidth={narrow ? undefined : (n) => cols.setWidth("credit", n)} onFit={narrow ? undefined : () => fit("credit", "Credit")} align={colAligns.aligns.credit ?? "center"} onAlign={(a) => colAligns.setAlign("credit", a)} />
+            <SortHeader compact label="Debit" column="debit" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={narrow ? undefined : cols.widths.debit} onWidth={narrow ? undefined : (n) => cols.setWidth("debit", n)} onFit={narrow ? undefined : () => fit("debit", "Debit")} align={colAligns.aligns.debit ?? "right"} onAlign={(a) => colAligns.setAlign("debit", a)} />
+            <SortHeader compact label="Credit" column="credit" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={narrow ? undefined : cols.widths.credit} onWidth={narrow ? undefined : (n) => cols.setWidth("credit", n)} onFit={narrow ? undefined : () => fit("credit", "Credit")} align={colAligns.aligns.credit ?? "right"} onAlign={(a) => colAligns.setAlign("credit", a)} />
           </tr>
         </thead>
         <tbody>
@@ -980,8 +980,8 @@ function JournalLineTable({
             return (
               <tr key={line.id} className="border-b border-border/70 last:border-0">
                 <td className={cn("py-2 text-muted-foreground", alignClass(colAligns.aligns.account ?? "center"), narrow && "break-words [overflow-wrap:anywhere]")} data-col="account" data-align={colAligns.aligns.account ?? "center"}>{account ? `${account.code} ${account.name}` : line.accountId}</td>
-                <td className={cn("py-2 whitespace-nowrap tabular-nums", alignClass(colAligns.aligns.debit ?? "center"))} data-col="debit" data-align={colAligns.aligns.debit ?? "center"}>{line.debit ? <Money amount={line.debit} currency={currency} /> : "—"}</td>
-                <td className={cn("py-2 whitespace-nowrap tabular-nums", alignClass(colAligns.aligns.credit ?? "center"))} data-col="credit" data-align={colAligns.aligns.credit ?? "center"}>{line.credit ? <Money amount={line.credit} currency={currency} /> : "—"}</td>
+                <td className={cn("py-2 whitespace-nowrap tabular-nums", alignClass(colAligns.aligns.debit ?? "right"))} data-col="debit" data-align={colAligns.aligns.debit ?? "right"}>{line.debit ? <Money amount={line.debit} currency={currency} /> : "—"}</td>
+                <td className={cn("py-2 whitespace-nowrap tabular-nums", alignClass(colAligns.aligns.credit ?? "right"))} data-col="credit" data-align={colAligns.aligns.credit ?? "right"}>{line.credit ? <Money amount={line.credit} currency={currency} /> : "—"}</td>
               </tr>
             );
           })}

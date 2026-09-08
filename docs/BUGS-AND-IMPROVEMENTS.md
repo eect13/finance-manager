@@ -1,6 +1,12 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.32.
+Re-verified in code 2026-09-08. Updated for v3.63.33.
+
+## Fixed in v3.63.33
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| R5 | Low | Journal Debit/Credit defaulted center | Default align right; storage key `…-col-aligns-v2` |
 
 ## Fixed in v3.63.32
 

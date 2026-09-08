@@ -1,6 +1,12 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.26.
+Re-verified in code 2026-09-08. Updated for v3.63.27.
+
+## Fixed in v3.63.27
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| R1 | Med (UX) | Party txn Grid showed Amount only | DocCards Open (+ Balance in a wrapping meta row when there is room) |
 
 ## Fixed in v3.63.26
 

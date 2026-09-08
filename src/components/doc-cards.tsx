@@ -75,6 +75,10 @@ export function DocCards({
     title: string;
     meta?: string;
     amount?: number;
+    /** Optional open balance (party txn Grid). */
+    open?: number | null;
+    /** Optional running balance; wraps under Open when the card is narrow. */
+    balance?: number | null;
     currency?: string;
     status?: ReactNode;
     onOpen: () => void;
@@ -95,6 +99,30 @@ export function DocCards({
               currency={row.currency ?? ""}
               className="item-card-amount mt-1 font-medium tabular-nums"
             />
+          ) : null}
+          {row.open != null || row.balance != null ? (
+            <div className="item-card-meta mt-1 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-muted-foreground">
+              {row.open != null ? (
+                <span className="whitespace-nowrap">
+                  Open{" "}
+                  <Money
+                    amount={row.open}
+                    currency={row.currency ?? ""}
+                    className="font-medium text-foreground tabular-nums"
+                  />
+                </span>
+              ) : null}
+              {row.balance != null ? (
+                <span className="item-card-balance whitespace-nowrap">
+                  Balance{" "}
+                  <Money
+                    amount={row.balance}
+                    currency={row.currency ?? ""}
+                    className="font-medium text-foreground tabular-nums"
+                  />
+                </span>
+              ) : null}
+            </div>
           ) : null}
         </button>
       )}

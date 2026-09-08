@@ -209,6 +209,8 @@ export function PartyTxnTable({
               ? `${formatRegisterDate(row.date)} · ${row.memo}`
               : formatRegisterDate(row.date),
             amount: row.amount,
+            open: row.open || null,
+            balance: row.balance,
             currency,
             status: <TxnBadge row={row} />,
             onOpen: () => openTxn(row.openKind, row.id),

@@ -209,6 +209,7 @@ export function PartyTxnTable({
               ? `${formatRegisterDate(row.date)} · ${row.memo}`
               : formatRegisterDate(row.date),
             amount: row.amount,
+            amountClassName: row.openKind === "receipt" || row.openKind === "check" ? "text-credit" : undefined,
             open: row.open || null,
             balance: row.balance,
             currency,

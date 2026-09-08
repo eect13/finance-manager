@@ -75,6 +75,8 @@ export function DocCards({
     title: string;
     meta?: string;
     amount?: number;
+    /** Optional tone for the primary amount (e.g. text-credit). */
+    amountClassName?: string;
     /** Optional open balance (party txn Grid). */
     open?: number | null;
     /** Optional running balance; wraps under Open when the card is narrow. */
@@ -97,7 +99,7 @@ export function DocCards({
             <Money
               amount={row.amount}
               currency={row.currency ?? ""}
-              className="item-card-amount mt-1 font-medium tabular-nums"
+              className={cn("item-card-amount mt-1 font-medium tabular-nums", row.amountClassName)}
             />
           ) : null}
           {row.open != null || row.balance != null ? (

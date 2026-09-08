@@ -1,6 +1,12 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.30.
+Re-verified in code 2026-09-08. Updated for v3.63.31.
+
+## Fixed in v3.63.31
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| R2 | Low | Party txn Grid amount lacked List credit tone | `amountClassName: text-credit` for receipt/check |
 
 ## Fixed in v3.63.30
 

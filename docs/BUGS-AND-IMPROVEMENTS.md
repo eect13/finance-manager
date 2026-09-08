@@ -1,6 +1,14 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.19.
+Re-verified in code 2026-09-08. Updated for v3.63.20.
+
+## Fixed in v3.63.20
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| 1 | Med | Checks / Invoices Status badges hugged the left of the column | Status cells flex-center; check status wrapper `justify-center` |
+| 2 | Med | Invoices ⋯ hid Print / Void / Delete while Actions had room | Phone RowActions shows extras when the cell is ≥ 84px; wrap instead of a 2-item cap |
+| 3 | Med | Employees filters: Hourly / View slid off; blurb cut to two lines | Toolbar + pills wrap; page hint no longer `-webkit-line-clamp: 2`. Active badge on Grid cards |
 
 ## Fixed in v3.63.19
 

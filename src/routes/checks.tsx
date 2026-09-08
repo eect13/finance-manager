@@ -312,7 +312,7 @@ function ChecksPage() {
                         onPointerDown={stopOpen}
                         onDoubleClick={stopOpen}
                       >
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex w-full items-center justify-center gap-1.5">
                           <CheckStatusControl
                             status={check.status}
                             recon={check.recon ?? "pending"}

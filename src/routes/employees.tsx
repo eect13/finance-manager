@@ -16,6 +16,7 @@ import { ListCard, listColClass, listColWidthStyle, listTableStyle} from "@/comp
 import { Money } from "@/components/money";
 import { ActionsHeader, SortHeader } from "@/components/sort-header";
 import { RowActions } from "@/components/row-actions";
+import { Badge } from "@/components/ui/badge";
 import { useColWidths } from "@/components/use-col-widths";
 import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
@@ -389,11 +390,10 @@ function EmployeesPage() {
           rows={sort.sorted.map((e) => ({
             id: e.id,
             title: e.name,
-            meta: [e.title, e.payType === "hourly" ? "Hourly" : "Salary", e.active ? "Active" : "Inactive"]
-              .filter(Boolean)
-              .join(" · "),
+            meta: [e.title, e.payType === "hourly" ? "Hourly" : "Salary"].filter(Boolean).join(" · "),
             amount: e.rate,
             currency: data.settings.currency,
+            status: <Badge variant={e.active ? "default" : "voided"}>{e.active ? "Active" : "Inactive"}</Badge>,
             onOpen: () => openEdit(e),
           }))}
         />
@@ -454,9 +454,7 @@ function EmployeesPage() {
                     </td>
                     <td className={cn("px-4 py-3 text-muted-foreground", alignClass(colAligns.aligns.bank ?? "center"))} data-col="bank" data-align={colAligns.aligns.bank ?? "center"}>{bank?.nickname ?? "—"}</td>
                     <td className={cn("px-4 py-3", alignClass(colAligns.aligns.status ?? "center"))} data-col="status" data-align={colAligns.aligns.status ?? "center"}>
-                      <span className={`rounded-full px-2 py-0.5 text-xs ${e.active ? "bg-muted" : "bg-destructive/10 text-destructive"}`}>
-                        {e.active ? "Active" : "Inactive"}
-                      </span>
+                      <Badge variant={e.active ? "default" : "voided"}>{e.active ? "Active" : "Inactive"}</Badge>
                     </td>
                     <td className="col-actions" data-col="actions">
                       <RowActions

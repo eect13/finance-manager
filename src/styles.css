@@ -6925,3 +6925,70 @@ button.party-card-row {
   }
 }
 
+/* v3.63.20 — Status centered; phone Actions show labels; employee toolbar wraps. */
+.list-grid td[data-col="status"],
+.list-grid th[data-col="status"],
+.register-matrix td.col-status,
+.register-matrix th.col-status,
+.party-txn-table td[data-col="status"],
+.party-txn-table th[data-col="status"] {
+  text-align: center !important;
+  vertical-align: middle;
+}
+.list-grid td[data-col="status"] > *,
+.register-matrix td.col-status > *,
+.party-txn-table td[data-col="status"] > * {
+  display: inline-flex !important;
+  width: max-content !important;
+  max-width: 100%;
+  justify-content: center;
+  align-items: center;
+  margin-inline: auto;
+}
+
+@media (max-width: 767px), ((hover: none) and (pointer: coarse)) {
+  .app-page-hint {
+    display: block !important;
+    -webkit-line-clamp: unset !important;
+    line-clamp: unset !important;
+    -webkit-box-orient: initial !important;
+    overflow: visible !important;
+    max-height: none !important;
+    font-size: 0.8125rem !important;
+    line-height: 1.4 !important;
+  }
+  .register-toolbar-actions {
+    flex-wrap: wrap !important;
+    justify-content: flex-start;
+  }
+  .register-toolbar-actions > * {
+    flex: 0 1 auto !important;
+    min-width: 0;
+  }
+  .filter-pills {
+    flex-wrap: wrap;
+    overflow: visible;
+  }
+  .list-grid td.col-actions,
+  .list-grid td[data-col="actions"] {
+    overflow: visible !important;
+    white-space: normal !important;
+  }
+  .list-grid td.col-actions > div,
+  .list-grid td[data-col="actions"] > div {
+    flex-wrap: wrap !important;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    justify-content: center;
+  }
+  .list-grid td.col-actions button,
+  .list-grid td[data-col="actions"] button {
+    height: 2rem !important;
+    min-height: 2rem !important;
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+}
+
+

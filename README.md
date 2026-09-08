@@ -1,4 +1,4 @@
-# Finance Manager v3.63.19
+# Finance Manager v3.63.20
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -27,115 +27,18 @@ Vite is installed with the packages — no global `vite` command. `.npmrc` has `
 
 After the Windows installer: **delete the leftover white shortcut** and pin the new one — shortcut and taskbar both use the navy pillars tile.
 
+## What's new in v3.63.20
+
+- **Status sits in the middle** of its column on Checks, Invoices, and the other lists. Pending / Open were hugging the left edge.
+- **Row actions on a phone:** Print, Void, and Delete stay on the row when the Actions column has room. ⋯ only appears when the cell is actually tight.
+- **Employees:** Active/Inactive is a badge on the card. Status / pay-type pills wrap with View instead of sliding Hourly off the screen. The page blurb is no longer cut to two lines.
+
 ## What's new in v3.63.19
 
 - **Receive payment (and every other sheet):** bank/customer typeahead and the date calendar stay inside the screen — they were sliding past the sheet when the keyboard was open. Method buttons wrap (three then two on a phone) instead of clipping Card. The sheet sits at the top on a phone so the keyboard does not cover Date and Deposit to.
 - **Register phone cards:** Pending and the bank (Operating) are the same height.
 
-## What's new in v3.63.18
-
-- **Customers / Vendors phone Grid**: cards start at the top of the pane. Windowing had treated the page as the scroller while the directory is a nested box, so the first names sat under a blank card.
-- **Close on a phone**: each check is a stacked row (name, Clear/Blocked, detail). The wide table was clipping to the last column.
-- **Record sheet**: long titles wrap; journal lines side-scroll inside the sheet instead of stretching it off the screen.
-- **Register phone cards**: Out / In share a row; Balance wraps underneath so Pending and the bank stay on the card.
-
-## What's new in v3.63.17
-
-- **Grid cards window:** Invoices, bills, receipts, checks, banks, employees, ledger, and the directory only paint the cards on screen. Register and Reconcile already did. Phone stays one card per row; desk is two then three as the pane widens.
-- **PH statutory payroll:** SSS, PhilHealth, Pag-IBIG, and TRAIN withholding are on by default (2026 tables). A pay run posts the period slice — twice a month is half, weekly is 12/52 of monthly. Reports → Payroll shows remittance balances. Not a BIR filing.
-- **Close, Forecast, Recurring** window like the other lists.
-
-## What's new in v3.63.16
-
-- **Grid cards match across tabs:** phone Grid is one card per row (Customers/Vendors were two skinny columns). Amounts use the same 1.05em as titles. Date/meta stay 0.85em. Same pad, radius, gap, and hairline on Register, Reconcile, Banks, invoices, and the directory.
-
-## What's new in v3.63.15
-
-- **Same type size on every tab:** Invoices, Bills, Receipts, Checks, Banks, Employees, Ledger, and Customers/Vendors Grid cards used to paint larger than Register (20px amounts, 8.5rem min-height, 14px tables). They now follow View → Type size like Register. List tables drop the leftover 14px/`0.72rem` pins.
-
-## What's new in v3.63.14
-
-- **Register phone ticks**: checkboxes stay in the select column. They were painting over DATE / TYPE because the tick sat above the frozen header (same class of bug Reconcile already had).
-- **Phone lists**: column width and auto-fit are off under 768px. Desktop List still drags and double-click auto-fits. Row height is not resizable.
-- **Same List paper on phone Register**: `list-card` and `list-grid` are separate nodes (like Reconcile), so the card is not a second vertical scroller.
-
-## What's new in v3.63.13
-
-- **Reconcile mobile List**: windowing matches Register. Phone List was using card-height estimates and counting the proof board as empty pad, so 353 uncleared lines looked like a blank card with two rows at the bottom.
-- **Print / CSV follow View chips**: hidden Date (etc.) stay hidden on list print and the page CSV button. Register CSV follows Register columns.
-- **Pay all active**: salaried employees get a paycheck run (hourly still needs hours). Pay period lives on the employee. Paychecks store `employeeId`.
-- **Bring in from another device**: Options → Backup merges a company file by id — new records arrive, yours stay. Open still replaces. Company files now keep passbook order.
-
-## What's new in v3.63.12
-
-- **Phone auto-fit**: column-edge handles stay tappable under 768px (tap to auto-fit). Drag resize stays mouse-only. View also has Auto-fit columns on lists that already fit.
-- **View column chips**: hide Date, Customer, and the rest on Invoices, Bills, Receipts, Checks, Banks, Employees, Ledger, Customers/Vendors, Reconcile, and Reports — same idea as Register. Actions and the Reconcile tick stay on.
-- **List virtualizer**: item keys are read from a ref so parent identity changes do not rebuild the visible range. Register internals are unchanged.
-
-## What's new in v3.63.11
-
-- **Reconcile scroll**: one virtualizer (Register-style), not two. Ticking still updates the proof board; scrolling the list no longer re-renders the whole page. Rows stay filled while you scroll.
-- **All large lists window**: Banks, Customers/Vendors, party history, chart of accounts, Reports aging / trial balance / P&L paint only the visible rows — same pad-row pattern as Register.
-
-## What's new in v3.63.10
-
-- **Actions centered**: Banks (and other lists) Actions title matches Nickname; Delete / Collect / Pay sit in the middle of the column.
-- **Confirms**: Start blank and Reload sample ask first. Dimmer-click does not skip a DELETE/RESTORE phrase. Options uses one confirm, not two stacked.
-- **Tax on existing docs**: Tax % and invoice tax still show when Settings tax is off if that document already has a rate. Input VAT on Reports was already the 1300 balance.
-- **Desk on a touch laptop**: List table from 768px wide, even when the pointer is coarse. Grid is the default only under 768px.
-- **Lists first paint**: invoices, bills, and the rest bind the live scroll node (same idea as Reconcile). Grid cards use the same table paper.
-
-## What's new in v3.63.9
-
-- **Layout default**: Grid (cards) on a phone, List (table) on the desk — Register now matches Banks, Invoices, and Reconcile. A saved View choice still wins.
-- **Banks Actions**: last column is a title only. No sort, no filter, no align menu. Nickname (first column) still sorts.
-
-## What's new in v3.63.8
-
-- **Customers / Vendors Name resize**: the auto-fit/drag handle sits on the Name|Contact edge again (it had been painted at the far right of the page). Double-click auto-fit works on that handle. Desk keeps the handles even on a touch-capable laptop.
-- **Column titles match Banks**: header row is a bottom rule only — no vertical borders on the titles.
-- **Reconcile List**: rows show with the list instead of sitting empty for a few seconds. Desk opens in List like Banks.
-
-## What's new in v3.63.7
-
-- **List columns like a sheet**: every List (and sub-table) column has its own width. Drag and double-click auto-fit change only that column — no leftover dump into Name/Customer/Payee, no last-column stretch, no cells merging. Refresh keeps the widths you set. The card side-scrolls; empty paper stays empty.
-
-## What's new in v3.63.6
-
-- **Customers / Vendors column width**: drag and double-click auto-fit on Name and Contact actually change the column. No freeze-pane overlay, no CSS min-width fighting the stored width. The list side-scrolls.
-- **Plain table paper**: directory, transaction history, and every other list use the same `--color-table` field — no sticky Name strip, no muted header, no edge fade.
-- **Actions labels on desk**: Collect, Pay, Delete (and the rest) stay on the row. ⋯ is phone-only; lists side-scroll when the buttons need room.
-
-## What's new in v3.63.5
-
-- **Customers / Vendors columns**: Name and Contact stay separate cells with drag-to-resize. Tight panes scroll instead of hiding or merging Contact.
-- **Status and Actions follow type size**: badges and row buttons scale with View → Type size (same `--register-font` as the list).
-
-## What's new in v3.63.4
-
-- **Quick Add** on posting: type a bank, payee, or expense account and choose Quick Add — same as QuickBooks. Cash sale works with no banks yet. Register, Receipts, Checks, Bills, Employees, Banks Record/Transfer, and the party sheets all type-ahead now.
-- **View on every list**: Invoices, Bills, Receipts, Checks, Employees, Ledger, Banks, Customers, Vendors, and Reconcile share Register’s View (Layout Grid|List + type size). The old standalone List/Grid pair is gone; type size is the same slider as Options → Display.
-
-## What's new in v3.63.3
-
-- **Windows / Android one-click from a fresh GitHub zip**: `deploy.bat` and `apk.bat` use CRLF, find the repo even when the unzip folder has parentheses (`finance-manager-main (1)`), call Node by full path, and fail with a readable message. Android packer installs npm deps, Rust if missing, and the `aarch64-linux-android` target. Temurin 17 is accepted (not only Microsoft JDK).
-- **README + screenshots**: current UI only; older point-release notes live in [docs/BUGS-AND-IMPROVEMENTS.md](docs/BUGS-AND-IMPROVEMENTS.md).
-
-## What's new in v3.63.2
-
-- **Remove sample / any DELETE confirm**: the dimmer was sitting on top of the sheet, so Remove could not be clicked after typing DELETE. Same for Purge, Close, Restore, and Register delete.
-
-## What's new in v3.63.1
-
-- **Android pack**: clean sync without dependencies now installs the Tauri CLI when missing, writes gitignored Gradle helpers, and emits TauriActivity from the template on a fresh gen tree.
-
-## What's new in v3.63.0
-
-- **One paper**: Reports, Forecast, and Options Recurring use the same white/dark table paper as Register. Print paper is white.
-- **Lists**: Receipts, Invoices, Bills, Checks, Ledger, and Employees virtualize like Reconcile (Register internals unchanged).
-- **Input VAT**: taxed bills split expense / Input VAT / AP (amount is VAT-inclusive). Reports → VAT shows payable vs receivable.
-- **Payroll**: hourly pay is hours × rate; optional withholding posts to Payroll Withholdings (not a PH tax engine).
-- **Reliability**: last keystroke flushes on close/hide; Restore last local copy skips identical backup writes.
+Older point-release notes live in [docs/BUGS-AND-IMPROVEMENTS.md](docs/BUGS-AND-IMPROVEMENTS.md).
 
 ## Screenshots
 

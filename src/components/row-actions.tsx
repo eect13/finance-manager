@@ -11,9 +11,7 @@ export type RowMenuItem = {
   danger?: boolean;
 };
 
-/** Phone: at most this many extras render as buttons; more go in ⋯. */
-const DESK_INLINE_MAX = 2;
-/** Below this width, extras (Delete, …) fold into ⋯. ~Delete sm button. */
+/** Phone: extras fold to ⋯ only when the cell is actually too tight. */
 const INLINE_FIT_MIN = 84;
 /** Below this, a primary (Collect / Pay) also folds into ⋯. */
 const PRIMARY_FIT_MIN = 120;
@@ -67,7 +65,7 @@ function MoreMenu({ items }: { items: RowMenuItem[] }) {
 
 /**
  * Desk: Collect / Pay / Delete (and the rest) stay on the row — lists side-scroll.
- * Phone / narrow: extras in compact ⋯; fold primary into ⋯ when the cell is too tight.
+ * Phone: extras stay on the row when the cell has room; ⋯ only when it is too tight.
  */
 export function RowActions({
   primary,
@@ -81,8 +79,8 @@ export function RowActions({
 }) {
   const phone = useNarrowUi();
   const rootRef = useRef<HTMLDivElement>(null);
-  const [narrow, setNarrow] = useState(true);
-  const [primaryNarrow, setPrimaryNarrow] = useState(true);
+  const [narrow, setNarrow] = useState(false);
+  const [primaryNarrow, setPrimaryNarrow] = useState(false);
 
   useLayoutEffect(() => {
     if (!phone) return;
@@ -119,7 +117,7 @@ export function RowActions({
   }
 
   const foldPrimary = Boolean(primary) && primaryNarrow;
-  const showInline = !narrow && extra.length > 0 && extra.length <= DESK_INLINE_MAX;
+  const showInline = !narrow && extra.length > 0;
   const menuItems: RowMenuItem[] =
     foldPrimary && primaryAsItem ? [primaryAsItem, ...extra] : extra;
   const showMenu = menuItems.length > 0 && (foldPrimary || !showInline);
@@ -128,7 +126,7 @@ export function RowActions({
   return (
     <div
       ref={rootRef}
-      className="flex w-full min-w-0 flex-nowrap items-center justify-center gap-1"
+      className="flex w-full min-w-0 flex-wrap items-center justify-center gap-1"
       onClick={stopOpen}
       onPointerDown={stopOpen}
     >

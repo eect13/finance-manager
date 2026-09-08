@@ -1,6 +1,13 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.14.
+Re-verified in code 2026-09-08. Updated for v3.63.15.
+
+## Fixed in v3.63.15
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| 1 | Med | Grid cards on Invoices/Bills/Receipts/Checks/Banks/Employees/Ledger (and party dir) were larger than Register — `text-xl` amounts, `min-height: 8.5rem`, 14px `text-sm` tables | Cards inherit `--list-type` with em titles/amounts; padding 0.75rem like Register; tables `font-size` + `line-height` follow View type size (beats `text-sm` and phone `0.72rem`) |
+| 2 | Low | Desk Register Grid rem-locked party/date/money (`0.95rem`) so desk Grid looked bigger than phone | em of `--list-type` |
 
 ## Fixed in v3.63.14
 

@@ -6636,6 +6636,121 @@ thead button.sort-header-label:hover {
   }
 }
 
+/* =============================================================================
+   v3.63.15 — Grid cards + list tables share View type size (Register scale)
+   Gestalt: same paper, padding, radius, gap, and em type on every tab.
+   ============================================================================= */
+
+.item-cards,
+.party-dir-cards,
+.list-card,
+.list-grid,
+.register-phone-list,
+.recon-phone-list,
+.register-desk-grid,
+.register-matrix,
+.recon-table-card,
+.party-dir-table,
+.party-txn-table {
+  font-size: var(--list-type, var(--register-font, 12px));
+  line-height: 1.35;
+}
+
+.item-cards {
+  gap: 0.65rem;
+}
+
+.item-card {
+  min-height: 0 !important;
+  padding: 0.75rem !important;
+  gap: 0.25rem;
+  border-radius: 1rem;
+  box-shadow: none;
+  font-size: inherit;
+  line-height: 1.35;
+}
+
+.item-card-title {
+  font-size: 1.05em;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.item-card-meta {
+  font-size: 0.85em;
+  line-height: 1.35;
+}
+
+.item-card-amount {
+  font-size: 1.05em;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.item-card-chip {
+  font-size: 0.72em;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.12em 0.65em;
+}
+
+.party-card-row,
+a.party-card-row,
+button.party-card-row {
+  min-height: 0;
+  padding: 0.75rem;
+  gap: 0.25rem;
+  border-radius: 1rem;
+  box-shadow: none;
+  font-size: inherit;
+  line-height: 1.35;
+}
+
+.register-desk-grid .register-phone-card .phone-card-party,
+.recon-phone-card .phone-card-party {
+  font-size: 1.05em;
+}
+.register-desk-grid .register-phone-card .phone-card-date,
+.register-desk-grid .register-phone-card .phone-card-money {
+  font-size: 0.92em;
+}
+.register-desk-grid .register-phone-card .phone-card-meta,
+.register-desk-grid .register-phone-card .phone-card-memo,
+.register-desk-grid .register-phone-card .phone-card-chip {
+  font-size: 0.85em;
+}
+.register-desk-grid .register-phone-card .phone-card-label {
+  font-size: 0.72em;
+}
+
+/* Beat leftover text-sm (14px) and phone 0.72rem table pins. */
+.list-grid table,
+.list-card table,
+.register-matrix table,
+.recon-table-card table,
+.party-dir-table table,
+.party-txn-table table {
+  font-size: var(--list-type, var(--register-font, 12px)) !important;
+  line-height: 1.35 !important;
+}
+
+@media (max-width: 767px), ((hover: none) and (pointer: coarse)) {
+  .register-matrix,
+  .recon-table-card,
+  .recon-table-card table,
+  .list-card,
+  .list-card table,
+  .list-grid,
+  .list-grid table,
+  .register-phone-table,
+  .party-dir-table,
+  .party-txn-table {
+    font-size: var(--list-type, var(--register-font, 12px)) !important;
+    line-height: 1.35 !important;
+  }
+}
+
+
 
 
 

@@ -232,16 +232,16 @@ function BanksPage() {
                 {...openProps("bank", bank.id, { click: true })}
               >
                 <span className="flex items-start justify-between gap-2">
-                  <span className="block min-w-0 break-words font-medium">{bank.name}</span>
-                  <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+                  <span className="item-card-title block min-w-0 break-words font-medium">{bank.name}</span>
+                  <span className="item-card-chip shrink-0 rounded-full bg-muted font-medium text-muted-foreground">
                     {bank.archived ? "Closed" : "Active"}
                   </span>
                 </span>
-                <span className="block break-words text-xs text-muted-foreground">
+                <span className="item-card-meta block break-words text-muted-foreground">
                   {bank.nickname} · {bank.accountNumber}
                 </span>
-                <Money amount={book} currency={settings.currency} className="mt-auto pt-2 text-xl font-medium tabular-nums" />
-                <span className="text-xs text-muted-foreground">
+                <Money amount={book} currency={settings.currency} className="item-card-amount mt-1 font-medium tabular-nums" />
+                <span className="item-card-meta text-muted-foreground">
                   Pending <Money amount={pending} currency={settings.currency} />
                 </span>
               </button>

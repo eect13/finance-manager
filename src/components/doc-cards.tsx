@@ -23,15 +23,15 @@ export function DocCards({
       {rows.map((row) => (
         <button key={row.id} type="button" className="item-card" onClick={row.onOpen}>
           <span className="flex items-start justify-between gap-2">
-            <span className="block min-w-0 break-words font-medium">{row.title}</span>
+            <span className="item-card-title block min-w-0 break-words font-medium">{row.title}</span>
             {row.status ? <span className="shrink-0">{row.status}</span> : null}
           </span>
-          {row.meta ? <span className="block break-words text-xs text-muted-foreground">{row.meta}</span> : null}
+          {row.meta ? <span className="item-card-meta block break-words text-muted-foreground">{row.meta}</span> : null}
           {row.amount != null ? (
             <Money
               amount={row.amount}
               currency={row.currency ?? ""}
-              className="mt-auto pt-2 text-xl font-medium tabular-nums"
+              className="item-card-amount mt-1 font-medium tabular-nums"
             />
           ) : null}
         </button>

@@ -1,4 +1,4 @@
-# Finance Manager v3.63.14
+# Finance Manager v3.63.15
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -26,6 +26,10 @@ Unzip the repo (a second unzip named `finance-manager-main (1)` is fine) so `dep
 Vite is installed with the packages — no global `vite` command. `.npmrc` has `legacy-peer-deps=true`.
 
 After the Windows installer: **delete the leftover white shortcut** and pin the new one — shortcut and taskbar both use the navy pillars tile.
+
+## What's new in v3.63.15
+
+- **Same type size on every tab:** Invoices, Bills, Receipts, Checks, Banks, Employees, Ledger, and Customers/Vendors Grid cards used to paint larger than Register (20px amounts, 8.5rem min-height, 14px tables). They now follow View → Type size like Register. List tables drop the leftover 14px/`0.72rem` pins.
 
 ## What's new in v3.63.14
 

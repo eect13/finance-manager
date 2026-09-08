@@ -746,7 +746,7 @@ function PartyDirectoryCards({
               key={item.id}
               type="button"
               className={cn(
-                "party-card-row min-h-11 rounded-2xl border border-border bg-card p-4 text-left",
+                "party-card-row text-left",
                 on && "bg-primary/10",
               )}
               onClick={() => onSelect(item.id)}
@@ -755,9 +755,9 @@ function PartyDirectoryCards({
                 onOpen(item.id);
               }}
             >
-              <span className="block truncate font-medium">{item.title}</span>
-              <span className="mt-1 block truncate text-xs text-muted-foreground">{item.subtitle}</span>
-              <Money amount={item.balance} currency={currency} className="mt-3 text-sm" />
+              <span className="item-card-title block truncate font-medium">{item.title}</span>
+              <span className="item-card-meta mt-1 block truncate text-muted-foreground">{item.subtitle}</span>
+              <Money amount={item.balance} currency={currency} className="item-card-amount mt-1 font-medium tabular-nums" />
             </button>
           );
         })

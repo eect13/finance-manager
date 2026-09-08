@@ -1,4 +1,4 @@
-# Finance Manager v3.63.15
+# Finance Manager v3.63.16
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -26,6 +26,10 @@ Unzip the repo (a second unzip named `finance-manager-main (1)` is fine) so `dep
 Vite is installed with the packages — no global `vite` command. `.npmrc` has `legacy-peer-deps=true`.
 
 After the Windows installer: **delete the leftover white shortcut** and pin the new one — shortcut and taskbar both use the navy pillars tile.
+
+## What's new in v3.63.16
+
+- **Grid cards match across tabs:** phone Grid is one card per row (Customers/Vendors were two skinny columns). Amounts use the same 1.05em as titles. Date/meta stay 0.85em. Same pad, radius, gap, and hairline on Register, Reconcile, Banks, invoices, and the directory.
 
 ## What's new in v3.63.15
 

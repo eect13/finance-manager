@@ -1,6 +1,13 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.15.
+Re-verified in code 2026-09-08. Updated for v3.63.16.
+
+## Fixed in v3.63.16
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| 1 | Med | Customers/Vendors phone Grid was 2-col (`@container workspace (min-width: 20rem)`) while Invoices/Register were 1-col | Phone Grid is 1-col on every tab. Desk idle directory matches Invoices (3-col at 56rem); split pane stays 1-col |
+| 2 | Med | Register/Reconcile card money was 0.92em (11px) vs DocCards amount 1.05em; leftover rem locks on desk Grid | Title/amount/money 1.05em, date/meta 0.85em, label 0.72em. Same 0.75rem pad, 1rem radius, 0.65rem gap, table-divider hairline |
 
 ## Fixed in v3.63.15
 

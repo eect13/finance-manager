@@ -6,6 +6,8 @@ import { AppShell } from "@/components/app-shell";
 import { ConfirmDelete } from "@/components/confirm-delete";
 import { DateInput } from "@/components/date-input";
 import { FilterPills, ListToolbar } from "@/components/filter-pills";
+import { ListViewMenu } from "@/components/list-view-menu";
+import { useListView } from "@/components/view-toggle";
 import { Money } from "@/components/money";
 import { PeriodPackPrint } from "@/components/period-print";
 import { requestPrint } from "@/components/print-preview";
@@ -19,7 +21,6 @@ import { closeChecklist, closeTotals, monthEndIso, type CloseCheck } from "@/lib
 import { fitColumnWidth } from "@/lib/finance/fit-column";
 import { formatDate } from "@/lib/finance/format";
 import { auditRows, exportCsv } from "@/lib/finance/export";
-import { useNarrowUi } from "@/lib/phone-layout";
 import { useEntrySort } from "@/lib/finance/sort";
 import { useFinanceData, useFinanceStore } from "@/lib/finance/store";
 import type { AuditEvent } from "@/lib/finance/types";
@@ -42,6 +43,7 @@ function ClosePage() {
   const snapshot = (data.closeHistory ?? []).filter((s) => !s.reopenedAt).at(-1) ?? (data.closeHistory ?? []).at(-1);
   const audit = [...(data.audit ?? [])].slice(-50).reverse();
   const [checkFilter, setCheckFilter] = useState<"all" | "blocked" | "clear">("all");
+  const [checkView, setCheckView] = useListView("close-check");
 
   return (
     <AppShell
@@ -107,7 +109,7 @@ function ClosePage() {
         <p className="mb-4 text-sm text-muted-foreground">Currently closed through {formatDate(closed)}.</p>
       ) : null}
 
-      <div className="mb-3">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
         <FilterPills
           value={checkFilter}
           onChange={setCheckFilter}
@@ -118,8 +120,10 @@ function ClosePage() {
             { id: "clear", label: "Clear" },
           ]}
         />
+        <ListViewMenu layout={checkView} onLayout={setCheckView} />
       </div>
       <ChecklistTable
+        layout={checkView}
         items={check.items.filter((item) => {
           if (checkFilter === "blocked") return !item.ok;
           if (checkFilter === "clear") return item.ok;
@@ -227,10 +231,12 @@ function ChecklistTable({
   items,
   onPostDue,
   dueLabel,
+  layout = "list",
 }: {
   items: CloseCheck[];
   onPostDue?: () => void;
   dueLabel?: string;
+  layout?: "list" | "grid";
 }) {
   const cols = useColWidths("finance-manager-close-check-cols", CHECK_COLS, { min: 120 });
   const colAligns = useColAligns("finance-manager-close-check-col-aligns", Object.keys(CHECK_COLS) as Array<keyof typeof CHECK_COLS>);
@@ -256,13 +262,12 @@ function ChecklistTable({
     ids: sort.sorted.map((i) => i.id),
     onOpen: openCheck,
   });
-  const narrow = useNarrowUi();
   function fit(id: keyof typeof CHECK_COLS, label: string) {
     const table = gridRef.current?.querySelector("table");
     if (!table) return;
     cols.setWidth(id, fitColumnWidth({ table, selector: `td[data-col="${id}"]`, header: label }));
   }
-  if (narrow) {
+  if (layout === "grid") {
     return (
       <div className="list-card overflow-hidden">
         {sort.sorted.length === 0 ? (

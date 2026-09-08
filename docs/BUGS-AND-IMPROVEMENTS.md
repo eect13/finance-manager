@@ -1,6 +1,14 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.22.
+Re-verified in code 2026-09-08. Updated for v3.63.23.
+
+## Fixed in v3.63.23
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| 1 | Med (UX) | Close phone only showed stacked cards; no List|Grid | `useListView` + View menu; Grid = stack cards, List = checklist table |
+| 2 | Med (UX) | Customers/Vendors txn history View had columns but no Grid | `DocCards` Grid + keep List; `ListViewMenu` `layout`/`onLayout` |
+| 3 | High | Journal detail Account/Debit/Credit clipped mid-amount on phone | Narrow journal table fits sheet (`table-layout: fixed`, Debit/Credit nowrap floor); sheet `align-content: start` / hug height |
 
 ## Fixed in v3.63.22
 

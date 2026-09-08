@@ -1,4 +1,4 @@
-# Finance Manager v3.63.22
+# Finance Manager v3.63.23
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -26,6 +26,12 @@ Unzip the repo (a second unzip named `finance-manager-main (1)` is fine) so `dep
 Vite is installed with the packages — no global `vite` command. `.npmrc` has `legacy-peer-deps=true`.
 
 After the Windows installer: **delete the leftover white shortcut** and pin the new one — shortcut and taskbar both use the navy pillars tile.
+
+## What's new in v3.63.23
+
+- **Close:** View menu List|Grid — checklist table or stacked cards; All / Blocked / Clear and Post due stay.
+- **Customers / Vendors history:** Grid cards via DocCards (List table kept); View layout toggle.
+- **Journal detail sheet:** Account / Debit / Credit fit the phone sheet (no mid-amount clip); sheet hugs content height.
 
 ## What's new in v3.63.22
 

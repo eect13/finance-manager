@@ -54,7 +54,7 @@ import { ListToolbar } from "@/components/filter-pills";
 import { ListFilters, applySortValue, useListPeriod, type FilterSelect } from "@/components/list-filters";
 import { ListCard, listColClass, listColWidthStyle, listTableStyle } from "@/components/list-table";
 import { ListViewMenu } from "@/components/list-view-menu";
-import { CardGrid } from "@/components/doc-cards";
+import { CardGrid, DocCards } from "@/components/doc-cards";
 import { useListView } from "@/components/view-toggle";
 import { useListVirtualizer, VirtPad } from "@/components/use-list-virtualizer";
 
@@ -111,6 +111,7 @@ export function PartyTxnTable({
   typeSelect?: FilterSelect;
 }) {
   const tapOpens = useTapOpens();
+  const [view, setView] = useListView("party-txn");
   const [query, setQuery] = useState("");
   const period = useListPeriod("all");
   const filtered = useMemo(() => {
@@ -180,18 +181,39 @@ export function PartyTxnTable({
           }}
         />
         <ListViewMenu
-          hiddenCount={vis.hiddenCount}
-          extra={viewColumnExtra(TXN_CHIPS, vis)}
-          onFitAll={() => {
-            (Object.keys(TXN_COLS) as Array<keyof typeof TXN_COLS>).forEach((id) => {
-              if (vis.on[id] === false) return;
-              fit(id, TXN_CHIPS.find((c) => c.id === id)?.label ?? id);
-            });
-          }}
+          layout={view}
+          onLayout={setView}
+          hiddenCount={view === "list" ? vis.hiddenCount : undefined}
+          extra={view === "list" ? viewColumnExtra(TXN_CHIPS, vis) : undefined}
+          onFitAll={
+            view === "list"
+              ? () => {
+                  (Object.keys(TXN_COLS) as Array<keyof typeof TXN_COLS>).forEach((id) => {
+                    if (vis.on[id] === false) return;
+                    fit(id, TXN_CHIPS.find((c) => c.id === id)?.label ?? id);
+                  });
+                }
+              : undefined
+          }
         />
       </ListToolbar>
       {sort.sorted.length === 0 ? (
         <p className="px-4 py-8 text-center text-sm text-muted-foreground">{query.trim() ? "No transactions match." : empty}</p>
+      ) : view === "grid" ? (
+        <DocCards
+          empty={empty}
+          rows={sort.sorted.map((row) => ({
+            id: `${row.openKind}-${row.id}`,
+            title: `${row.type} ${row.number}`,
+            meta: row.memo
+              ? `${formatRegisterDate(row.date)} · ${row.memo}`
+              : formatRegisterDate(row.date),
+            amount: row.amount,
+            currency,
+            status: <TxnBadge row={row} />,
+            onOpen: () => openTxn(row.openKind, row.id),
+          }))}
+        />
       ) : (
         <ListCard
           ref={pointer.bindContainer(wrapRef)}

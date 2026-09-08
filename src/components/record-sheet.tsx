@@ -43,6 +43,7 @@ import type { OpenKind } from "@/lib/finance/open-record";
 import { customerHistory, vendorHistory } from "@/lib/finance/party-history";
 import { useFinanceData, useFinanceStore } from "@/lib/finance/store";
 import { cn } from "@/lib/utils";
+import { useNarrowUi } from "@/lib/phone-layout";
 import { EMPTY_CUSTOMER, EMPTY_VENDOR } from "@/lib/finance/types";
 
 export function RecordSheet() {
@@ -857,7 +858,7 @@ function JournalBody({ id, onClose }: { id: string; onClose: () => void }) {
 
   return (
     <>
-      <DialogHeader>
+      <DialogHeader className="mb-2">
         <DialogTitle>{entry.description}</DialogTitle>
         <DialogDescription>
           {formatDate(entry.date)} · {entry.sourceType}
@@ -941,19 +942,36 @@ function JournalLineTable({
     if (!table) return;
     cols.setWidth(id, fitColumnWidth({ table, selector: `td[data-col="${id}"]`, header: label }));
   }
+  const narrow = useNarrowUi();
+  const tableStyle = narrow
+    ? ({ width: "100%", minWidth: "100%", tableLayout: "fixed" } as const)
+    : listTableStyle(cols.tableWidth);
   return (
-    <div ref={wrapRef} className="list-grid min-w-0 max-w-full overflow-x-auto">
-      <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
+    <div
+      ref={wrapRef}
+      className="journal-line-grid list-grid min-w-0 max-w-full overflow-x-auto"
+    >
+      <table ref={cols.tableRef} className="text-sm" style={tableStyle}>
         <colgroup>
           {(Object.keys(JL_COLS) as Array<keyof typeof JL_COLS>).map((id) => (
-            <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id])} />
+            <col
+              key={id}
+              className={listColClass(id)}
+              style={
+                narrow
+                  ? id === "account"
+                    ? { width: "auto", minWidth: 0 }
+                    : { width: "5.75rem", minWidth: "5.75rem" }
+                  : listColWidthStyle(id, cols.widths[id])
+              }
+            />
           ))}
         </colgroup>
         <thead>
           <tr className="border-b border-border text-muted-foreground">
-            <SortHeader compact label="Account" column="account" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.account} onWidth={(n) => cols.setWidth("account", n)} onFit={() => fit("account", "Account")} align={colAligns.aligns.account ?? "center"} onAlign={(a) => colAligns.setAlign("account", a)} fill />
-            <SortHeader compact label="Debit" column="debit" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.debit} onWidth={(n) => cols.setWidth("debit", n)} onFit={() => fit("debit", "Debit")} align={colAligns.aligns.debit ?? "center"} onAlign={(a) => colAligns.setAlign("debit", a)} />
-            <SortHeader compact label="Credit" column="credit" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.credit} onWidth={(n) => cols.setWidth("credit", n)} onFit={() => fit("credit", "Credit")} align={colAligns.aligns.credit ?? "center"} onAlign={(a) => colAligns.setAlign("credit", a)} />
+            <SortHeader compact label="Account" column="account" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={narrow ? undefined : cols.widths.account} onWidth={narrow ? undefined : (n) => cols.setWidth("account", n)} onFit={narrow ? undefined : () => fit("account", "Account")} align={colAligns.aligns.account ?? "center"} onAlign={(a) => colAligns.setAlign("account", a)} fill />
+            <SortHeader compact label="Debit" column="debit" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={narrow ? undefined : cols.widths.debit} onWidth={narrow ? undefined : (n) => cols.setWidth("debit", n)} onFit={narrow ? undefined : () => fit("debit", "Debit")} align={colAligns.aligns.debit ?? "center"} onAlign={(a) => colAligns.setAlign("debit", a)} />
+            <SortHeader compact label="Credit" column="credit" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={narrow ? undefined : cols.widths.credit} onWidth={narrow ? undefined : (n) => cols.setWidth("credit", n)} onFit={narrow ? undefined : () => fit("credit", "Credit")} align={colAligns.aligns.credit ?? "center"} onAlign={(a) => colAligns.setAlign("credit", a)} />
           </tr>
         </thead>
         <tbody>
@@ -961,9 +979,9 @@ function JournalLineTable({
             const account = data.accounts.find((a) => a.id === line.accountId);
             return (
               <tr key={line.id} className="border-b border-border/70 last:border-0">
-                <td className={cn("py-2 text-muted-foreground", alignClass(colAligns.aligns.account ?? "center"))} data-col="account" data-align={colAligns.aligns.account ?? "center"}>{account ? `${account.code} ${account.name}` : line.accountId}</td>
-                <td className={cn("py-2", alignClass(colAligns.aligns.debit ?? "center"))} data-col="debit" data-align={colAligns.aligns.debit ?? "center"}>{line.debit ? <Money amount={line.debit} currency={currency} /> : "—"}</td>
-                <td className={cn("py-2", alignClass(colAligns.aligns.credit ?? "center"))} data-col="credit" data-align={colAligns.aligns.credit ?? "center"}>{line.credit ? <Money amount={line.credit} currency={currency} /> : "—"}</td>
+                <td className={cn("py-2 text-muted-foreground", alignClass(colAligns.aligns.account ?? "center"), narrow && "break-words [overflow-wrap:anywhere]")} data-col="account" data-align={colAligns.aligns.account ?? "center"}>{account ? `${account.code} ${account.name}` : line.accountId}</td>
+                <td className={cn("py-2 whitespace-nowrap tabular-nums", alignClass(colAligns.aligns.debit ?? "center"))} data-col="debit" data-align={colAligns.aligns.debit ?? "center"}>{line.debit ? <Money amount={line.debit} currency={currency} /> : "—"}</td>
+                <td className={cn("py-2 whitespace-nowrap tabular-nums", alignClass(colAligns.aligns.credit ?? "center"))} data-col="credit" data-align={colAligns.aligns.credit ?? "center"}>{line.credit ? <Money amount={line.credit} currency={currency} /> : "—"}</td>
               </tr>
             );
           })}

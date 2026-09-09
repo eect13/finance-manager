@@ -1,6 +1,12 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.34.
+Re-verified in code 2026-09-08. Updated for v3.63.35.
+
+## Fixed in v3.63.35
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| B1 | Med | Journal line `colgroup` Debit/Credit still 5.75rem vs CSS 7.5–8.5rem floor | Sync narrow col widths to width 8rem / min 7.5rem / max 8.5rem |
 
 ## Fixed in v3.63.34
 

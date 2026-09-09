@@ -961,7 +961,7 @@ function JournalLineTable({
                 narrow
                   ? id === "account"
                     ? { width: "auto", minWidth: 0 }
-                    : { width: "5.75rem", minWidth: "5.75rem" }
+                    : { width: "8rem", minWidth: "7.5rem", maxWidth: "8.5rem" }
                   : listColWidthStyle(id, cols.widths[id])
               }
             />

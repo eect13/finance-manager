@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { Printer } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
@@ -12,7 +12,7 @@ import { Money } from "@/components/money";
 import { PeriodPackPrint } from "@/components/period-print";
 import { requestPrint } from "@/components/print-preview";
 import { SortHeader } from "@/components/sort-header";
-import { listColClass, listColWidthStyle, listTableStyle} from "@/components/list-table";
+import { listColClass, listColWidthStyle } from "@/components/list-table";
 import { useColWidths } from "@/components/use-col-widths";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
 import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
@@ -238,6 +238,21 @@ function useTapOpens() {
   return tap;
 }
 
+
+/** Close lists: fill the card; one flex col absorbs leftover (sheet-style sum-width left a void). */
+function closeListTableStyle(tableWidth: number): CSSProperties {
+  return { width: "100%", minWidth: Math.max(tableWidth, 1) };
+}
+
+function closeColClass(id: string, flexId: string) {
+  return id === flexId ? "col-flex" : listColClass(id);
+}
+
+function closeColWidthStyle(id: string, width: number, flexId: string): CSSProperties | undefined {
+  if (id === flexId) return { minWidth: width, width: "100%" };
+  return listColWidthStyle(id, width);
+}
+
 const CHECK_COLS = { check: 200, status: 136, detail: 360 } as const;
 
 function ChecklistTable({
@@ -252,7 +267,7 @@ function ChecklistTable({
   layout?: "list" | "grid";
 }) {
   const cols = useColWidths("finance-manager-close-check-cols", CHECK_COLS, { min: 120 });
-  const colAligns = useColAligns("finance-manager-close-check-col-aligns", Object.keys(CHECK_COLS) as Array<keyof typeof CHECK_COLS>);
+  const colAligns = useColAligns("finance-manager-close-check-col-aligns", Object.keys(CHECK_COLS) as Array<keyof typeof CHECK_COLS>, { detail: "left" });
   const gridRef = useRef<HTMLDivElement>(null);
   const getters = useMemo(
     () => ({
@@ -346,17 +361,17 @@ function ChecklistTable({
       }}
     >
       <div className="list-grid">
-      <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
+      <table ref={cols.tableRef} className="text-sm" style={closeListTableStyle(cols.tableWidth)}>
         <colgroup>
           {(Object.keys(CHECK_COLS) as Array<keyof typeof CHECK_COLS>).map((id) => (
-            <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id])} />
+            <col key={id} className={closeColClass(id, "detail")} style={closeColWidthStyle(id, cols.widths[id], "detail")} />
           ))}
         </colgroup>
         <thead>
           <tr className="border-b border-border text-muted-foreground">
             <SortHeader label="Check" column="check" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.check} onWidth={(n) => cols.setWidth("check", n)} onFit={() => fit("check", "Check")} align={colAligns.aligns.check ?? "center"} onAlign={(a) => colAligns.setAlign("check", a)} />
             <SortHeader label="Status" column="status" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.status} onWidth={(n) => cols.setWidth("status", n)} onFit={() => fit("status", "Status")} className="whitespace-nowrap" align={colAligns.aligns.status ?? "center"} onAlign={(a) => colAligns.setAlign("status", a)} />
-            <SortHeader label="Detail" column="detail" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.detail} onWidth={(n) => cols.setWidth("detail", n)} onFit={() => fit("detail", "Detail")} align={colAligns.aligns.detail ?? "center"} onAlign={(a) => colAligns.setAlign("detail", a)} fill />
+            <SortHeader label="Detail" column="detail" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.detail} onWidth={(n) => cols.setWidth("detail", n)} onFit={() => fit("detail", "Detail")} align={colAligns.aligns.detail ?? "left"} onAlign={(a) => colAligns.setAlign("detail", a)} fill />
           </tr>
         </thead>
         <tbody>
@@ -393,10 +408,12 @@ function ChecklistTable({
                 }}
               >
                 <td className={cn("px-4 py-3 font-medium", alignClass(colAligns.aligns.check ?? "center"))} data-col="check" data-align={colAligns.aligns.check ?? "center"}>{item.label}</td>
-                <td className={cn("px-4 py-3", alignClass(colAligns.aligns.status ?? "center"))} data-col="status" data-align={colAligns.aligns.status ?? "center"}>{item.ok ? "Clear" : "Blocked"}</td>
-                <td className={cn("px-4 py-3", alignClass(colAligns.aligns.detail ?? "center"))} data-col="detail" data-align={colAligns.aligns.detail ?? "center"}>
-                  <div className="flex w-full min-w-0 flex-wrap items-center justify-center gap-2">
-                    <span className="min-w-0">
+                <td className={cn("px-4 py-3", alignClass(colAligns.aligns.status ?? "center"))} data-col="status" data-align={colAligns.aligns.status ?? "center"}>
+                  <span className={item.ok ? "text-emerald-700 dark:text-emerald-400" : "text-foreground/80"}>{item.ok ? "Clear" : "Blocked"}</span>
+                </td>
+                <td className={cn("px-4 py-3 col-fill", alignClass(colAligns.aligns.detail ?? "left"))} data-col="detail" data-align={colAligns.aligns.detail ?? "left"}>
+                  <div className="flex w-full min-w-0 flex-wrap items-center gap-2">
+                    <span className="min-w-0 flex-1">
                       {item.href ? (
                         <Link to={item.href} className="underline-offset-2 hover:underline" onClick={(e) => e.stopPropagation()}>
                           {item.detail}
@@ -408,7 +425,7 @@ function ChecklistTable({
                     {item.id === "recurring" && !item.ok && onPostDue ? (
                       <Button
                         size="sm"
-                        className="shrink-0"
+                        className="ml-auto shrink-0"
                         onClick={(e) => {
                           e.stopPropagation();
                           onPostDue();
@@ -470,10 +487,10 @@ function SnapshotTable({
       }}
     >
       <div className="list-grid">
-      <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
+      <table ref={cols.tableRef} className="text-sm" style={closeListTableStyle(cols.tableWidth)}>
         <colgroup>
           {(Object.keys(SNAP_COLS) as Array<keyof typeof SNAP_COLS>).map((id) => (
-            <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id])} />
+            <col key={id} className={closeColClass(id, "bank")} style={closeColWidthStyle(id, cols.widths[id], "bank")} />
           ))}
         </colgroup>
         <thead>
@@ -544,7 +561,7 @@ function AuditTable({ rows }: { rows: AuditEvent[] }) {
   );
   const sort = useEntrySort(filtered, "when", getters, "desc");
   const cols = useColWidths("finance-manager-audit-cols", AUDIT_COLS);
-  const colAligns = useColAligns("finance-manager-audit-col-aligns", Object.keys(AUDIT_COLS) as Array<keyof typeof AUDIT_COLS>);
+  const colAligns = useColAligns("finance-manager-audit-col-aligns", Object.keys(AUDIT_COLS) as Array<keyof typeof AUDIT_COLS>, { detail: "left" });
   const gridRef = useRef<HTMLDivElement>(null);
   const pointer = useTableKeyboardFocus({
     ids: sort.sorted.map((e) => e.id),
@@ -575,10 +592,10 @@ function AuditTable({ rows }: { rows: AuditEvent[] }) {
         }}
       >
         <div className="list-grid">
-      <table ref={cols.tableRef} className="text-sm" style={listTableStyle(cols.tableWidth)}>
+      <table ref={cols.tableRef} className="text-sm" style={closeListTableStyle(cols.tableWidth)}>
           <colgroup>
             {(Object.keys(AUDIT_COLS) as Array<keyof typeof AUDIT_COLS>).map((id) => (
-              <col key={id} className={listColClass(id)} style={listColWidthStyle(id, cols.widths[id])} />
+              <col key={id} className={closeColClass(id, "detail")} style={closeColWidthStyle(id, cols.widths[id], "detail")} />
             ))}
           </colgroup>
           <thead>
@@ -586,7 +603,7 @@ function AuditTable({ rows }: { rows: AuditEvent[] }) {
               <SortHeader label="When" column="when" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.when} onWidth={(n) => cols.setWidth("when", n)} onFit={() => fit("when", "When")} align={colAligns.aligns.when ?? "center"} onAlign={(a) => colAligns.setAlign("when", a)} />
               <SortHeader label="Who" column="who" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.who} onWidth={(n) => cols.setWidth("who", n)} onFit={() => fit("who", "Who")} align={colAligns.aligns.who ?? "center"} onAlign={(a) => colAligns.setAlign("who", a)} />
               <SortHeader label="Action" column="action" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.action} onWidth={(n) => cols.setWidth("action", n)} onFit={() => fit("action", "Action")} align={colAligns.aligns.action ?? "center"} onAlign={(a) => colAligns.setAlign("action", a)} />
-              <SortHeader label="Detail" column="detail" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.detail} onWidth={(n) => cols.setWidth("detail", n)} onFit={() => fit("detail", "Detail")} align={colAligns.aligns.detail ?? "center"} onAlign={(a) => colAligns.setAlign("detail", a)} fill />
+              <SortHeader label="Detail" column="detail" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.detail} onWidth={(n) => cols.setWidth("detail", n)} onFit={() => fit("detail", "Detail")} align={colAligns.aligns.detail ?? "left"} onAlign={(a) => colAligns.setAlign("detail", a)} fill />
               <SortHeader label="Old" column="old" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.old} onWidth={(n) => cols.setWidth("old", n)} onFit={() => fit("old", "Old")} align={colAligns.aligns.old ?? "center"} onAlign={(a) => colAligns.setAlign("old", a)} />
               <SortHeader label="New" column="next" sortKey={sort.key} dir={sort.dir} onToggle={sort.toggle} width={cols.widths.next} onWidth={(n) => cols.setWidth("next", n)} onFit={() => fit("next", "New")} align={colAligns.aligns.next ?? "center"} onAlign={(a) => colAligns.setAlign("next", a)} />
             </tr>
@@ -611,7 +628,7 @@ function AuditTable({ rows }: { rows: AuditEvent[] }) {
                   <td className={cn("px-4 py-3 whitespace-nowrap", alignClass(colAligns.aligns.when ?? "center"))} data-col="when" data-align={colAligns.aligns.when ?? "center"}>{new Date(ev.at).toLocaleString()}</td>
                   <td className={cn("px-4 py-3", alignClass(colAligns.aligns.who ?? "center"))} data-col="who" data-align={colAligns.aligns.who ?? "center"}>{ev.who || "this browser"}</td>
                   <td className={cn("px-4 py-3", alignClass(colAligns.aligns.action ?? "center"))} data-col="action" data-align={colAligns.aligns.action ?? "center"}>{ev.action}</td>
-                  <td className={cn("px-4 py-3", alignClass(colAligns.aligns.detail ?? "center"))} data-col="detail" data-align={colAligns.aligns.detail ?? "center"}>{ev.detail}</td>
+                  <td className={cn("px-4 py-3 col-fill", alignClass(colAligns.aligns.detail ?? "left"))} data-col="detail" data-align={colAligns.aligns.detail ?? "left"}>{ev.detail}</td>
                   <td className={cn("px-4 py-3", alignClass(colAligns.aligns.old ?? "center"))} data-col="old" data-align={colAligns.aligns.old ?? "center"}>{ev.old}</td>
                   <td className={cn("px-4 py-3", alignClass(colAligns.aligns.next ?? "center"))} data-col="next" data-align={colAligns.aligns.next ?? "center"}>{ev.new}</td>
                 </tr>

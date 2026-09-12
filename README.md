@@ -1,4 +1,4 @@
-# Finance Manager v3.63.36
+# Finance Manager v3.63.37
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -26,6 +26,12 @@ Unzip the repo (a second unzip named `finance-manager-main (1)` is fine) so `dep
 Vite is installed with the packages — no global `vite` command. `.npmrc` has `legacy-peer-deps=true`.
 
 After the Windows installer: **delete the leftover white shortcut** and pin the new one — shortcut and taskbar both use the navy pillars tile.
+
+## What's new in v3.63.37
+
+- **IDB growth:** Audit capped (newest 800 / ~180 KB); purge closed years also drops finished recon statements through that date; persist + local backup skip identical JSON (fingerprint).
+- **Code-split:** Vite `manualChunks` for `finance` + vendor (react / tanstack / ui / utils) on web and Tauri — smaller Android cold-start chunks without changing desktop behavior.
+- **PH books helpers (not eFiling):** Reports → Payroll shows 13th-month estimate (posted gross ÷ 12, else months × rate ÷ 12) and 1601-C style WHT summary; CSV exports for 1601-C detail, monthly WHT, 13th month, and VAT summary. Clearly labeled for accountant / books only.
 
 ## What'''s new in v3.63.25
 

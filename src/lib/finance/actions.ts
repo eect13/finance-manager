@@ -31,6 +31,7 @@ import type {
   Vendor,
 } from "./types";
 import { computePhPayroll, periodPayAmount, PH_PAYROLL_CODES } from "./ph-payroll";
+import { capAuditEvents } from "./audit-cap";
 import { applyRegisterOrderPlacement, cashBook, pruneRegisterOrder, type ArrangePlace, type CashLineKind } from "./register";
 import { methodNeedsReference, methodLabel } from "./methods";
 import {
@@ -1806,6 +1807,12 @@ export function purgeClosedThrough(data: FinanceData, throughDate: string): { da
       ],
     };
   }
+  // Drop finished recon statements through the purge date (line refs are gone) and re-cap audit.
+  next = {
+    ...next,
+    reconHistory: (next.reconHistory ?? []).filter((r) => (r.statementDate || "") > throughDate),
+    audit: capAuditEvents(next.audit),
+  };
   return { data: next, removed };
 }
 
@@ -1826,7 +1833,7 @@ function appendAudit(
     old: extra?.old ?? "",
     new: extra?.new ?? "",
   };
-  const audit = [...(data.audit ?? []), event].slice(-2000);
+  const audit = capAuditEvents([...(data.audit ?? []), event]);
   return { ...data, audit };
 }
 

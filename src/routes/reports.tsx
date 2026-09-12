@@ -26,6 +26,14 @@ import { trialBalanceRows } from "@/lib/finance/export";
 import { fitColumnWidth } from "@/lib/finance/fit-column";
 import { formatDate, todayIso } from "@/lib/finance/format";
 import { incomeStatement, trialBalance, vatBalances } from "@/lib/finance/ledger";
+import {
+  BIR_BOOKS_DISCLAIMER,
+  thirteenthMonthCsvRows,
+  thirteenthMonthEstimates,
+  vatSummaryRows,
+  withholding1601cMonthlySummary,
+  withholding1601cRows,
+} from "@/lib/finance/ph-bir";
 import { payrollRemittance } from "@/lib/finance/ph-payroll";
 import type { Account } from "@/lib/finance/types";
 import { openProps, openTxn } from "@/lib/finance/open-record";
@@ -97,7 +105,7 @@ function ReportsPage() {
   return (
     <AppShell
       title="Reports"
-      description="Trial balance, profit and loss, VAT, payroll remittance, and 30/60/90 aging as of a date."
+      description="Trial balance, profit and loss, VAT, payroll remittance (13th month / 1601-C style CSV), and 30/60/90 aging as of a date."
       wide
       actions={
         <>
@@ -640,38 +648,47 @@ function VatPanel({ asOf, currency }: { asOf: string; currency: string }) {
   const data = useFinanceData();
   const vat = vatBalances(data, asOf);
   return (
-    <div className="list-grid list-scroll overflow-auto rounded-2xl table-paper elevation outline-none">
-      <table className="text-sm" style={{ width: "100%" }}>
-        <thead>
-          <tr className="border-b border-border text-muted-foreground">
-            <th className="px-4 py-3 text-center font-medium">Account</th>
-            <th className="px-4 py-3 text-center font-medium">Balance</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr className="border-b border-border/70">
-            <td className="px-4 py-3">Output VAT Payable (2200)</td>
-            <td className="px-4 py-3">
-              <Money amount={vat.output} currency={currency} />
-            </td>
-          </tr>
-          <tr className="border-b border-border/70">
-            <td className="px-4 py-3">Input VAT Receivable (1300)</td>
-            <td className="px-4 py-3">
-              <Money amount={vat.input} currency={currency} />
-            </td>
-          </tr>
-          <tr>
-            <td className="px-4 py-3 font-medium">Net VAT payable</td>
-            <td className="px-4 py-3 font-medium">
-              <Money amount={vat.netPayable} currency={currency} signed />
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      <p className="px-4 py-3 text-xs text-muted-foreground">
-        Output from taxed invoices and cash sales, input from taxed bills. Amount on a bill is VAT-inclusive when Tax % is set. Not a BIR return.
-      </p>
+    <div className="space-y-3">
+      <div className="flex flex-wrap gap-2">
+        <CsvButton
+          filename={`vat-summary-${asOf}.csv`}
+          rows={vatSummaryRows(data, asOf)}
+          label="Export VAT CSV"
+        />
+      </div>
+      <div className="list-grid list-scroll overflow-auto rounded-2xl table-paper elevation outline-none">
+        <table className="text-sm" style={{ width: "100%" }}>
+          <thead>
+            <tr className="border-b border-border text-muted-foreground">
+              <th className="px-4 py-3 text-center font-medium">Account</th>
+              <th className="px-4 py-3 text-center font-medium">Balance</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-b border-border/70">
+              <td className="px-4 py-3">Output VAT Payable (2200)</td>
+              <td className="px-4 py-3">
+                <Money amount={vat.output} currency={currency} />
+              </td>
+            </tr>
+            <tr className="border-b border-border/70">
+              <td className="px-4 py-3">Input VAT Receivable (1300)</td>
+              <td className="px-4 py-3">
+                <Money amount={vat.input} currency={currency} />
+              </td>
+            </tr>
+            <tr>
+              <td className="px-4 py-3 font-medium">Net VAT payable</td>
+              <td className="px-4 py-3 font-medium">
+                <Money amount={vat.netPayable} currency={currency} signed />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p className="px-4 py-3 text-xs text-muted-foreground">
+          Output from taxed invoices and cash sales, input from taxed bills. Amount on a bill is VAT-inclusive when Tax % is set. {BIR_BOOKS_DISCLAIMER}
+        </p>
+      </div>
     </div>
   );
 }
@@ -680,6 +697,10 @@ function VatPanel({ asOf, currency }: { asOf: string; currency: string }) {
 function PayrollPanel({ asOf, currency }: { asOf: string; currency: string }) {
   const data = useFinanceData();
   const p = payrollRemittance(data, asOf);
+  const year = Number((asOf || todayIso()).slice(0, 4)) || new Date().getFullYear();
+  const from = `${year}-01-01`;
+  const thirteenth = useMemo(() => thirteenthMonthEstimates(data, year, asOf), [data, year, asOf]);
+  const monthly1601 = useMemo(() => withholding1601cMonthlySummary(data, from, asOf), [data, from, asOf]);
   const row = (label: string, amount: number) => (
     <tr className="border-b border-border/70 last:border-0">
       <td className="px-4 py-3">{label}</td>
@@ -689,26 +710,120 @@ function PayrollPanel({ asOf, currency }: { asOf: string; currency: string }) {
     </tr>
   );
   return (
-    <div className="list-grid list-scroll overflow-auto rounded-2xl table-paper elevation outline-none">
-      <table className="text-sm" style={{ width: "100%" }}>
-        <thead>
-          <tr className="border-b border-border text-muted-foreground">
-            <th className="px-4 py-3 text-center font-medium">Account</th>
-            <th className="px-4 py-3 text-center font-medium">Balance</th>
-          </tr>
-        </thead>
-        <tbody>
-          {row("SSS Payable (2211)", p.sss)}
-          {row("PhilHealth Payable (2212)", p.philhealth)}
-          {row("Pag-IBIG Payable (2213)", p.pagibig)}
-          {row("Withholding Tax Payable (2214)", p.wht)}
-          {row("Other withholdings (2210)", p.other)}
-          {row("Employer contributions (5310)", p.employer)}
-        </tbody>
-      </table>
-      <p className="px-4 py-3 text-xs text-muted-foreground">
-        2026 PH statutory from posted paychecks. Remit SSS, PhilHealth, Pag-IBIG, and BIR 1601-C from these balances. Not a government filing.
-      </p>
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-2">
+        <CsvButton
+          filename={`1601c-withholding-${year}.csv`}
+          rows={withholding1601cRows(data, from, asOf)}
+          label="Export 1601-C CSV"
+        />
+        <CsvButton
+          filename={`1601c-monthly-${year}.csv`}
+          rows={monthly1601}
+          label="Export monthly WHT"
+        />
+        <CsvButton
+          filename={`13th-month-${year}.csv`}
+          rows={thirteenthMonthCsvRows(data, year, asOf)}
+          label="Export 13th month"
+        />
+      </div>
+
+      <div className="list-grid list-scroll overflow-auto rounded-2xl table-paper elevation outline-none">
+        <table className="text-sm" style={{ width: "100%" }}>
+          <thead>
+            <tr className="border-b border-border text-muted-foreground">
+              <th className="px-4 py-3 text-center font-medium">Account</th>
+              <th className="px-4 py-3 text-center font-medium">Balance</th>
+            </tr>
+          </thead>
+          <tbody>
+            {row("SSS Payable (2211)", p.sss)}
+            {row("PhilHealth Payable (2212)", p.philhealth)}
+            {row("Pag-IBIG Payable (2213)", p.pagibig)}
+            {row("Withholding Tax Payable (2214)", p.wht)}
+            {row("Other withholdings (2210)", p.other)}
+            {row("Employer contributions (5310)", p.employer)}
+          </tbody>
+        </table>
+        <p className="px-4 py-3 text-xs text-muted-foreground">
+          2026 PH statutory from posted paychecks. Use Export 1601-C CSV for the accountant’s remittance worksheet (not eBIRForms XML). {BIR_BOOKS_DISCLAIMER}
+        </p>
+      </div>
+
+      <div className="list-grid list-scroll overflow-auto rounded-2xl table-paper elevation outline-none">
+        <div className="border-b border-border px-4 py-3">
+          <p className="text-sm font-medium">13th month estimate · {year}</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Prefer posted paycheck gross ÷ 12. Else salaried pro-rata: monthly rate × months worked ÷ 12 (hire month counts if any day worked). Basic pay only — not OT or allowances. Does not apply the ₱90,000 fringe exclusion or TRAIN year-end annualization. {BIR_BOOKS_DISCLAIMER}
+          </p>
+        </div>
+        <table className="text-sm" style={{ width: "100%" }}>
+          <thead>
+            <tr className="border-b border-border text-muted-foreground">
+              <th className="px-4 py-3 text-center font-medium">Employee</th>
+              <th className="px-4 py-3 text-center font-medium">Months</th>
+              <th className="px-4 py-3 text-center font-medium">Basis</th>
+              <th className="px-4 py-3 text-center font-medium">Estimate</th>
+            </tr>
+          </thead>
+          <tbody>
+            {thirteenth.length === 0 ? (
+              <tr>
+                <td className="px-4 py-3 text-muted-foreground" colSpan={4}>
+                  No active employees.
+                </td>
+              </tr>
+            ) : (
+              thirteenth.map((r) => (
+                <tr key={r.employeeId} className="border-b border-border/70 last:border-0">
+                  <td className="px-4 py-3">{r.name}</td>
+                  <td className="px-4 py-3">{r.monthsCounted}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{r.note}</td>
+                  <td className="px-4 py-3">
+                    <Money amount={r.estimate} currency={currency} />
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {monthly1601.length > 0 ? (
+        <div className="list-grid list-scroll overflow-auto rounded-2xl table-paper elevation outline-none">
+          <div className="border-b border-border px-4 py-3">
+            <p className="text-sm font-medium">1601-C style monthly WHT · {year}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              From posted employee paychecks through the as-of date. Detail CSV has one row per slip.
+            </p>
+          </div>
+          <table className="text-sm" style={{ width: "100%" }}>
+            <thead>
+              <tr className="border-b border-border text-muted-foreground">
+                <th className="px-4 py-3 text-center font-medium">Period</th>
+                <th className="px-4 py-3 text-center font-medium">Slips</th>
+                <th className="px-4 py-3 text-center font-medium">Gross</th>
+                <th className="px-4 py-3 text-center font-medium">WHT</th>
+              </tr>
+            </thead>
+            <tbody>
+              {monthly1601.map((r) => (
+                <tr key={String(r.Period)} className="border-b border-border/70 last:border-0">
+                  <td className="px-4 py-3">{r.Period}</td>
+                  <td className="px-4 py-3">{r.Paychecks}</td>
+                  <td className="px-4 py-3">
+                    <Money amount={Math.round(Number(r["Gross pay"]) * 100)} currency={currency} />
+                  </td>
+                  <td className="px-4 py-3">
+                    <Money amount={Math.round(Number(r["WHT (2214)"]) * 100)} currency={currency} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
     </div>
   );
 }

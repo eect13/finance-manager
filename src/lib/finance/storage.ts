@@ -1,4 +1,5 @@
 import type { PersistStorage, StateStorage, StorageValue } from "zustand/middleware";
+import { contentFingerprint } from "./audit-cap";
 import { writeLocalBackupsFromPersist } from "./local-backup";
 
 const DB_NAME = "finance-manager";
@@ -87,11 +88,20 @@ export function createDebouncedPersistStorage<T>(kv: StateStorage, delay = 280):
   let timer: ReturnType<typeof setTimeout> | null = null;
   let pending: { name: string; value: StorageValue<T> } | null = null;
 
+  const lastWritten = new Map<string, string>();
+
   function flush() {
     if (!pending) return;
     const { name, value } = pending;
     pending = null;
     const json = JSON.stringify(value);
+    const hash = contentFingerprint(json);
+    if (lastWritten.get(name) === hash) {
+      // Books unchanged — still refresh the restore snapshot path (it has its own skip).
+      writeLocalBackupsFromPersist(value);
+      return;
+    }
+    lastWritten.set(name, hash);
     void Promise.resolve(kv.setItem(name, json)).then(() => {
       writeLocalBackupsFromPersist(value);
     });

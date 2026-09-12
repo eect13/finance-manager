@@ -1,6 +1,14 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.35.
+Re-verified in code 2026-09-08. Updated for v3.63.37.
+
+## Fixed in v3.63.37
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| O2 | Low | IDB audit / dual backup growth | Cap audit (800 / ~180 KB) on append + normalize; skip identical persist + local-backup JSON; purge closed years drops recon statements ≤ through date |
+| O3 | Low | Optional `manualChunks` still open | Vite `manualChunks` for finance + vendor-* on web and Tauri desktop builds |
+| BIR | Product | 13th month / 1601-C / VAT export deferred | Practical slice: 13th-month estimate + 1601-C style WHT CSV + VAT summary CSV; labeled not eFiling (no TRAIN annualization) |
 
 ## Fixed in v3.63.35
 
@@ -382,7 +390,7 @@ Re-verified in code 2026-09-05 (Asia/Manila). Updated for v3.62.47. UI direction
 | D | Low | `ensureOutputVat` | Now `ensureSystemAccounts` (2200 / 1300 / 2210). Lookups still use `code`. | Improved (v3.63.0) |
 | E | Low | Debounced persist (~280ms) | `beforeunload` + `pagehide` / `visibilitychange` flush. Crash can still drop a beat. | Improved (v3.63.0) |
 | F | Low | `patchJournalAmount` | Still used for check / payment receipt / untaxed bill / deposit / expense / transfer (2-line). **Do not** use for multi-line VAT. | Still open (safe for 2-line) |
-| G | Med (product) | Thin payroll | Pay period, batch Pay all active, `employeeId`. 2026 SSS/PhilHealth/Pag-IBIG/TRAIN + Reports → Payroll (v3.63.17). Not BIR annualization / 1601-C filing / 13th month. | Fixed (statutory; filing still out of scope) |
+| G | Med (product) | Thin payroll | Statutory PH + Reports payroll (v3.63.17). 13th-month estimate + 1601-C style / VAT CSV (v3.63.37). Still not full BIR annualization / eBIRForms. | Improved (books helpers; eFiling still out of scope) |
 | H | — | Android APK | Solo path improved in v3.59 (JDK 17, NDK resolve, symlink fallback, auto-sign). Still needs SDK+NDK on the machine. | Improved (env) |
 
 ## New findings (confirmed) — not yet fixed or deferred
@@ -402,13 +410,13 @@ Re-verified in code 2026-09-05 (Asia/Manila). Updated for v3.62.47. UI direction
 
 ## Areas of improvement
 
-1. **IndexedDB / size** — Cap audit further; optional purge of closed detail; avoid dual full backup copies; chunked multi-company blobs.
+1. **IndexedDB / size** — Audit cap + skip-identical backup/persist shipped (v3.63.37). Still open: chunked multi-company blobs.
 2. **List virtualization** — Register pattern is on the large lists, Close/Forecast/Recurring, and Grid cards. VAT panel and record-sheet lines stay unwindowed (tiny).
-3. **Code-split** — `tanstackStart({ router: { autoCodeSplitting: true } })` in v3.63.17. Optional `manualChunks` still open.
+3. **Code-split** — Route auto-split (v3.63.17) + `manualChunks` finance/vendor (v3.63.37).
 4. **Tauri / Android** — Validate WebView IDB persistence; share/save company JSON; cold-start via splits. Solo APK path improved in v3.59; still needs SDK+NDK installed.
-5. **Payroll depth** — Statutory PH engine shipped (v3.63.17). Still open: BIR annualization, 1601-C filing export, 13th month.
+5. **Payroll depth** — Statutory PH engine (v3.63.17) + 13th-month estimate + 1601-C style CSV (v3.63.37). Still open: full BIR annualization / TRAIN year-end / eBIRForms XML.
 6. **Multi-device** — Company-file merge by id (local wins, incoming-only rows added). Open still replaces. P2P stub deleted.
-7. **Purchase VAT** — Done (v3.63.0): Input VAT on bills + Reports → VAT. Still open: BIR return export.
+7. **Purchase VAT** — Done (v3.63.0): Input VAT on bills + Reports → VAT. VAT summary CSV (v3.63.37). Still open: official BIR return / eFiling package.
 8. **Invoice edit UX** — Surface tax as document field clearly so Settings toggle never feels like it rewrites history (partially: Tax % on create/edit when tax enabled).
 9. **“All dates” copy** — Align README (“through today”) with code (`to: ""`) or cap `dateTo` at `todayIso()`.
 10. **Field `htmlFor` / input ids** — Wire labels for keyboard and screen-reader focus.

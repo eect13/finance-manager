@@ -22,6 +22,12 @@ import {
   vendorRows,
   visibleCsv,
 } from "@/lib/finance/export";
+import {
+  thirteenthMonthCsvRows,
+  vatSummaryRows,
+  withholding1601cRows,
+} from "@/lib/finance/ph-bir";
+import { todayIso } from "@/lib/finance/format";
 import type { FinanceData } from "@/lib/finance/types";
 
 function stamp() {
@@ -36,6 +42,9 @@ function saveCsv(filename: string, rows: Array<Record<string, string | number>>)
 export type ExportCsvAction = { label: string; filename: string; rows: Array<Record<string, string | number>> };
 
 export function exportCsvActions(data: FinanceData, day = stamp()): ExportCsvAction[] {
+  const asOf = todayIso();
+  const year = Number(asOf.slice(0, 4)) || new Date().getFullYear();
+  const yearStart = `${year}-01-01`;
   return [
     { label: "General ledger CSV", filename: `ledger-${day}.csv`, rows: ledgerRows(data) },
     { label: "Trial balance CSV", filename: `trial-balance-${day}.csv`, rows: trialBalanceRows(data) },
@@ -47,6 +56,9 @@ export function exportCsvActions(data: FinanceData, day = stamp()): ExportCsvAct
     { label: "Receipts CSV", filename: `receipts-${day}.csv`, rows: receiptRows(data) },
     { label: "Bills CSV", filename: `bills-${day}.csv`, rows: billRows(data) },
     { label: "Banks CSV", filename: `banks-${day}.csv`, rows: bankRows(data) },
+    { label: "VAT summary CSV", filename: `vat-summary-${day}.csv`, rows: vatSummaryRows(data, asOf) },
+    { label: "1601-C withholding CSV", filename: `1601c-withholding-${year}.csv`, rows: withholding1601cRows(data, yearStart, asOf) },
+    { label: "13th month estimate CSV", filename: `13th-month-${year}.csv`, rows: thirteenthMonthCsvRows(data, year, asOf) },
   ];
 }
 

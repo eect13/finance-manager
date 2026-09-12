@@ -2,6 +2,7 @@ import { DEFAULT_SETTINGS, normalizeRegisterCols, parseRecon, type ReconStatus }
 import { parseDateFormat } from "./format";
 import { parseMethod } from "./methods";
 import { ensureRegisterOrder } from "./register";
+import { capAuditEvents } from "./audit-cap";
 import type { Employee, PayType,  Account, AuditEvent, Bank, Bill, CheckRecord, CloseSnapshot, Customer, FinanceData, Invoice, JournalEntry, Receipt, ReconStatement, Vendor } from "./types";
 
 function asArray<T>(value: unknown): T[] {
@@ -174,12 +175,14 @@ export function normalizeBooks(raw: unknown): FinanceData {
       journalId: typeof s.journalId === "string" ? s.journalId : "",
       packetPrinted: Boolean(s.packetPrinted),
     })),
-    audit: asArray<AuditEvent>(p.audit).map((ev) => ({
-      ...ev,
-      who: ev.who && ev.who.trim() ? ev.who : "this browser",
-      old: typeof ev.old === "string" ? ev.old : "",
-      new: typeof ev.new === "string" ? ev.new : "",
-    })),
+    audit: capAuditEvents(
+      asArray<AuditEvent>(p.audit).map((ev) => ({
+        ...ev,
+        who: ev.who && ev.who.trim() ? ev.who : "this browser",
+        old: typeof ev.old === "string" ? ev.old : "",
+        new: typeof ev.new === "string" ? ev.new : "",
+      })),
+    ),
     registerOrder: registerOrderSeed,
     nextNumbers: {
       invoice: nextNumbers.invoice ?? 1,

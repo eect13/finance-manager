@@ -22,6 +22,45 @@ function quietRolldownChecks() {
   };
 }
 
+
+/** Split vendor + finance so Android WebView cold start loads a smaller first paint. Safe for Tauri desktop. */
+function appManualChunks(id: string): string | undefined {
+  const norm = id.replace(/\\/g, "/");
+  if (norm.includes("/src/lib/finance/")) return "finance";
+  if (!norm.includes("node_modules")) return undefined;
+  if (
+    norm.includes("/react-dom/") ||
+    norm.includes("/react/") ||
+    norm.includes("/scheduler/")
+  ) {
+    return "vendor-react";
+  }
+  if (norm.includes("/@tanstack/")) return "vendor-tanstack";
+  if (
+    norm.includes("/@radix-ui/") ||
+    norm.includes("/lucide-react/") ||
+    norm.includes("/cmdk/") ||
+    norm.includes("/vaul/") ||
+    norm.includes("/sonner/") ||
+    norm.includes("/class-variance-authority/") ||
+    norm.includes("/clsx/") ||
+    norm.includes("/tailwind-merge/")
+  ) {
+    return "vendor-ui";
+  }
+  if (
+    norm.includes("/date-fns/") ||
+    norm.includes("/zod/") ||
+    norm.includes("/zustand/") ||
+    norm.includes("/react-hook-form/") ||
+    norm.includes("/@hookform/")
+  ) {
+    return "vendor-utils";
+  }
+  return "vendor";
+}
+
+
 /** `tauri build` sets these. Skip Nitro SSR — the installer only needs static files + index.html. */
 const isTauriBuild = Boolean(
   process.env.TAURI_ENV_PLATFORM || process.env.TAURI_ENV_FAMILY || process.env.TAURI_PLATFORM,
@@ -198,6 +237,9 @@ export default defineConfig(({ command, isPreview }) => {
         rolldownOptions: {
           input: "desktop.html",
           checks: quietRolldownChecks(),
+          output: {
+            manualChunks: appManualChunks,
+          },
           onLog(level, log, defaultHandler) {
             const code = String((log as { code?: string }).code ?? "");
             if (code === "INEFFECTIVE_DYNAMIC_IMPORT" || code === "PLUGIN_TIMINGS") return;
@@ -250,5 +292,19 @@ export default defineConfig(({ command, isPreview }) => {
       : []),
     viteReact(),
   ],
+  build: {
+    chunkSizeWarningLimit: 900,
+    rolldownOptions: {
+      checks: quietRolldownChecks(),
+      output: {
+        manualChunks: appManualChunks,
+      },
+      onLog(level, log, defaultHandler) {
+        const code = String((log as { code?: string }).code ?? "");
+        if (code === "INEFFECTIVE_DYNAMIC_IMPORT" || code === "PLUGIN_TIMINGS") return;
+        defaultHandler(level, log);
+      },
+    },
+  },
   };
 });

@@ -1,3 +1,4 @@
+import { contentFingerprint } from "./audit-cap";
 import { normalizeBooks } from "./normalize";
 import type { FinanceData } from "./types";
 
@@ -8,6 +9,8 @@ export type LocalCopy = {
   id: string;
   savedAt: string;
   data: FinanceData;
+  /** Fingerprint of serialized books — skip put when unchanged. */
+  hash?: string;
 };
 
 function openDb(): Promise<IDBDatabase> {
@@ -54,36 +57,37 @@ function asCopy(raw: unknown): LocalCopy | null {
   const o = raw as Record<string, unknown>;
   if (typeof o.id !== "string" || typeof o.savedAt !== "string") return null;
   try {
-    return { id: o.id, savedAt: o.savedAt, data: normalizeBooks(o.data) };
+    return {
+      id: o.id,
+      savedAt: o.savedAt,
+      data: normalizeBooks(o.data),
+      hash: typeof o.hash === "string" ? o.hash : undefined,
+    };
   } catch {
     return null;
   }
 }
 
-const lastSnapshot = new Map<string, string>();
-
-function snapshotKey(data: FinanceData): string {
-  return JSON.stringify(data);
-}
+const lastHash = new Map<string, string>();
 
 /** One timestamped snapshot per company. Survives Remove company / Remove sample. */
 export async function writeLocalBackup(id: string, data: FinanceData): Promise<void> {
   if (!id || !data?.settings) return;
-  const json = snapshotKey(data);
-  if (lastSnapshot.get(id) === json) return;
-  lastSnapshot.set(id, json);
-  const row: LocalCopy = { id, savedAt: new Date().toISOString(), data };
+  const hash = contentFingerprint(data);
+  if (lastHash.get(id) === hash) return;
+  lastHash.set(id, hash);
+  const row: LocalCopy = { id, savedAt: new Date().toISOString(), data, hash };
   await idbOp("readwrite", (store) => store.put(row));
 }
 
 export async function writeLocalBackups(companies: Record<string, FinanceData>): Promise<void> {
   const entries = Object.entries(companies).filter(([, data]) => data?.settings);
-  const changed: Array<[string, FinanceData]> = [];
+  const changed: Array<[string, FinanceData, string]> = [];
   for (const [id, data] of entries) {
-    const json = snapshotKey(data);
-    if (lastSnapshot.get(id) === json) continue;
-    lastSnapshot.set(id, json);
-    changed.push([id, data]);
+    const hash = contentFingerprint(data);
+    if (lastHash.get(id) === hash) continue;
+    lastHash.set(id, hash);
+    changed.push([id, data, hash]);
   }
   if (changed.length === 0) return;
   const savedAt = new Date().toISOString();
@@ -92,8 +96,8 @@ export async function writeLocalBackups(companies: Record<string, FinanceData>):
       new Promise<void>((resolve, reject) => {
         const tx = db.transaction(STORE, "readwrite");
         const store = tx.objectStore(STORE);
-        for (const [id, data] of changed) {
-          store.put({ id, savedAt, data } satisfies LocalCopy);
+        for (const [id, data, hash] of changed) {
+          store.put({ id, savedAt, data, hash } satisfies LocalCopy);
         }
         tx.oncomplete = () => {
           db.close();
@@ -109,7 +113,10 @@ export async function writeLocalBackups(companies: Record<string, FinanceData>):
 
 export async function readLocalBackup(id: string): Promise<LocalCopy | null> {
   try {
-    return asCopy(await idbOp<unknown>("readonly", (store) => store.get(id)));
+    const copy = asCopy(await idbOp<unknown>("readonly", (store) => store.get(id)));
+    if (copy?.hash) lastHash.set(copy.id, copy.hash);
+    else if (copy) lastHash.set(copy.id, contentFingerprint(copy.data));
+    return copy;
   } catch {
     return null;
   }

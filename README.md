@@ -1,4 +1,4 @@
-# Finance Manager v3.63.40
+# Finance Manager v3.63.41
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -6,7 +6,7 @@ Pacific Harbor Trading is the default **sample company** — a full 2026 year of
 
 **License:** MIT. Light or dark. No accounts, no server, no cloud. Books stay on this computer (IndexedDB). Settings → Storage can ask the browser to keep them. Download a backup to move them.
 
-The app mark is a **navy tile with cream pillars**. Windows uses a BMP 32-bit `.ico` (PNG-in-ICO showed as a white square). After install, delete any leftover blank shortcut and pin the new one.
+The app mark is a **navy tile with cream pillars**. Windows uses a BMP 32-bit `.ico` (PNG-in-ICO showed as a white square). NSIS writes one Desktop shortcut named **Finance Manager** (navy tile). A second launch focuses the existing window.
 
 ## Install (fresh GitHub download)
 
@@ -25,7 +25,12 @@ Unzip the repo (a second unzip named `finance-manager-main (1)` is fine) so `dep
 
 Vite is installed with the packages — no global `vite` command. `.npmrc` has `legacy-peer-deps=true`.
 
-After the Windows installer: **delete the leftover white shortcut** and pin the new one — shortcut and taskbar both use the navy pillars tile.
+After the Windows installer: Desktop has one **Finance Manager** shortcut (navy pillars). Pin that — do not keep leftover `finance-manager` aliases from older builds.
+
+## What's new in v3.63.41
+
+- **Single-instance desktop:** opening Finance Manager again focuses, unminimizes, and shows the existing window. Android is unchanged.
+- **Tidy NSIS Desktop shortcut:** installer writes one **Finance Manager** shortcut (product name + exe icon) and removes leftover `finance-manager` / `FinanceManager` aliases.
 
 ## What's new in v3.63.40
 

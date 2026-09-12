@@ -1,6 +1,13 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.40.
+Re-verified in code 2026-09-08. Updated for v3.63.41.
+
+## Fixed in v3.63.41
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| D1 | Med | Second desktop launch opened another window | `tauri-plugin-single-instance` (desktop-only) focuses / unminimizes / shows `main` |
+| D2 | Low | Messy / leftover Desktop shortcuts after NSIS | `windows/hooks.nsh` writes one `Finance Manager.lnk` and deletes cargo-name aliases |
 
 ## Fixed in v3.63.40
 

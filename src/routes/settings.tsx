@@ -29,7 +29,8 @@ import { formatDate, todayIso } from "@/lib/finance/format";
 import { useEntrySort } from "@/lib/finance/sort";
 import { UNDO_MAX, useFinanceData, useFinanceStore } from "@/lib/finance/store";
 import { browserStorage, countEntries, formatBytes, jsonSize, requestPersistentStorage } from "@/lib/finance/storage-usage";
-import { COUNTRY_TAX_PACKS, CURRENCIES, countryTaxPackForCurrency, type RecurringItem } from "@/lib/finance/types";
+import { newId } from "@/lib/finance/ids";
+import { COUNTRY_TAX_PACKS, CURRENCIES, countryTaxPackForCurrency, modulesEnabledByPack, withModule, type RecurringItem } from "@/lib/finance/types";
 import { useShallow } from "zustand/react/shallow";
 import { AppearancePicker } from "@/components/theme-toggle";
 import { DisplayZoomSettings, ListDensitySettings, ListTypeSettings, DateFormatSettings } from "@/components/ui-zoom-controls";
@@ -433,6 +434,10 @@ function SettingsPage() {
                             patch.modulePh13thMonth = true;
                             patch.modulePhBirExports = true;
                           }
+                          const extra = modulesEnabledByPack(pack.id);
+                          if (Object.keys(extra).length) {
+                            patch.modules = { ...settings.modules, ...extra };
+                          }
                           updateSettings(patch);
                           toast.success(
                             willUpdateCurrency
@@ -471,8 +476,9 @@ function SettingsPage() {
           <CardHeader>
             <CardTitle>Tax & payroll modules</CardTitle>
             <OptionsDescMore>
-              Turn on modules for your country. More regions later. Toggles only hide UI and exports — they do not
-              delete posted paychecks, balances, or accounts.
+              Turn on modules for your country. Practical stubs for the books and accountant — not statutory filing
+              engines. Toggles only hide UI and exports — they do not delete posted paychecks, balances, rates, or
+              accounts.
             </OptionsDescMore>
           </CardHeader>
           <CardContent className="grid gap-4">
@@ -503,8 +509,167 @@ function SettingsPage() {
                 onCheckedChange={(v) => updateSettings({ modulePhBirExports: v })}
               />
             </OptionsSwitchRow>
+            <OptionsSwitchRow
+              title="US payroll (FIT + FICA stub)"
+              hint="W-2 style estimate and CSV from salary posts. Not a substitute for IRS e-file, Form W-2, or 941."
+            >
+              <Switch
+                checked={settings.modules.usPayroll}
+                onCheckedChange={(v) => updateSettings(withModule(settings, "usPayroll", v))}
+              />
+            </OptionsSwitchRow>
+            <OptionsSwitchRow
+              title="Singapore CPF"
+              hint="Employee / employer CPF estimate table and CSV. Not CPF Board filing."
+            >
+              <Switch
+                checked={settings.modules.sgCpf}
+                onCheckedChange={(v) => updateSettings(withModule(settings, "sgCpf", v))}
+              />
+            </OptionsSwitchRow>
+            <OptionsSwitchRow
+              title="Generic VAT / GST workbook"
+              hint="Rates plus input/output summary and CSV for any VAT country. Not a VAT return."
+            >
+              <Switch
+                checked={settings.modules.genericVat}
+                onCheckedChange={(v) => updateSettings(withModule(settings, "genericVat", v))}
+              />
+            </OptionsSwitchRow>
+            <OptionsSwitchRow
+              title="Australia PAYG / BAS summary"
+              hint="Remittance-style GST + PAYG estimate and CSV. Not ATO BAS or STP."
+            >
+              <Switch
+                checked={settings.modules.auBas}
+                onCheckedChange={(v) => updateSettings(withModule(settings, "auBas", v))}
+              />
+            </OptionsSwitchRow>
+            <OptionsSwitchRow
+              title="UK PAYE + NI"
+              hint="PAYE and Class 1 NI estimate and CSV. Not HMRC RTI."
+            >
+              <Switch
+                checked={settings.modules.ukPaye}
+                onCheckedChange={(v) => updateSettings(withModule(settings, "ukPaye", v))}
+              />
+            </OptionsSwitchRow>
+            <OptionsSwitchRow
+              title="Multi-currency FX"
+              hint="Rate table, secondary currency display, and convert CSV. Books stay in home currency — no automatic gain/loss journals."
+            >
+              <Switch
+                checked={settings.modules.multiCurrency}
+                onCheckedChange={(v) => updateSettings(withModule(settings, "multiCurrency", v))}
+              />
+            </OptionsSwitchRow>
+            {settings.modules.multiCurrency ? (
+              <div className="grid gap-3 rounded-xl border border-border/70 bg-muted/40 px-4 py-3">
+                <Field label="Secondary currency">
+                  <Select
+                    value={settings.secondaryCurrency || "__none__"}
+                    onValueChange={(v) => updateSettings({ secondaryCurrency: v === "__none__" ? "" : v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="None" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">None</SelectItem>
+                      {CURRENCIES.filter((c) => c.code !== settings.currency).map((c) => (
+                        <SelectItem key={c.code} value={c.code}>
+                          {c.code} — {c.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <p className="text-xs text-muted-foreground">
+                  Rate is units of To per 1 From (e.g. 1 USD = 56 PHP → From USD, To PHP, Rate 56). Latest rate on or before a
+                  document date is used.
+                </p>
+                <div className="grid gap-2">
+                  {(settings.fxRates ?? []).map((row) => (
+                    <div key={row.id} className="grid gap-2 sm:grid-cols-[1fr_1fr_1fr_1fr_auto]">
+                      <Input
+                        value={row.from}
+                        placeholder="From"
+                        onChange={(e) =>
+                          updateSettings({
+                            fxRates: settings.fxRates.map((r) =>
+                              r.id === row.id ? { ...r, from: e.target.value.toUpperCase() } : r,
+                            ),
+                          })
+                        }
+                      />
+                      <Input
+                        value={row.to}
+                        placeholder="To"
+                        onChange={(e) =>
+                          updateSettings({
+                            fxRates: settings.fxRates.map((r) =>
+                              r.id === row.id ? { ...r, to: e.target.value.toUpperCase() } : r,
+                            ),
+                          })
+                        }
+                      />
+                      <Input
+                        value={String(row.rate)}
+                        inputMode="decimal"
+                        placeholder="Rate"
+                        onChange={(e) =>
+                          updateSettings({
+                            fxRates: settings.fxRates.map((r) =>
+                              r.id === row.id ? { ...r, rate: Number(e.target.value) || 0 } : r,
+                            ),
+                          })
+                        }
+                      />
+                      <Input
+                        value={row.asOf}
+                        placeholder="As of YYYY-MM-DD"
+                        onChange={(e) =>
+                          updateSettings({
+                            fxRates: settings.fxRates.map((r) => (r.id === row.id ? { ...r, asOf: e.target.value } : r)),
+                          })
+                        }
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => updateSettings({ fxRates: settings.fxRates.filter((r) => r.id !== row.id) })}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="w-fit"
+                    onClick={() =>
+                      updateSettings({
+                        fxRates: [
+                          ...settings.fxRates,
+                          {
+                            id: newId(),
+                            from: settings.currency || "USD",
+                            to: settings.secondaryCurrency || "USD",
+                            rate: 1,
+                            asOf: todayIso(),
+                          },
+                        ],
+                      })
+                    }
+                  >
+                    Add FX rate
+                  </Button>
+                </div>
+              </div>
+            ) : null}
             <p className="text-xs text-muted-foreground">
-              Defaults: on for PHP currency and the Pacific Harbor sample; off for other currencies until you turn them on.
+              Defaults: PH on for PHP / Pacific Harbor; US payroll for USD; CPF for SGD; PAYG/BAS for AUD; PAYE for GBP;
+              generic VAT when sales tax is already on. Off otherwise until you turn them on. Toggles hide UI — they do not
+              delete posted paychecks, rates, or accounts.
             </p>
           </CardContent>
         </Card>

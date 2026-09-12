@@ -1,6 +1,13 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.38.
+Re-verified in code 2026-09-08. Updated for v3.63.39.
+
+## Fixed in v3.63.39
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| M4 | Product | Suggested US / SG / VAT / AU / UK / FX packs not built | Settings toggles + estimate tables/CSV (stubs, not filing engines); defaults from currency / taxEnabled; country packs enable related flags |
+| M5 | Low | FX / VAT workbook needed a home for rates | `settings.modules` + `fxRates` / `secondaryCurrency`; Reports FX tab and generic VAT monthly workbook gated |
 
 ## Fixed in v3.63.38
 
@@ -431,7 +438,7 @@ Re-verified in code 2026-09-05 (Asia/Manila). Updated for v3.62.47. UI direction
 2. **List virtualization** — Register pattern is on the large lists, Close/Forecast/Recurring, and Grid cards. VAT panel and record-sheet lines stay unwindowed (tiny).
 3. **Code-split** — Route auto-split (v3.63.17) + `manualChunks` finance/vendor (v3.63.37).
 4. **Tauri / Android** — Validate WebView IDB persistence; share/save company JSON; cold-start via splits. Solo APK path improved in v3.59; still needs SDK+NDK installed.
-5. **Payroll depth** — Statutory PH engine (v3.63.17) + 13th-month / 1601-C CSV (v3.63.37) + regional module toggles (v3.63.38). Still open: full BIR annualization / TRAIN year-end / eBIRForms XML; other country packs (US/SG/AU/UK) as suggestions only.
+5. **Payroll depth** — Statutory PH engine (v3.63.17) + 13th-month / 1601-C CSV (v3.63.37) + regional module toggles (v3.63.38). US/SG/AU/UK/VAT/FX stubs shipped (v3.63.39). Still open: full BIR annualization / TRAIN year-end / eBIRForms XML; IRS Pub 15-T / W-2 e-file; CPF Board; ATO BAS/STP; HMRC RTI; per-invoice FX + realized gain/loss journals.
 6. **Multi-device** — Company-file merge by id (local wins, incoming-only rows added). Open still replaces. P2P stub deleted.
 7. **Purchase VAT** — Done (v3.63.0): Input VAT on bills + Reports → VAT. VAT summary CSV (v3.63.37). Still open: official BIR return / eFiling package.
 8. **Invoice edit UX** — Surface tax as document field clearly so Settings toggle never feels like it rewrites history (partially: Tax % on create/edit when tax enabled).

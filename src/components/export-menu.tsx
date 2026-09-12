@@ -22,11 +22,17 @@ import {
   vendorRows,
   visibleCsv,
 } from "@/lib/finance/export";
+import { auBasCsvRows } from "@/lib/finance/au-bas";
+import { fxDocumentCsvRows, fxRateCsvRows } from "@/lib/finance/fx";
+import { genericVatCsvRows } from "@/lib/finance/generic-vat";
 import {
   thirteenthMonthCsvRows,
   vatSummaryRows,
   withholding1601cRows,
 } from "@/lib/finance/ph-bir";
+import { sgCpfCsvRows } from "@/lib/finance/sg-cpf";
+import { ukPayeCsvRows } from "@/lib/finance/uk-paye";
+import { usW2CsvRows } from "@/lib/finance/us-payroll";
 import { todayIso } from "@/lib/finance/format";
 import type { FinanceData } from "@/lib/finance/types";
 
@@ -72,6 +78,50 @@ export function exportCsvActions(data: FinanceData, day = stamp()): ExportCsvAct
       label: "13th month estimate CSV",
       filename: `13th-month-${year}.csv`,
       rows: thirteenthMonthCsvRows(data, year, asOf),
+    });
+  }
+  const m = s.modules ?? {};
+  if (m.usPayroll) {
+    actions.push({
+      label: "US W-2 style estimate CSV",
+      filename: `us-w2-estimate-${year}.csv`,
+      rows: usW2CsvRows(data, year, asOf),
+    });
+  }
+  if (m.sgCpf) {
+    actions.push({
+      label: "Singapore CPF estimate CSV",
+      filename: `sg-cpf-estimate-${year}.csv`,
+      rows: sgCpfCsvRows(data, year, asOf),
+    });
+  }
+  if (m.genericVat) {
+    actions.push({
+      label: "VAT/GST workbook CSV",
+      filename: `vat-gst-workbook-${day}.csv`,
+      rows: genericVatCsvRows(data, asOf),
+    });
+  }
+  if (m.auBas) {
+    actions.push({
+      label: "Australia BAS / PAYG CSV",
+      filename: `au-bas-payg-${year}.csv`,
+      rows: auBasCsvRows(data, year, asOf),
+    });
+  }
+  if (m.ukPaye) {
+    actions.push({
+      label: "UK PAYE + NI estimate CSV",
+      filename: `uk-paye-ni-${year}.csv`,
+      rows: ukPayeCsvRows(data, year, asOf),
+    });
+  }
+  if (m.multiCurrency) {
+    actions.push({ label: "FX rates CSV", filename: `fx-rates-${day}.csv`, rows: fxRateCsvRows(data) });
+    actions.push({
+      label: "FX converted documents CSV",
+      filename: `fx-documents-${day}.csv`,
+      rows: fxDocumentCsvRows(data, asOf),
     });
   }
   return actions;

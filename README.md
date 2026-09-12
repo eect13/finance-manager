@@ -1,4 +1,4 @@
-# Finance Manager v3.63.38
+# Finance Manager v3.63.39
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -26,6 +26,11 @@ Unzip the repo (a second unzip named `finance-manager-main (1)` is fine) so `dep
 Vite is installed with the packages — no global `vite` command. `.npmrc` has `legacy-peer-deps=true`.
 
 After the Windows installer: **delete the leftover white shortcut** and pin the new one — shortcut and taskbar both use the navy pillars tile.
+
+## What's new in v3.63.39
+
+- **More regional stubs** (Settings toggles, default off unless the currency / VAT hint matches): US FIT+FICA W-2 style estimate, Singapore CPF, generic VAT/GST workbook, Australia PAYG/BAS summary, UK PAYE+NI, and multi-currency FX rates + convert CSV. Country packs can turn on related toggles. Practical books/accountant worksheets — **not** IRS / CPF Board / ATO / HMRC / VAT e-file.
+- Toggling a module off hides Reports / Export UI and does not delete posted paychecks, rates, or accounts.
 
 ## What's new in v3.63.38
 
@@ -79,16 +84,21 @@ After the Windows installer: **delete the leftover white shortcut** and pin the 
 
 Older point-release notes live in [docs/BUGS-AND-IMPROVEMENTS.md](docs/BUGS-AND-IMPROVEMENTS.md).
 
-## Suggested next regional modules (not built)
+## Regional modules (what they do / don’t)
 
-Ideas for the same toggle pattern — pick what to ship later:
+All are Settings toggles. Off hides the UI; data stays.
 
-1. **US payroll stub** — FIT / FICA / state withholding estimate + W-2 style year-end CSV (not eFile).
-2. **Singapore CPF** — employee/employer CPF splits and remittance summary.
-3. **Generic VAT / GST pack** — country-agnostic output/input VAT workbook (beyond PH-flavored CSV labels).
-4. **AU STP / PAYG** — pay-as-you-go withholding estimate + BAS-oriented summary CSV.
-5. **UK PAYE / NI** — PAYE + National Insurance period estimate (not RTI submission).
-6. **Multi-currency books** — home + foreign bank FX with realized gain/loss (pairs with any tax module).
+| Module | Does | Does not |
+| --- | --- | --- |
+| **PH payroll / 13th / BIR** | Statutory split on pay, remittance balances, 13th estimate, 1601-C / VAT CSV | BIR eFiling, eBIRForms, TRAIN year-end annualization |
+| **US payroll** | FIT + FICA estimate, W-2 style table + CSV from posted gross or salary | IRS e-file, Form W-2/941, Pub 15-T, state tax |
+| **Singapore CPF** | EE 20% / ER 17% OW estimate + CSV | CPF Board filing, age bands, Additional Wage ceiling |
+| **Generic VAT/GST** | Rate + input/output + monthly journal workbook + CSV | Official VAT/GST return |
+| **AU PAYG / BAS** | Resident PAYG estimate + GST remittance-style summary + CSV | ATO BAS, STP, tax-free threshold phase-ins |
+| **UK PAYE + NI** | PAYE + Class 1 NI estimate + CSV | HMRC RTI, student loan, pensions |
+| **Multi-currency FX** | Rate table, secondary currency convert helpers, document CSV | Per-invoice foreign currency, live FX feed, auto gain/loss journals |
+
+**Defaults:** PHP / Pacific Harbor → PH on. USD → US payroll. SGD → CPF. AUD → PAYG/BAS. GBP → PAYE. Generic VAT on when sales tax is already enabled. FX off until you turn it on. Applying a country pack can enable related toggles.
 
 ## Screenshots
 

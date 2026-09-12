@@ -131,7 +131,8 @@ export interface Settings {
   dateFormat: "MDY" | "DMY" | "LONG";
   /**
    * Regional modules (Settings → Tax & payroll modules).
-   * Default on for PHP / Pacific Harbor sample; off otherwise. Toggling off hides UI — does not delete data.
+   * PH defaults on for PHP / Pacific Harbor; other packs follow currency / VAT hints.
+   * Toggling off hides UI — does not delete data.
    */
   /** Philippines SSS / PhilHealth / Pag-IBIG / TRAIN withholdings. */
   modulePhPayroll: boolean;
@@ -139,6 +140,60 @@ export interface Settings {
   modulePh13thMonth: boolean;
   /** BIR-style exports: 1601-C / WHT CSV, VAT summary CSV. */
   modulePhBirExports: boolean;
+  /** Extra regional stubs: US / SG / generic VAT / AU / UK / FX. */
+  modules: RegionalModules;
+  /** Display / convert-to currency when modules.multiCurrency is on. */
+  secondaryCurrency: string;
+  /** Manual FX rates (units of `to` per 1 `from`). */
+  fxRates: FxRate[];
+}
+
+export interface RegionalModules {
+  usPayroll: boolean;
+  sgCpf: boolean;
+  genericVat: boolean;
+  auBas: boolean;
+  ukPaye: boolean;
+  multiCurrency: boolean;
+}
+
+export const DEFAULT_REGIONAL_MODULES: RegionalModules = {
+  usPayroll: false,
+  sgCpf: false,
+  genericVat: false,
+  auBas: false,
+  ukPaye: false,
+  multiCurrency: false,
+};
+
+export interface FxRate {
+  id: string;
+  from: string;
+  to: string;
+  /** Units of `to` per 1 unit of `from`. */
+  rate: number;
+  asOf: string;
+}
+
+export function normalizeFxRates(raw: unknown): FxRate[] {
+  if (!Array.isArray(raw)) return [];
+  const out: FxRate[] = [];
+  for (const row of raw) {
+    if (!row || typeof row !== "object") continue;
+    const r = row as Record<string, unknown>;
+    const from = String(r.from || "").toUpperCase().trim();
+    const to = String(r.to || "").toUpperCase().trim();
+    const rate = Number(r.rate);
+    if (!from || !to || !Number.isFinite(rate) || rate <= 0) continue;
+    out.push({
+      id: typeof r.id === "string" && r.id ? r.id : `fx_${from}_${to}_${out.length}`,
+      from,
+      to,
+      rate,
+      asOf: typeof r.asOf === "string" ? r.asOf : "",
+    });
+  }
+  return out;
 }
 
 export interface AuditEvent {
@@ -665,6 +720,9 @@ export const DEFAULT_SETTINGS: Settings = {
   modulePhPayroll: true,
   modulePh13thMonth: true,
   modulePhBirExports: true,
+  modules: { ...DEFAULT_REGIONAL_MODULES },
+  secondaryCurrency: "",
+  fxRates: [],
 };
 
 /** Infer PH regional modules for legacy books that lack the flags. */
@@ -681,20 +739,109 @@ export function defaultPhModulesOn(settings: {
   return false;
 }
 
+export function inferExtraModules(settings: {
+  currency?: string;
+  taxEnabled?: boolean;
+}): RegionalModules {
+  const cur = (settings.currency || "").toUpperCase();
+  return {
+    usPayroll: cur === "USD",
+    sgCpf: cur === "SGD",
+    genericVat: settings.taxEnabled === true,
+    auBas: cur === "AUD",
+    ukPaye: cur === "GBP",
+    multiCurrency: false,
+  };
+}
+
+function rawModulesBag(raw?: Record<string, unknown>): Record<string, unknown> {
+  const bag = raw?.modules;
+  return bag && typeof bag === "object" && !Array.isArray(bag) ? (bag as Record<string, unknown>) : {};
+}
+
+function extraFlag(
+  rawModules: Record<string, unknown>,
+  src: Record<string, unknown>,
+  key: keyof RegionalModules,
+  flatKey: string,
+  infer: boolean,
+): boolean {
+  if (typeof rawModules[key] === "boolean") return rawModules[key];
+  if (typeof src[flatKey] === "boolean") return Boolean(src[flatKey]);
+  return infer;
+}
+
 export function normalizeRegionalModules(
   merged: Partial<Settings> & Record<string, unknown>,
   /** Pre-default raw settings — used so DEFAULT_SETTINGS module flags do not override currency inference. */
   raw?: Record<string, unknown>,
-): Pick<Settings, "modulePhPayroll" | "modulePh13thMonth" | "modulePhBirExports"> {
-  const infer = defaultPhModulesOn(merged);
+): Pick<Settings, "modulePhPayroll" | "modulePh13thMonth" | "modulePhBirExports" | "modules" | "secondaryCurrency" | "fxRates"> {
+  const inferPh = defaultPhModulesOn(merged);
+  const inferExtra = inferExtraModules(merged);
   const src = raw ?? merged;
+  const rawModules = rawModulesBag(src);
   const flag = (key: "modulePhPayroll" | "modulePh13thMonth" | "modulePhBirExports") =>
-    typeof src[key] === "boolean" ? Boolean(src[key]) : infer;
+    typeof src[key] === "boolean" ? Boolean(src[key]) : inferPh;
+  const secondary =
+    typeof src.secondaryCurrency === "string" ? src.secondaryCurrency.toUpperCase() : merged.secondaryCurrency || "";
   return {
     modulePhPayroll: flag("modulePhPayroll"),
     modulePh13thMonth: flag("modulePh13thMonth"),
     modulePhBirExports: flag("modulePhBirExports"),
+    modules: {
+      usPayroll: extraFlag(rawModules, src, "usPayroll", "moduleUsPayroll", inferExtra.usPayroll),
+      sgCpf: extraFlag(rawModules, src, "sgCpf", "moduleSgCpf", inferExtra.sgCpf),
+      genericVat: extraFlag(rawModules, src, "genericVat", "moduleGenericVat", inferExtra.genericVat),
+      auBas: extraFlag(rawModules, src, "auBas", "moduleAuBas", inferExtra.auBas),
+      ukPaye: extraFlag(rawModules, src, "ukPaye", "moduleUkPaye", inferExtra.ukPaye),
+      multiCurrency: extraFlag(rawModules, src, "multiCurrency", "moduleMultiCurrency", inferExtra.multiCurrency),
+    },
+    secondaryCurrency: secondary,
+    fxRates: normalizeFxRates(src.fxRates ?? merged.fxRates),
   };
+}
+
+export type AllRegionalModules = RegionalModules & {
+  phPayroll: boolean;
+  ph13thMonth: boolean;
+  phBirExports: boolean;
+};
+
+export function modulesOf(settings: Settings): AllRegionalModules {
+  return {
+    phPayroll: settings.modulePhPayroll,
+    ph13thMonth: settings.modulePh13thMonth,
+    phBirExports: settings.modulePhBirExports,
+    ...(settings.modules ?? DEFAULT_REGIONAL_MODULES),
+  };
+}
+
+export function withModule(settings: Settings, key: keyof RegionalModules, value: boolean): Pick<Settings, "modules"> {
+  return { modules: { ...settings.modules, [key]: value } };
+}
+
+/** Country pack → related module flags (merged onto existing toggles; never turns others off). */
+export function modulesEnabledByPack(packId: string): Partial<RegionalModules> {
+  switch (packId) {
+    case "PH":
+      return { genericVat: true };
+    case "US":
+    case "US7":
+      return { usPayroll: true };
+    case "SG":
+      return { sgCpf: true, genericVat: true };
+    case "AU":
+      return { auBas: true, genericVat: true };
+    case "GB":
+      return { ukPaye: true, genericVat: true };
+    case "EU20":
+    case "JP":
+    case "CA":
+    case "CN":
+      return { genericVat: true };
+    default:
+      return {};
+  }
 }
 
 /** Account codes created only when PH payroll module is on (never deleted when toggled off). */

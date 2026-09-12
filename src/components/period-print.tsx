@@ -409,18 +409,19 @@ export function PeriodPackPrint({
   );
 }
 
-export function ReportsPrint({ asOf, tab }: { asOf: string; tab: "aging" | "tb" | "pl" | "vat" | "payroll" }) {
+export function ReportsPrint({ asOf, tab }: { asOf: string; tab: "aging" | "tb" | "pl" | "vat" | "payroll" | "fx" }) {
   const data = useFinanceData();
   const mounted = usePrintPortal();
   if (!mounted) return null;
   const currency = data.settings.currency;
   const money = (n: number) => formatMoney(n, currency);
   if (tab === "payroll") {
-    const pay = payrollRemittance(data, asOf);
+    const pay = data.settings.modulePhPayroll ? payrollRemittance(data, asOf) : null;
     return createPortal(
       <PrintFrame>
         <article className="print-sheet">
-          <SheetHead title="Payroll remittance" subtitle={`As of ${formatDate(asOf)}`} />
+          <SheetHead title="Payroll" subtitle={`As of ${formatDate(asOf)} — books / accountant estimates, not a filing package.`} />
+          {pay ? (
           <table className="register-print-table">
             <thead>
               <tr>
@@ -435,6 +436,44 @@ export function ReportsPrint({ asOf, tab }: { asOf: string; tab: "aging" | "tb" 
               <tr><td>Withholding Tax Payable (2214)</td><td className="col-money">{money(pay.wht)}</td></tr>
               <tr><td>Other withholdings (2210)</td><td className="col-money">{money(pay.other)}</td></tr>
               <tr><td>Employer contributions (5310)</td><td className="col-money">{money(pay.employer)}</td></tr>
+            </tbody>
+          </table>
+          ) : (
+            <p>Use on-screen Reports → Payroll for US / SG / AU / UK estimate tables, or Export CSV. PH remittance prints when the Philippines payroll module is on.</p>
+          )}
+        </article>
+      </PrintFrame>,
+      document.body,
+    );
+  }
+  if (tab === "fx") {
+    const rates = data.settings.fxRates ?? [];
+    return createPortal(
+      <PrintFrame>
+        <article className="print-sheet">
+          <SheetHead title="FX rates" subtitle={`Home ${currency || "—"} · secondary ${data.settings.secondaryCurrency || "—"}`} />
+          <table className="register-print-table">
+            <thead>
+              <tr>
+                <th>From</th>
+                <th>To</th>
+                <th>Rate</th>
+                <th>As of</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rates.length === 0 ? (
+                <tr><td colSpan={4}>No rates.</td></tr>
+              ) : (
+                rates.map((r) => (
+                  <tr key={r.id}>
+                    <td>{r.from}</td>
+                    <td>{r.to}</td>
+                    <td>{r.rate}</td>
+                    <td>{r.asOf || "—"}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </article>

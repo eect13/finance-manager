@@ -22,7 +22,43 @@ describe("regional modules defaults", () => {
     assert.equal(usd.settings.modulePh13thMonth, false);
     assert.equal(usd.settings.modulePhBirExports, false);
     assert.ok(!usd.accounts.some((a) => a.code === "2211"));
+    assert.equal(usd.settings.modules.usPayroll, true);
+    assert.equal(usd.settings.modules.sgCpf, false);
+    assert.equal(usd.settings.modules.genericVat, false);
   });
+
+  it("infers extra modules from currency and taxEnabled", () => {
+    const sgd = normalizeBooks({ settings: { companyName: "Co", currency: "SGD" } });
+    assert.equal(sgd.settings.modules.sgCpf, true);
+    assert.equal(sgd.settings.modules.usPayroll, false);
+
+    const aud = normalizeBooks({ settings: { companyName: "Co", currency: "AUD" } });
+    assert.equal(aud.settings.modules.auBas, true);
+
+    const gbp = normalizeBooks({ settings: { companyName: "Co", currency: "GBP" } });
+    assert.equal(gbp.settings.modules.ukPaye, true);
+
+    const vatOn = normalizeBooks({ settings: { companyName: "Co", currency: "EUR", taxEnabled: true } });
+    assert.equal(vatOn.settings.modules.genericVat, true);
+    assert.equal(vatOn.settings.modules.multiCurrency, false);
+  });
+
+  it("preserves explicit extra-module false on USD books", () => {
+    const books = normalizeBooks({
+      settings: {
+        companyName: "Co",
+        currency: "USD",
+        taxEnabled: true,
+        modules: { usPayroll: false, sgCpf: false, genericVat: false, auBas: false, ukPaye: false, multiCurrency: true },
+        secondaryCurrency: "EUR",
+      },
+    });
+    assert.equal(books.settings.modules.usPayroll, false);
+    assert.equal(books.settings.modules.genericVat, false);
+    assert.equal(books.settings.modules.multiCurrency, true);
+    assert.equal(books.settings.secondaryCurrency, "EUR");
+  });
+
 
   it("preserves explicit false on PHP books", () => {
     const books = normalizeBooks({
@@ -45,5 +81,6 @@ describe("regional modules defaults", () => {
     assert.equal(n.modulePhPayroll, false);
     assert.equal(n.modulePh13thMonth, true);
     assert.equal(n.modulePhBirExports, true);
+    assert.equal(n.modules.usPayroll, false);
   });
 });

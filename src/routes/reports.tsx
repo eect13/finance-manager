@@ -35,7 +35,8 @@ import {
   withholding1601cRows,
 } from "@/lib/finance/ph-bir";
 import { payrollRemittance } from "@/lib/finance/ph-payroll";
-import type { Account } from "@/lib/finance/types";
+import { FxPanel, GenericVatWorkbook, RegionalPayrollSections } from "@/components/regional-reports";
+import { modulesOf, type Account } from "@/lib/finance/types";
 import { openProps, openTxn } from "@/lib/finance/open-record";
 import { useEntrySort } from "@/lib/finance/sort";
 import { useFinanceData } from "@/lib/finance/store";
@@ -65,16 +66,19 @@ const PL_VIS_IDS = PL_CHIPS.map((c) => c.id);
 function ReportsPage() {
   const data = useFinanceData();
   const settings = data.settings;
-  const showPhPayroll = settings.modulePhPayroll;
-  const show13th = settings.modulePh13thMonth;
-  const showBir = settings.modulePhBirExports;
-  const showPayrollTab = showPhPayroll || show13th || showBir;
+  const mods = modulesOf(settings);
+  const showPhPayroll = mods.phPayroll;
+  const show13th = mods.ph13thMonth;
+  const showBir = mods.phBirExports;
+  const showFx = mods.multiCurrency;
+  const showPayrollTab =
+    showPhPayroll || show13th || showBir || mods.usPayroll || mods.sgCpf || mods.auBas || mods.ukPaye;
   const [asOf, setAsOf] = useState(todayIso());
   const [query, setQuery] = useState("");
   const [tab, setTab] = useState("aging");
   useEffect(() => {
-    if (!showPayrollTab && tab === "payroll") setTab("aging");
-  }, [showPayrollTab, tab]);
+    if ((!showPayrollTab && tab === "payroll") || (!showFx && tab === "fx")) setTab("aging");
+  }, [showPayrollTab, showFx, tab]);
   const ageVis = useColVisible("finance-manager-aging-vis", AGE_VIS_IDS);
   const tbVis = useColVisible("finance-manager-tb-vis", TB_VIS_IDS);
   const plVis = useColVisible("finance-manager-pl-vis", PL_VIS_IDS);
@@ -112,7 +116,7 @@ function ReportsPage() {
   return (
     <AppShell
       title="Reports"
-      description="Trial balance, profit and loss, VAT, optional PH payroll / BIR helpers, and 30/60/90 aging as of a date."
+      description="Trial balance, profit and loss, VAT, optional regional payroll / tax stubs, FX, and 30/60/90 aging as of a date."
       wide
       actions={
         <>
@@ -135,6 +139,7 @@ function ReportsPage() {
           <TabsTrigger value="pl">Profit and loss</TabsTrigger>
           <TabsTrigger value="vat">VAT</TabsTrigger>
           {showPayrollTab ? <TabsTrigger value="payroll">Payroll</TabsTrigger> : null}
+          {showFx ? <TabsTrigger value="fx">FX</TabsTrigger> : null}
         </TabsList>
         <TabsContent value="aging">
           <ListToolbar query={query} onQuery={setQuery} placeholder="Search party or number" label="Search aging">
@@ -181,7 +186,7 @@ function ReportsPage() {
           <PlTable rows={plVisible} net={pl.net} currency={settings.currency} vis={plVis} layout={plView} registerFit={(fn) => { plFit.current = fn; }} />
         </TabsContent>
         <TabsContent value="vat">
-          <VatPanel asOf={asOf} currency={settings.currency} birExports={showBir} />
+          <VatPanel asOf={asOf} currency={settings.currency} birExports={showBir} genericVat={mods.genericVat} />
         </TabsContent>
         {showPayrollTab ? (
           <TabsContent value="payroll">
@@ -191,14 +196,20 @@ function ReportsPage() {
               showPhPayroll={showPhPayroll}
               show13th={show13th}
               showBir={showBir}
+              mods={mods}
             />
+          </TabsContent>
+        ) : null}
+        {showFx ? (
+          <TabsContent value="fx">
+            <FxPanel asOf={asOf} currency={settings.currency} />
           </TabsContent>
         ) : null}
       </Tabs>
       <ReportsPrint
         asOf={asOf}
         tab={
-          tab === "tb" || tab === "pl" || tab === "vat" || (tab === "payroll" && showPayrollTab)
+          tab === "tb" || tab === "pl" || tab === "vat" || (tab === "payroll" && showPayrollTab) || (tab === "fx" && showFx)
             ? tab
             : "aging"
         }
@@ -666,7 +677,7 @@ function PlTable({
   );
 }
 
-function VatPanel({ asOf, currency, birExports }: { asOf: string; currency: string; birExports: boolean }) {
+function VatPanel({ asOf, currency, birExports, genericVat }: { asOf: string; currency: string; birExports: boolean; genericVat: boolean }) {
   const data = useFinanceData();
   const vat = vatBalances(data, asOf);
   return (
@@ -680,6 +691,7 @@ function VatPanel({ asOf, currency, birExports }: { asOf: string; currency: stri
           />
         </div>
       ) : null}
+      {genericVat ? <GenericVatWorkbook asOf={asOf} currency={currency} /> : null}
       <div className="list-grid list-scroll overflow-auto rounded-2xl table-paper elevation outline-none">
         <table className="text-sm" style={{ width: "100%" }}>
           <thead>
@@ -724,12 +736,14 @@ function PayrollPanel({
   showPhPayroll,
   show13th,
   showBir,
+  mods,
 }: {
   asOf: string;
   currency: string;
   showPhPayroll: boolean;
   show13th: boolean;
   showBir: boolean;
+  mods: ReturnType<typeof modulesOf>;
 }) {
   const data = useFinanceData();
   const p = useMemo(
@@ -881,6 +895,7 @@ function PayrollPanel({
           </table>
         </div>
       ) : null}
+      <RegionalPayrollSections asOf={asOf} year={year} currency={currency} mods={mods} />
     </div>
   );
 }

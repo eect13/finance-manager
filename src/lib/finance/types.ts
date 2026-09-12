@@ -820,28 +820,86 @@ export function withModule(settings: Settings, key: keyof RegionalModules, value
   return { modules: { ...settings.modules, [key]: value } };
 }
 
-/** Country pack → related module flags (merged onto existing toggles; never turns others off). */
-export function modulesEnabledByPack(packId: string): Partial<RegionalModules> {
+/** Region-exclusive flags when applying a country tax pack (`multiCurrency` is orthogonal). */
+export type CountryPackModulePatch = {
+  modulePhPayroll: boolean;
+  modulePh13thMonth: boolean;
+  modulePhBirExports: boolean;
+  usPayroll: boolean;
+  sgCpf: boolean;
+  genericVat: boolean;
+  auBas: boolean;
+  ukPaye: boolean;
+};
+
+const PACK_MODULES_OFF: CountryPackModulePatch = {
+  modulePhPayroll: false,
+  modulePh13thMonth: false,
+  modulePhBirExports: false,
+  usPayroll: false,
+  sgCpf: false,
+  genericVat: false,
+  auBas: false,
+  ukPaye: false,
+};
+
+/**
+ * Country pack → exclusive regional module flags.
+ * Applying a pack turns that pack’s modules **on** and turns **off** other region packs
+ * (PH payroll/13th/BIR, US, SG, AU, UK). `multiCurrency` is never changed here.
+ * `genericVat` is intentional for VAT/GST packs (PH/SG/AU/UK/EU/JP/CA/CN); off for US sales-tax and HK/NONE.
+ */
+export function modulesEnabledByPack(packId: string): CountryPackModulePatch {
   switch (packId) {
     case "PH":
-      return { genericVat: true };
+      return {
+        ...PACK_MODULES_OFF,
+        modulePhPayroll: true,
+        modulePh13thMonth: true,
+        modulePhBirExports: true,
+        genericVat: true,
+      };
     case "US":
     case "US7":
-      return { usPayroll: true };
+      return { ...PACK_MODULES_OFF, usPayroll: true };
     case "SG":
-      return { sgCpf: true, genericVat: true };
+      return { ...PACK_MODULES_OFF, sgCpf: true, genericVat: true };
     case "AU":
-      return { auBas: true, genericVat: true };
+      return { ...PACK_MODULES_OFF, auBas: true, genericVat: true };
     case "GB":
-      return { ukPaye: true, genericVat: true };
+      return { ...PACK_MODULES_OFF, ukPaye: true, genericVat: true };
     case "EU20":
     case "JP":
     case "CA":
     case "CN":
-      return { genericVat: true };
+      return { ...PACK_MODULES_OFF, genericVat: true };
+    case "HK":
+    case "NONE":
+      return { ...PACK_MODULES_OFF };
     default:
-      return {};
+      return { ...PACK_MODULES_OFF };
   }
+}
+
+/** Merge exclusive pack flags onto settings; preserves `multiCurrency` and FX. */
+export function settingsPatchForCountryPack(
+  settings: Settings,
+  packId: string,
+): Pick<Settings, "modulePhPayroll" | "modulePh13thMonth" | "modulePhBirExports" | "modules"> {
+  const pack = modulesEnabledByPack(packId);
+  return {
+    modulePhPayroll: pack.modulePhPayroll,
+    modulePh13thMonth: pack.modulePh13thMonth,
+    modulePhBirExports: pack.modulePhBirExports,
+    modules: {
+      ...settings.modules,
+      usPayroll: pack.usPayroll,
+      sgCpf: pack.sgCpf,
+      genericVat: pack.genericVat,
+      auBas: pack.auBas,
+      ukPaye: pack.ukPaye,
+    },
+  };
 }
 
 /** Account codes created only when PH payroll module is on (never deleted when toggled off). */

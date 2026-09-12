@@ -30,7 +30,7 @@ import { useEntrySort } from "@/lib/finance/sort";
 import { UNDO_MAX, useFinanceData, useFinanceStore } from "@/lib/finance/store";
 import { browserStorage, countEntries, formatBytes, jsonSize, requestPersistentStorage } from "@/lib/finance/storage-usage";
 import { newId } from "@/lib/finance/ids";
-import { COUNTRY_TAX_PACKS, CURRENCIES, countryTaxPackForCurrency, modulesEnabledByPack, withModule, type RecurringItem } from "@/lib/finance/types";
+import { COUNTRY_TAX_PACKS, CURRENCIES, countryTaxPackForCurrency, settingsPatchForCountryPack, withModule, type RecurringItem } from "@/lib/finance/types";
 import { useShallow } from "zustand/react/shallow";
 import { AppearancePicker } from "@/components/theme-toggle";
 import { DisplayZoomSettings, ListDensitySettings, ListTypeSettings, DateFormatSettings } from "@/components/ui-zoom-controls";
@@ -404,6 +404,9 @@ function SettingsPage() {
                   return (
                     <>
                       <p className="text-xs text-muted-foreground">{pack.note}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Apply turns this pack’s tax &amp; payroll modules on and turns other region packs off (PH / US / SG / AU / UK). Multi-currency is unchanged. VAT/GST packs also enable the generic VAT workbook when that matches the pack.
+                      </p>
                       <OptionsSwitchRow
                         title="Also update home currency"
                         hint={
@@ -423,26 +426,18 @@ function SettingsPage() {
                         variant="secondary"
                         className="w-fit"
                         onClick={() => {
+                          const willUpdateCurrency = canChangeCurrency && updateCurrencyWithPack;
                           const patch: Parameters<typeof updateSettings>[0] = {
                             taxEnabled: pack.taxEnabled,
                             defaultTaxRate: pack.defaultTaxRate,
+                            ...settingsPatchForCountryPack(settings, pack.id),
                           };
-                          const willUpdateCurrency = canChangeCurrency && updateCurrencyWithPack;
                           if (willUpdateCurrency) patch.currency = pack.currency;
-                          if (pack.id === "PH") {
-                            patch.modulePhPayroll = true;
-                            patch.modulePh13thMonth = true;
-                            patch.modulePhBirExports = true;
-                          }
-                          const extra = modulesEnabledByPack(pack.id);
-                          if (Object.keys(extra).length) {
-                            patch.modules = { ...settings.modules, ...extra };
-                          }
                           updateSettings(patch);
                           toast.success(
                             willUpdateCurrency
-                              ? `Applied ${pack.country}: ${pack.taxLabel}, currency ${pack.currency}.`
-                              : `Applied ${pack.country}: ${pack.taxLabel} (currency unchanged).`,
+                              ? `Applied ${pack.country}: ${pack.taxLabel}, currency ${pack.currency}. Other region modules off.`
+                              : `Applied ${pack.country}: ${pack.taxLabel} (currency unchanged). Other region modules off.`,
                           );
                         }}
                       >

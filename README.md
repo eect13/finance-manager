@@ -1,4 +1,4 @@
-# Finance Manager v3.63.39
+# Finance Manager v3.63.40
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -26,6 +26,12 @@ Unzip the repo (a second unzip named `finance-manager-main (1)` is fine) so `dep
 Vite is installed with the packages — no global `vite` command. `.npmrc` has `legacy-peer-deps=true`.
 
 After the Windows installer: **delete the leftover white shortcut** and pin the new one — shortcut and taskbar both use the navy pillars tile.
+
+## What's new in v3.63.40
+
+- **Country pack Apply is exclusive:** applying US (or SG/AU/UK/…) turns that pack’s modules on and turns other region packs off (PH payroll/13th/BIR included). VAT/GST packs intentionally enable generic VAT; US sales-tax packs do not. Multi-currency is unchanged.
+- **Close checklist Detail** defaults left again — align storage key bumped to `…-col-aligns-v2` so old center prefs do not stick; Status stays center.
+- Print on Reports → Payroll only when PH payroll is on; VAT panel BIR/VAT disclaimers only when those modules are on.
 
 ## What's new in v3.63.39
 

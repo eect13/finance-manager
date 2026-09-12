@@ -34,6 +34,7 @@ import {
   withholding1601cMonthlySummary,
   withholding1601cRows,
 } from "@/lib/finance/ph-bir";
+import { VAT_BOOKS_DISCLAIMER } from "@/lib/finance/generic-vat";
 import { payrollRemittance } from "@/lib/finance/ph-payroll";
 import { FxPanel, GenericVatWorkbook, RegionalPayrollSections } from "@/components/regional-reports";
 import { modulesOf, type Account } from "@/lib/finance/types";
@@ -121,10 +122,12 @@ function ReportsPage() {
       actions={
         <>
           <CsvButton filename="trial-balance.csv" rows={trialBalanceRows(data)} visible={tbVis.on} />
-          <Button variant="outline" onClick={requestPrint}>
-            <Printer />
-            Print
-          </Button>
+          {!(tab === "payroll" && !showPhPayroll) ? (
+            <Button variant="outline" onClick={requestPrint}>
+              <Printer />
+              Print
+            </Button>
+          ) : null}
         </>
       }
     >
@@ -722,7 +725,9 @@ function VatPanel({ asOf, currency, birExports, genericVat }: { asOf: string; cu
           </tbody>
         </table>
         <p className="px-4 py-3 text-xs text-muted-foreground">
-          Output from taxed invoices and cash sales, input from taxed bills. Amount on a bill is VAT-inclusive when Tax % is set. {BIR_BOOKS_DISCLAIMER}
+          Output from taxed invoices and cash sales, input from taxed bills. Amount on a bill is VAT-inclusive when Tax % is set.
+          {birExports ? <> {BIR_BOOKS_DISCLAIMER}</> : null}
+          {genericVat && !birExports ? <> {VAT_BOOKS_DISCLAIMER}</> : null}
         </p>
       </div>
     </div>

@@ -267,7 +267,7 @@ function ChecklistTable({
   layout?: "list" | "grid";
 }) {
   const cols = useColWidths("finance-manager-close-check-cols", CHECK_COLS, { min: 120 });
-  const colAligns = useColAligns("finance-manager-close-check-col-aligns", Object.keys(CHECK_COLS) as Array<keyof typeof CHECK_COLS>, { detail: "left" });
+  const colAligns = useColAligns("finance-manager-close-check-col-aligns-v2", Object.keys(CHECK_COLS) as Array<keyof typeof CHECK_COLS>, { detail: "left" });
   const gridRef = useRef<HTMLDivElement>(null);
   const getters = useMemo(
     () => ({

@@ -1,7 +1,13 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { normalizeBooks } from "./normalize.ts";
-import { defaultPhModulesOn, normalizeRegionalModules } from "./types.ts";
+import {
+  DEFAULT_SETTINGS,
+  defaultPhModulesOn,
+  modulesEnabledByPack,
+  normalizeRegionalModules,
+  settingsPatchForCountryPack,
+} from "./types.ts";
 
 describe("regional modules defaults", () => {
   it("infers on for PHP and Pacific Harbor", () => {
@@ -82,5 +88,44 @@ describe("regional modules defaults", () => {
     assert.equal(n.modulePh13thMonth, true);
     assert.equal(n.modulePhBirExports, true);
     assert.equal(n.modules.usPayroll, false);
+  });
+});
+
+
+describe("country pack module exclusivity", () => {
+  it("US pack enables US payroll and clears PH / other regions", () => {
+    const p = modulesEnabledByPack("US");
+    assert.equal(p.usPayroll, true);
+    assert.equal(p.modulePhPayroll, false);
+    assert.equal(p.modulePh13thMonth, false);
+    assert.equal(p.modulePhBirExports, false);
+    assert.equal(p.sgCpf, false);
+    assert.equal(p.auBas, false);
+    assert.equal(p.ukPaye, false);
+    assert.equal(p.genericVat, false);
+  });
+
+  it("PH pack enables PH modules + genericVat and clears US payroll", () => {
+    const p = modulesEnabledByPack("PH");
+    assert.equal(p.modulePhPayroll, true);
+    assert.equal(p.modulePh13thMonth, true);
+    assert.equal(p.modulePhBirExports, true);
+    assert.equal(p.genericVat, true);
+    assert.equal(p.usPayroll, false);
+  });
+
+  it("settingsPatchForCountryPack preserves multiCurrency", () => {
+    const settings = {
+      ...DEFAULT_SETTINGS,
+      modulePhPayroll: true,
+      modulePh13thMonth: true,
+      modulePhBirExports: true,
+      modules: { ...DEFAULT_SETTINGS.modules, usPayroll: false, multiCurrency: true, genericVat: true },
+    };
+    const patch = settingsPatchForCountryPack(settings, "US");
+    assert.equal(patch.modules.usPayroll, true);
+    assert.equal(patch.modules.multiCurrency, true);
+    assert.equal(patch.modules.genericVat, false);
+    assert.equal(patch.modulePhPayroll, false);
   });
 });

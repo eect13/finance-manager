@@ -4,16 +4,22 @@ import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { Field } from "@/components/field";
-import { FilterPills } from "@/components/filter-pills";
+import { FilterPills, ListToolbar } from "@/components/filter-pills";
+import { ListFilters, applySortValue } from "@/components/list-filters";
+import { ListViewMenu } from "@/components/list-view-menu";
+import { useListView } from "@/components/view-toggle";
+import { CardGrid } from "@/components/doc-cards";
 import { Money } from "@/components/money";
 import { Sparkline } from "@/components/sparkline";
-import { listColClass, listColWidthStyle, listTableStyle} from "@/components/list-table";
+import { ListCard, listColClass, listColWidthStyle, listTableStyle } from "@/components/list-table";
 import { ActionsHeader, SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
 import { useTableKeyboardFocus } from "@/components/use-table-keyboard-focus";
 import { useListVirtualizer, VirtPad } from "@/components/use-list-virtualizer";
+import { useColVisible, visibleTableWidth, viewColumnExtra } from "@/components/column-chips";
 import { cn } from "@/lib/utils";
+import { stopOpen } from "@/lib/finance/open-record";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -44,6 +50,24 @@ const BUDGET_COLS = {
   actions: 120,
 } as const;
 
+const BUDGET_CHIPS = [
+  { id: "name", label: "Name" },
+  { id: "kind", label: "Kind" },
+  { id: "start", label: "From" },
+  { id: "amount", label: "Amount" },
+] as const;
+const BUDGET_VIS_IDS = BUDGET_CHIPS.map((c) => c.id);
+
+const BUDGET_SORT = [
+  { value: "name:asc", label: "Name A–Z" },
+  { value: "name:desc", label: "Name Z–A" },
+  { value: "kind:asc", label: "Kind" },
+  { value: "start:desc", label: "From · newest" },
+  { value: "start:asc", label: "From · oldest" },
+  { value: "amount:desc", label: "Amount high–low" },
+  { value: "amount:asc", label: "Amount low–high" },
+];
+
 function ForecastPage() {
   const data = useFinanceData();
   const { settings, budgetItems } = data;
@@ -63,11 +87,20 @@ function ForecastPage() {
     [data.settings, data.checks, data.invoices, data.bills, data.budgetItems, data.journals],
   );
   const end = points[points.length - 1];
+
+  const [query, setQuery] = useState("");
+  const [view, setView] = useListView("forecast-budget");
   const [kindFilter, setKindFilter] = useState<"all" | "inflow" | "outflow">("all");
-  const budgetVisible = useMemo(
-    () => (kindFilter === "all" ? budgetItems : budgetItems.filter((i) => i.kind === kindFilter)),
-    [budgetItems, kindFilter],
-  );
+
+  const budgetVisible = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return budgetItems.filter((i) => {
+      if (kindFilter !== "all" && i.kind !== kindFilter) return false;
+      if (!q) return true;
+      return [i.name, i.kind, i.startMonth].join(" ").toLowerCase().includes(q);
+    });
+  }, [budgetItems, kindFilter, query]);
+
   const budgetGetters = useMemo(
     () => ({
       name: (i: BudgetItem) => i.name,
@@ -79,12 +112,43 @@ function ForecastPage() {
   );
   const budgetSort = useEntrySort(budgetVisible, "name", budgetGetters, "asc");
   const budgetCols = useColWidths("finance-manager-budget-cols", BUDGET_COLS);
-  const budgetAligns = useColAligns("finance-manager-budget-col-aligns", Object.keys(BUDGET_COLS) as Array<keyof typeof BUDGET_COLS>);
+  const vis = useColVisible("finance-manager-budget-vis", BUDGET_VIS_IDS);
+  // -v2 so Amount right default is not stuck on old center prefs
+  const budgetAligns = useColAligns(
+    "finance-manager-budget-col-aligns-v2",
+    Object.keys(BUDGET_COLS) as Array<keyof typeof BUDGET_COLS>,
+    { name: "left", amount: "right" },
+  );
   const budgetRef = useRef<HTMLDivElement>(null);
   const pointer = useTableKeyboardFocus({
     ids: budgetSort.sorted.map((i) => i.id),
   });
-  const listVirt = useListVirtualizer(budgetSort.sorted.length, budgetRef, (index) => budgetSort.sorted[index]?.id ?? index);
+  const listVirt = useListVirtualizer(
+    budgetSort.sorted.length,
+    budgetRef,
+    (index) => budgetSort.sorted[index]?.id ?? index,
+    48,
+    view === "list",
+  );
+
+  function fit(id: keyof typeof BUDGET_COLS, label: string) {
+    const table = budgetRef.current?.querySelector("table");
+    if (!table) return;
+    budgetCols.setWidth(id, fitColumnWidth({ table, selector: `td[data-col="${id}"]`, header: label }));
+  }
+  function fitAll() {
+    (Object.keys(BUDGET_COLS) as Array<keyof typeof BUDGET_COLS>).forEach((id) => {
+      if (id !== "actions" && vis.on[id] === false) return;
+      fit(id, BUDGET_CHIPS.find((c) => c.id === id)?.label ?? "Actions");
+    });
+  }
+
+  const emptyMessage =
+    budgetItems.length === 0
+      ? "No recurring items yet."
+      : "No budget items match this search or filter.";
+
+  const signedAmount = (item: BudgetItem) => (item.kind === "outflow" ? -item.amount : item.amount);
 
   return (
     <AppShell
@@ -131,109 +195,224 @@ function ForecastPage() {
       <Card className="mt-4">
         <CardHeader>
           <CardTitle>Monthly budget</CardTitle>
-          <p className="text-sm text-muted-foreground">Applied on the first of each future month. Keep rent and payroll here so the forecast stays honest.</p>
+          <p className="text-sm text-muted-foreground">
+            Applied on the first of each future month. Keep rent and payroll here so the forecast stays honest.
+          </p>
         </CardHeader>
         <CardContent>
-          {budgetItems.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No recurring items yet.</p>
+          <ListToolbar
+            query={query}
+            onQuery={setQuery}
+            placeholder="Search name, kind, or start month…"
+            label="Search budget items"
+          >
+            <FilterPills
+              value={kindFilter}
+              onChange={setKindFilter}
+              label="Budget"
+              options={[
+                { id: "all", label: "All" },
+                { id: "outflow", label: "Out" },
+                { id: "inflow", label: "In" },
+              ]}
+            />
+            <ListFilters
+              selects={[]}
+              sortValue={`${budgetSort.key}:${budgetSort.dir}`}
+              sortOptions={BUDGET_SORT}
+              onSort={(v) => applySortValue(budgetSort.set, v)}
+              onClear={() => {
+                setQuery("");
+                setKindFilter("all");
+                budgetSort.set("name", "asc");
+              }}
+            />
+            <ListViewMenu
+              layout={view}
+              onLayout={setView}
+              hiddenCount={view === "list" ? vis.hiddenCount : undefined}
+              extra={view === "list" ? viewColumnExtra(BUDGET_CHIPS, vis) : undefined}
+              onFitAll={view === "list" ? fitAll : undefined}
+            />
+          </ListToolbar>
+
+          {view === "grid" ? (
+            <CardGrid
+              items={budgetSort.sorted}
+              empty={emptyMessage}
+              getId={(i) => i.id}
+              estimateSize={140}
+            >
+              {(item) => (
+                <div className="item-card text-left">
+                  <span className="item-card-title block min-w-0 break-words font-medium">{item.name}</span>
+                  <span className="item-card-meta block break-words text-muted-foreground">
+                    {item.kind === "inflow" ? "Inflow" : "Outflow"} · from {item.startMonth}
+                  </span>
+                  <Money
+                    amount={signedAmount(item)}
+                    currency={settings.currency}
+                    signed
+                    className="item-card-amount mt-1 font-medium tabular-nums"
+                  />
+                  <div className="mt-2" onClick={stopOpen} onDoubleClick={stopOpen} onPointerDown={stopOpen}>
+                    <Button size="sm" variant="ghost" onClick={() => removeBudget(item.id)}>
+                      Remove
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </CardGrid>
           ) : (
-            <>
-              <div className="mb-3">
-                <FilterPills
-                  value={kindFilter}
-                  onChange={setKindFilter}
-                  label="Budget"
-                  options={[
-                    { id: "all", label: "All" },
-                    { id: "outflow", label: "Out" },
-                    { id: "inflow", label: "In" },
-                  ]}
-                />
-              </div>
-              <div
-                ref={pointer.bindContainer(budgetRef)}
-                tabIndex={0}
-                className="list-grid overflow-x-auto rounded-2xl table-paper elevation outline-none"
-                onMouseDown={(e) => {
-                  const t = e.target as HTMLElement | null;
-                  if (t?.closest("input, textarea, select, button, a, [role='checkbox']")) return;
-                  (e.currentTarget as HTMLElement).focus({ preventScroll: true });
-                }}
+            <ListCard
+              ref={pointer.bindContainer(budgetRef)}
+              tabIndex={0}
+              className="outline-none"
+              {...vis.hideAttrs}
+            >
+              <table
+                ref={budgetCols.tableRef}
+                className="text-sm"
+                style={listTableStyle(visibleTableWidth(budgetCols.widths, vis.on))}
               >
-                <table ref={budgetCols.tableRef} className="text-sm" style={listTableStyle(budgetCols.tableWidth)}>
-                  <colgroup>
-                    {(Object.keys(BUDGET_COLS) as Array<keyof typeof BUDGET_COLS>).map((id) => (
-                      <col key={id} className={listColClass(id)} style={listColWidthStyle(id, budgetCols.widths[id])} />
-                    ))}
-                  </colgroup>
-                  <thead>
-                    <tr className="border-b border-border text-muted-foreground">
-                      <SortHeader label="Name" column="name" sortKey={budgetSort.key} dir={budgetSort.dir} onToggle={budgetSort.toggle} width={budgetCols.widths.name} onWidth={(n) => budgetCols.setWidth("name", n)} onFit={() => {
-                        const table = budgetRef.current?.querySelector("table");
-                        if (!table) return;
-                        budgetCols.setWidth("name", fitColumnWidth({ table, selector: `td[data-col="name"]`, header: "Name" }));
-                      }} align={budgetAligns.aligns.name ?? "center"} onAlign={(a) => budgetAligns.setAlign("name", a)} fill />
-                      <SortHeader label="Kind" column="kind" sortKey={budgetSort.key} dir={budgetSort.dir} onToggle={budgetSort.toggle} width={budgetCols.widths.kind} onWidth={(n) => budgetCols.setWidth("kind", n)} onFit={() => {
-                        const table = budgetRef.current?.querySelector("table");
-                        if (!table) return;
-                        budgetCols.setWidth("kind", fitColumnWidth({ table, selector: `td[data-col="kind"]`, header: "Kind" }));
-                      }} align={budgetAligns.aligns.kind ?? "center"} onAlign={(a) => budgetAligns.setAlign("kind", a)} />
-                      <SortHeader label="From" column="start" sortKey={budgetSort.key} dir={budgetSort.dir} onToggle={budgetSort.toggle} width={budgetCols.widths.start} onWidth={(n) => budgetCols.setWidth("start", n)} onFit={() => {
-                        const table = budgetRef.current?.querySelector("table");
-                        if (!table) return;
-                        budgetCols.setWidth("start", fitColumnWidth({ table, selector: `td[data-col="start"]`, header: "From" }));
-                      }} align={budgetAligns.aligns.start ?? "center"} onAlign={(a) => budgetAligns.setAlign("start", a)} />
-                      <SortHeader label="Amount" column="amount" sortKey={budgetSort.key} dir={budgetSort.dir} onToggle={budgetSort.toggle} width={budgetCols.widths.amount} onWidth={(n) => budgetCols.setWidth("amount", n)} onFit={() => {
-                        const table = budgetRef.current?.querySelector("table");
-                        if (!table) return;
-                        budgetCols.setWidth("amount", fitColumnWidth({ table, selector: `td[data-col="amount"]`, header: "Amount" }));
-                      }} align={budgetAligns.aligns.amount ?? "center"} onAlign={(a) => budgetAligns.setAlign("amount", a)} />
-                      <ActionsHeader width={budgetCols.widths.actions} onWidth={(n) => budgetCols.setWidth("actions", n)} onFit={() => {
-                        const table = budgetRef.current?.querySelector("table");
-                        if (!table) return;
-                        budgetCols.setWidth("actions", fitColumnWidth({ table, selector: `td[data-col="actions"]`, header: "Actions" }));
-                      }} />
+                <colgroup>
+                  {(Object.keys(BUDGET_COLS) as Array<keyof typeof BUDGET_COLS>).map((id) => (
+                    <col
+                      key={id}
+                      className={listColClass(id)}
+                      style={listColWidthStyle(id, budgetCols.widths[id], id === "actions" || vis.on[id] !== false)}
+                      data-col={id}
+                    />
+                  ))}
+                </colgroup>
+                <thead>
+                  <tr className="border-b border-border text-muted-foreground">
+                    <SortHeader
+                      label="Name"
+                      column="name"
+                      sortKey={budgetSort.key}
+                      dir={budgetSort.dir}
+                      onToggle={budgetSort.toggle}
+                      width={budgetCols.widths.name}
+                      onWidth={(n) => budgetCols.setWidth("name", n)}
+                      onFit={() => fit("name", "Name")}
+                      align={budgetAligns.aligns.name ?? "left"}
+                      onAlign={(a) => budgetAligns.setAlign("name", a)}
+                      fill
+                    />
+                    <SortHeader
+                      label="Kind"
+                      column="kind"
+                      sortKey={budgetSort.key}
+                      dir={budgetSort.dir}
+                      onToggle={budgetSort.toggle}
+                      width={budgetCols.widths.kind}
+                      onWidth={(n) => budgetCols.setWidth("kind", n)}
+                      onFit={() => fit("kind", "Kind")}
+                      align={budgetAligns.aligns.kind ?? "center"}
+                      onAlign={(a) => budgetAligns.setAlign("kind", a)}
+                    />
+                    <SortHeader
+                      label="From"
+                      column="start"
+                      sortKey={budgetSort.key}
+                      dir={budgetSort.dir}
+                      onToggle={budgetSort.toggle}
+                      width={budgetCols.widths.start}
+                      onWidth={(n) => budgetCols.setWidth("start", n)}
+                      onFit={() => fit("start", "From")}
+                      align={budgetAligns.aligns.start ?? "center"}
+                      onAlign={(a) => budgetAligns.setAlign("start", a)}
+                    />
+                    <SortHeader
+                      label="Amount"
+                      column="amount"
+                      sortKey={budgetSort.key}
+                      dir={budgetSort.dir}
+                      onToggle={budgetSort.toggle}
+                      width={budgetCols.widths.amount}
+                      onWidth={(n) => budgetCols.setWidth("amount", n)}
+                      onFit={() => fit("amount", "Amount")}
+                      align={budgetAligns.aligns.amount ?? "right"}
+                      onAlign={(a) => budgetAligns.setAlign("amount", a)}
+                    />
+                    <ActionsHeader
+                      width={budgetCols.widths.actions}
+                      onWidth={(n) => budgetCols.setWidth("actions", n)}
+                      onFit={() => fit("actions", "Actions")}
+                    />
+                  </tr>
+                </thead>
+                <tbody>
+                  {budgetSort.sorted.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-10 text-center text-muted-foreground">
+                        {emptyMessage}
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
+                  ) : (
                     <>
-                    <VirtPad height={listVirt.padTop} colSpan={5} />
-                    {listVirt.items.map((v) => {
-                      const item = budgetSort.sorted[v.index];
-                      if (!item) return null;
-                      return (
-                      <tr
-                        key={item.id}
-                        className="border-b border-border/70 last:border-0"
-                        data-focused={pointer.activeId === item.id ? "true" : undefined}
-                        data-row-id={item.id}
-                        aria-current={pointer.activeId === item.id ? "true" : undefined}
-                        onClick={() => pointer.setActiveId(item.id)}
-                      >
-                        <td className={cn("px-4 py-2", alignClass(budgetAligns.aligns.name ?? "center"))} data-col="name" data-align={budgetAligns.aligns.name ?? "center"}>{item.name}</td>
-                        <td className={cn("px-4 py-2", alignClass(budgetAligns.aligns.kind ?? "center"))} data-col="kind" data-align={budgetAligns.aligns.kind ?? "center"}>{item.kind === "inflow" ? "Inflow" : "Outflow"}</td>
-                        <td className={cn("px-4 py-2", alignClass(budgetAligns.aligns.start ?? "center"))} data-col="start" data-align={budgetAligns.aligns.start ?? "center"}>{item.startMonth}</td>
-                        <td className={cn("px-4 py-2", alignClass(budgetAligns.aligns.amount ?? "center"))} data-col="amount" data-align={budgetAligns.aligns.amount ?? "center"}>
-                          <Money
-                            amount={item.kind === "outflow" ? -item.amount : item.amount}
-                            currency={settings.currency}
-                            signed
-                          />
-                        </td>
-                        <td className="col-actions px-4 py-2">
-                          <Button size="sm" variant="ghost" onClick={() => removeBudget(item.id)}>
-                            Remove
-                          </Button>
-                        </td>
-                      </tr>
-                      );
-                    })}
-                    <VirtPad height={listVirt.padBottom} colSpan={5} />
+                      <VirtPad height={listVirt.padTop} colSpan={5} />
+                      {listVirt.items.map((v) => {
+                        const item = budgetSort.sorted[v.index];
+                        if (!item) return null;
+                        return (
+                          <tr
+                            key={item.id}
+                            className="border-b border-border/70 last:border-0"
+                            data-focused={pointer.activeId === item.id ? "true" : undefined}
+                            data-row-id={item.id}
+                            aria-current={pointer.activeId === item.id ? "true" : undefined}
+                            onClick={() => pointer.setActiveId(item.id)}
+                          >
+                            <td
+                              className={cn("px-4 py-2", alignClass(budgetAligns.aligns.name ?? "left"))}
+                              data-col="name"
+                              data-align={budgetAligns.aligns.name ?? "left"}
+                            >
+                              {item.name}
+                            </td>
+                            <td
+                              className={cn("px-4 py-2", alignClass(budgetAligns.aligns.kind ?? "center"))}
+                              data-col="kind"
+                              data-align={budgetAligns.aligns.kind ?? "center"}
+                            >
+                              {item.kind === "inflow" ? "Inflow" : "Outflow"}
+                            </td>
+                            <td
+                              className={cn("px-4 py-2", alignClass(budgetAligns.aligns.start ?? "center"))}
+                              data-col="start"
+                              data-align={budgetAligns.aligns.start ?? "center"}
+                            >
+                              {item.startMonth}
+                            </td>
+                            <td
+                              className={cn("px-4 py-2", alignClass(budgetAligns.aligns.amount ?? "right"))}
+                              data-col="amount"
+                              data-align={budgetAligns.aligns.amount ?? "right"}
+                            >
+                              <Money amount={signedAmount(item)} currency={settings.currency} signed />
+                            </td>
+                            <td
+                              className="col-actions px-4 py-2"
+                              data-col="actions"
+                              onClick={stopOpen}
+                              onDoubleClick={stopOpen}
+                              onPointerDown={stopOpen}
+                            >
+                              <Button size="sm" variant="ghost" onClick={() => removeBudget(item.id)}>
+                                Remove
+                              </Button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      <VirtPad height={listVirt.padBottom} colSpan={5} />
                     </>
-                  </tbody>
-                </table>
-              </div>
-            </>
+                  )}
+                </tbody>
+              </table>
+            </ListCard>
           )}
         </CardContent>
       </Card>

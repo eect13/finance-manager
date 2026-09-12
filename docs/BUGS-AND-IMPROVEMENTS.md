@@ -1,6 +1,13 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.41.
+Re-verified in code 2026-09-08. Updated for v3.63.42.
+
+## Fixed in v3.63.42
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| F1 | Med | Forecast budget List clipped Amount on narrow phones | List\|Grid + View column toggles; Grid cards; search + kind pills on both |
+| F2 | Low | Amount column stayed center from old align prefs | Bump `finance-manager-budget-col-aligns` → `…-v2`; Amount defaults right, Name left |
 
 ## Fixed in v3.63.41
 

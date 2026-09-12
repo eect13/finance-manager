@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
+import { ConfirmDelete } from "@/components/confirm-delete";
 import { Field } from "@/components/field";
 import { FilterPills, ListToolbar } from "@/components/filter-pills";
 import { ListFilters, applySortValue } from "@/components/list-filters";
@@ -12,6 +13,7 @@ import { CardGrid } from "@/components/doc-cards";
 import { Money } from "@/components/money";
 import { Sparkline } from "@/components/sparkline";
 import { ListCard, listColClass, listColWidthStyle, listTableStyle } from "@/components/list-table";
+import { RowActions } from "@/components/row-actions";
 import { ActionsHeader, SortHeader } from "@/components/sort-header";
 import { useColWidths } from "@/components/use-col-widths";
 import { useColAligns, alignClass } from "@/components/use-col-aligns";
@@ -47,7 +49,7 @@ const BUDGET_COLS = {
   kind: 110,
   start: 120,
   amount: 128,
-  actions: 120,
+  actions: 160,
 } as const;
 
 const BUDGET_CHIPS = [
@@ -68,6 +70,56 @@ const BUDGET_SORT = [
   { value: "amount:asc", label: "Amount low–high" },
 ];
 
+
+const BUDGET_QUERY_KEY = "finance-manager-forecast-budget-query";
+const BUDGET_KIND_KEY = "finance-manager-forecast-budget-kind";
+
+type BudgetKindFilter = "all" | "inflow" | "outflow";
+
+type BudgetForm = {
+  name: string;
+  kind: "inflow" | "outflow";
+  amount: string;
+  startMonth: string;
+};
+
+function emptyBudgetForm(): BudgetForm {
+  return {
+    name: "",
+    kind: "outflow",
+    amount: "",
+    startMonth: currentMonth(),
+  };
+}
+
+function formFromItem(item: BudgetItem): BudgetForm {
+  return {
+    name: item.name,
+    kind: item.kind,
+    amount: item.amount ? String(item.amount / 100) : "",
+    startMonth: item.startMonth,
+  };
+}
+
+function readBudgetQuery(): string {
+  try {
+    return localStorage.getItem(BUDGET_QUERY_KEY) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+function readBudgetKind(): BudgetKindFilter {
+  try {
+    const saved = localStorage.getItem(BUDGET_KIND_KEY);
+    if (saved === "all" || saved === "inflow" || saved === "outflow") return saved;
+  } catch {
+    /* private mode */
+  }
+  return "all";
+}
+
+
 function ForecastPage() {
   const data = useFinanceData();
   const { settings, budgetItems } = data;
@@ -75,12 +127,9 @@ function ForecastPage() {
   const removeBudget = useFinanceStore((s) => s.removeBudget);
 
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({
-    name: "",
-    kind: "outflow" as "inflow" | "outflow",
-    amount: "",
-    startMonth: currentMonth(),
-  });
+  const [editId, setEditId] = useState<string | null>(null);
+  const [dropId, setDropId] = useState<string | null>(null);
+  const [form, setForm] = useState<BudgetForm>(() => emptyBudgetForm());
 
   const points = useMemo(
     () => cashForecast(data, 90),
@@ -88,9 +137,24 @@ function ForecastPage() {
   );
   const end = points[points.length - 1];
 
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(readBudgetQuery);
   const [view, setView] = useListView("forecast-budget");
-  const [kindFilter, setKindFilter] = useState<"all" | "inflow" | "outflow">("all");
+  const [kindFilter, setKindFilter] = useState<BudgetKindFilter>(readBudgetKind);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(BUDGET_QUERY_KEY, query);
+    } catch {
+      /* private mode */
+    }
+  }, [query]);
+  useEffect(() => {
+    try {
+      localStorage.setItem(BUDGET_KIND_KEY, kindFilter);
+    } catch {
+      /* private mode */
+    }
+  }, [kindFilter]);
 
   const budgetVisible = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -113,6 +177,11 @@ function ForecastPage() {
   const budgetSort = useEntrySort(budgetVisible, "name", budgetGetters, "asc");
   const budgetCols = useColWidths("finance-manager-budget-cols", BUDGET_COLS);
   const vis = useColVisible("finance-manager-budget-vis", BUDGET_VIS_IDS);
+  // Actions stay on — include explicitly so visibleTableWidth does not rely on undefined.
+  const budgetVisOn = useMemo(
+    () => ({ ...vis.on, actions: true }) as Record<string, boolean>,
+    [vis.on],
+  );
   // -v2 so Amount right default is not stuck on old center prefs
   const budgetAligns = useColAligns(
     "finance-manager-budget-col-aligns-v2",
@@ -122,6 +191,10 @@ function ForecastPage() {
   const budgetRef = useRef<HTMLDivElement>(null);
   const pointer = useTableKeyboardFocus({
     ids: budgetSort.sorted.map((i) => i.id),
+    onOpen: (id) => {
+      const item = budgetSort.sorted.find((i) => i.id === id);
+      if (item) openEdit(item);
+    },
   });
   const listVirt = useListVirtualizer(
     budgetSort.sorted.length,
@@ -138,10 +211,46 @@ function ForecastPage() {
   }
   function fitAll() {
     (Object.keys(BUDGET_COLS) as Array<keyof typeof BUDGET_COLS>).forEach((id) => {
-      if (id !== "actions" && vis.on[id] === false) return;
+      if (budgetVisOn[id] === false) return;
       fit(id, BUDGET_CHIPS.find((c) => c.id === id)?.label ?? "Actions");
     });
   }
+
+  function openNew() {
+    setEditId(null);
+    setForm(emptyBudgetForm());
+    setOpen(true);
+  }
+
+  function openEdit(item: BudgetItem) {
+    setEditId(item.id);
+    setForm(formFromItem(item));
+    setOpen(true);
+  }
+
+  function closeDialog() {
+    setOpen(false);
+    setEditId(null);
+  }
+
+  function saveBudget() {
+    if (!form.name.trim()) return toast.error("Name the item.");
+    upsertBudget({
+      id: editId ?? undefined,
+      name: form.name.trim(),
+      kind: form.kind,
+      amount: parseAmountToCents(form.amount),
+      cadence: "monthly",
+      startMonth: form.startMonth,
+    });
+    setForm(emptyBudgetForm());
+    setEditId(null);
+    setOpen(false);
+    toast.success(editId ? "Budget item updated." : "Budget item saved.");
+  }
+
+  const editing = editId ? budgetItems.find((i) => i.id === editId) : null;
+  const dropping = dropId ? budgetItems.find((i) => i.id === dropId) : null;
 
   const emptyMessage =
     budgetItems.length === 0
@@ -155,7 +264,7 @@ function ForecastPage() {
       title="Cash forecast"
       description="Ninety-day cash from the bank estimate, pending checks, invoice due dates, then monthly budget items."
       actions={
-        <Button onClick={() => setOpen(true)}>
+        <Button onClick={openNew}>
           <Plus />
           Budget item
         </Button>
@@ -241,7 +350,7 @@ function ForecastPage() {
               items={budgetSort.sorted}
               empty={emptyMessage}
               getId={(i) => i.id}
-              estimateSize={140}
+              estimateSize={160}
             >
               {(item) => (
                 <div className="item-card text-left">
@@ -256,9 +365,12 @@ function ForecastPage() {
                     className="item-card-amount mt-1 font-medium tabular-nums"
                   />
                   <div className="mt-2" onClick={stopOpen} onDoubleClick={stopOpen} onPointerDown={stopOpen}>
-                    <Button size="sm" variant="ghost" onClick={() => removeBudget(item.id)}>
-                      Remove
-                    </Button>
+                    <RowActions
+                      items={[
+                        { label: "Edit", onSelect: () => openEdit(item) },
+                        { label: "Remove", onSelect: () => setDropId(item.id), danger: true },
+                      ]}
+                    />
                   </div>
                 </div>
               )}
@@ -273,14 +385,14 @@ function ForecastPage() {
               <table
                 ref={budgetCols.tableRef}
                 className="text-sm"
-                style={listTableStyle(visibleTableWidth(budgetCols.widths, vis.on))}
+                style={listTableStyle(visibleTableWidth(budgetCols.widths, budgetVisOn))}
               >
                 <colgroup>
                   {(Object.keys(BUDGET_COLS) as Array<keyof typeof BUDGET_COLS>).map((id) => (
                     <col
                       key={id}
                       className={listColClass(id)}
-                      style={listColWidthStyle(id, budgetCols.widths[id], id === "actions" || vis.on[id] !== false)}
+                      style={listColWidthStyle(id, budgetCols.widths[id], budgetVisOn[id] !== false)}
                       data-col={id}
                     />
                   ))}
@@ -363,7 +475,9 @@ function ForecastPage() {
                             data-focused={pointer.activeId === item.id ? "true" : undefined}
                             data-row-id={item.id}
                             aria-current={pointer.activeId === item.id ? "true" : undefined}
+                            title="Double-tap, double-click, or press Enter to edit"
                             onClick={() => pointer.setActiveId(item.id)}
+                            onDoubleClick={() => openEdit(item)}
                           >
                             <td
                               className={cn("px-4 py-2", alignClass(budgetAligns.aligns.name ?? "left"))}
@@ -400,9 +514,12 @@ function ForecastPage() {
                               onDoubleClick={stopOpen}
                               onPointerDown={stopOpen}
                             >
-                              <Button size="sm" variant="ghost" onClick={() => removeBudget(item.id)}>
-                                Remove
-                              </Button>
+                              <RowActions
+                                items={[
+                                  { label: "Edit", onSelect: () => openEdit(item) },
+                                  { label: "Remove", onSelect: () => setDropId(item.id), danger: true },
+                                ]}
+                              />
                             </td>
                           </tr>
                         );
@@ -417,10 +534,10 @@ function ForecastPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={(on) => (!on ? closeDialog() : undefined)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Budget item</DialogTitle>
+            <DialogTitle>{editing ? editing.name : "Budget item"}</DialogTitle>
             <DialogDescription>Repeats every month from the start month onward.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4">
@@ -446,25 +563,32 @@ function ForecastPage() {
             </Field>
           </div>
           <DialogFooter>
-            <Button
-              onClick={() => {
-                if (!form.name.trim()) return toast.error("Name the item.");
-                upsertBudget({
-                  name: form.name.trim(),
-                  kind: form.kind,
-                  amount: parseAmountToCents(form.amount),
-                  cadence: "monthly",
-                  startMonth: form.startMonth,
-                });
-                setOpen(false);
-                toast.success("Budget item saved.");
-              }}
-            >
-              Save
+            <Button variant="outline" onClick={closeDialog}>
+              Cancel
             </Button>
+            <Button onClick={saveBudget}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDelete
+        open={Boolean(dropId)}
+        title="Remove this budget item?"
+        body={
+          dropping
+            ? `Removes “${dropping.name}” from the monthly budget. The cash forecast will update.`
+            : "Removes this item from the monthly budget."
+        }
+        confirmLabel="Remove"
+        onClose={() => setDropId(null)}
+        onConfirm={() => {
+          if (dropId) {
+            removeBudget(dropId);
+            toast.success("Budget item removed.");
+          }
+          setDropId(null);
+        }}
+      />
     </AppShell>
   );
 }

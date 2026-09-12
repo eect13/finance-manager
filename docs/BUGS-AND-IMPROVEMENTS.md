@@ -1,6 +1,16 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.42.
+Re-verified in code 2026-09-08. Updated for v3.63.43.
+
+## Fixed in v3.63.43
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| F3 | Med (UX) | Budget items had Remove only — no Edit | Shared Add/Edit dialog; Edit on List + Grid (`RowActions`); Enter/double-click opens edit |
+| F4 | Med (UX) | Remove wiped items on phone Grid mis-tap | `ConfirmDelete` before `removeBudget` (Employees pattern) |
+| F5 | Low | Search + kind filter reset on revisit | Persist `finance-manager-forecast-budget-query` / `…-kind` like `useListView` |
+| F6 | Low | Add dialog kept prior values after Save | Reset form + edit target after successful save; Add opens empty form |
+| F7 | Low | Actions width relied on `vis.on.actions === undefined` | `budgetVisOn = { ...vis.on, actions: true }` for col + `visibleTableWidth` |
 
 ## Fixed in v3.63.42
 

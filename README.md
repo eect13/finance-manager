@@ -1,4 +1,4 @@
-# Finance Manager v3.63.42
+# Finance Manager v3.63.43
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -26,6 +26,10 @@ Unzip the repo (a second unzip named `finance-manager-main (1)` is fine) so `dep
 Vite is installed with the packages — no global `vite` command. `.npmrc` has `legacy-peer-deps=true`.
 
 After the Windows installer: Desktop has one **Finance Manager** shortcut (navy pillars). Pin that — do not keep leftover `finance-manager` aliases from older builds.
+
+## What's new in v3.63.43
+
+- **Forecast → Monthly budget polish:** Edit (shared Add dialog) on List and Grid; ConfirmDelete before Remove; search + kind filter persist in localStorage; form clears after Save; Actions column counted explicitly in table width (no undefined-vis quirk).
 
 ## What's new in v3.63.42
 

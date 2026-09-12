@@ -96,7 +96,8 @@ function formFromItem(item: BudgetItem): BudgetForm {
   return {
     name: item.name,
     kind: item.kind,
-    amount: item.amount ? String(item.amount / 100) : "",
+    // Zero cents → empty field (same empty feel as Add)
+    amount: item.amount > 0 ? String(item.amount / 100) : "",
     startMonth: item.startMonth,
   };
 }
@@ -249,7 +250,6 @@ function ForecastPage() {
     toast.success(editId ? "Budget item updated." : "Budget item saved.");
   }
 
-  const editing = editId ? budgetItems.find((i) => i.id === editId) : null;
   const dropping = dropId ? budgetItems.find((i) => i.id === dropId) : null;
 
   const emptyMessage =
@@ -354,7 +354,13 @@ function ForecastPage() {
             >
               {(item) => (
                 <div className="item-card text-left">
-                  <span className="item-card-title block min-w-0 break-words font-medium">{item.name}</span>
+                  <button
+                    type="button"
+                    className="item-card-title block min-w-0 break-words text-left font-medium hover:underline"
+                    onClick={() => openEdit(item)}
+                  >
+                    {item.name}
+                  </button>
                   <span className="item-card-meta block break-words text-muted-foreground">
                     {item.kind === "inflow" ? "Inflow" : "Outflow"} · from {item.startMonth}
                   </span>
@@ -537,7 +543,7 @@ function ForecastPage() {
       <Dialog open={open} onOpenChange={(on) => (!on ? closeDialog() : undefined)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editing ? editing.name : "Budget item"}</DialogTitle>
+            <DialogTitle>{editId ? "Edit budget item" : "Budget item"}</DialogTitle>
             <DialogDescription>Repeats every month from the start month onward.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4">

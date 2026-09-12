@@ -1,12 +1,20 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.43.
+Re-verified in code 2026-09-08. Updated for v3.63.44.
+
+## Fixed in v3.63.44
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| F8 | Med (UX) | Forecast budget Grid had no card-open — Edit only via RowActions; docs claimed Enter/dblclick on Grid | Grid title button opens Edit (Employees `openEdit` pattern); `stopOpen` on RowActions kept; List Enter/dblclick unchanged |
+| F9 | Low | Edit form showed `"0"` when amount was 0¢ | `formFromItem` uses empty string when `amount` is not > 0 (same empty feel as Add) |
+| F10 | Low | Edit dialog title used stale stored name | Static titles: "Budget item" (add) / "Edit budget item" (edit) |
 
 ## Fixed in v3.63.43
 
 | # | Severity | Issue | Fix |
 | --- | --- | --- | --- |
-| F3 | Med (UX) | Budget items had Remove only — no Edit | Shared Add/Edit dialog; Edit on List + Grid (`RowActions`); Enter/double-click opens edit |
+| F3 | Med (UX) | Budget items had Remove only — no Edit | Shared Add/Edit dialog; Edit on List + Grid (`RowActions`); List Enter/dblclick opens edit |
 | F4 | Med (UX) | Remove wiped items on phone Grid mis-tap | `ConfirmDelete` before `removeBudget` (Employees pattern) |
 | F5 | Low | Search + kind filter reset on revisit | Persist `finance-manager-forecast-budget-query` / `…-kind` like `useListView` |
 | F6 | Low | Add dialog kept prior values after Save | Reset form + edit target after successful save; Add opens empty form |

@@ -129,6 +129,16 @@ export interface Settings {
   decimalPlaces: number;
   /** List/print date display. Typed dates stay MM/DD/YYYY. Default MDY. */
   dateFormat: "MDY" | "DMY" | "LONG";
+  /**
+   * Regional modules (Settings → Tax & payroll modules).
+   * Default on for PHP / Pacific Harbor sample; off otherwise. Toggling off hides UI — does not delete data.
+   */
+  /** Philippines SSS / PhilHealth / Pag-IBIG / TRAIN withholdings. */
+  modulePhPayroll: boolean;
+  /** 13th-month estimate & CSV (standalone or with PH payroll). */
+  modulePh13thMonth: boolean;
+  /** BIR-style exports: 1601-C / WHT CSV, VAT summary CSV. */
+  modulePhBirExports: boolean;
 }
 
 export interface AuditEvent {
@@ -651,4 +661,41 @@ export const DEFAULT_SETTINGS: Settings = {
   useThousandSeparators: true,
   decimalPlaces: 2,
   dateFormat: "MDY",
+  // PHP home currency → PH modules on by default (global companies turn them off in Settings).
+  modulePhPayroll: true,
+  modulePh13thMonth: true,
+  modulePhBirExports: true,
 };
+
+/** Infer PH regional modules for legacy books that lack the flags. */
+export function defaultPhModulesOn(settings: {
+  currency?: string;
+  companyName?: string;
+}): boolean {
+  const cur = (settings.currency || "").toUpperCase();
+  if (cur === "PHP") return true;
+  const name = (settings.companyName || "").toLowerCase();
+  // Pacific Harbor sample and common PH locale hints
+  if (name.includes("pacific harbor")) return true;
+  if (name.includes("philippines") || name.endsWith(".ph")) return true;
+  return false;
+}
+
+export function normalizeRegionalModules(
+  merged: Partial<Settings> & Record<string, unknown>,
+  /** Pre-default raw settings — used so DEFAULT_SETTINGS module flags do not override currency inference. */
+  raw?: Record<string, unknown>,
+): Pick<Settings, "modulePhPayroll" | "modulePh13thMonth" | "modulePhBirExports"> {
+  const infer = defaultPhModulesOn(merged);
+  const src = raw ?? merged;
+  const flag = (key: "modulePhPayroll" | "modulePh13thMonth" | "modulePhBirExports") =>
+    typeof src[key] === "boolean" ? Boolean(src[key]) : infer;
+  return {
+    modulePhPayroll: flag("modulePhPayroll"),
+    modulePh13thMonth: flag("modulePh13thMonth"),
+    modulePhBirExports: flag("modulePhBirExports"),
+  };
+}
+
+/** Account codes created only when PH payroll module is on (never deleted when toggled off). */
+export const PH_PAYROLL_ACCOUNT_CODES = ["2211", "2212", "2213", "2214", "5310"] as const;

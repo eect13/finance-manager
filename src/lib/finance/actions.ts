@@ -1524,13 +1524,34 @@ export function updateInvoiceRecord(data: FinanceData, id: string, patch: AnyIn)
   };
 }
 export function updateSettings(data: FinanceData, patch: Partial<Settings>): FinanceData {
+  const settings = {
+    ...data.settings,
+    ...patch,
+  };
+  let accounts = data.accounts;
+  // PH payroll on → ensure statutory account stubs (never delete when turning off).
+  if (settings.modulePhPayroll) {
+    accounts = ensurePhPayrollAccounts(accounts);
+  }
   return {
     ...data,
-    settings: {
-      ...data.settings,
-      ...patch
-    }
+    settings,
+    accounts,
   };
+}
+
+function ensurePhPayrollAccounts(accounts: FinanceData["accounts"]): FinanceData["accounts"] {
+  let next = accounts;
+  const add = (code: string, id: string, name: string, type: "liability" | "expense") => {
+    if (next.some((a) => a.code === code)) return;
+    next = [...next, { id, code, name, type, system: true }];
+  };
+  add("2211", "acct-2211", "SSS Payable", "liability");
+  add("2212", "acct-2212", "PhilHealth Payable", "liability");
+  add("2213", "acct-2213", "Pag-IBIG Payable", "liability");
+  add("2214", "acct-2214", "Withholding Tax Payable", "liability");
+  add("5310", "acct-5310", "Employer contributions", "expense");
+  return next;
 }
 export function reassignCashBank(data: FinanceData, input: AnyIn): FinanceData {
   if (input.kind === "opening") throw new Error("Opening balance stays on its banks.");
@@ -2302,7 +2323,8 @@ export function payEmployee(data: FinanceData, input: {
   }
   if (amount <= 0) throw new Error("Enter a paycheck amount.");
   const extra = Math.max(0, Math.round(Number(input.withholding) || 0));
-  const statutory = input.statutory ?? employee.statutory !== false;
+  const moduleOn = data.settings.modulePhPayroll === true;
+  const statutory = moduleOn && (input.statutory ?? employee.statutory !== false);
   const period = employee.payPeriod ?? "monthly";
   const parts = computePhPayroll({ gross: amount, period, statutory, extra });
   if (parts.net <= 0) throw new Error("Deductions must be less than gross pay.");

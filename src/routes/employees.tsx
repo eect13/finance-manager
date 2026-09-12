@@ -117,6 +117,7 @@ function toForm(e?: Employee | null): FormState {
 
 function EmployeesPage() {
   const data = useFinanceData();
+  const phPayroll = data.settings.modulePhPayroll;
   const addEmployee = useFinanceStore((s) => s.addEmployee);
   const updateEmployee = useFinanceStore((s) => s.updateEmployee);
   const removeEmployee = useFinanceStore((s) => s.removeEmployee);
@@ -204,7 +205,7 @@ function EmployeesPage() {
     setEditId(null);
     setCreating(true);
     const bankId = banks.find((b) => b.nickname === "Payroll")?.id ?? banks[0]?.id ?? "";
-    setForm({ ...toForm(null), bankId });
+    setForm({ ...toForm(null), bankId, statutory: phPayroll });
   }
 
   function openEdit(e: Employee) {
@@ -232,7 +233,7 @@ function EmployeesPage() {
         payPeriod: form.payPeriod,
         notes: form.notes,
         active: form.active,
-        statutory: form.statutory,
+        statutory: phPayroll ? form.statutory : false,
       };
       if (editing) {
         updateEmployee(editing.id, payload);
@@ -253,7 +254,7 @@ function EmployeesPage() {
     setPayBankId(e.bankId || banks[0]?.id || "");
     setPayHours("");
     setPayWithholding("");
-    setPayStatutory(e.statutory !== false);
+    setPayStatutory(phPayroll && e.statutory !== false);
     const periodAmt = periodPayAmount(e.rate, e.payPeriod ?? "monthly", e.payType);
     setPayAmount(e.payType === "salary" && periodAmt ? String(periodAmt / 100) : "");
   }
@@ -523,7 +524,10 @@ function EmployeesPage() {
           <DialogHeader>
             <DialogTitle>{editing ? editing.name : "New employee"}</DialogTitle>
             <DialogDescription>
-              Roster details for paychecks. Hourly rate is per hour; salary is monthly. PH statutory (SSS, PhilHealth, Pag-IBIG, TRAIN) is on by default.
+              Roster details for paychecks. Hourly rate is per hour; salary is monthly.
+              {phPayroll
+                ? " PH statutory (SSS, PhilHealth, Pag-IBIG, TRAIN) is available when the Philippines payroll module is on."
+                : " Turn on Philippines payroll in Settings → Tax & payroll modules for SSS / PhilHealth / Pag-IBIG / TRAIN."}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -583,12 +587,14 @@ function EmployeesPage() {
             <Field label="Notes">
               <Input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
             </Field>
+            {phPayroll ? (
             <Field label="PH statutory (2026)">
               <div className="flex h-10 items-center gap-2">
                 <Switch checked={form.statutory} onCheckedChange={(v) => setForm({ ...form, statutory: v })} />
                 <span className="text-sm text-muted-foreground">SSS, PhilHealth, Pag-IBIG, TRAIN</span>
               </div>
             </Field>
+            ) : null}
             <Field label="Status">
               <Select value={form.active ? "active" : "inactive"} onValueChange={(v) => setForm({ ...form, active: v === "active" })}>
                 <SelectTrigger>
@@ -615,7 +621,10 @@ function EmployeesPage() {
           <DialogHeader>
             <DialogTitle>Post paycheck</DialogTitle>
             <DialogDescription>
-              Writes a check from the selected bank. Hourly is hours × rate. PH statutory computes SSS, PhilHealth, Pag-IBIG, and TRAIN withholding for this period.
+              Writes a check from the selected bank. Hourly is hours × rate.
+              {phPayroll
+                ? " PH statutory computes SSS, PhilHealth, Pag-IBIG, and TRAIN withholding for this period."
+                : " Generic net pay only — enable Philippines payroll in Settings for statutory withholdings."}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3">
@@ -644,12 +653,14 @@ function EmployeesPage() {
             <Field label={payingEmp?.payType === "hourly" ? "Gross" : "Amount"}>
               <Input inputMode="decimal" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} />
             </Field>
+            {phPayroll ? (
             <Field label="PH statutory (2026)">
               <div className="flex h-10 items-center gap-2">
                 <Switch checked={payStatutory} onCheckedChange={setPayStatutory} />
                 <span className="text-sm text-muted-foreground">SSS, PhilHealth, Pag-IBIG, TRAIN</span>
               </div>
             </Field>
+            ) : null}
             <Field label="Other deduction">
               <Input inputMode="decimal" value={payWithholding} onChange={(e) => setPayWithholding(e.target.value)} />
             </Field>
@@ -678,7 +689,8 @@ function EmployeesPage() {
           <DialogHeader>
             <DialogTitle>Pay all active</DialogTitle>
             <DialogDescription>
-              Posts a period paycheck for each active salaried employee (weekly is 12/52 of monthly, twice a month is half). Hourly people need hours on a single slip. PH statutory is taken from each employee.
+              Posts a period paycheck for each active salaried employee (weekly is 12/52 of monthly, twice a month is half). Hourly people need hours on a single slip.
+              {phPayroll ? " PH statutory is taken from each employee." : ""}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3">

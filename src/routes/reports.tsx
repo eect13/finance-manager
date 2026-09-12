@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Printer } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { DateInput } from "@/components/date-input";
@@ -65,9 +65,16 @@ const PL_VIS_IDS = PL_CHIPS.map((c) => c.id);
 function ReportsPage() {
   const data = useFinanceData();
   const settings = data.settings;
+  const showPhPayroll = settings.modulePhPayroll;
+  const show13th = settings.modulePh13thMonth;
+  const showBir = settings.modulePhBirExports;
+  const showPayrollTab = showPhPayroll || show13th || showBir;
   const [asOf, setAsOf] = useState(todayIso());
   const [query, setQuery] = useState("");
   const [tab, setTab] = useState("aging");
+  useEffect(() => {
+    if (!showPayrollTab && tab === "payroll") setTab("aging");
+  }, [showPayrollTab, tab]);
   const ageVis = useColVisible("finance-manager-aging-vis", AGE_VIS_IDS);
   const tbVis = useColVisible("finance-manager-tb-vis", TB_VIS_IDS);
   const plVis = useColVisible("finance-manager-pl-vis", PL_VIS_IDS);
@@ -105,7 +112,7 @@ function ReportsPage() {
   return (
     <AppShell
       title="Reports"
-      description="Trial balance, profit and loss, VAT, payroll remittance (13th month / 1601-C style CSV), and 30/60/90 aging as of a date."
+      description="Trial balance, profit and loss, VAT, optional PH payroll / BIR helpers, and 30/60/90 aging as of a date."
       wide
       actions={
         <>
@@ -127,7 +134,7 @@ function ReportsPage() {
           <TabsTrigger value="tb">Trial balance</TabsTrigger>
           <TabsTrigger value="pl">Profit and loss</TabsTrigger>
           <TabsTrigger value="vat">VAT</TabsTrigger>
-          <TabsTrigger value="payroll">Payroll</TabsTrigger>
+          {showPayrollTab ? <TabsTrigger value="payroll">Payroll</TabsTrigger> : null}
         </TabsList>
         <TabsContent value="aging">
           <ListToolbar query={query} onQuery={setQuery} placeholder="Search party or number" label="Search aging">
@@ -174,13 +181,28 @@ function ReportsPage() {
           <PlTable rows={plVisible} net={pl.net} currency={settings.currency} vis={plVis} layout={plView} registerFit={(fn) => { plFit.current = fn; }} />
         </TabsContent>
         <TabsContent value="vat">
-          <VatPanel asOf={asOf} currency={settings.currency} />
+          <VatPanel asOf={asOf} currency={settings.currency} birExports={showBir} />
         </TabsContent>
-        <TabsContent value="payroll">
-          <PayrollPanel asOf={asOf} currency={settings.currency} />
-        </TabsContent>
+        {showPayrollTab ? (
+          <TabsContent value="payroll">
+            <PayrollPanel
+              asOf={asOf}
+              currency={settings.currency}
+              showPhPayroll={showPhPayroll}
+              show13th={show13th}
+              showBir={showBir}
+            />
+          </TabsContent>
+        ) : null}
       </Tabs>
-      <ReportsPrint asOf={asOf} tab={tab === "tb" || tab === "pl" || tab === "vat" || tab === "payroll" ? tab : "aging"} />
+      <ReportsPrint
+        asOf={asOf}
+        tab={
+          tab === "tb" || tab === "pl" || tab === "vat" || (tab === "payroll" && showPayrollTab)
+            ? tab
+            : "aging"
+        }
+      />
     </AppShell>
   );
 }
@@ -644,18 +666,20 @@ function PlTable({
   );
 }
 
-function VatPanel({ asOf, currency }: { asOf: string; currency: string }) {
+function VatPanel({ asOf, currency, birExports }: { asOf: string; currency: string; birExports: boolean }) {
   const data = useFinanceData();
   const vat = vatBalances(data, asOf);
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap gap-2">
-        <CsvButton
-          filename={`vat-summary-${asOf}.csv`}
-          rows={vatSummaryRows(data, asOf)}
-          label="Export VAT CSV"
-        />
-      </div>
+      {birExports ? (
+        <div className="flex flex-wrap gap-2">
+          <CsvButton
+            filename={`vat-summary-${asOf}.csv`}
+            rows={vatSummaryRows(data, asOf)}
+            label="Export VAT CSV"
+          />
+        </div>
+      ) : null}
       <div className="list-grid list-scroll overflow-auto rounded-2xl table-paper elevation outline-none">
         <table className="text-sm" style={{ width: "100%" }}>
           <thead>
@@ -694,13 +718,34 @@ function VatPanel({ asOf, currency }: { asOf: string; currency: string }) {
 }
 
 
-function PayrollPanel({ asOf, currency }: { asOf: string; currency: string }) {
+function PayrollPanel({
+  asOf,
+  currency,
+  showPhPayroll,
+  show13th,
+  showBir,
+}: {
+  asOf: string;
+  currency: string;
+  showPhPayroll: boolean;
+  show13th: boolean;
+  showBir: boolean;
+}) {
   const data = useFinanceData();
-  const p = payrollRemittance(data, asOf);
+  const p = useMemo(
+    () => (showPhPayroll ? payrollRemittance(data, asOf) : null),
+    [showPhPayroll, data, asOf],
+  );
   const year = Number((asOf || todayIso()).slice(0, 4)) || new Date().getFullYear();
   const from = `${year}-01-01`;
-  const thirteenth = useMemo(() => thirteenthMonthEstimates(data, year, asOf), [data, year, asOf]);
-  const monthly1601 = useMemo(() => withholding1601cMonthlySummary(data, from, asOf), [data, from, asOf]);
+  const thirteenth = useMemo(
+    () => (show13th ? thirteenthMonthEstimates(data, year, asOf) : []),
+    [show13th, data, year, asOf],
+  );
+  const monthly1601 = useMemo(
+    () => (showBir ? withholding1601cMonthlySummary(data, from, asOf) : []),
+    [showBir, data, from, asOf],
+  );
   const row = (label: string, amount: number) => (
     <tr className="border-b border-border/70 last:border-0">
       <td className="px-4 py-3">{label}</td>
@@ -711,24 +756,33 @@ function PayrollPanel({ asOf, currency }: { asOf: string; currency: string }) {
   );
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap gap-2">
-        <CsvButton
-          filename={`1601c-withholding-${year}.csv`}
-          rows={withholding1601cRows(data, from, asOf)}
-          label="Export 1601-C CSV"
-        />
-        <CsvButton
-          filename={`1601c-monthly-${year}.csv`}
-          rows={monthly1601}
-          label="Export monthly WHT"
-        />
-        <CsvButton
-          filename={`13th-month-${year}.csv`}
-          rows={thirteenthMonthCsvRows(data, year, asOf)}
-          label="Export 13th month"
-        />
-      </div>
+      {(showBir || show13th) ? (
+        <div className="flex flex-wrap gap-2">
+          {showBir ? (
+            <>
+              <CsvButton
+                filename={`1601c-withholding-${year}.csv`}
+                rows={withholding1601cRows(data, from, asOf)}
+                label="Export 1601-C CSV"
+              />
+              <CsvButton
+                filename={`1601c-monthly-${year}.csv`}
+                rows={monthly1601}
+                label="Export monthly WHT"
+              />
+            </>
+          ) : null}
+          {show13th ? (
+            <CsvButton
+              filename={`13th-month-${year}.csv`}
+              rows={thirteenthMonthCsvRows(data, year, asOf)}
+              label="Export 13th month"
+            />
+          ) : null}
+        </div>
+      ) : null}
 
+      {showPhPayroll && p ? (
       <div className="list-grid list-scroll overflow-auto rounded-2xl table-paper elevation outline-none">
         <table className="text-sm" style={{ width: "100%" }}>
           <thead>
@@ -750,7 +804,9 @@ function PayrollPanel({ asOf, currency }: { asOf: string; currency: string }) {
           2026 PH statutory from posted paychecks. Use Export 1601-C CSV for the accountant’s remittance worksheet (not eBIRForms XML). {BIR_BOOKS_DISCLAIMER}
         </p>
       </div>
+      ) : null}
 
+      {show13th ? (
       <div className="list-grid list-scroll overflow-auto rounded-2xl table-paper elevation outline-none">
         <div className="border-b border-border px-4 py-3">
           <p className="text-sm font-medium">13th month estimate · {year}</p>
@@ -789,8 +845,9 @@ function PayrollPanel({ asOf, currency }: { asOf: string; currency: string }) {
           </tbody>
         </table>
       </div>
+      ) : null}
 
-      {monthly1601.length > 0 ? (
+      {showBir && monthly1601.length > 0 ? (
         <div className="list-grid list-scroll overflow-auto rounded-2xl table-paper elevation outline-none">
           <div className="border-b border-border px-4 py-3">
             <p className="text-sm font-medium">1601-C style monthly WHT · {year}</p>

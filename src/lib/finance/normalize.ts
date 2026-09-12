@@ -1,4 +1,4 @@
-import { DEFAULT_SETTINGS, normalizeRegisterCols, parseRecon, type ReconStatus } from "./types";
+import { DEFAULT_SETTINGS, normalizeRegionalModules, normalizeRegisterCols, parseRecon, type ReconStatus } from "./types";
 import { parseDateFormat } from "./format";
 import { parseMethod } from "./methods";
 import { ensureRegisterOrder } from "./register";
@@ -11,9 +11,14 @@ function asArray<T>(value: unknown): T[] {
 
 export function normalizeBooks(raw: unknown): FinanceData {
   const p = (raw && typeof raw === "object" ? raw : {}) as Partial<FinanceData> & Record<string, unknown>;
-  const merged = { ...DEFAULT_SETTINGS, ...(p.settings ?? {}) };
+  const rawSettings =
+    p.settings && typeof p.settings === "object" && !Array.isArray(p.settings)
+      ? (p.settings as unknown as Record<string, unknown>)
+      : {};
+  const merged = { ...DEFAULT_SETTINGS, ...rawSettings };
   const font = Number(merged.registerFontSize);
   const decimals = Number(merged.decimalPlaces);
+  const regional = normalizeRegionalModules(merged as unknown as Record<string, unknown>, rawSettings);
   const settings = {
     ...merged,
     registerFontSize: Number.isFinite(font) ? Math.min(18, Math.max(10, Math.round(font))) : 12,
@@ -22,6 +27,7 @@ export function normalizeBooks(raw: unknown): FinanceData {
     useThousandSeparators: merged.useThousandSeparators !== false,
     decimalPlaces: Number.isFinite(decimals) ? Math.min(4, Math.max(0, Math.round(decimals))) : 2,
     dateFormat: parseDateFormat(merged.dateFormat),
+    ...regional,
   };
   const customers = asArray<Customer>(p.customers).map((c, i) => ({
     ...c,
@@ -137,7 +143,7 @@ export function normalizeBooks(raw: unknown): FinanceData {
     sortOrder: typeof e.sortOrder === "number" ? e.sortOrder : i,
   }));
   const banks = ensureSafekeeping(asArray<Bank>(p.banks), asArray<Account>(p.accounts));
-  const accounts = ensureSystemAccounts(banks.accounts);
+  const accounts = ensureSystemAccounts(banks.accounts, settings.modulePhPayroll);
   const registerOrderRaw =
     p.registerOrder && typeof p.registerOrder === "object" && !Array.isArray(p.registerOrder)
       ? (p.registerOrder as Record<string, unknown>)
@@ -227,7 +233,7 @@ function ensureSafekeeping(banks: Bank[], accounts: Account[]): { banks: Bank[];
 }
 
 
-function ensureSystemAccounts(accounts: Account[]): Account[] {
+function ensureSystemAccounts(accounts: Account[], phPayrollModule: boolean): Account[] {
   let next = accounts;
   if (!next.some((a) => a.code === "2200")) {
     next = [
@@ -247,20 +253,24 @@ function ensureSystemAccounts(accounts: Account[]): Account[] {
       { id: "acct-2210", code: "2210", name: "Payroll Withholdings", type: "liability", system: true },
     ];
   }
-  if (!next.some((a) => a.code === "2211")) {
-    next = [...next, { id: "acct-2211", code: "2211", name: "SSS Payable", type: "liability", system: true }];
-  }
-  if (!next.some((a) => a.code === "2212")) {
-    next = [...next, { id: "acct-2212", code: "2212", name: "PhilHealth Payable", type: "liability", system: true }];
-  }
-  if (!next.some((a) => a.code === "2213")) {
-    next = [...next, { id: "acct-2213", code: "2213", name: "Pag-IBIG Payable", type: "liability", system: true }];
-  }
-  if (!next.some((a) => a.code === "2214")) {
-    next = [...next, { id: "acct-2214", code: "2214", name: "Withholding Tax Payable", type: "liability", system: true }];
-  }
-  if (!next.some((a) => a.code === "5310")) {
-    next = [...next, { id: "acct-5310", code: "5310", name: "Employer contributions", type: "expense", system: true }];
+  // PH statutory payables / employer expense — only ensure when the regional module is on.
+  // Turning the module off hides UI; existing accounts and balances stay.
+  if (phPayrollModule) {
+    if (!next.some((a) => a.code === "2211")) {
+      next = [...next, { id: "acct-2211", code: "2211", name: "SSS Payable", type: "liability", system: true }];
+    }
+    if (!next.some((a) => a.code === "2212")) {
+      next = [...next, { id: "acct-2212", code: "2212", name: "PhilHealth Payable", type: "liability", system: true }];
+    }
+    if (!next.some((a) => a.code === "2213")) {
+      next = [...next, { id: "acct-2213", code: "2213", name: "Pag-IBIG Payable", type: "liability", system: true }];
+    }
+    if (!next.some((a) => a.code === "2214")) {
+      next = [...next, { id: "acct-2214", code: "2214", name: "Withholding Tax Payable", type: "liability", system: true }];
+    }
+    if (!next.some((a) => a.code === "5310")) {
+      next = [...next, { id: "acct-5310", code: "5310", name: "Employer contributions", type: "expense", system: true }];
+    }
   }
   return next;
 }

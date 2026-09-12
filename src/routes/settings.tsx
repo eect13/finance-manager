@@ -46,6 +46,7 @@ function OptionsJump() {
     { id: phone ? "opt-tips" : "opt-keyboard", label: phone ? "Tips" : "Shortcuts" },
     { id: "opt-companies", label: "Companies" },
     { id: "opt-tax", label: "Tax" },
+    { id: "opt-modules", label: "Modules" },
     { id: "opt-backup", label: "Backup" },
     { id: "opt-recurring", label: "Recurring" },
     { id: "opt-storage", label: "Storage" },
@@ -427,6 +428,11 @@ function SettingsPage() {
                           };
                           const willUpdateCurrency = canChangeCurrency && updateCurrencyWithPack;
                           if (willUpdateCurrency) patch.currency = pack.currency;
+                          if (pack.id === "PH") {
+                            patch.modulePhPayroll = true;
+                            patch.modulePh13thMonth = true;
+                            patch.modulePhBirExports = true;
+                          }
                           updateSettings(patch);
                           toast.success(
                             willUpdateCurrency
@@ -458,6 +464,48 @@ function SettingsPage() {
                 />
               </Field>
             ) : null}
+          </CardContent>
+        </Card>
+
+        <Card id="opt-modules" className="scroll-mt-16">
+          <CardHeader>
+            <CardTitle>Tax & payroll modules</CardTitle>
+            <OptionsDescMore>
+              Turn on modules for your country. More regions later. Toggles only hide UI and exports — they do not
+              delete posted paychecks, balances, or accounts.
+            </OptionsDescMore>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <OptionsSwitchRow
+              title="Philippines payroll (SSS / PhilHealth / Pag-IBIG / TRAIN)"
+              hint="When off, hide PH withholdings on Employees and PH remittance panels. Generic salary / hourly pay stays."
+            >
+              <Switch
+                checked={settings.modulePhPayroll}
+                onCheckedChange={(v) => updateSettings({ modulePhPayroll: v })}
+              />
+            </OptionsSwitchRow>
+            <OptionsSwitchRow
+              title="13th-month estimate & export"
+              hint="Reports estimate and CSV. Can stay on without PH payroll (uses posted gross or salary pro-rata)."
+            >
+              <Switch
+                checked={settings.modulePh13thMonth}
+                onCheckedChange={(v) => updateSettings({ modulePh13thMonth: v })}
+              />
+            </OptionsSwitchRow>
+            <OptionsSwitchRow
+              title="BIR-style exports (1601-C / WHT / VAT summary CSV)"
+              hint="When off, hide those Export menu items and Reports CSV actions. Not eFiling / eBIRForms."
+            >
+              <Switch
+                checked={settings.modulePhBirExports}
+                onCheckedChange={(v) => updateSettings({ modulePhBirExports: v })}
+              />
+            </OptionsSwitchRow>
+            <p className="text-xs text-muted-foreground">
+              Defaults: on for PHP currency and the Pacific Harbor sample; off for other currencies until you turn them on.
+            </p>
           </CardContent>
         </Card>
 

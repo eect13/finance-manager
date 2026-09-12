@@ -1,4 +1,4 @@
-# Finance Manager v3.63.37
+# Finance Manager v3.63.38
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -26,6 +26,11 @@ Unzip the repo (a second unzip named `finance-manager-main (1)` is fine) so `dep
 Vite is installed with the packages — no global `vite` command. `.npmrc` has `legacy-peer-deps=true`.
 
 After the Windows installer: **delete the leftover white shortcut** and pin the new one — shortcut and taskbar both use the navy pillars tile.
+
+## What's new in v3.63.38
+
+- **Regional modules:** Settings → Tax & payroll modules toggles for Philippines payroll (SSS / PhilHealth / Pag-IBIG / TRAIN), 13th-month estimate & export, and BIR-style CSVs (1601-C / WHT / VAT summary). Defaults on for PHP / Pacific Harbor sample; off otherwise. Toggling off hides UI — does not delete data.
+- **Global appeal:** Non-PH companies keep generic salary/hourly pay without PH withholdings UI or remittance exports until modules are turned on.
 
 ## What's new in v3.63.37
 
@@ -73,6 +78,17 @@ After the Windows installer: **delete the leftover white shortcut** and pin the 
 - **Register phone cards:** Pending and the bank (Operating) are the same height.
 
 Older point-release notes live in [docs/BUGS-AND-IMPROVEMENTS.md](docs/BUGS-AND-IMPROVEMENTS.md).
+
+## Suggested next regional modules (not built)
+
+Ideas for the same toggle pattern — pick what to ship later:
+
+1. **US payroll stub** — FIT / FICA / state withholding estimate + W-2 style year-end CSV (not eFile).
+2. **Singapore CPF** — employee/employer CPF splits and remittance summary.
+3. **Generic VAT / GST pack** — country-agnostic output/input VAT workbook (beyond PH-flavored CSV labels).
+4. **AU STP / PAYG** — pay-as-you-go withholding estimate + BAS-oriented summary CSV.
+5. **UK PAYE / NI** — PAYE + National Insurance period estimate (not RTI submission).
+6. **Multi-currency books** — home + foreign bank FX with realized gain/loss (pairs with any tax module).
 
 ## Screenshots
 

@@ -1,6 +1,14 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.37.
+Re-verified in code 2026-09-08. Updated for v3.63.38.
+
+## Fixed in v3.63.38
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| M1 | Product | PH payroll / BIR helpers hard-wired worldwide | Settings → Tax & payroll modules toggles; defaults on for PHP / Pacific Harbor, off otherwise; hide UI/exports without deleting data |
+| M2 | Low | BIR remittance loops re-scanned accounts/journals per paycheck | Cache code→id + journal-by-id maps in `ph-bir` 13th / 1601 helpers |
+| M3 | Low | Export menu always built PH CSV rows | Gate 1601 / VAT summary / 13th actions (and row build) behind modules |
 
 ## Fixed in v3.63.37
 
@@ -380,6 +388,15 @@ Re-verified in code 2026-09-05 (Asia/Manila). Updated for v3.62.47. UI direction
 | 3 | Low | Invoices list had no empty-state row | Empty / no-match message |
 | 4 | Low | `DropdownMenuContent` stayed at `z-50` while Select/Popover use `z-[200]` | Raised Export (and other) menus to `z-[200]` |
 
+## Suggested next modular regions (for Eric / Baymax — not implemented)
+
+1. US W-2 / FIT+FICA stub + year-end CSV
+2. Singapore CPF employee/employer splits
+3. Generic VAT/GST workbook (de-PH labels)
+4. Australia PAYG / BAS-oriented summary
+5. UK PAYE + NI period estimate
+6. Multi-currency FX gains/losses (pairs with any tax module)
+
 ## Still open (known) — re-verified in code 2026-09-08
 
 | # | Severity | Area | Notes | Status |
@@ -414,7 +431,7 @@ Re-verified in code 2026-09-05 (Asia/Manila). Updated for v3.62.47. UI direction
 2. **List virtualization** — Register pattern is on the large lists, Close/Forecast/Recurring, and Grid cards. VAT panel and record-sheet lines stay unwindowed (tiny).
 3. **Code-split** — Route auto-split (v3.63.17) + `manualChunks` finance/vendor (v3.63.37).
 4. **Tauri / Android** — Validate WebView IDB persistence; share/save company JSON; cold-start via splits. Solo APK path improved in v3.59; still needs SDK+NDK installed.
-5. **Payroll depth** — Statutory PH engine (v3.63.17) + 13th-month estimate + 1601-C style CSV (v3.63.37). Still open: full BIR annualization / TRAIN year-end / eBIRForms XML.
+5. **Payroll depth** — Statutory PH engine (v3.63.17) + 13th-month / 1601-C CSV (v3.63.37) + regional module toggles (v3.63.38). Still open: full BIR annualization / TRAIN year-end / eBIRForms XML; other country packs (US/SG/AU/UK) as suggestions only.
 6. **Multi-device** — Company-file merge by id (local wins, incoming-only rows added). Open still replaces. P2P stub deleted.
 7. **Purchase VAT** — Done (v3.63.0): Input VAT on bills + Reports → VAT. VAT summary CSV (v3.63.37). Still open: official BIR return / eFiling package.
 8. **Invoice edit UX** — Surface tax as document field clearly so Settings toggle never feels like it rewrites history (partially: Tax % on create/edit when tax enabled).

@@ -20,7 +20,7 @@ import type {
   ReconStatus,
   Vendor,
 } from "./types";
-import { DEFAULT_SETTINGS } from "./types";
+import { DEFAULT_SETTINGS, PH_PAYROLL_ACCOUNT_CODES } from "./types";
 
 const IDS = {
   bdo: "bank-bdo",
@@ -149,10 +149,13 @@ function seedCashRecon(date: string): ReconStatus {
 }
 
 export function emptyBooks(): FinanceData {
+  const phCodes = new Set<string>(PH_PAYROLL_ACCOUNT_CODES);
   return {
     settings: { ...DEFAULT_SETTINGS },
     banks: [],
-    accounts: SYSTEM_ACCOUNTS.filter((a) => !a.bankId),
+    accounts: SYSTEM_ACCOUNTS.filter(
+      (a) => !a.bankId && (DEFAULT_SETTINGS.modulePhPayroll || !phCodes.has(a.code)),
+    ),
     customers: [],
     vendors: [],
     employees: [],
@@ -1777,6 +1780,9 @@ export function createSeed(): FinanceData {
       companyAddress: "Unit 12, Harbor Point, Las Piñas, Metro Manila\nTIN 009-774-221-000",
       companyPhone: "+63 2 8800 4410",
       companyEmail: "treasury@pacificharbor.ph",
+      modulePhPayroll: true,
+      modulePh13thMonth: true,
+      modulePhBirExports: true,
     },
     banks,
     accounts: SYSTEM_ACCOUNTS,

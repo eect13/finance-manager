@@ -57,23 +57,55 @@ function accountIdByCode(data: FinanceData, code: string): string | undefined {
   return data.accounts.find((a) => a.code === code)?.id;
 }
 
-function paycheckJournal(data: FinanceData, checkId: string, journalId: string): JournalEntry | undefined {
-  return data.journals.find((j) => j.id === journalId && j.sourceType === "check" && j.sourceId === checkId);
+/** One-shot code→id map for remittance loops (avoids O(accounts) per paycheck). */
+function accountIdsByCode(data: FinanceData): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const a of data.accounts) {
+    if (a.code && !map.has(a.code)) map.set(a.code, a.id);
+  }
+  return map;
 }
 
+function paycheckJournal(
+  data: FinanceData,
+  checkId: string,
+  journalId: string,
+  byId?: Map<string, JournalEntry>,
+): JournalEntry | undefined {
+  const journal = byId?.get(journalId) ?? data.journals.find((j) => j.id === journalId);
+  if (!journal) return undefined;
+  if (journal.sourceType === "check" && journal.sourceId === checkId) return journal;
+  return undefined;
+}
+
+type StatutoryParts = {
+  gross: number;
+  sssEeEr: number;
+  phil: number;
+  pag: number;
+  wht: number;
+  other: number;
+  employer: number;
+};
+
+const ZERO_PARTS: StatutoryParts = { gross: 0, sssEeEr: 0, phil: 0, pag: 0, wht: 0, other: 0, employer: 0 };
+
 /** Gross basic + statutory line credits on one posted employee paycheck. */
-export function paycheckStatutoryParts(data: FinanceData, check: { id: string; journalId: string; employeeId?: string }) {
-  const journal = paycheckJournal(data, check.id, check.journalId);
-  const zero = { gross: 0, sssEeEr: 0, phil: 0, pag: 0, wht: 0, other: 0, employer: 0 };
-  if (!journal) return zero;
-  const id = (code: string) => accountIdByCode(data, code);
-  const payrollId = id("5300");
-  const sssId = id(PH_PAYROLL_CODES.sss);
-  const philId = id(PH_PAYROLL_CODES.philhealth);
-  const pagId = id(PH_PAYROLL_CODES.pagibig);
-  const whtId = id(PH_PAYROLL_CODES.wht);
-  const otherId = id(PH_PAYROLL_CODES.other);
-  const erId = id(PH_PAYROLL_CODES.employer);
+export function paycheckStatutoryParts(
+  data: FinanceData,
+  check: { id: string; journalId: string; employeeId?: string },
+  opts?: { codes?: Map<string, string>; journalsById?: Map<string, JournalEntry> },
+): StatutoryParts {
+  const journal = paycheckJournal(data, check.id, check.journalId, opts?.journalsById);
+  if (!journal) return ZERO_PARTS;
+  const codes = opts?.codes ?? accountIdsByCode(data);
+  const payrollId = codes.get("5300");
+  const sssId = codes.get(PH_PAYROLL_CODES.sss);
+  const philId = codes.get(PH_PAYROLL_CODES.philhealth);
+  const pagId = codes.get(PH_PAYROLL_CODES.pagibig);
+  const whtId = codes.get(PH_PAYROLL_CODES.wht);
+  const otherId = codes.get(PH_PAYROLL_CODES.other);
+  const erId = codes.get(PH_PAYROLL_CODES.employer);
   let gross = 0;
   let sssEeEr = 0;
   let phil = 0;
@@ -93,7 +125,12 @@ export function paycheckStatutoryParts(data: FinanceData, check: { id: string; j
   return { gross, sssEeEr, phil, pag, wht, other, employer };
 }
 
-function postedGrossInYear(data: FinanceData, employeeId: string, year: number): number {
+function postedGrossInYear(
+  data: FinanceData,
+  employeeId: string,
+  year: number,
+  opts?: { codes?: Map<string, string>; journalsById?: Map<string, JournalEntry> },
+): number {
   const { from, to } = yearBounds(year);
   let total = 0;
   for (const check of data.checks ?? []) {
@@ -101,7 +138,7 @@ function postedGrossInYear(data: FinanceData, employeeId: string, year: number):
     const date = check.postDate || check.issueDate;
     if (!date || date < from || date > to) continue;
     if (check.status === "voided" || check.status === "bounced") continue;
-    total += paycheckStatutoryParts(data, check).gross;
+    total += paycheckStatutoryParts(data, check, opts).gross;
   }
   return total;
 }
@@ -122,9 +159,10 @@ export function estimate13thMonth(
   employee: Employee,
   year: number,
   asOf?: string,
+  opts?: { codes?: Map<string, string>; journalsById?: Map<string, JournalEntry> },
 ): ThirteenthMonthRow {
   const monthsCounted = monthsWorkedInYear(employee.hireDate || `${year}-01-01`, year, asOf);
-  const postedGross = postedGrossInYear(data, employee.id, year);
+  const postedGross = postedGrossInYear(data, employee.id, year, opts);
   if (postedGross > 0) {
     const estimate = Math.round(postedGross / 12);
     return {
@@ -174,9 +212,12 @@ export function thirteenthMonthEstimates(
   year: number,
   asOf?: string,
 ): ThirteenthMonthRow[] {
+  const codes = accountIdsByCode(data);
+  const journalsById = new Map(data.journals.map((j) => [j.id, j]));
+  const opts = { codes, journalsById };
   return [...(data.employees ?? [])]
-    .filter((e) => e.active || postedGrossInYear(data, e.id, year) > 0)
-    .map((e) => estimate13thMonth(data, e, year, asOf))
+    .filter((e) => e.active || postedGrossInYear(data, e.id, year, opts) > 0)
+    .map((e) => estimate13thMonth(data, e, year, asOf, opts))
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
@@ -205,6 +246,9 @@ export function withholding1601cRows(
   to: string,
 ): Array<Record<string, string | number>> {
   const rows: Array<Record<string, string | number>> = [];
+  const codes = accountIdsByCode(data);
+  const journalsById = new Map(data.journals.map((j) => [j.id, j]));
+  const empById = new Map((data.employees ?? []).map((e) => [e.id, e]));
   const checks = [...(data.checks ?? [])]
     .filter((c) => c.employeeId)
     .filter((c) => {
@@ -214,8 +258,8 @@ export function withholding1601cRows(
     .sort((a, b) => (a.postDate || a.issueDate).localeCompare(b.postDate || b.issueDate) || a.id.localeCompare(b.id));
 
   for (const check of checks) {
-    const emp = (data.employees ?? []).find((e) => e.id === check.employeeId);
-    const parts = paycheckStatutoryParts(data, check);
+    const emp = check.employeeId ? empById.get(check.employeeId) : undefined;
+    const parts = paycheckStatutoryParts(data, check, { codes, journalsById });
     const date = check.postDate || check.issueDate;
     const period = date.slice(0, 7);
     rows.push({

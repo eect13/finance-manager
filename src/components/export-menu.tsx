@@ -45,7 +45,8 @@ export function exportCsvActions(data: FinanceData, day = stamp()): ExportCsvAct
   const asOf = todayIso();
   const year = Number(asOf.slice(0, 4)) || new Date().getFullYear();
   const yearStart = `${year}-01-01`;
-  return [
+  const s = data.settings;
+  const actions: ExportCsvAction[] = [
     { label: "General ledger CSV", filename: `ledger-${day}.csv`, rows: ledgerRows(data) },
     { label: "Trial balance CSV", filename: `trial-balance-${day}.csv`, rows: trialBalanceRows(data) },
     { label: "Bank register CSV", filename: `bank-register-${day}.csv`, rows: cashRegisterRows(data) },
@@ -56,10 +57,24 @@ export function exportCsvActions(data: FinanceData, day = stamp()): ExportCsvAct
     { label: "Receipts CSV", filename: `receipts-${day}.csv`, rows: receiptRows(data) },
     { label: "Bills CSV", filename: `bills-${day}.csv`, rows: billRows(data) },
     { label: "Banks CSV", filename: `banks-${day}.csv`, rows: bankRows(data) },
-    { label: "VAT summary CSV", filename: `vat-summary-${day}.csv`, rows: vatSummaryRows(data, asOf) },
-    { label: "1601-C withholding CSV", filename: `1601c-withholding-${year}.csv`, rows: withholding1601cRows(data, yearStart, asOf) },
-    { label: "13th month estimate CSV", filename: `13th-month-${year}.csv`, rows: thirteenthMonthCsvRows(data, year, asOf) },
   ];
+  // BIR-flavored / PH helpers — only build rows when the regional module is on (avoids work on every Export open).
+  if (s.modulePhBirExports) {
+    actions.push({ label: "VAT summary CSV", filename: `vat-summary-${day}.csv`, rows: vatSummaryRows(data, asOf) });
+    actions.push({
+      label: "1601-C withholding CSV",
+      filename: `1601c-withholding-${year}.csv`,
+      rows: withholding1601cRows(data, yearStart, asOf),
+    });
+  }
+  if (s.modulePh13thMonth) {
+    actions.push({
+      label: "13th month estimate CSV",
+      filename: `13th-month-${year}.csv`,
+      rows: thirteenthMonthCsvRows(data, year, asOf),
+    });
+  }
+  return actions;
 }
 
 export function ExportMenu({ data }: { data: FinanceData }) {

@@ -1,4 +1,4 @@
-# Finance Manager v3.63.45
+# Finance Manager v3.63.46
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -26,6 +26,10 @@ Unzip the repo (a second unzip named `finance-manager-main (1)` is fine) so `dep
 Vite is installed with the packages — no global `vite` command. `.npmrc` has `legacy-peer-deps=true`.
 
 After the Windows installer: Desktop has one **Finance Manager** shortcut (navy pillars). Pin that — do not keep leftover `finance-manager` aliases from older builds.
+
+## What's new in v3.63.46
+
+- **Shared card virtualizer estimates:** Register, Reconcile, and CardGrid use one `cardEstimateSize` / token py math (`cardDensityPadDeltaPx` ≈ 8px Compact shrink) — no more divergent magic −20 vs −12. List-row matrix shared via `listRowEstimateSize`. Options title is **List & Grid density**.
 
 ## What's new in v3.63.45
 

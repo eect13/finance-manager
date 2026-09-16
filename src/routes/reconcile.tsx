@@ -38,6 +38,7 @@ import { openProps, openTxn } from "@/lib/finance/open-record";
 import { useEntrySort } from "@/lib/finance/sort";
 import { useFinanceData, useFinanceStore } from "@/lib/finance/store";
 import { useListDensity } from "@/lib/list-density";
+import { cardEstimateSize, listRowEstimateSize } from "@/components/use-list-virtualizer";
 import { cn } from "@/lib/utils";
 import { getWorkspaceScrollElement, listScrollElement, listScrollMargin } from "@/lib/workspace-scroll";
 
@@ -629,14 +630,8 @@ function ReconcileLines({
   const cardMode = phoneLayout === "grid";
   const { density, isCompact } = useListDensity();
   const rowSize = cardMode
-    ? (narrow ? 168 : 148) - (isCompact ? 20 : 0)
-    : isCompact
-      ? narrow
-        ? 44
-        : 40
-      : narrow
-        ? 52
-        : 48;
+    ? cardEstimateSize(isCompact, narrow ? 168 : 148)
+    : listRowEstimateSize(isCompact, narrow);
   const listRef = useRef<HTMLElement | null>(null);
   function bindList(node: HTMLElement | null) {
     listRef.current = node;

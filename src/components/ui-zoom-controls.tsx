@@ -112,12 +112,12 @@ export function ListDensitySettings() {
   return (
     <div className="grid gap-3 rounded-xl bg-muted/70 px-4 py-3">
       <div className="min-w-0">
-        <p className="text-sm font-medium">List density</p>
+        <p className="text-sm font-medium">List &amp; Grid density</p>
         <p className="text-xs text-muted-foreground">
           Row and Grid card spacing on every list tab (Register, Reconcile, Invoices, …). Saved on this device.
         </p>
       </div>
-      <div className="flex flex-wrap gap-2" role="group" aria-label="List density">
+      <div className="flex flex-wrap gap-2" role="group" aria-label="List &amp; Grid density">
         {options.map((opt) => (
           <Button
             key={opt.id}

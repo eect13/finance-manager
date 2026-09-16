@@ -3,14 +3,30 @@ import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "re
 import { useListDensity } from "@/lib/list-density";
 import { getWorkspaceScrollElement, listScrollMargin } from "@/lib/workspace-scroll";
 
-/** Default list-row estimate — Compact ~40, Comfortable ~48. */
-export function listRowEstimateSize(compact: boolean): number {
-  return compact ? 40 : 48;
+/**
+ * Match CSS `--list-cell-py`: comfortable 0.65rem, compact 0.4rem.
+ * Vertical pad shrink in Compact is 2 × Δpy (top + bottom).
+ */
+export const LIST_CELL_PY_REM = { comfortable: 0.65, compact: 0.4 } as const;
+
+/** Compact card estimate shrink vs Comfortable — ~8px at 16px root (not magic −20 / −12). */
+export function cardDensityPadDeltaPx(compact: boolean, rootFontPx = 16): number {
+  if (!compact) return 0;
+  return Math.round((LIST_CELL_PY_REM.comfortable - LIST_CELL_PY_REM.compact) * 2 * rootFontPx);
 }
 
-/** Default Grid card estimate when callers omit size. */
-export function cardEstimateSize(compact: boolean): number {
-  return compact ? 98 : 110;
+/** List-row estimate — desk Compact ~40 / Comfortable ~48; narrow +4. */
+export function listRowEstimateSize(compact: boolean, narrow = false): number {
+  if (compact) return narrow ? 44 : 40;
+  return narrow ? 52 : 48;
+}
+
+/**
+ * Grid card estimate. Default base 110 matches CardGrid; Register/Reconcile pass
+ * 148 / 168. Density delta is shared token math (`cardDensityPadDeltaPx`).
+ */
+export function cardEstimateSize(compact: boolean, baseComfortable = 110): number {
+  return baseComfortable - cardDensityPadDeltaPx(compact);
 }
 
 /** ListCard (capped overflow-y) is the Y scroller; otherwise workspace, like Register.

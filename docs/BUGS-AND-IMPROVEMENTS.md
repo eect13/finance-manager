@@ -1,6 +1,13 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.45.
+Re-verified in code 2026-09-08. Updated for v3.63.46.
+
+## Fixed in v3.63.46
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| D5 | Med | Register/Reconcile Compact card virt used magic −20; CardGrid used −12; real py delta ~8px | Shared `cardEstimateSize` / `cardDensityPadDeltaPx` (token `--list-cell-py` math) for Register, Reconcile, CardGrid; `listRowEstimateSize` drops duplicate matrices |
+| D6 | Low | Options control title still “List density” | Renamed to **List & Grid density** (subtitle already covered List + Grid) |
 
 ## Fixed in v3.63.45
 

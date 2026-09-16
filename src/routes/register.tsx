@@ -19,6 +19,7 @@ import {
   usePhoneUi,
 } from "@/lib/phone-layout";
 import { useListDensity } from "@/lib/list-density";
+import { cardEstimateSize, listRowEstimateSize } from "@/components/use-list-virtualizer";
 import { CsvButton } from "@/components/export-menu";
 import { ListFilters } from "@/components/list-filters";
 import { Money } from "@/components/money";
@@ -1005,14 +1006,8 @@ function RegisterTable({
   const cardMode = phoneLayout === "grid";
   const { density, isCompact } = useListDensity();
   const rowEstimate = cardMode
-    ? (narrow ? 168 : 148) - (isCompact ? 20 : 0)
-    : isCompact
-      ? narrow
-        ? 44
-        : 40
-      : narrow
-        ? 52
-        : 48;
+    ? cardEstimateSize(isCompact, narrow ? 168 : 148)
+    : listRowEstimateSize(isCompact, narrow);
   function requestSort(column: string) {
     if (dragOn) {
       toast.message("Passbook order while Move dates is on.");

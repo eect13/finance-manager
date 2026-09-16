@@ -118,9 +118,6 @@ export function VirtPad({ height, colSpan }: { height: number; colSpan: number }
   );
 }
 
-/** @deprecated Prefer cardVirtGapPx(isCompact) — Comfortable ≈10, Compact ≈8. */
-export const CARD_VIRT_GAP = Math.round(LIST_CARD_GAP_REM.comfortable * 16);
-
 export function cardLaneCount(width: number, compact?: boolean): number {
   if (compact) return 1;
   if (typeof window !== "undefined" && window.innerWidth < 768) return 1;

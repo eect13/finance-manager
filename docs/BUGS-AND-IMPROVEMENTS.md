@@ -1,6 +1,16 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.50.
+Re-verified in code 2026-09-08. Updated for v3.63.51.
+
+## Fixed in v3.63.51
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| G5 | Med (UX) | Grid cards sat too close to borders (`--list-grid-inset` 0.4rem < gap 0.65rem) | Comfortable inset → `0.85rem` (Compact `0.5rem`); Gestalt inset ≥ gap |
+| G6 | Med (UX) | Desk Reconcile Grid missed outer inset (phone-media-only rule) | Shared desk+phone virt ul padding via `--list-grid-inset` |
+| G7 | Low (UX) | Party Grid double-inset (pane 0.75rem + virt margin) | Pane uses token; `.item-cards-virt` margin 0 inside party Grid |
+| P2 | Low (tooling) | Vite warned on broken CSS comment `px-*/py-*` mid-rule | Comment rewritten so `*/` does not close early |
+| R1 | Low | Dead density parse/read exports + deprecated `CARD_VIRT_GAP` | Trimmed; `list-density.ts` still forces Comfortable |
 
 ## Fixed in v3.63.50
 

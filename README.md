@@ -1,4 +1,4 @@
-# Finance Manager v3.63.50
+# Finance Manager v3.63.51
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -26,6 +26,10 @@ Unzip the repo (a second unzip named `finance-manager-main (1)` is fine) so `dep
 Vite is installed with the packages — no global `vite` command. `.npmrc` has `legacy-peer-deps=true`.
 
 After the Windows installer: Desktop has one **Finance Manager** shortcut (navy pillars). Pin that — do not keep leftover `finance-manager` aliases from older builds.
+
+## What's new in v3.63.51
+
+- **Grid Gestalt inset:** Comfortable `--list-grid-inset` 0.4→0.85rem (inset ≥ `--list-card-gap` so card groups clear chrome). Compact inset 0.25→0.5. Desk Reconcile Grid ul shares the token; party Grid pane uses the token and drops double virt margin. Fixed Vite-broken `px-*/py-*` CSS comment. Trimmed unused density parse/read exports and deprecated `CARD_VIRT_GAP`.
 
 ## What's new in v3.63.50
 

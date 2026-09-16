@@ -53,7 +53,8 @@
   --list-cell-px: 0.85rem;
   --list-cell-py: 0.75rem;
   --list-card-gap: 0.65rem;
-  --list-grid-inset: 0.4rem;
+  /* Gestalt: inset >= gap so the card group breathes from chrome more than cards from each other */
+  --list-grid-inset: 0.85rem;
   --list-check-col: 2.75rem;
   --list-check-pad-x: 0.25rem;
   --list-actions-px: 0.75rem;
@@ -67,7 +68,7 @@
   --list-cell-px: 0.5rem;
   --list-cell-py: 0.4rem;
   --list-card-gap: 0.5rem;
-  --list-grid-inset: 0.25rem;
+  --list-grid-inset: 0.5rem;
   --list-check-col: 2.25rem;
   --list-check-pad-x: 0.15rem;
   --list-actions-px: 0.55rem;
@@ -79,7 +80,8 @@
   --list-cell-px: 0.85rem;
   --list-cell-py: 0.75rem;
   --list-card-gap: 0.65rem;
-  --list-grid-inset: 0.4rem;
+  /* Gestalt: inset >= gap so the card group breathes from chrome more than cards from each other */
+  --list-grid-inset: 0.85rem;
   --list-check-col: 2.75rem;
   --list-check-pad-x: 0.25rem;
   --list-actions-px: 0.75rem;
@@ -3872,12 +3874,7 @@ html.tauri-android .app-header-inner {
     box-shadow: none;
     box-sizing: border-box;
   }
-  /* Virt flow + padTop/padBottom spacers: gap lives in cardVirtGapPx only (CSS gap double-counts mid-scroll). */
-  .register-phone-list:not(.is-list) ul,
-  .recon-phone-list:not(.is-list) ul {
-    padding: var(--list-grid-inset);
-    margin: 0;
-  }
+  /* Virt ul inset lifted globally below (desk Reconcile Grid too). */
   .register-phone-list:not(.is-list) li,
   .recon-phone-list:not(.is-list) li {
     margin: 0;
@@ -4081,18 +4078,24 @@ body.is-phone-move-dragging {
   -webkit-user-select: none;
   cursor: grabbing;
 }
-/* Desk Grid: virtualized card stack (same 1D virtualizer as phone; max width for readability) */
-/* Virt flow + padTop/padBottom: inter-card spacing from cardVirtGapPx only (not CSS gap). */
+/* Desk + phone Grid virt uls: outer inset from token; inter-card gap from cardVirtGapPx only (not CSS gap). */
+.register-phone-list:not(.is-list) > ul,
+.recon-phone-list:not(.is-list) > ul,
 .register-desk-grid[data-layout="grid"] > ul {
   display: flex;
   flex-direction: column;
   list-style: none;
   margin: 0;
   padding: var(--list-grid-inset);
+}
+.register-desk-grid[data-layout="grid"] > ul {
   max-width: min(52rem, 100%);
 }
-.register-desk-grid[data-layout="grid"] > ul > li {
+.register-desk-grid[data-layout="grid"] > ul > li,
+.register-phone-list:not(.is-list) > ul > li,
+.recon-phone-list:not(.is-list) > ul > li {
   min-width: 0;
+  margin: 0;
 }
 .register-desk-grid .register-phone-card {
   height: 100%;
@@ -6792,7 +6795,7 @@ button.party-card-row {
 a.party-card-row,
 button.party-card-row {
   border-radius: 1rem;
-  /* Density tokens beat leftover Tailwind px-*/py-* on cards */
+  /* Density tokens beat leftover Tailwind px-* / py-* on cards */
   padding: var(--list-cell-py) var(--list-cell-px) !important;
   min-height: 0;
   box-shadow: none;
@@ -6863,7 +6866,11 @@ button.party-card-row {
 .party-center[data-view="grid"] .party-pane-list {
   overflow: visible !important;
   max-height: none !important;
-  padding: 0.75rem;
+  padding: var(--list-grid-inset);
+}
+/* Pane already insets — CardGrid virt margin would double the edge air */
+.party-center[data-view="grid"] .item-cards-virt {
+  margin: 0 !important;
 }
 .close-page .list-card {
   overflow: visible !important;
@@ -7039,3 +7046,9 @@ button.party-card-row {
     overflow: visible !important;
   }
 }
+
+/* =============================================================================
+   v3.63.51 — Grid Gestalt inset: Comfortable --list-grid-inset 0.4→0.85rem
+   (inset >= --list-card-gap so groups clear chrome; Compact inset 0.25→0.5).
+   Desk Reconcile Grid ul shares inset; party Grid pane uses token, virt margin 0.
+   ============================================================================= */

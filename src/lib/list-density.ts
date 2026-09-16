@@ -17,22 +17,12 @@ function clearStoredDensity() {
   }
 }
 
-/** Compact localStorage is ignored — Options no longer exposes density. */
-export function parseListDensity(_raw: string | null): ListDensity {
-  return LIST_DENSITY_DEFAULT;
-}
-
-export function readListDensity(): ListDensity {
-  clearStoredDensity();
-  return LIST_DENSITY_DEFAULT;
-}
-
 export function applyListDensity(value: ListDensity) {
   if (typeof document === "undefined") return;
   document.documentElement.setAttribute(ATTR, value);
 }
 
-export function writeListDensity(_value: ListDensity) {
+function writeListDensity() {
   clearStoredDensity();
   applyListDensity(LIST_DENSITY_DEFAULT);
 }
@@ -52,9 +42,10 @@ export function getListDensity(): ListDensity {
   return current;
 }
 
-export function setListDensity(_value: ListDensity) {
+/** Options no longer exposes density — always Comfortable. */
+export function setListDensity(_value?: ListDensity) {
   current = LIST_DENSITY_DEFAULT;
-  writeListDensity(current);
+  writeListDensity();
   emit();
 }
 

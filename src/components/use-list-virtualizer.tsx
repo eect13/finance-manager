@@ -1,6 +1,17 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
+import { useListDensity } from "@/lib/list-density";
 import { getWorkspaceScrollElement, listScrollMargin } from "@/lib/workspace-scroll";
+
+/** Default list-row estimate — Compact ~40, Comfortable ~48. */
+export function listRowEstimateSize(compact: boolean): number {
+  return compact ? 40 : 48;
+}
+
+/** Default Grid card estimate when callers omit size. */
+export function cardEstimateSize(compact: boolean): number {
+  return compact ? 98 : 110;
+}
 
 /** ListCard (capped overflow-y) is the Y scroller; otherwise workspace, like Register.
  * Walk ancestors — CardGrid lives inside `.party-pane-list` (max-height + overflow auto),
@@ -35,14 +46,16 @@ export function useListVirtualizer(
   count: number,
   scrollRef: RefObject<HTMLElement | null>,
   getItemKey: (index: number) => string | number,
-  estimateSize = 48,
+  estimateSize?: number,
   enabled = true,
 ) {
+  const { isCompact, density } = useListDensity();
+  const resolvedSize = estimateSize ?? listRowEstimateSize(isCompact);
   const [scrollEl, setScrollEl] = useState<HTMLElement | null>(null);
   const keyRef = useRef(getItemKey);
   keyRef.current = getItemKey;
-  const sizeRef = useRef(estimateSize);
-  sizeRef.current = estimateSize;
+  const sizeRef = useRef(resolvedSize);
+  sizeRef.current = resolvedSize;
   useLayoutEffect(() => {
     const node = scrollRef.current;
     setScrollEl((prev) => (prev === node ? prev : node));
@@ -58,9 +71,9 @@ export function useListVirtualizer(
   useEffect(() => {
     if (!enabled) return;
     virt.measure();
-    // Layout / count / scroller only — virt identity would remeasure every render.
+    // Layout / count / size / density / scroller — virt identity would remeasure every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [count, estimateSize, scrollEl, enabled]);
+  }, [count, resolvedSize, density, scrollEl, enabled]);
   const items = virt.getVirtualItems();
   const first = items[0];
   const last = items[items.length - 1];
@@ -127,16 +140,18 @@ export function useCardVirtualizer(
   count: number,
   scrollRef: RefObject<HTMLElement | null>,
   getItemKey: (index: number) => string | number,
-  estimateSize = 110,
+  estimateSize?: number,
   lanes = 1,
   enabled = true,
 ) {
+  const { isCompact, density } = useListDensity();
+  const resolvedSize = estimateSize ?? cardEstimateSize(isCompact);
   const [scrollEl, setScrollEl] = useState<HTMLElement | null>(null);
   const [scrollMargin, setScrollMargin] = useState(0);
   const keyRef = useRef(getItemKey);
   keyRef.current = getItemKey;
-  const sizeRef = useRef(estimateSize);
-  sizeRef.current = estimateSize;
+  const sizeRef = useRef(resolvedSize);
+  sizeRef.current = resolvedSize;
   useLayoutEffect(() => {
     const node = scrollRef.current;
     setScrollEl((prev) => (prev === node ? prev : node));
@@ -159,7 +174,7 @@ export function useCardVirtualizer(
     if (!enabled) return;
     virt.measure();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [count, estimateSize, scrollEl, enabled, laneCount]);
+  }, [count, resolvedSize, density, scrollEl, enabled, laneCount]);
   return {
     items: virt.getVirtualItems(),
     totalSize: virt.getTotalSize(),

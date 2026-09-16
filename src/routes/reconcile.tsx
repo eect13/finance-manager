@@ -37,6 +37,7 @@ import { KIND_LABEL, type CashLine } from "@/lib/finance/register";
 import { openProps, openTxn } from "@/lib/finance/open-record";
 import { useEntrySort } from "@/lib/finance/sort";
 import { useFinanceData, useFinanceStore } from "@/lib/finance/store";
+import { useListDensity } from "@/lib/list-density";
 import { cn } from "@/lib/utils";
 import { getWorkspaceScrollElement, listScrollElement, listScrollMargin } from "@/lib/workspace-scroll";
 
@@ -626,7 +627,16 @@ function ReconcileLines({
 }) {
   const narrow = isNarrowUi();
   const cardMode = phoneLayout === "grid";
-  const rowSize = cardMode ? (narrow ? 168 : 148) : narrow ? 52 : 44;
+  const { density, isCompact } = useListDensity();
+  const rowSize = cardMode
+    ? (narrow ? 168 : 148) - (isCompact ? 20 : 0)
+    : isCompact
+      ? narrow
+        ? 44
+        : 40
+      : narrow
+        ? 52
+        : 48;
   const listRef = useRef<HTMLElement | null>(null);
   function bindList(node: HTMLElement | null) {
     listRef.current = node;
@@ -657,7 +667,7 @@ function ReconcileLines({
     virt.measure();
     // Layout / type / count / scroller / margin only — virt identity would remeasure every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phoneLayout, cardMode, fontSize, lines.length, scrollEl, scrollMargin, rowSize]);
+  }, [phoneLayout, cardMode, fontSize, lines.length, scrollEl, scrollMargin, rowSize, density]);
   const vItems = virt.getVirtualItems();
   const first = vItems[0];
   const last = vItems[vItems.length - 1];
@@ -1158,7 +1168,7 @@ const ReconPhoneCard = memo(function ReconPhoneCard({
     <li ref={measureRef} data-index={index}>
       <div
         data-selected={on ? "true" : undefined}
-        className="recon-phone-card flex items-start gap-2 rounded-2xl border border-border/40 bg-card px-3 py-3 touch-manipulation shadow-none"
+        className="recon-phone-card flex items-start gap-2 rounded-2xl border border-border/40 bg-card touch-manipulation shadow-none"
         {...openProps(openKindFor(line), openId, { click: true })}
       >
         <div

@@ -106,15 +106,15 @@ export function DisplayZoomSettings() {
 export function ListDensitySettings() {
   const { density, setDensity } = useListDensity();
   const options: { id: ListDensity; label: string; hint: string }[] = [
-    { id: "comfortable", label: "Comfortable", hint: "Default padding — matches Reconcile tick spacing" },
-    { id: "compact", label: "Compact", hint: "Tighter rows when lists feel spacious" },
+    { id: "comfortable", label: "Comfortable", hint: "Default padding for List rows and Grid cards" },
+    { id: "compact", label: "Compact", hint: "Tighter List rows and Grid cards when space is tight" },
   ];
   return (
     <div className="grid gap-3 rounded-xl bg-muted/70 px-4 py-3">
       <div className="min-w-0">
         <p className="text-sm font-medium">List density</p>
         <p className="text-xs text-muted-foreground">
-          One spacing rule for every list tab (Register, Reconcile, Invoices, …). Saved on this device.
+          Row and Grid card spacing on every list tab (Register, Reconcile, Invoices, …). Saved on this device.
         </p>
       </div>
       <div className="flex flex-wrap gap-2" role="group" aria-label="List density">

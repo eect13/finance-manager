@@ -269,9 +269,9 @@ function SettingsPage() {
           <CardHeader>
             <CardTitle>Display / Formatting</CardTitle>
             <OptionsDescMore>
-              Appearance, display zoom, list density, type size, and date format apply on every tab. Zoom and density stay
-              on this device; type size and date format are stored with the company file along with thousand separators
-              and decimal places.
+              Appearance, display zoom, list density (List + Grid), type size, and date format apply on every tab. Zoom and
+              density stay on this device; type size and date format are stored with the company file along with thousand
+              separators and decimal places.
             </OptionsDescMore>
           </CardHeader>
           <CardContent className="grid gap-4">

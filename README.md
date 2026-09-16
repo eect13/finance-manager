@@ -1,4 +1,4 @@
-# Finance Manager v3.63.44
+# Finance Manager v3.63.45
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -26,6 +26,10 @@ Unzip the repo (a second unzip named `finance-manager-main (1)` is fine) so `dep
 Vite is installed with the packages — no global `vite` command. `.npmrc` has `legacy-peer-deps=true`.
 
 After the Windows installer: Desktop has one **Finance Manager** shortcut (navy pillars). Pin that — do not keep leftover `finance-manager` aliases from older builds.
+
+## What's new in v3.63.45
+
+- **List density for Grid cards + virtualizer:** Options Compact/Comfortable now drive Grid card padding (`--list-cell-px` / `--list-cell-py`) as well as List rows; Register/Reconcile estimates and remeasure follow density (and type size on Register). Options copy says List + Grid.
 
 ## What's new in v3.63.44
 

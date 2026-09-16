@@ -1,6 +1,13 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.44.
+Re-verified in code 2026-09-08. Updated for v3.63.45.
+
+## Fixed in v3.63.45
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| D3 | Med (UX) | List density only visibly changed List rows — Grid cards kept hardcoded `0.75rem` / Tailwind `px-3 py-3` | Card padding uses `--list-cell-px` / `--list-cell-py`; Register/Reconcile drop utility pad |
+| D4 | Low | Virtualizer estimates ignored density; Register did not remeasure on density/type | Density-aware defaults (~40/~48 list; card estimates shrink in Compact); Register measure deps include density + fontSize |
 
 ## Fixed in v3.63.44
 

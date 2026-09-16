@@ -9,7 +9,7 @@ export function CardGrid<T>({
   items,
   empty,
   getId,
-  estimateSize = 110,
+  estimateSize,
   compact,
   className,
   children,

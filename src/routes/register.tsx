@@ -18,6 +18,7 @@ import {
   type PhoneLayout,
   usePhoneUi,
 } from "@/lib/phone-layout";
+import { useListDensity } from "@/lib/list-density";
 import { CsvButton } from "@/components/export-menu";
 import { ListFilters } from "@/components/list-filters";
 import { Money } from "@/components/money";
@@ -766,6 +767,7 @@ function RegisterPage() {
           someOn={someOn}
           dragOn={dragOn}
           phoneLayout={phoneLayout}
+          fontSize={fontSize}
           onPhoneLayout={(next) => {
             setPhoneLayout(next);
             writePhoneLayout(REGISTER_PHONE_LAYOUT_KEY, next);
@@ -932,6 +934,7 @@ function RegisterTable({
   someOn,
   dragOn,
   phoneLayout,
+  fontSize,
   onPhoneLayout: _onPhoneLayout,
   dragging,
   draggingSourceId,
@@ -969,6 +972,7 @@ function RegisterTable({
   someOn: boolean;
   dragOn: boolean;
   phoneLayout: PhoneLayout;
+  fontSize: number;
   onPhoneLayout: (next: PhoneLayout) => void;
   dragging: string | null;
   draggingSourceId: string | null;
@@ -999,6 +1003,16 @@ function RegisterTable({
   const phone = isPhoneUi();
   const narrow = isNarrowUi();
   const cardMode = phoneLayout === "grid";
+  const { density, isCompact } = useListDensity();
+  const rowEstimate = cardMode
+    ? (narrow ? 168 : 148) - (isCompact ? 20 : 0)
+    : isCompact
+      ? narrow
+        ? 44
+        : 40
+      : narrow
+        ? 52
+        : 48;
   function requestSort(column: string) {
     if (dragOn) {
       toast.message("Passbook order while Move dates is on.");
@@ -1009,7 +1023,7 @@ function RegisterTable({
   const virtualizer = useVirtualizer({
     count: lines.length,
     getScrollElement: () => getWorkspaceScrollElement(),
-    estimateSize: () => (cardMode ? (narrow ? 168 : 148) : narrow ? 52 : 44),
+    estimateSize: () => rowEstimate,
     overscan: cardMode ? 8 : 12,
     getItemKey: (index) => lines[index]?.id ?? index,
     gap: cardMode ? 8 : 0,
@@ -1019,9 +1033,9 @@ function RegisterTable({
   };
   useEffect(() => {
     virtualizer.measure();
-    // Remeasure when Grid/List or column set changes card heights.
+    // Remeasure when layout, density, type size, or columns change row heights.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phoneLayout, cardMode, cols]);
+  }, [phoneLayout, cardMode, cols, density, fontSize, rowEstimate]);
   const { outTotal, inTotal } = useMemo(() => {
     let out = 0;
     let inn = 0;
@@ -1434,7 +1448,7 @@ function RegisterTable({
                     aria-current={!isOpening && activeId === line.id ? "true" : undefined}
                     data-selected={!isOpening && isOn ? "true" : undefined}
                     className={cn(
-                      "register-phone-card rounded-2xl border border-border/40 bg-card px-3 py-3 touch-manipulation shadow-none",
+                      "register-phone-card rounded-2xl border border-border/40 bg-card touch-manipulation shadow-none",
                       isDragging && "ring-2 ring-primary opacity-60",
                       overRow === line.id && dragOn && "bg-accent/50",
                     )}

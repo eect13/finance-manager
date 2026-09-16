@@ -1038,7 +1038,7 @@
     gap: 0.25rem;
     min-width: 0;
     min-height: 0;
-    padding: 0.75rem;
+    padding: var(--list-cell-py) var(--list-cell-px);
     border: 0;
     border-radius: 1rem;
     background: var(--color-card);
@@ -6671,7 +6671,7 @@ thead button.sort-header-label:hover {
 
 .item-card {
   min-height: 0 !important;
-  padding: 0.75rem !important;
+  padding: var(--list-cell-py) var(--list-cell-px) !important;
   gap: 0.25rem;
   border-radius: 1rem;
   box-shadow: none;
@@ -6707,7 +6707,7 @@ thead button.sort-header-label:hover {
 a.party-card-row,
 button.party-card-row {
   min-height: 0;
-  padding: 0.75rem;
+  padding: var(--list-cell-py) var(--list-cell-px);
   gap: 0.25rem;
   border-radius: 1rem;
   box-shadow: none;
@@ -6790,7 +6790,8 @@ button.party-card-row {
 a.party-card-row,
 button.party-card-row {
   border-radius: 1rem;
-  padding: 0.75rem;
+  /* Density tokens beat leftover Tailwind px-*/py-* on cards */
+  padding: var(--list-cell-py) var(--list-cell-px) !important;
   min-height: 0;
   box-shadow: none;
   border: 1px solid var(--color-table-divider, var(--color-border));

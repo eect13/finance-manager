@@ -21,7 +21,7 @@ import { OptionsDescMore } from "@/components/options-desc-more";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { canPickBackupFolder, chooseBackupFolder, getBackupFolderName, hydrateBackupFolder, saveCompanyFilePreferFolder, useBackupFolderName } from "@/lib/finance/backup-folder";
+import { canPickBackupFolder, chooseBackupFolder, clearBackupFolder, getBackupFolderName, hydrateBackupFolder, saveCompanyFilePreferFolder, useBackupFolderName } from "@/lib/finance/backup-folder";
 import { backupPayload } from "@/lib/finance/export";
 import { listLocalBackups, readLocalBackup } from "@/lib/finance/local-backup";
 import { SAMPLE_COMPANY_ID } from "@/lib/finance/seed";
@@ -740,6 +740,7 @@ function SettingsPage() {
               <Button variant="outline" onClick={() => setBooksConfirm({ kind: "restore" })} disabled={!localStamp}>
                 Restore last local copy
               </Button>
+            </div>
             <input
               ref={fileRef}
               type="file"
@@ -778,12 +779,11 @@ function SettingsPage() {
                 }
               }}
             />
-            <p className="w-full text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               {localStamp
                 ? `Last local copy ${new Date(localStamp).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}.`
                 : "No local copy yet — post or save once and this browser will keep one."}
             </p>
-            </div>
           </CardContent>
         </Card>
 
@@ -1153,12 +1153,12 @@ function BackupFolderPanel() {
       <div className="min-w-0">
         <p className="text-sm font-medium">Backup folder</p>
         <p className="text-xs text-muted-foreground">
-          JSON company files land here when you tap Save company file. Open and Bring in are unchanged.
+          JSON company files land here when you tap Save company file. Clear forgets the folder. Open and Bring in are unchanged.
         </p>
       </div>
       <p className="text-sm">{folderName ?? "Not set"}</p>
       {canPick ? (
-        <div>
+        <div className="flex flex-wrap gap-2">
           <Button
             type="button"
             variant="outline"
@@ -1174,6 +1174,22 @@ function BackupFolderPanel() {
           >
             Choose backup folder
           </Button>
+          {folderName ? (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={async () => {
+                try {
+                  await clearBackupFolder();
+                  toast.message("Backup folder cleared.");
+                } catch (err) {
+                  toast.error(err instanceof Error ? err.message : "Could not clear the backup folder.");
+                }
+              }}
+            >
+              Clear
+            </Button>
+          ) : null}
         </div>
       ) : (
         <p className="text-xs text-muted-foreground">Folder picker isn’t available on this device — use Save company file (download).</p>

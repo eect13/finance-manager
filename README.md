@@ -1,4 +1,4 @@
-# Finance Manager v3.63.52
+# Finance Manager v3.63.53
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -26,6 +26,10 @@ Unzip the repo (a second unzip named `finance-manager-main (1)` is fine) so `dep
 Vite is installed with the packages — no global `vite` command. `.npmrc` has `legacy-peer-deps=true`.
 
 After the Windows installer: Desktop has one **Finance Manager** shortcut (navy pillars). Pin that — do not keep leftover `finance-manager` aliases from older builds.
+
+## What's new in v3.63.53
+
+- **Backup folder polish:** Clear forgets the chosen folder (handle + name). Save confirms before replacing same-day JSON already in that folder. Backup actions / hidden file inputs / local-copy stamp are separate rows (no flex junk drawer).
 
 ## What's new in v3.63.52
 

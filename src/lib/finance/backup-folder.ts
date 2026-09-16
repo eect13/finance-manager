@@ -12,14 +12,13 @@ function emit() {
   listeners.forEach((fn) => fn());
 }
 
+type BackupFileHandle = {
+  createWritable: () => Promise<{ write: (data: string) => Promise<void>; close: () => Promise<void> }>;
+};
+
 type BackupDirHandle = {
   readonly name: string;
-  getFileHandle: (
-    name: string,
-    options?: { create?: boolean },
-  ) => Promise<{
-    createWritable: () => Promise<{ write: (data: string) => Promise<void>; close: () => Promise<void> }>;
-  }>;
+  getFileHandle: (name: string, options?: { create?: boolean }) => Promise<BackupFileHandle>;
   queryPermission?: (d?: { mode?: "read" | "readwrite" }) => Promise<"granted" | "denied" | "prompt">;
   requestPermission?: (d?: { mode?: "read" | "readwrite" }) => Promise<"granted" | "denied" | "prompt">;
 };
@@ -114,6 +113,28 @@ async function ensureWritePermission(handle: BackupDirHandle): Promise<boolean> 
   }
 }
 
+
+async function backupFileExists(handle: BackupDirHandle, filename: string): Promise<boolean> {
+  try {
+    await handle.getFileHandle(filename);
+    return true;
+  } catch (err) {
+    if (err instanceof DOMException && err.name === "NotFoundError") return false;
+    // If we cannot probe, assume missing and let create:true proceed.
+    return false;
+  }
+}
+
+/** Drop the remembered folder handle and display name. */
+export async function clearBackupFolder(): Promise<void> {
+  try {
+    await idbOp("readwrite", (store) => store.delete(HANDLE_KEY));
+  } catch {
+    /* store may be empty */
+  }
+  writeName(null);
+}
+
 /** Folder picker. Throws AbortError if the user cancels. */
 export async function chooseBackupFolder(): Promise<string> {
   const w = window as DirectoryPickerWindow;
@@ -149,6 +170,12 @@ export async function saveCompanyFilePreferFolder(
   const folderSet = Boolean(readName() || handle);
   if (handle && (await ensureWritePermission(handle))) {
     try {
+      if (await backupFileExists(handle, filename)) {
+        const ok =
+          typeof window !== "undefined" &&
+          window.confirm(`Replace ${filename} in the backup folder?`);
+        if (!ok) throw new DOMException("The user aborted a request.", "AbortError");
+      }
       const file = await handle.getFileHandle(filename, { create: true });
       const writable = await file.createWritable();
       await writable.write(content);

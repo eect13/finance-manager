@@ -1,6 +1,14 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.52.
+Re-verified in code 2026-09-08. Updated for v3.63.53.
+
+## Fixed in v3.63.53
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| B4 | Low (UX) | No way to clear Backup folder once set | Clear control drops IDB handle + localStorage name |
+| B5 | Low (UX) | Same-day Save silently overwrote folder JSON | `window.confirm` before replace when file exists |
+| B6 | Low (UX) | Backup buttons + hidden inputs + stamp in one flex-wrap | Actions row / hidden inputs / stamp separated |
 
 ## Fixed in v3.63.52
 

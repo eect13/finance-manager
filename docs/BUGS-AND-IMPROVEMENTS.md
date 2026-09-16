@@ -1,6 +1,14 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.51.
+Re-verified in code 2026-09-08. Updated for v3.63.52.
+
+## Fixed in v3.63.52
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| B4 | Med (UX) | Backup Save fallback paths still used `toast.success` for partial failure | `fallback-saved` / `fallback-downloaded` use `toast.message` (Register-style informational); true success paths keep `toast.success` |
+
+**Deferred (Skye carry Lows — not in this tip):** Clear backup folder control; overwrite confirm on folder Save; extra flex-wrap polish; dead Compact path sweep.
 
 ## Fixed in v3.63.51
 

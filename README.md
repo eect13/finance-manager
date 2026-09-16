@@ -1,4 +1,4 @@
-# Finance Manager v3.63.51
+# Finance Manager v3.63.52
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -26,6 +26,10 @@ Unzip the repo (a second unzip named `finance-manager-main (1)` is fine) so `dep
 Vite is installed with the packages — no global `vite` command. `.npmrc` has `legacy-peer-deps=true`.
 
 After the Windows installer: Desktop has one **Finance Manager** shortcut (navy pillars). Pin that — do not keep leftover `finance-manager` aliases from older builds.
+
+## What's new in v3.63.52
+
+- **Backup Save fallback toast:** Folder-write fallbacks (`Couldn't write… save picker` / `…downloaded`) now use `toast.message` (informational), not `toast.success`. True folder/picker/download successes stay on `toast.success`.
 
 ## What's new in v3.63.51
 

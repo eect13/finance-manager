@@ -708,13 +708,17 @@ function SettingsPage() {
                     const name = `finance-manager-company-${new Date().toISOString().slice(0, 10)}.json`;
                     const how = await saveCompanyFilePreferFolder(name, backupPayload(data));
                     const folder = getBackupFolderName();
-                    toast.success(
+                    const msg =
                       how === "folder"
                         ? `Company file saved to ${folder ?? "the backup folder"}.`
-                        : how === "saved"
-                          ? "Company file saved."
-                          : "Company file downloaded.",
-                    );
+                        : how === "fallback-saved"
+                          ? "Couldn't write to Backup folder — used the save picker instead"
+                          : how === "fallback-downloaded"
+                            ? "Couldn't write to Backup folder — downloaded instead"
+                            : how === "saved"
+                              ? "Company file saved."
+                              : "Company file downloaded.";
+                    toast.success(msg);
                   } catch (err) {
                     if (err instanceof DOMException && err.name === "AbortError") return;
                     toast.error(err instanceof Error ? err.message : "Could not save.");

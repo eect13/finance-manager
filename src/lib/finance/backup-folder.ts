@@ -128,15 +128,25 @@ export async function chooseBackupFolder(): Promise<string> {
   return handle.name;
 }
 
+export type SaveCompanyFileHow =
+  | "folder"
+  | "saved"
+  | "downloaded"
+  | "fallback-saved"
+  | "fallback-downloaded";
+
 /**
  * Write JSON into the chosen backup folder when a live directory handle is
  * available; otherwise the existing save-picker / download path.
+ * When a backup folder is set but the write fails, returns fallback-* so the
+ * UI can say it fell back instead of a silent saved/downloaded toast.
  */
 export async function saveCompanyFilePreferFolder(
   filename: string,
   content: string,
-): Promise<"folder" | "saved" | "downloaded"> {
+): Promise<SaveCompanyFileHow> {
   const handle = await loadHandle();
+  const folderSet = Boolean(readName() || handle);
   if (handle && (await ensureWritePermission(handle))) {
     try {
       const file = await handle.getFileHandle(filename, { create: true });
@@ -149,7 +159,11 @@ export async function saveCompanyFilePreferFolder(
       if (err instanceof DOMException && err.name === "AbortError") throw err;
     }
   }
-  return saveCompanyFile(filename, content);
+  const how = await saveCompanyFile(filename, content);
+  if (folderSet) {
+    return how === "saved" ? "fallback-saved" : "fallback-downloaded";
+  }
+  return how;
 }
 
 export function getBackupFolderName(): string | null {

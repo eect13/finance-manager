@@ -1,6 +1,12 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.49.
+Re-verified in code 2026-09-08. Updated for v3.63.50.
+
+## Fixed in v3.63.50
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| B3 | Med (UX) | Save fell back from Backup folder to picker/download but toasted as a normal save | `saveCompanyFilePreferFolder` returns `fallback-saved` / `fallback-downloaded`; Options Save toast says it fell back |
 
 ## Fixed in v3.63.49
 

@@ -1,4 +1,4 @@
-# Finance Manager v3.63.47
+# Finance Manager v3.63.48
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -26,6 +26,10 @@ Unzip the repo (a second unzip named `finance-manager-main (1)` is fine) so `dep
 Vite is installed with the packages — no global `vite` command. `.npmrc` has `legacy-peer-deps=true`.
 
 After the Windows installer: Desktop has one **Finance Manager** shortcut (navy pillars). Pin that — do not keep leftover `finance-manager` aliases from older builds.
+
+## What's new in v3.63.48
+
+- **Register/Reconcile Grid virt gap:** Drop CSS `gap` on virt Grid uls so spacing comes only from `cardVirtGapPx` (CSS gap + virt gap was double-counting, worse mid-scroll with padTop). Keep `--list-grid-inset` padding and non-virt `.item-cards` / `.party-dir-cards` CSS gap. O1–O3 density tokens unchanged.
 
 ## What's new in v3.63.47
 

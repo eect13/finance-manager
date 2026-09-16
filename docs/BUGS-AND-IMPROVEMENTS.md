@@ -1,6 +1,12 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.47.
+Re-verified in code 2026-09-08. Updated for v3.63.48.
+
+## Fixed in v3.63.48
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| G4 | Med (UX) | Register/Reconcile Grid virt ul CSS `gap` + `cardVirtGapPx` double-counted (worse mid-scroll when padTop > 0) | Remove CSS `gap` from virt Grid uls only; keep `--list-grid-inset` padding; non-virt `.item-cards` / `.party-dir-cards` keep CSS gap; CardGrid absolute path unchanged |
 
 ## Fixed in v3.63.47
 

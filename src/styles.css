@@ -3872,9 +3872,9 @@ html.tauri-android .app-header-inner {
     box-shadow: none;
     box-sizing: border-box;
   }
+  /* Virt flow + padTop/padBottom spacers: gap lives in cardVirtGapPx only (CSS gap double-counts mid-scroll). */
   .register-phone-list:not(.is-list) ul,
   .recon-phone-list:not(.is-list) ul {
-    gap: var(--list-card-gap);
     padding: var(--list-grid-inset);
     margin: 0;
   }
@@ -3913,10 +3913,6 @@ html.tauri-android .app-header-inner {
     background: transparent;
     padding: 0.45rem 0.55rem;
     min-height: 2.75rem;
-  }
-  .register-phone-list:not(.is-list) ul,
-  .recon-phone-list:not(.is-list) ul {
-    gap: var(--list-card-gap);
   }
 }
 
@@ -4086,10 +4082,10 @@ body.is-phone-move-dragging {
   cursor: grabbing;
 }
 /* Desk Grid: virtualized card stack (same 1D virtualizer as phone; max width for readability) */
+/* Virt flow + padTop/padBottom: inter-card spacing from cardVirtGapPx only (not CSS gap). */
 .register-desk-grid[data-layout="grid"] > ul {
   display: flex;
   flex-direction: column;
-  gap: var(--list-card-gap);
   list-style: none;
   margin: 0;
   padding: var(--list-grid-inset);

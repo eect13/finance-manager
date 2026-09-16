@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/ui/tooltip";
 import { DATE_FORMAT_OPTIONS, type DateFormatId } from "@/lib/finance/format";
 import { useFinanceData, useFinanceStore } from "@/lib/finance/store";
-import { useListDensity, type ListDensity } from "@/lib/list-density";
 import { UI_ZOOM_MAX, UI_ZOOM_MIN, UI_ZOOM_STEP, useUiZoom } from "@/lib/ui-zoom";
 import { cn } from "@/lib/utils";
 
@@ -98,40 +97,6 @@ export function DisplayZoomSettings() {
         aria-label="Display zoom"
         onChange={(e) => setZoom(Number(e.target.value))}
       />
-    </div>
-  );
-}
-
-
-export function ListDensitySettings() {
-  const { density, setDensity } = useListDensity();
-  const options: { id: ListDensity; label: string; hint: string }[] = [
-    { id: "comfortable", label: "Comfortable", hint: "Default padding for List rows and Grid cards" },
-    { id: "compact", label: "Compact", hint: "Tighter List rows and Grid cards when space is tight" },
-  ];
-  return (
-    <div className="grid gap-3 rounded-xl bg-muted/70 px-4 py-3">
-      <div className="min-w-0">
-        <p className="text-sm font-medium">List &amp; Grid density</p>
-        <p className="text-xs text-muted-foreground">
-          Row and Grid card spacing on every list tab (Register, Reconcile, Invoices, …). Saved on this device.
-        </p>
-      </div>
-      <div className="flex flex-wrap gap-2" role="group" aria-label="List &amp; Grid density">
-        {options.map((opt) => (
-          <Button
-            key={opt.id}
-            type="button"
-            size="sm"
-            variant={density === opt.id ? "default" : "outline"}
-            aria-pressed={density === opt.id}
-            title={opt.hint}
-            onClick={() => setDensity(opt.id)}
-          >
-            {opt.label}
-          </Button>
-        ))}
-      </div>
     </div>
   );
 }

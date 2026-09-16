@@ -484,7 +484,7 @@ export function AppShell({
                         className="flex min-h-11 w-full items-center rounded-xl px-3 text-left text-sm hover:bg-muted"
                         onClick={() => setMoreOpen(false)}
                       >
-                        Options (companies, density, …)
+                        Options (companies, backup, …)
                       </Link>
                     </div>
                   )}

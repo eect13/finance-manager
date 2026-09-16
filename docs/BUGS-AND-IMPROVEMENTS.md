@@ -1,6 +1,13 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.48.
+Re-verified in code 2026-09-08. Updated for v3.63.49.
+
+## Fixed in v3.63.49
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| B1 | Med (UX) | Options Keep books + List density were confusing leftover controls | Removed Keep books button and density Options UI; lock spacing to Comfortable and clear Compact localStorage on boot; storage meter stays |
+| B2 | Med (UX) | JSON backup had no clear folder path | Options → Backup folder (File System Access directory handle + `finance-manager-backup-folder` name); Save prefers that folder, else existing picker/download |
 
 ## Fixed in v3.63.48
 

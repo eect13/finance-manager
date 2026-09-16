@@ -32,9 +32,8 @@
       (function () {
         try {
           var k = "finance-manager-list-density";
-          var v = localStorage.getItem(k);
-          var d = v === "compact" ? "compact" : "comfortable";
-          document.documentElement.setAttribute("data-list-density", d);
+          try { localStorage.removeItem(k); } catch (e) {}
+          document.documentElement.setAttribute("data-list-density", "comfortable");
         } catch (e) {}
       })();
     </script>

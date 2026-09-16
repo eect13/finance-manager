@@ -21,19 +21,20 @@ import { OptionsDescMore } from "@/components/options-desc-more";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { backupPayload, saveCompanyFile } from "@/lib/finance/export";
+import { canPickBackupFolder, chooseBackupFolder, getBackupFolderName, hydrateBackupFolder, saveCompanyFilePreferFolder, useBackupFolderName } from "@/lib/finance/backup-folder";
+import { backupPayload } from "@/lib/finance/export";
 import { listLocalBackups, readLocalBackup } from "@/lib/finance/local-backup";
 import { SAMPLE_COMPANY_ID } from "@/lib/finance/seed";
 import { fitColumnWidth } from "@/lib/finance/fit-column";
 import { formatDate, todayIso } from "@/lib/finance/format";
 import { useEntrySort } from "@/lib/finance/sort";
 import { UNDO_MAX, useFinanceData, useFinanceStore } from "@/lib/finance/store";
-import { browserStorage, countEntries, formatBytes, jsonSize, requestPersistentStorage } from "@/lib/finance/storage-usage";
+import { browserStorage, countEntries, formatBytes, jsonSize } from "@/lib/finance/storage-usage";
 import { newId } from "@/lib/finance/ids";
 import { COUNTRY_TAX_PACKS, CURRENCIES, countryTaxPackForCurrency, settingsPatchForCountryPack, withModule, type RecurringItem } from "@/lib/finance/types";
 import { useShallow } from "zustand/react/shallow";
 import { AppearancePicker } from "@/components/theme-toggle";
-import { DisplayZoomSettings, ListDensitySettings, ListTypeSettings, DateFormatSettings } from "@/components/ui-zoom-controls";
+import { DisplayZoomSettings, ListTypeSettings, DateFormatSettings } from "@/components/ui-zoom-controls";
 import { usePhoneUi } from "@/lib/phone-layout";
 import { findShortcutLabel, isApplePlatform, redoShortcutLabel, undoShortcutLabel } from "@/lib/hotkey";
 
@@ -269,15 +270,13 @@ function SettingsPage() {
           <CardHeader>
             <CardTitle>Display / Formatting</CardTitle>
             <OptionsDescMore>
-              Appearance, display zoom, list density (List + Grid), type size, and date format apply on every tab. Zoom and
-              density stay on this device; type size and date format are stored with the company file along with thousand
-              separators and decimal places.
+              Appearance, display zoom, type size, and date format apply on every tab. Zoom stays on this device; type size
+              and date format are stored with the company file along with thousand separators and decimal places.
             </OptionsDescMore>
           </CardHeader>
           <CardContent className="grid gap-4">
             <AppearancePicker />
             <DisplayZoomSettings />
-            <ListDensitySettings />
             <ListTypeSettings />
             <DateFormatSettings />
             <OptionsSwitchRow
@@ -694,35 +693,45 @@ function SettingsPage() {
             <CardTitle>Backup and restore</CardTitle>
             <OptionsDescMore>
               This JSON is this company — banks, invoices, receipts, recon, close, and audit. There is no cloud; the
-              file in this browser is the books. Save writes a copy on this device where the browser allows it;
-              otherwise it downloads. Open replaces this company. Bring in from another device adds records that are
-              not already here and leaves yours alone. After every save this browser also keeps a local copy.
+              file in this browser is the books. Pick a backup folder on this computer so Save writes JSON there;
+              otherwise it uses the save picker or a download. Open replaces this company. Bring in from another
+              device adds records that are not already here and leaves yours alone. After every save this browser
+              also keeps a local copy.
             </OptionsDescMore>
           </CardHeader>
-          <CardContent className="flex flex-wrap gap-2">
-            <Button
-              onClick={async () => {
-                try {
-                  const name = `finance-manager-company-${new Date().toISOString().slice(0, 10)}.json`;
-                  const how = await saveCompanyFile(name, backupPayload(data));
-                  toast.success(how === "saved" ? "Company file saved." : "Company file downloaded.");
-                } catch (err) {
-                  if (err instanceof DOMException && err.name === "AbortError") return;
-                  toast.error(err instanceof Error ? err.message : "Could not save.");
-                }
-              }}
-            >
-              Save company file
-            </Button>
-            <Button variant="outline" onClick={() => fileRef.current?.click()}>
-              Open company file
-            </Button>
-            <Button variant="outline" onClick={() => mergeRef.current?.click()}>
-              Bring in from another device
-            </Button>
-            <Button variant="outline" onClick={() => setBooksConfirm({ kind: "restore" })} disabled={!localStamp}>
-              Restore last local copy
-            </Button>
+          <CardContent className="grid gap-4">
+            <BackupFolderPanel />
+            <div className="flex flex-wrap gap-2">
+              <Button
+                onClick={async () => {
+                  try {
+                    const name = `finance-manager-company-${new Date().toISOString().slice(0, 10)}.json`;
+                    const how = await saveCompanyFilePreferFolder(name, backupPayload(data));
+                    const folder = getBackupFolderName();
+                    toast.success(
+                      how === "folder"
+                        ? `Company file saved to ${folder ?? "the backup folder"}.`
+                        : how === "saved"
+                          ? "Company file saved."
+                          : "Company file downloaded.",
+                    );
+                  } catch (err) {
+                    if (err instanceof DOMException && err.name === "AbortError") return;
+                    toast.error(err instanceof Error ? err.message : "Could not save.");
+                  }
+                }}
+              >
+                Save company file
+              </Button>
+              <Button variant="outline" onClick={() => fileRef.current?.click()}>
+                Open company file
+              </Button>
+              <Button variant="outline" onClick={() => mergeRef.current?.click()}>
+                Bring in from another device
+              </Button>
+              <Button variant="outline" onClick={() => setBooksConfirm({ kind: "restore" })} disabled={!localStamp}>
+                Restore last local copy
+              </Button>
             <input
               ref={fileRef}
               type="file"
@@ -766,6 +775,7 @@ function SettingsPage() {
                 ? `Last local copy ${new Date(localStamp).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}.`
                 : "No local copy yet — post or save once and this browser will keep one."}
             </p>
+            </div>
           </CardContent>
         </Card>
 
@@ -1121,6 +1131,49 @@ const REC_COLS = {
   actions: 120,
 } as const;
 
+function BackupFolderPanel() {
+  const folderName = useBackupFolderName();
+  const [canPick, setCanPick] = useState(false);
+
+  useEffect(() => {
+    setCanPick(canPickBackupFolder());
+    void hydrateBackupFolder();
+  }, []);
+
+  return (
+    <div className="grid gap-3 rounded-xl bg-muted/70 px-4 py-3">
+      <div className="min-w-0">
+        <p className="text-sm font-medium">Backup folder</p>
+        <p className="text-xs text-muted-foreground">
+          JSON company files land here when you tap Save company file. Open and Bring in are unchanged.
+        </p>
+      </div>
+      <p className="text-sm">{folderName ?? "Not set"}</p>
+      {canPick ? (
+        <div>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={async () => {
+              try {
+                const name = await chooseBackupFolder();
+                toast.success(`Backup folder set to ${name}.`);
+              } catch (err) {
+                if (err instanceof DOMException && err.name === "AbortError") return;
+                toast.error(err instanceof Error ? err.message : "Could not set the backup folder.");
+              }
+            }}
+          >
+            Choose backup folder
+          </Button>
+        </div>
+      ) : (
+        <p className="text-xs text-muted-foreground">Folder picker isn’t available on this device — use Save company file (download).</p>
+      )}
+    </div>
+  );
+}
+
 function StoragePanel() {
   const data = useFinanceData();
   const companies = useFinanceStore((s) => s.companies);
@@ -1136,7 +1189,6 @@ function StoragePanel() {
   }>({ usage: 0, quota: 0, persisted: null, engine: "unknown" });
   const [through, setThrough] = useState(`${new Date().getFullYear() - 1}-12-31`);
   const [purging, setPurging] = useState(false);
-  const [asking, setAsking] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -1181,33 +1233,10 @@ function StoragePanel() {
             : browser.persisted === false
               ? " · not persistent — download a company file if you clear site data"
               : ""}
-          . Finance Manager does not cap storage. The grant is this browser’s — often about 10 GB
-          until you tap Keep books, then a large share of free disk. There is no API to type a GB
-          number. Undo/redo keeps up to {UNDO_MAX} steps in memory for this session (maximum
-          sensible depth for full company snapshots).
+          . Finance Manager does not cap storage. The grant is this browser’s — typically a share
+          of free disk. There is no API to type a GB number. Undo/redo keeps up to {UNDO_MAX} steps
+          in memory for this session (maximum sensible depth for full company snapshots).
         </p>
-        {browser.persisted !== true ? (
-          <Button
-            className="mt-3"
-            variant="outline"
-            disabled={asking}
-            onClick={() => {
-              setAsking(true);
-              void (async () => {
-                try {
-                  const ok = await requestPersistentStorage();
-                  setBrowser(await browserStorage());
-                  if (ok) toast.success("This browser will keep the books.");
-                  else toast.message("This browser did not raise the grant. Download a company file as backup.");
-                } finally {
-                  setAsking(false);
-                }
-              })();
-            }}
-          >
-            Keep books on this computer
-          </Button>
-        ) : null}
       </div>
       <dl className="stat-grid stat-grid-4">
         <Stat label="This company" value={formatBytes(companyBytes)} hint={`${counts.total} entries`} />

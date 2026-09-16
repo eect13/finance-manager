@@ -8,17 +8,23 @@ export const LIST_DENSITY_DEFAULT: ListDensity = "comfortable";
 
 const listeners = new Set<() => void>();
 
-export function parseListDensity(raw: string | null): ListDensity {
-  return raw === "compact" ? "compact" : "comfortable";
+function clearStoredDensity() {
+  if (typeof localStorage === "undefined") return;
+  try {
+    localStorage.removeItem(KEY);
+  } catch {
+    /* private mode */
+  }
+}
+
+/** Compact localStorage is ignored — Options no longer exposes density. */
+export function parseListDensity(_raw: string | null): ListDensity {
+  return LIST_DENSITY_DEFAULT;
 }
 
 export function readListDensity(): ListDensity {
-  if (typeof localStorage === "undefined") return LIST_DENSITY_DEFAULT;
-  try {
-    return parseListDensity(localStorage.getItem(KEY));
-  } catch {
-    return LIST_DENSITY_DEFAULT;
-  }
+  clearStoredDensity();
+  return LIST_DENSITY_DEFAULT;
 }
 
 export function applyListDensity(value: ListDensity) {
@@ -26,18 +32,15 @@ export function applyListDensity(value: ListDensity) {
   document.documentElement.setAttribute(ATTR, value);
 }
 
-export function writeListDensity(value: ListDensity) {
-  try {
-    localStorage.setItem(KEY, value);
-  } catch {
-    /* private mode */
-  }
-  applyListDensity(value);
+export function writeListDensity(_value: ListDensity) {
+  clearStoredDensity();
+  applyListDensity(LIST_DENSITY_DEFAULT);
 }
 
 let current: ListDensity = LIST_DENSITY_DEFAULT;
 if (typeof window !== "undefined") {
-  current = readListDensity();
+  current = LIST_DENSITY_DEFAULT;
+  clearStoredDensity();
   applyListDensity(current);
 }
 
@@ -49,8 +52,8 @@ export function getListDensity(): ListDensity {
   return current;
 }
 
-export function setListDensity(value: ListDensity) {
-  current = value === "compact" ? "compact" : "comfortable";
+export function setListDensity(_value: ListDensity) {
+  current = LIST_DENSITY_DEFAULT;
   writeListDensity(current);
   emit();
 }
@@ -69,5 +72,5 @@ export function useListDensity() {
   };
 }
 
-/** Apply before paint — pairs with THEME_BOOT / UI_ZOOM_BOOT. */
-export const LIST_DENSITY_BOOT = `(function(){try{var k=${JSON.stringify(KEY)};var v=localStorage.getItem(k);var d=v==="compact"?"compact":"comfortable";document.documentElement.setAttribute(${JSON.stringify(ATTR)},d);}catch(e){}})();`;
+/** Apply Comfortable before paint and drop a leftover Compact key. */
+export const LIST_DENSITY_BOOT = `(function(){try{var k=${JSON.stringify(KEY)};try{localStorage.removeItem(k);}catch(e){}document.documentElement.setAttribute(${JSON.stringify(ATTR)},${JSON.stringify(LIST_DENSITY_DEFAULT)});}catch(e){}})();`;

@@ -38,7 +38,7 @@ import { openProps, openTxn } from "@/lib/finance/open-record";
 import { useEntrySort } from "@/lib/finance/sort";
 import { useFinanceData, useFinanceStore } from "@/lib/finance/store";
 import { useListDensity } from "@/lib/list-density";
-import { cardEstimateSize, listRowEstimateSize } from "@/components/use-list-virtualizer";
+import { cardEstimateSize, cardVirtGapPx, listRowEstimateSize } from "@/components/use-list-virtualizer";
 import { cn } from "@/lib/utils";
 import { getWorkspaceScrollElement, listScrollElement, listScrollMargin } from "@/lib/workspace-scroll";
 
@@ -642,6 +642,7 @@ function ReconcileLines({
   keyRef.current = (i) => lines[i]?.id ?? i;
   const sizeRef = useRef(rowSize);
   sizeRef.current = rowSize;
+  const cardGap = cardMode ? cardVirtGapPx(isCompact) : 0;
   useLayoutEffect(() => {
     const node = listRef.current;
     const el = listScrollElement(node);
@@ -655,14 +656,14 @@ function ReconcileLines({
     estimateSize: () => sizeRef.current,
     overscan: cardMode ? 8 : 12,
     getItemKey: (index) => keyRef.current(index),
-    gap: cardMode ? 8 : 0,
+    gap: cardGap,
     scrollMargin,
   });
   useEffect(() => {
     virt.measure();
     // Layout / type / count / scroller / margin only — virt identity would remeasure every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phoneLayout, cardMode, fontSize, lines.length, scrollEl, scrollMargin, rowSize, density]);
+  }, [phoneLayout, cardMode, fontSize, lines.length, scrollEl, scrollMargin, rowSize, density, cardGap]);
   const vItems = virt.getVirtualItems();
   const first = vItems[0];
   const last = vItems[vItems.length - 1];

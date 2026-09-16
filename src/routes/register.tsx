@@ -19,7 +19,7 @@ import {
   usePhoneUi,
 } from "@/lib/phone-layout";
 import { useListDensity } from "@/lib/list-density";
-import { cardEstimateSize, listRowEstimateSize } from "@/components/use-list-virtualizer";
+import { cardEstimateSize, cardVirtGapPx, listRowEstimateSize } from "@/components/use-list-virtualizer";
 import { CsvButton } from "@/components/export-menu";
 import { ListFilters } from "@/components/list-filters";
 import { Money } from "@/components/money";
@@ -1008,6 +1008,7 @@ function RegisterTable({
   const rowEstimate = cardMode
     ? cardEstimateSize(isCompact, narrow ? 168 : 148)
     : listRowEstimateSize(isCompact, narrow);
+  const cardGap = cardMode ? cardVirtGapPx(isCompact) : 0;
   function requestSort(column: string) {
     if (dragOn) {
       toast.message("Passbook order while Move dates is on.");
@@ -1021,7 +1022,7 @@ function RegisterTable({
     estimateSize: () => rowEstimate,
     overscan: cardMode ? 8 : 12,
     getItemKey: (index) => lines[index]?.id ?? index,
-    gap: cardMode ? 8 : 0,
+    gap: cardGap,
   });
   scrollToRow.current = (index) => {
     virtualizer.scrollToIndex(index, { align: "auto" });
@@ -1030,7 +1031,7 @@ function RegisterTable({
     virtualizer.measure();
     // Remeasure when layout, density, type size, or columns change row heights.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phoneLayout, cardMode, cols, density, fontSize, rowEstimate]);
+  }, [phoneLayout, cardMode, cols, density, fontSize, rowEstimate, cardGap]);
   const { outTotal, inTotal } = useMemo(() => {
     let out = 0;
     let inn = 0;

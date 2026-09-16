@@ -1,4 +1,4 @@
-# Finance Manager v3.63.46
+# Finance Manager v3.63.47
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -26,6 +26,10 @@ Unzip the repo (a second unzip named `finance-manager-main (1)` is fine) so `dep
 Vite is installed with the packages — no global `vite` command. `.npmrc` has `legacy-peer-deps=true`.
 
 After the Windows installer: Desktop has one **Finance Manager** shortcut (navy pillars). Pin that — do not keep leftover `finance-manager` aliases from older builds.
+
+## What's new in v3.63.47
+
+- **Grid Gestalt O1–O3 + packer maxBuffer:** One `data-list-density` drives list/card pad, inter-card gap, and grid outer inset. Comfortable `--list-cell-py: 0.75rem` / `--list-card-gap: 0.65rem` / `--list-grid-inset: 0.4rem`; Compact keeps tighter py `0.4` / gap `0.5` / inset `0.25`. Register, Reconcile, and CardGrid virt gaps share `cardVirtGapPx` (no magic 8 vs 10). Android pack helpers use `maxBuffer: 64MB` for cargo metadata.
 
 ## What's new in v3.63.46
 

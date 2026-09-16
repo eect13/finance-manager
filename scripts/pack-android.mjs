@@ -82,6 +82,8 @@ function runCapture(cmd, args, env = process.env) {
     env,
     encoding: "utf8",
     windowsHide: true,
+    // cargo metadata for Tauri+plugins is multi-MB; Node default ~1MB maxBuffer fails the APK helpers.
+    maxBuffer: 64 * 1024 * 1024,
   });
   return {
     status: r.status ?? 1,

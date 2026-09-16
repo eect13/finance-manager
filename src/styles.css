@@ -49,9 +49,11 @@
 :root {
   color-scheme: light;
   --app-ui-zoom: 1;
-  /* Shared list spacing (all list-grid / register / reconcile tabs) */
+  /* Shared list/grid spacing — one density drives cell pad, card gap, grid inset */
   --list-cell-px: 0.85rem;
-  --list-cell-py: 0.65rem;
+  --list-cell-py: 0.75rem;
+  --list-card-gap: 0.65rem;
+  --list-grid-inset: 0.4rem;
   --list-check-col: 2.75rem;
   --list-check-pad-x: 0.25rem;
   --list-actions-px: 0.75rem;
@@ -64,6 +66,8 @@
 :root[data-list-density="compact"] {
   --list-cell-px: 0.5rem;
   --list-cell-py: 0.4rem;
+  --list-card-gap: 0.5rem;
+  --list-grid-inset: 0.25rem;
   --list-check-col: 2.25rem;
   --list-check-pad-x: 0.15rem;
   --list-actions-px: 0.55rem;
@@ -73,7 +77,9 @@
 }
 :root[data-list-density="comfortable"] {
   --list-cell-px: 0.85rem;
-  --list-cell-py: 0.65rem;
+  --list-cell-py: 0.75rem;
+  --list-card-gap: 0.65rem;
+  --list-grid-inset: 0.4rem;
   --list-check-col: 2.75rem;
   --list-check-pad-x: 0.25rem;
   --list-actions-px: 0.75rem;
@@ -1021,14 +1027,15 @@
 
   .party-dir-cards {
     display: grid;
-    gap: 0.65rem;
-    padding: 0;
+    gap: var(--list-card-gap);
+    padding: var(--list-grid-inset);
     grid-template-columns: 1fr;
   }
 
   .item-cards {
     display: grid;
-    gap: 0.75rem;
+    gap: var(--list-card-gap);
+    padding: var(--list-grid-inset);
     grid-template-columns: 1fr;
   }
 
@@ -3867,8 +3874,8 @@ html.tauri-android .app-header-inner {
   }
   .register-phone-list:not(.is-list) ul,
   .recon-phone-list:not(.is-list) ul {
-    gap: 0.65rem;
-    padding: 0;
+    gap: var(--list-card-gap);
+    padding: var(--list-grid-inset);
     margin: 0;
   }
   .register-phone-list:not(.is-list) li,
@@ -3909,7 +3916,7 @@ html.tauri-android .app-header-inner {
   }
   .register-phone-list:not(.is-list) ul,
   .recon-phone-list:not(.is-list) ul {
-    gap: 0.5rem;
+    gap: var(--list-card-gap);
   }
 }
 
@@ -4082,9 +4089,10 @@ body.is-phone-move-dragging {
 .register-desk-grid[data-layout="grid"] > ul {
   display: flex;
   flex-direction: column;
+  gap: var(--list-card-gap);
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: var(--list-grid-inset);
   max-width: min(52rem, 100%);
 }
 .register-desk-grid[data-layout="grid"] > ul > li {
@@ -6666,7 +6674,8 @@ thead button.sort-header-label:hover {
 }
 
 .item-cards {
-  gap: 0.65rem;
+  gap: var(--list-card-gap);
+  padding: var(--list-grid-inset);
 }
 
 .item-card {
@@ -6776,11 +6785,8 @@ button.party-card-row {
 
 .item-cards,
 .party-dir-cards {
-  gap: 0.65rem;
-}
-
-.party-dir-cards {
-  padding: 0;
+  gap: var(--list-card-gap);
+  padding: var(--list-grid-inset);
 }
 
 .register-phone-card,
@@ -6844,6 +6850,9 @@ button.party-card-row {
   display: block !important;
   position: relative;
   min-height: 0;
+  /* Absolute lanes ignore padding — margin is the Grid outer inset. */
+  padding: 0 !important;
+  margin: var(--list-grid-inset);
 }
 .item-card-virt {
   box-sizing: border-box;

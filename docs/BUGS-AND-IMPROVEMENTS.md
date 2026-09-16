@@ -1,6 +1,15 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.46.
+Re-verified in code 2026-09-08. Updated for v3.63.47.
+
+## Fixed in v3.63.47
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| G1 | Med (UX) | Comfortable Grid card py still 0.65rem — felt tight vs locked Gestalt | `--list-cell-py` Comfortable/`:root` → `0.75rem`; Compact stays `0.4rem`; `LIST_CELL_PY_REM` matched (Compact shrink ≈11px) |
+| G2 | Med (UX) | Grid stacks sat flush — no shared outer inset | Token `--list-grid-inset` (Comfortable `0.4rem` / Compact `0.25rem`) on Register/Reconcile Grid uls, `.item-cards` / `.party-dir-cards`; virt uses margin (absolute lanes ignore padding) |
+| G3 | Med (UX) | Inter-card gap split magic 8 (Register/Reconcile virt) vs 10 / mixed CSS | Token `--list-card-gap` (Comfortable `0.65rem` / Compact `0.5rem`); `cardVirtGapPx` for Register, Reconcile, CardGrid; CSS `gap` on those grids uses the token |
+| P1 | Low (tooling) | Android pack `cargo metadata` blew Node default ~1MB maxBuffer | `scripts/pack-android.mjs` `maxBuffer: 64MB` |
 
 ## Fixed in v3.63.46
 

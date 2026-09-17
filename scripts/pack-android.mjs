@@ -87,7 +87,9 @@ function runCapture(cmd, args, env = process.env) {
   });
   return {
     status: r.status ?? 1,
-    out: `${r.stdout || ""}${r.stderr || ""}`,
+    out: r.stdout || "",
+    err: r.stderr || "",
+    combined: `${r.stdout || ""}${r.stderr || ""}`,
   };
 }
 
@@ -178,8 +180,8 @@ function ensureAndroidRustTarget() {
 function javaMajor(javaHome) {
   const bin = join(javaHome, "bin", WIN ? "java.exe" : "java");
   if (!existsSync(bin)) return null;
-  const { out } = runCapture(bin, ["-version"]);
-  const m = out.match(/version "(\d+)/);
+  const { out, err } = runCapture(bin, ["-version"]);
+  const m = `${out}${err}`.match(/version "(\d+)/);
   return m ? Number(m[1]) : null;
 }
 
@@ -416,7 +418,7 @@ function ensureTauriGradleHelpers() {
     join(ROOT, "src-tauri", "Cargo.toml"),
   ]);
   if (meta.status !== 0) {
-    fail("cargo metadata failed while generating Android Gradle helpers.", meta.out);
+    fail("cargo metadata failed while generating Android Gradle helpers.", meta.err || meta.combined);
   }
   let parsed;
   try {

@@ -1,10 +1,10 @@
-# Finance Manager v3.63.53
+# Finance Manager v3.63.54
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
-Pacific Harbor Trading is the default **sample company** — a full 2026 year of trading plus extra trade so the file sits near **1,000 documents**. Payee is the customer or vendor name; memo is the reason. Create more companies from the name in the header or from Settings. **Remove sample** deletes that file from this browser; **Restore last local copy** puts back the last automatic snapshot; Reload sample brings the demo back.
+Pacific Harbor Trading is the default **sample company** — a full 2026 year of trading for a mid-size warehouse, about **40 customers**, **30 vendors**, **14 employees**, and **~1,700 documents**. Payee is the customer or vendor name; memo is the reason. Create more companies from the name in the header or from Settings. **Remove sample** deletes that file from this browser; **Restore last local copy** puts back the last automatic snapshot; Reload sample brings the demo back.
 
-**License:** MIT. Light or dark. No accounts, no server, no cloud. Books stay on this computer (IndexedDB). Options → Backup can save a JSON company file (pick a backup folder on desktop). Open a file to move books to another device.
+**License:** MIT. Light or dark. No accounts, no server, no cloud. Books stay on this computer (IndexedDB). Options → Backup can save a JSON company file (pick a backup folder on desktop). Open replaces this company; Merge adds records that are not already here.
 
 The app mark is a **navy tile with cream pillars**. Windows uses a BMP 32-bit `.ico` (PNG-in-ICO showed as a white square). NSIS writes one Desktop shortcut named **Finance Manager** (navy tile). A second launch focuses the existing window.
 
@@ -27,6 +27,11 @@ Vite is installed with the packages — no global `vite` command. `.npmrc` has `
 
 After the Windows installer: Desktop has one **Finance Manager** shortcut (navy pillars). Pin that — do not keep leftover `finance-manager` aliases from older builds.
 
+## What's new in v3.63.54
+
+- **Honest backup verbs:** Options → Backup is Save (export JSON), Open (replace this company), Merge (add missing records by id), Restore last local copy (this browser’s snapshot). “Bring in from another device” is gone — that label sounded like Save.
+- **Bigger Pacific Harbor sample:** ~40 customers, ~30 vendors, 14 employees (salary + hourly, one inactive), ~1,700 documents. Reload sample in Options to pick it up in an existing browser.
+
 ## What's new in v3.63.53
 
 - **Backup folder polish:** Clear forgets the chosen folder (handle + name). Save confirms before replacing same-day JSON already in that folder. Backup actions / hidden file inputs / local-copy stamp are separate rows (no flex junk drawer).
@@ -46,7 +51,7 @@ After the Windows installer: Desktop has one **Finance Manager** shortcut (navy 
 ## What's new in v3.63.49
 
 - **Options cleanup:** Keep books on this computer and List density are gone from Options. Storage still shows the usage meter. List/Grid spacing is locked to Comfortable (a leftover Compact localStorage key is cleared on boot).
-- **Backup folder:** Options → Backup shows the current folder (or Not set). On Chromium/desktop, **Choose backup folder** remembers a local folder via File System Access; **Save company file** writes JSON there when that folder is live, otherwise the existing save picker / download. Open / Bring in / Restore last local copy unchanged. Phones without a directory picker hide Choose folder and keep Save as download.
+- **Backup folder:** Options → Backup shows the current folder (or Not set). On Chromium/desktop, **Choose backup folder** remembers a local folder via File System Access; **Save company file** writes JSON there when that folder is live, otherwise the existing save picker / download. Open / Merge / Restore last local copy unchanged. Phones without a directory picker hide Choose folder and keep Save as download.
 
 ## What's new in v3.63.48
 
@@ -186,7 +191,7 @@ Books do **not** follow you to another phone or laptop. Download a backup on one
 - **Reports → Aging** stacks Receivables then Payables (never two skinny columns).
 - **Close** recs every live bank, posts recurring, then locks. Reopen is a dated event (type REOPEN).
 - **Employees → Pay**: salary uses the rate; hourly is hours × rate. Optional withholding posts to Payroll Withholdings (2210).
-- **Backup**: Options → Backup. Pick a backup folder (desktop) then Save company file writes JSON there; otherwise download/save picker. Open / Bring in / Restore last local copy unchanged. Header Export is CSV only.
+- **Backup**: Options → Backup. Pick a backup folder (desktop) then Save company file writes JSON there; otherwise download/save picker. Open replaces this company; Merge adds missing records; Restore last local copy is this browser’s snapshot. Header Export is CSV only.
 
 The register is still the book. See [docs/BUGS-AND-IMPROVEMENTS.md](docs/BUGS-AND-IMPROVEMENTS.md) for the full fixed/open list and older release notes.
 

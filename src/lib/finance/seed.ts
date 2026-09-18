@@ -669,6 +669,49 @@ export function createSeed(): FinanceData {
     },
   ];
 
+  const moreCust: Array<[string, string, string, string, string, string, string]> = [
+    ["cust-tarlac", "Tarlac Rice Mill", "Ben Sison", "ap@tarlacrice.ph", "+63 45 555 2210", "Tarlac City", "Net 30"],
+    ["cust-palawan", "Palawan Island Store", "Maya Ortega", "maya@palawanstore.ph", "+63 48 555 1188", "Puerto Princesa", "Net 15"],
+    ["cust-antipolo", "Antipolo Hardware", "Leo Cruz", "purchasing@antipolohw.ph", "+63 2 8570 4411", "Antipolo, Rizal", "Net 30"],
+    ["cust-tagaytay", "Tagaytay Produce", "Ina Villanueva", "ina@tagaytayproduce.ph", "+63 46 555 3302", "Tagaytay City", "Net 15"],
+    ["cust-makati", "Makati Office Pantry", "Chris Uy", "pantry@makatioffice.ph", "+63 2 8884 2201", "Salcedo Village, Makati", "Net 30"],
+    ["cust-cavite", "Cavite Frozen Foods", "Ramon de Leon", "ramon@cavitefrozen.ph", "+63 46 555 7704", "Dasmarinas, Cavite", "Net 30"],
+    ["cust-dumaguete", "Dumaguete Catch", "Tess Rivera", "tess@dumaguetecatch.ph", "+63 35 555 1180", "Dumaguete City", "Due on receipt"],
+    ["cust-legazpi", "Legazpi Ice Plant", "Noel Borja", "noel@legazpiice.ph", "+63 52 555 4418", "Legazpi City", "Net 30"],
+    ["cust-tacloban", "Tacloban Relief Goods", "Aira Padilla", "aira@taclobanrelief.ph", "+63 53 555 2209", "Tacloban City", "Net 15"],
+    ["cust-cotabato", "Cotabato Grain Co.", "Farouk Abdullah", "farouk@cotabatograin.ph", "+63 64 555 3310", "Cotabato City", "Net 30"],
+    ["cust-lucena", "Lucena Port Supply", "Gino Alonzo", "gino@lucenaport.ph", "+63 42 555 8801", "Lucena City", "Net 30"],
+    ["cust-bohol", "Bohol Farm Co-op", "Liza Catacutan", "liza@boholfarm.ph", "+63 38 555 1192", "Tagbilaran", "Net 15"],
+    ["cust-marikina", "Marikina Shoebox", "Paolo Chua", "paolo@marikinashoe.ph", "+63 2 8941 2204", "Marikina", "Net 30"],
+    ["cust-pasig", "Pasig Clinic Supply", "Dr. Helen Go", "billing@pasigclinic.ph", "+63 2 8631 4408", "Pasig", "Net 30"],
+    ["cust-calamba", "Calamba Packaging", "Rico Encarnacion", "rico@calambapack.ph", "+63 49 555 7701", "Calamba, Laguna", "Net 45"],
+    ["cust-sanjuan", "San Juan Deli", "Mara Santos", "mara@sanjuandeli.ph", "+63 2 8724 1180", "San Juan", "Due on receipt"],
+    ["cust-valenzuela", "Valenzuela Steel Mesh", "Andres Tan", "andres@valenzuelasteel.ph", "+63 2 8292 4410", "Valenzuela", "Net 45"],
+    ["cust-muntinlupa", "Muntinlupa Depot", "Kathy Sy", "kathy@muntinlupadepot.ph", "+63 2 8862 3301", "Muntinlupa", "Net 30"],
+    ["cust-roxas", "Roxas Seafood", "Isko Villareal", "isko@roxasseafood.ph", "+63 36 555 2208", "Roxas City", "Net 15"],
+    ["cust-koronadal", "Koronadal Market", "Jenny Alonto", "jenny@koronadalmarket.ph", "+63 83 555 1184", "Koronadal City", "Net 30"],
+  ];
+  for (const [id, name, contact, email, phone, address, terms] of moreCust) {
+    customers.push({ id, name, contact, email, phone, address, terms, notes: "", sortOrder: customers.length });
+  }
+
+  const moreVend: Array<[string, string, string, string, string, string, string, string]> = [
+    ["vend-grab", "Grab for Business", "Fleet desk", "biz@grab.com", "+63 2 7795 2222", "BGC, Taguig", "Net 15", "GRB-4401"],
+    ["vend-dhl", "DHL Express", "Account desk", "ph@dhl.com", "+63 2 8879 0000", "Pasay", "Net 15", "DHL-882"],
+    ["vend-cebupac", "Cebu Pacific Cargo", "Cargo billing", "cargo@cebupacificair.com", "+63 2 8702 0888", "Pasay", "Net 30", "CEB-104"],
+    ["vend-smart", "Smart Communications", "Enterprise", "enterprise@smart.com.ph", "+63 2 8888 1111", "Makati", "Due on the 15th", "SMT-2201"],
+    ["vend-maynilad", "Maynilad Water", "Business center", "business@mayniladwater.com.ph", "+63 2 1626", "Quezon City", "Due on receipt", "MYN-331"],
+    ["vend-shell", "Shell Fleet", "Fleet card", "fleet@shell.com.ph", "+63 2 8499 4000", "Makati", "Net 15", "SHL-77"],
+    ["vend-uniform", "Uniform Works", "Corporate sales", "sales@uniformworks.ph", "+63 2 8531 4410", "Mandaluyong", "Net 30", "UFW-19"],
+    ["vend-firetech", "Firetech Safety", "Account manager", "billing@firetech.ph", "+63 2 8884 2208", "Parañaque", "Net 30", "FTS-12"],
+    ["vend-megawide", "Megawide Facilities", "Lease desk", "fm@megawide.com.ph", "+63 2 8655 1111", "Cebu City", "Due on the 10th", "MGW-440"],
+    ["vend-allied", "Allied Tracer Security", "Capt. Reyes", "billing@alliedtracer.ph", "+63 2 8555 7702", "Pasig", "Net 15", "ATS-88"],
+    ["vend-iso", "ISO Cert PH", "Audit desk", "audit@isocert.ph", "+63 2 8812 1190", "Makati", "Net 30", "ISO-2026"],
+  ];
+  for (const [id, name, contact, email, phone, address, terms, accountNumber] of moreVend) {
+    vendors.push({ id, name, contact, email, phone, address, terms, notes: "", accountNumber, sortOrder: vendors.length });
+  }
+
   customers.sort((a, b) => a.name.localeCompare(b.name, "en", { sensitivity: "base" }));
   customers.forEach((c, i) => {
     c.sortOrder = i;
@@ -1543,6 +1586,11 @@ export function createSeed(): FinanceData {
     "Spare parts",
     "Film and tape",
     "Ice and salt",
+    "Rice sacks",
+    "Frozen lot",
+    "Clinic supplies",
+    "Steel mesh",
+    "Port handling",
   ];
   const billMemos = [
     "Office supplies",
@@ -1553,6 +1601,10 @@ export function createSeed(): FinanceData {
     "Internet",
     "Mall stall dues",
     "Cargo handling",
+    "Uniforms",
+    "Safety gear",
+    "Air cargo",
+    "Facilities dues",
   ];
   const billAccounts = [IDS.opex, IDS.misc, IDS.fees, IDS.utilities];
   const cashMemos = [
@@ -1624,8 +1676,8 @@ export function createSeed(): FinanceData {
     reference: "PET-902",
   });
 
-  // Extra trade across the full year (~800 source docs with core ops → ~1,000 total).
-  for (let i = 0; i < 250; i++) {
+  // Extra trade across the full year (~1,350 source docs with core ops → ~1,700 total).
+  for (let i = 0; i < 480; i++) {
     const month = tradeMonth(i);
     const day = tradeDay(i, 2);
     const cust = extraCustomers[i % extraCustomers.length];
@@ -1659,7 +1711,7 @@ export function createSeed(): FinanceData {
     });
   }
 
-  for (let i = 0; i < 265; i++) {
+  for (let i = 0; i < 490; i++) {
     const month = tradeMonth(i + 41);
     const day = tradeDay(i, 3);
     const vendor = extraVendors[i % extraVendors.length];
@@ -1677,7 +1729,7 @@ export function createSeed(): FinanceData {
     });
   }
 
-  for (let i = 0; i < 130; i++) {
+  for (let i = 0; i < 220; i++) {
     const month = tradeMonth(i + 7);
     const day = tradeDay(i, 4);
     const cust = extraCustomers[(i * 3) % extraCustomers.length];
@@ -1694,7 +1746,7 @@ export function createSeed(): FinanceData {
 
   const fleetVendors = [IDS.vendPetron, IDS.vendPhoenix, IDS.vendLala, IDS.vendGlobe, IDS.vendJrs, IDS.vendWater, IDS.vendOffice];
   const fleetMemos = ["Fleet fuel", "Fleet fuel", "Last-mile delivery", "Mobile data", "Courier", "Water", "Office supplies"];
-  for (let i = 0; i < 90; i++) {
+  for (let i = 0; i < 160; i++) {
     const month = tradeMonth(i + 13);
     const day = tradeDay(i, 6);
     const vendor = vendors.find((v) => v.id === fleetVendors[i % fleetVendors.length]);
@@ -1715,7 +1767,7 @@ export function createSeed(): FinanceData {
     { id: "bud-rent", name: "Warehouse rent", kind: "outflow", amount: P(85_000), cadence: "monthly", startMonth: "2026-01", accountId: IDS.rent },
     { id: "bud-pay", name: "Payroll", kind: "outflow", amount: P(252_800), cadence: "monthly", startMonth: "2026-01", accountId: IDS.payroll },
     { id: "bud-util", name: "Utilities", kind: "outflow", amount: P(19_500), cadence: "monthly", startMonth: "2026-01", accountId: IDS.utilities },
-    { id: "bud-sales", name: "Trade sales", kind: "inflow", amount: P(420_000), cadence: "monthly", startMonth: "2026-01", accountId: IDS.sales },
+    { id: "bud-sales", name: "Trade sales", kind: "inflow", amount: P(620_000), cadence: "monthly", startMonth: "2026-01", accountId: IDS.sales },
   ];
 
   const recurrences: RecurringItem[] = [
@@ -1836,6 +1888,182 @@ export function createSeed(): FinanceData {
         active: true,
         notes: "Part-time, about 80 hours a month",
         sortOrder: 2,
+      },
+      {
+        id: "emp-mendoza",
+        name: "Paolo Mendoza",
+        title: "Sales lead",
+        email: "paolo.mendoza@pacificharbor.example",
+        phone: "+63 917 555 0104",
+        payType: "salary",
+        rate: 4_200_000,
+        bankId: IDS.metro,
+        hireDate: "2023-06-01",
+        payPeriod: "semimonthly",
+        statutory: true,
+        active: true,
+        notes: "",
+        sortOrder: 3,
+      },
+      {
+        id: "emp-lim",
+        name: "Grace Lim",
+        title: "Purchasing",
+        email: "grace.lim@pacificharbor.example",
+        phone: "+63 917 555 0105",
+        payType: "salary",
+        rate: 3_200_000,
+        bankId: IDS.metro,
+        hireDate: "2024-08-12",
+        payPeriod: "semimonthly",
+        statutory: true,
+        active: true,
+        notes: "",
+        sortOrder: 4,
+      },
+      {
+        id: "emp-navarro",
+        name: "Rico Navarro",
+        title: "Driver",
+        email: "rico.navarro@pacificharbor.example",
+        phone: "+63 917 555 0106",
+        payType: "salary",
+        rate: 2_200_000,
+        bankId: IDS.metro,
+        hireDate: "2022-04-18",
+        payPeriod: "semimonthly",
+        statutory: true,
+        active: true,
+        notes: "",
+        sortOrder: 5,
+      },
+      {
+        id: "emp-ramos",
+        name: "Beth Ramos",
+        title: "Counter clerk",
+        email: "beth.ramos@pacificharbor.example",
+        phone: "+63 917 555 0107",
+        payType: "salary",
+        rate: 2_000_000,
+        bankId: IDS.metro,
+        hireDate: "2025-02-03",
+        payPeriod: "semimonthly",
+        statutory: true,
+        active: true,
+        notes: "",
+        sortOrder: 6,
+      },
+      {
+        id: "emp-delacruz",
+        name: "Jun Dela Cruz",
+        title: "Warehouse picker",
+        email: "jun.delacruz@pacificharbor.example",
+        phone: "+63 917 555 0108",
+        payType: "hourly",
+        rate: 18_000,
+        bankId: IDS.metro,
+        hireDate: "2024-11-04",
+        payPeriod: "weekly",
+        statutory: true,
+        active: true,
+        notes: "Full-time warehouse",
+        sortOrder: 7,
+      },
+      {
+        id: "emp-villanueva",
+        name: "Faith Villanueva",
+        title: "Inventory clerk",
+        email: "faith.villanueva@pacificharbor.example",
+        phone: "+63 917 555 0109",
+        payType: "salary",
+        rate: 2_400_000,
+        bankId: IDS.metro,
+        hireDate: "2025-03-17",
+        payPeriod: "semimonthly",
+        statutory: true,
+        active: true,
+        notes: "",
+        sortOrder: 8,
+      },
+      {
+        id: "emp-bautista",
+        name: "Carlo Bautista",
+        title: "Delivery helper",
+        email: "carlo.bautista@pacificharbor.example",
+        phone: "+63 917 555 0110",
+        payType: "hourly",
+        rate: 16_500,
+        bankId: IDS.metro,
+        hireDate: "2025-05-12",
+        payPeriod: "weekly",
+        statutory: true,
+        active: true,
+        notes: "",
+        sortOrder: 9,
+      },
+      {
+        id: "emp-sy",
+        name: "Nina Sy",
+        title: "AR clerk",
+        email: "nina.sy@pacificharbor.example",
+        phone: "+63 917 555 0111",
+        payType: "salary",
+        rate: 2_800_000,
+        bankId: IDS.metro,
+        hireDate: "2024-01-08",
+        payPeriod: "semimonthly",
+        statutory: true,
+        active: true,
+        notes: "",
+        sortOrder: 10,
+      },
+      {
+        id: "emp-hassan",
+        name: "Omar Hassan",
+        title: "Night checker",
+        email: "omar.hassan@pacificharbor.example",
+        phone: "+63 917 555 0112",
+        payType: "hourly",
+        rate: 19_000,
+        bankId: IDS.metro,
+        hireDate: "2023-09-20",
+        payPeriod: "weekly",
+        statutory: true,
+        active: true,
+        notes: "Night shift",
+        sortOrder: 11,
+      },
+      {
+        id: "emp-borja",
+        name: "Ella Borja",
+        title: "HR / admin",
+        email: "ella.borja@pacificharbor.example",
+        phone: "+63 917 555 0113",
+        payType: "salary",
+        rate: 3_000_000,
+        bankId: IDS.metro,
+        hireDate: "2024-05-02",
+        payPeriod: "semimonthly",
+        statutory: true,
+        active: true,
+        notes: "",
+        sortOrder: 12,
+      },
+      {
+        id: "emp-tan",
+        name: "Kevin Tan",
+        title: "IT support",
+        email: "kevin.tan@pacificharbor.example",
+        phone: "+63 917 555 0114",
+        payType: "salary",
+        rate: 3_500_000,
+        bankId: IDS.metro,
+        hireDate: "2023-02-14",
+        payPeriod: "monthly",
+        statutory: true,
+        active: false,
+        notes: "Left 2026-06-30",
+        sortOrder: 13,
       },
     ],
     invoices,

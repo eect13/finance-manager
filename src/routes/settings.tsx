@@ -694,9 +694,9 @@ function SettingsPage() {
             <OptionsDescMore>
               This JSON is this company — banks, invoices, receipts, recon, close, and audit. There is no cloud; the
               file in this browser is the books. Pick a backup folder on this computer so Save writes JSON there;
-              otherwise it uses the save picker or a download. Open replaces this company. Bring in from another
-              device adds records that are not already here and leaves yours alone. After every save this browser
-              also keeps a local copy.
+              otherwise it uses the save picker or a download. Save exports. Open replaces this company with that
+              file. Merge adds records that are not already here and leaves yours alone. Restore last local copy is
+              this browser’s snapshot, not a downloaded file.
             </OptionsDescMore>
           </CardHeader>
           <CardContent className="grid gap-4">
@@ -731,11 +731,11 @@ function SettingsPage() {
               >
                 Save company file
               </Button>
-              <Button variant="outline" onClick={() => fileRef.current?.click()}>
+              <Button variant="outline" onClick={() => fileRef.current?.click()} aria-label="Open company file — replace this company">
                 Open company file
               </Button>
-              <Button variant="outline" onClick={() => mergeRef.current?.click()}>
-                Bring in from another device
+              <Button variant="outline" onClick={() => mergeRef.current?.click()} aria-label="Merge company file — add missing records">
+                Merge company file
               </Button>
               <Button variant="outline" onClick={() => setBooksConfirm({ kind: "restore" })} disabled={!localStamp}>
                 Restore last local copy
@@ -772,7 +772,7 @@ function SettingsPage() {
                   toast.success(
                     added === 0 && skipped === 0
                       ? "Nothing new in that file."
-                      : `Brought in ${added} new record${added === 1 ? "" : "s"}${skipped ? ` · ${skipped} already here` : ""}.`,
+                      : `Merged ${added} new record${added === 1 ? "" : "s"}${skipped ? ` · ${skipped} already here` : ""}.`,
                   );
                 } catch (err) {
                   toast.error(err instanceof Error ? err.message : "Could not merge.");
@@ -1153,7 +1153,7 @@ function BackupFolderPanel() {
       <div className="min-w-0">
         <p className="text-sm font-medium">Backup folder</p>
         <p className="text-xs text-muted-foreground">
-          JSON company files land here when you tap Save company file. Clear forgets the folder. Open and Bring in are unchanged.
+          JSON company files land here when you tap Save company file. Clear forgets the folder. Open and Merge still pick a file.
         </p>
       </div>
       <p className="text-sm">{folderName ?? "Not set"}</p>

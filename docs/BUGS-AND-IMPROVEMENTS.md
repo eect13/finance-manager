@@ -1,6 +1,13 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-08. Updated for v3.63.53.
+Re-verified in code 2026-09-18. Updated for v3.63.54.
+
+## Fixed in v3.63.54
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| B7 | Med (UX) | “Bring in from another device” read as a twin of Save | Honest verbs: Save = export, Open = replace, Merge = add missing by id, Restore = this-browser snapshot |
+| S1 | Low | Pacific Harbor felt like a boutique (~19 parties, 3 employees, ~1,000 docs) | ~40 customers, ~30 vendors, 14 employees, ~1,700 documents |
 
 ## Fixed in v3.63.53
 

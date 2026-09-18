@@ -111,6 +111,26 @@ export const SYSTEM_ACCOUNTS: Account[] = [
 
 export const SAMPLE_COMPANY_ID = "co-pacific-harbor";
 
+/** Mid-size Pacific Harbor thresholds (v3.63.54+). Older boutique seeds fall below these. */
+export function isOutdatedPacificHarborSample(data: {
+  customers: unknown[];
+  vendors: unknown[];
+  employees: unknown[];
+  invoices: unknown[];
+  bills: unknown[];
+  receipts: unknown[];
+  checks: unknown[];
+}): boolean {
+  const docs = data.invoices.length + data.bills.length + data.receipts.length + data.checks.length;
+  return (
+    data.customers.length < 35 ||
+    data.vendors.length < 28 ||
+    data.employees.length < 12 ||
+    docs < 1700
+  );
+}
+
+
 /** Sample books are a live 2026 year as of this date (early Sep — books feel current). */
 const AS_OF = "2026-09-03";
 

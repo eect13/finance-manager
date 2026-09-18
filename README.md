@@ -1,4 +1,4 @@
-# Finance Manager v3.63.54
+# Finance Manager v3.63.55
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -26,6 +26,11 @@ Unzip the repo (a second unzip named `finance-manager-main (1)` is fine) so `dep
 Vite is installed with the packages — no global `vite` command. `.npmrc` has `legacy-peer-deps=true`.
 
 After the Windows installer: Desktop has one **Finance Manager** shortcut (navy pillars). Pin that — do not keep leftover `finance-manager` aliases from older builds.
+
+## What's new in v3.63.55
+
+- **Compact remnant trim:** Options density stays gone. Force-Comfortable boot remains (clears old Compact localStorage). Unreachable Compact CSS token overrides and dead `isCompact` virt paths removed — spacing is Comfortable-only.
+- **Reload sample for existing profiles:** Options jump includes Sample; outdated/missing Pacific Harbor gets a clear callout and a emphasized Reload sample control. Confirm copy and toast match `resetDemo` (replaces the sample file with the mid-size seed; other companies stay).
 
 ## What's new in v3.63.54
 

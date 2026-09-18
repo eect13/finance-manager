@@ -18,7 +18,6 @@ import {
   type PhoneLayout,
   usePhoneUi,
 } from "@/lib/phone-layout";
-import { useListDensity } from "@/lib/list-density";
 import { cardEstimateSize, cardVirtGapPx, listRowEstimateSize } from "@/components/use-list-virtualizer";
 import { CsvButton } from "@/components/export-menu";
 import { ListFilters } from "@/components/list-filters";
@@ -1004,11 +1003,10 @@ function RegisterTable({
   const phone = isPhoneUi();
   const narrow = isNarrowUi();
   const cardMode = phoneLayout === "grid";
-  const { density, isCompact } = useListDensity();
   const rowEstimate = cardMode
-    ? cardEstimateSize(isCompact, narrow ? 168 : 148)
-    : listRowEstimateSize(isCompact, narrow);
-  const cardGap = cardMode ? cardVirtGapPx(isCompact) : 0;
+    ? cardEstimateSize(narrow ? 168 : 148)
+    : listRowEstimateSize(narrow);
+  const cardGap = cardMode ? cardVirtGapPx() : 0;
   function requestSort(column: string) {
     if (dragOn) {
       toast.message("Passbook order while Move dates is on.");
@@ -1029,9 +1027,9 @@ function RegisterTable({
   };
   useEffect(() => {
     virtualizer.measure();
-    // Remeasure when layout, density, type size, or columns change row heights.
+    // Remeasure when layout, type size, or columns change row heights.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phoneLayout, cardMode, cols, density, fontSize, rowEstimate, cardGap]);
+  }, [phoneLayout, cardMode, cols, fontSize, rowEstimate, cardGap]);
   const { outTotal, inTotal } = useMemo(() => {
     let out = 0;
     let inn = 0;

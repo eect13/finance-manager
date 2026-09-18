@@ -1,41 +1,29 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
-import { useListDensity } from "@/lib/list-density";
 import { getWorkspaceScrollElement, listScrollMargin } from "@/lib/workspace-scroll";
 
-/**
- * Match CSS `--list-cell-py`: comfortable 0.75rem, compact 0.4rem.
- * Vertical pad shrink in Compact is 2 × Δpy (top + bottom) ≈ 11px at 16px root.
- */
-export const LIST_CELL_PY_REM = { comfortable: 0.75, compact: 0.4 } as const;
+/** Match CSS `--list-cell-py` (Comfortable 0.75rem). Compact density removed. */
+export const LIST_CELL_PY_REM = 0.75;
 
-/** Match CSS `--list-card-gap` (Comfortable 0.65 / Compact 0.5). */
-export const LIST_CARD_GAP_REM = { comfortable: 0.65, compact: 0.5 } as const;
-
-/** Compact card estimate shrink vs Comfortable — token py math (not magic −20 / −12). */
-export function cardDensityPadDeltaPx(compact: boolean, rootFontPx = 16): number {
-  if (!compact) return 0;
-  return Math.round((LIST_CELL_PY_REM.comfortable - LIST_CELL_PY_REM.compact) * 2 * rootFontPx);
-}
+/** Match CSS `--list-card-gap` (Comfortable 0.65rem). */
+export const LIST_CARD_GAP_REM = 0.65;
 
 /** Inter-card virt gap from `--list-card-gap` — one helper for Register / Reconcile / CardGrid. */
-export function cardVirtGapPx(compact: boolean, rootFontPx = 16): number {
-  const rem = compact ? LIST_CARD_GAP_REM.compact : LIST_CARD_GAP_REM.comfortable;
-  return Math.round(rem * rootFontPx);
+export function cardVirtGapPx(rootFontPx = 16): number {
+  return Math.round(LIST_CARD_GAP_REM * rootFontPx);
 }
 
-/** List-row estimate — desk Compact ~40 / Comfortable ~48; narrow +4. */
-export function listRowEstimateSize(compact: boolean, narrow = false): number {
-  if (compact) return narrow ? 44 : 40;
+/** List-row estimate — desk Comfortable ~48; narrow +4. */
+export function listRowEstimateSize(narrow = false): number {
   return narrow ? 52 : 48;
 }
 
 /**
  * Grid card estimate. Default base 110 matches CardGrid; Register/Reconcile pass
- * 148 / 168. Density delta is shared token math (`cardDensityPadDeltaPx`).
+ * 148 / 168. Density is Comfortable-only.
  */
-export function cardEstimateSize(compact: boolean, baseComfortable = 110): number {
-  return baseComfortable - cardDensityPadDeltaPx(compact);
+export function cardEstimateSize(baseComfortable = 110): number {
+  return baseComfortable;
 }
 
 /** ListCard (capped overflow-y) is the Y scroller; otherwise workspace, like Register.
@@ -74,8 +62,7 @@ export function useListVirtualizer(
   estimateSize?: number,
   enabled = true,
 ) {
-  const { isCompact, density } = useListDensity();
-  const resolvedSize = estimateSize ?? listRowEstimateSize(isCompact);
+  const resolvedSize = estimateSize ?? listRowEstimateSize();
   const [scrollEl, setScrollEl] = useState<HTMLElement | null>(null);
   const keyRef = useRef(getItemKey);
   keyRef.current = getItemKey;
@@ -96,9 +83,9 @@ export function useListVirtualizer(
   useEffect(() => {
     if (!enabled) return;
     virt.measure();
-    // Layout / count / size / density / scroller — virt identity would remeasure every render.
+    // Layout / count / size / scroller — virt identity would remeasure every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [count, resolvedSize, density, scrollEl, enabled]);
+  }, [count, resolvedSize, scrollEl, enabled]);
   const items = virt.getVirtualItems();
   const first = items[0];
   const last = items[items.length - 1];
@@ -166,8 +153,7 @@ export function useCardVirtualizer(
   lanes = 1,
   enabled = true,
 ) {
-  const { isCompact, density } = useListDensity();
-  const resolvedSize = estimateSize ?? cardEstimateSize(isCompact);
+  const resolvedSize = estimateSize ?? cardEstimateSize();
   const [scrollEl, setScrollEl] = useState<HTMLElement | null>(null);
   const [scrollMargin, setScrollMargin] = useState(0);
   const keyRef = useRef(getItemKey);
@@ -181,7 +167,7 @@ export function useCardVirtualizer(
     setScrollMargin(listScrollMargin(node, scroller));
   });
   const laneCount = Math.max(1, lanes);
-  const gapPx = cardVirtGapPx(isCompact);
+  const gapPx = cardVirtGapPx();
   const virt = useVirtualizer({
     count,
     enabled,
@@ -197,7 +183,7 @@ export function useCardVirtualizer(
     if (!enabled) return;
     virt.measure();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [count, resolvedSize, density, scrollEl, enabled, laneCount, gapPx]);
+  }, [count, resolvedSize, scrollEl, enabled, laneCount, gapPx]);
   return {
     items: virt.getVirtualItems(),
     totalSize: virt.getTotalSize(),

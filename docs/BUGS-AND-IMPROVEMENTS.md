@@ -1,6 +1,13 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-18. Updated for v3.63.54.
+Re-verified in code 2026-09-18. Updated for v3.63.55.
+
+## Fixed in v3.63.55
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| R1 | Low | Dead Compact CSS / `isCompact` virt paths after Options density removed | Strip Compact-only CSS; Comfortable-only virt estimates; keep force-Comfortable boot + localStorage clear |
+| S2 | Med (UX) | Bigger Pacific Harbor only on fresh load; Reload sample buried / unclear for existing profiles | Options Sample jump + `opt-sample`; outdated/missing callout + emphasized Reload; confirm/toast match `resetDemo` replace |
 
 ## Fixed in v3.63.54
 
@@ -23,7 +30,7 @@ Re-verified in code 2026-09-18. Updated for v3.63.54.
 | --- | --- | --- | --- |
 | B4 | Med (UX) | Backup Save fallback paths still used `toast.success` for partial failure | `fallback-saved` / `fallback-downloaded` use `toast.message` (Register-style informational); true success paths keep `toast.success` |
 
-**Deferred (Skye carry Lows — not in this tip):** Clear backup folder control; overwrite confirm on folder Save; extra flex-wrap polish; dead Compact path sweep.
+**Deferred (Skye carry Lows — later tips):** (backup Clear / overwrite / flex-wrap done in .53; Compact remnant + Reload sample in .55).
 
 ## Fixed in v3.63.51
 

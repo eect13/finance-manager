@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { createSeed } from "./seed.ts";
+import { createSeed, isOutdatedPacificHarborSample } from "./seed.ts";
 
 describe("Pacific Harbor sample", () => {
   const data = createSeed();
@@ -22,5 +22,21 @@ describe("Pacific Harbor sample", () => {
       const credit = j.lines.reduce((s, l) => s + l.credit, 0);
       assert.equal(debit, credit, j.id);
     }
+  });
+
+  it("marks fresh seed as current and boutique sizes as outdated", () => {
+    assert.equal(isOutdatedPacificHarborSample(data), false);
+    assert.equal(
+      isOutdatedPacificHarborSample({
+        customers: Array(19),
+        vendors: Array(10),
+        employees: Array(3),
+        invoices: Array(400),
+        bills: Array(300),
+        receipts: Array(200),
+        checks: Array(100),
+      }),
+      true,
+    );
   });
 });

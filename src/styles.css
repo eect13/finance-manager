@@ -49,7 +49,7 @@
 :root {
   color-scheme: light;
   --app-ui-zoom: 1;
-  /* Shared list/grid spacing — one density drives cell pad, card gap, grid inset */
+  /* Shared list/grid spacing — Comfortable only (Options density removed) */
   --list-cell-px: 0.85rem;
   --list-cell-py: 0.75rem;
   --list-card-gap: 0.65rem;
@@ -63,18 +63,6 @@
   --list-tick-hit: 2.25rem;
   --list-type: 12px;
   --register-font: 12px;
-}
-:root[data-list-density="compact"] {
-  --list-cell-px: 0.5rem;
-  --list-cell-py: 0.4rem;
-  --list-card-gap: 0.5rem;
-  --list-grid-inset: 0.5rem;
-  --list-check-col: 2.25rem;
-  --list-check-pad-x: 0.15rem;
-  --list-actions-px: 0.55rem;
-  --list-actions-min: 3.5rem;
-  --list-flex-min: 8rem;
-  --list-tick-hit: 2rem;
 }
 :root[data-list-density="comfortable"] {
   --list-cell-px: 0.85rem;
@@ -4425,9 +4413,6 @@ body.is-phone-move-dragging {
 }
 
 /* Density: SortHeader hit target follows --list-* */
-:root[data-list-density="compact"] .sort-header-main {
-  min-height: 2rem;
-}
 :root[data-list-density="comfortable"] .sort-header-main,
 :root:not([data-list-density]) .sort-header-main {
   min-height: 2.5rem;
@@ -7049,6 +7034,6 @@ button.party-card-row {
 
 /* =============================================================================
    v3.63.51 — Grid Gestalt inset: Comfortable --list-grid-inset 0.4→0.85rem
-   (inset >= --list-card-gap so groups clear chrome; Compact inset 0.25→0.5).
+   (inset >= --list-card-gap so groups clear chrome).
    Desk Reconcile Grid ul shares inset; party Grid pane uses token, virt margin 0.
    ============================================================================= */

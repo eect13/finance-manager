@@ -24,7 +24,7 @@ import { Switch } from "@/components/ui/switch";
 import { canPickBackupFolder, chooseBackupFolder, clearBackupFolder, getBackupFolderName, hydrateBackupFolder, saveCompanyFilePreferFolder, useBackupFolderName } from "@/lib/finance/backup-folder";
 import { backupPayload } from "@/lib/finance/export";
 import { listLocalBackups, readLocalBackup } from "@/lib/finance/local-backup";
-import { SAMPLE_COMPANY_ID } from "@/lib/finance/seed";
+import { isOutdatedPacificHarborSample, SAMPLE_COMPANY_ID } from "@/lib/finance/seed";
 import { fitColumnWidth } from "@/lib/finance/fit-column";
 import { formatDate, todayIso } from "@/lib/finance/format";
 import { useEntrySort } from "@/lib/finance/sort";
@@ -47,6 +47,7 @@ function OptionsJump() {
     { id: "opt-display", label: "Display" },
     { id: phone ? "opt-tips" : "opt-keyboard", label: phone ? "Tips" : "Shortcuts" },
     { id: "opt-companies", label: "Companies" },
+    { id: "opt-sample", label: "Sample" },
     { id: "opt-tax", label: "Tax" },
     { id: "opt-modules", label: "Modules" },
     { id: "opt-backup", label: "Backup" },
@@ -206,6 +207,11 @@ function SettingsPage() {
     { kind: "blank" } | { kind: "reload" } | { kind: "restore" } | { kind: "drop"; id: string } | null
   >(null);
   const [localStamp, setLocalStamp] = useState<string | null>(null);
+  const sampleBooks = companies[SAMPLE_COMPANY_ID];
+  const sampleMissing = !sampleBooks;
+  const sampleOutdated = !!sampleBooks && isOutdatedPacificHarborSample(sampleBooks);
+  const sampleNeedsReload = sampleMissing || sampleOutdated;
+
 
   useEffect(() => {
     function scrollToHash() {
@@ -343,9 +349,57 @@ function SettingsPage() {
             <Button variant="outline" className="w-fit" onClick={() => setNewOpen(true)}>
               New company
             </Button>
+            {sampleNeedsReload ? (
+              <p className="mt-1 text-xs text-muted-foreground">
+                {sampleMissing
+                  ? "Pacific Harbor sample is not in this browser."
+                  : "This browser still has the smaller Pacific Harbor sample."}{" "}
+                <a href="#opt-sample" className="font-medium text-foreground underline-offset-2 hover:underline">
+                  Reload sample
+                </a>{" "}
+                for the mid-size demo (~40 customers, ~1,700 documents).
+              </p>
+            ) : null}
           </CardContent>
         </Card>
 
+        <Card className="lg:col-span-2 scroll-mt-16" id="opt-sample">
+          <CardHeader>
+            <CardTitle>Sample data</CardTitle>
+            <OptionsDescMore>
+              Pacific Harbor Trading is the default sample. Reload sample replaces that file with the latest mid-size
+              demo (~40 customers, ~30 vendors, 14 employees, ~1,700 documents) — use it after an upgrade if this
+              browser still has the older boutique books. Remove sample deletes that file from this browser — a blank
+              company takes its place if it was the only one. Restore last local copy brings the last automatic snapshot
+              back without Reload sample. Start blank clears the company you are in, not the others.
+            </OptionsDescMore>
+          </CardHeader>
+          <CardContent className="grid gap-3">
+            {sampleNeedsReload ? (
+              <div className="rounded-xl border border-border bg-muted/60 px-3 py-2 text-sm">
+                {sampleMissing
+                  ? "Pacific Harbor is not loaded in this browser. Reload sample adds the mid-size demo."
+                  : "This Pacific Harbor file is the older smaller sample. Reload sample replaces it with the mid-size demo — other companies stay."}
+              </div>
+            ) : null}
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" onClick={() => setBooksConfirm({ kind: "blank" })}>
+                Start blank
+              </Button>
+              <Button
+                variant={sampleNeedsReload ? "default" : "outline"}
+                onClick={() => setBooksConfirm({ kind: "reload" })}
+              >
+                Reload sample
+              </Button>
+              {order.includes(SAMPLE_COMPANY_ID) ? (
+                <Button variant="ghost" onClick={() => setBooksConfirm({ kind: "drop", id: SAMPLE_COMPANY_ID })}>
+                  Remove sample
+                </Button>
+              ) : null}
+            </div>
+          </CardContent>
+        </Card>
         <Card id="opt-tax" className="scroll-mt-16">
           <CardHeader>
             <CardTitle>Currency and tax</CardTitle>
@@ -804,29 +858,6 @@ function SettingsPage() {
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Sample data</CardTitle>
-            <OptionsDescMore>
-              Pacific Harbor Trading is the default sample. Reload it anytime. Remove sample deletes that file from this
-              browser — a blank company takes its place if it was the only one. Restore last local copy brings the last
-              automatic snapshot back without Reload sample. Start blank clears the company you are in, not the others.
-            </OptionsDescMore>
-          </CardHeader>
-          <CardContent className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={() => setBooksConfirm({ kind: "blank" })}>
-              Start blank
-            </Button>
-            <Button variant="outline" onClick={() => setBooksConfirm({ kind: "reload" })}>
-              Reload sample
-            </Button>
-            {order.includes(SAMPLE_COMPANY_ID) ? (
-              <Button variant="ghost" onClick={() => setBooksConfirm({ kind: "drop", id: SAMPLE_COMPANY_ID })}>
-                Remove sample
-              </Button>
-            ) : null}
-          </CardContent>
-        </Card>
       </div>
       <NewCompanyDialog open={newOpen} onClose={() => setNewOpen(false)} onCreate={addCompany} />
       <ConfirmDelete
@@ -846,7 +877,7 @@ function SettingsPage() {
           booksConfirm?.kind === "blank"
             ? "Clears the open company. Banks and entries in this file go away. Other companies stay. Restore last local copy can bring it back."
             : booksConfirm?.kind === "reload"
-              ? "Replaces the open company with Pacific Harbor sample data. Unsaved work in this file is lost."
+              ? "Replaces Pacific Harbor with the latest mid-size sample (~40 customers, ~30 vendors, 14 employees, ~1,700 documents). Other companies stay. Unsaved edits in the sample file are lost."
               : booksConfirm?.kind === "restore"
                 ? localStamp
                   ? `Replaces the open company with the snapshot from ${new Date(localStamp).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}. If you removed this file, it comes back. A downloaded JSON is not required.`
@@ -884,7 +915,7 @@ function SettingsPage() {
               toast.success("Blank books. Add a bank to begin.");
             } else if (booksConfirm.kind === "reload") {
               resetDemo();
-              toast.success("Pacific Harbor sample is open.");
+              toast.success("Pacific Harbor sample reloaded (~40 customers, ~1,700 documents).");
             } else if (booksConfirm.kind === "restore") {
               const result = await restoreLocalCopy();
               toast.success(

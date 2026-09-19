@@ -1,6 +1,16 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-18. Updated for v3.63.55.
+Re-verified in code 2026-09-18. Updated for v3.63.56.
+
+## Fixed in v3.63.56
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| D1 | Low | README changelog still listed 19–55 (including `What'''s` typos on 24/25) | Keep 56/55/54 on README; older notes stay here |
+| D2 | Low | Dead Options-density React store (`useListDensity` / `isCompact`) after UI removed | Boot script only — still clears Compact localStorage before paint |
+| G1 | Docs | Gallery still showed the boutique sample | Recaptured desk / register / reports / reconcile / employees / options / phone |
+
+
 
 ## Fixed in v3.63.55
 

@@ -16,6 +16,20 @@ describe("Pacific Harbor sample", () => {
     assert.ok(docs >= 1700, `documents ${docs}`);
   });
 
+  it("payroll lump covers the named staff, not a boutique stub", () => {
+    const payBudget = data.budgetItems.find((b) => b.id === "bud-pay");
+    assert.ok(payBudget && payBudget.amount >= 38_000_000, `budget ${payBudget?.amount}`);
+    const halves = data.checks.filter((c) => c.payee === "Staff payroll" && /half/i.test(c.memo ?? ""));
+    const thirteenth = data.checks.filter((c) => c.payee === "Staff payroll" && /13th/i.test(c.memo ?? ""));
+    assert.equal(halves.length, 24, `halves ${halves.length}`);
+    assert.ok(halves.every((c) => c.amount === 19_000_000));
+    assert.equal(thirteenth.length, 1);
+    assert.equal(thirteenth[0]?.amount, 38_000_000);
+    const rec = data.recurrences.filter((r) => r.id.startsWith("rec-pay"));
+    assert.equal(rec.length, 2);
+    assert.ok(rec.every((r) => r.amount === 19_000_000));
+  });
+
   it("every journal balances", () => {
     for (const j of data.journals) {
       const debit = j.lines.reduce((s, l) => s + l.debit, 0);
@@ -35,6 +49,19 @@ describe("Pacific Harbor sample", () => {
         bills: Array(300),
         receipts: Array(200),
         checks: Array(100),
+      }),
+      true,
+    );
+    assert.equal(
+      isOutdatedPacificHarborSample({
+        customers: Array(39),
+        vendors: Array(30),
+        employees: Array(14),
+        invoices: Array(500),
+        bills: Array(400),
+        receipts: Array(400),
+        checks: Array(500),
+        budgetItems: [{ id: "bud-pay", amount: 25_280_000 }],
       }),
       true,
     );

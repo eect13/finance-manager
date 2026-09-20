@@ -109,7 +109,7 @@ function Desk() {
         </div>
       ) : null}
       <section className="desk-stats">
-        <Stat label="In the bank (est.)" hint="Book cash plus pending checks">
+        <Stat label="In the bank" hint="Book cash plus pending checks">
           <Money amount={inBank} currency={settings.currency} className="stat-value" />
         </Stat>
         <Stat label="Book cash" hint="After issued checks">

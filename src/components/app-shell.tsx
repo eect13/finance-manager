@@ -321,9 +321,13 @@ export function AppShell({
 
   if (!hydrated) {
     return (
-      <div className="app-zoom-root app-shell-loading flex h-dvh items-center justify-center bg-background text-foreground">
+      <div className="app-zoom-root app-shell-loading flex h-dvh flex-col items-center justify-center gap-3 bg-background px-6 text-foreground">
         <ThemeSync />
-        <p className="text-sm text-muted-foreground">Opening the books…</p>
+        <AppMark className="h-11 w-11" title="Finance Manager" />
+        <div className="text-center">
+          <p className="text-sm font-medium tracking-tight">Finance Manager</p>
+          <p className="mt-1 text-sm text-muted-foreground">Opening the books…</p>
+        </div>
       </div>
     );
   }

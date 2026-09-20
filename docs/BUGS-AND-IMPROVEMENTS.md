@@ -1,6 +1,16 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-18. Updated for v3.63.56.
+Re-verified in code 2026-09-20. Updated for v3.63.57.
+
+## Fixed in v3.63.57
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| 1 | Med | Staff payroll lump ₱252,800 vs 13 named employees ~₱380k | Halves ₱190k / month+13th ₱380k / transfers ₱385k; Reload callout if `bud-pay` is old |
+| 2 | Med (UX) | Open replaced the company with no confirm | File pick → ConfirmDelete kind `open` / REPLACE → `importBackup` |
+| 3 | Low (UX) | Regional-pack honesty lived behind More on phone | Always-visible CardDescription: worksheets/CSV, not filing engines |
+| 4 | Low (UX) | Phone Desk “In the bank (est.)” wrapped on 2-col tiles | Shorten label; nowrap+ellipsis on eyebrows and bank nicknames |
+| 5 | Low (UX) | Hydrate splash was unbranded text | AppMark + name + “Opening the books…”; still no chrome before hydrate |
 
 ## Fixed in v3.63.56
 

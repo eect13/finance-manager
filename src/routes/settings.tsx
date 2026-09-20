@@ -189,6 +189,7 @@ function SettingsPage() {
   const restoreLocalCopy = useFinanceStore((s) => s.restoreLocalCopy);
   const fileRef = useRef<HTMLInputElement>(null);
   const mergeRef = useRef<HTMLInputElement>(null);
+  const pendingOpenRef = useRef<string | null>(null);
   const [countryPackId, setCountryPackId] = useState("");
   /** When applying a country tax pack, also set home currency to the pack’s currency. */
   const [updateCurrencyWithPack, setUpdateCurrencyWithPack] = useState(true);
@@ -204,7 +205,7 @@ function SettingsPage() {
   );
   const [newOpen, setNewOpen] = useState(false);
   const [booksConfirm, setBooksConfirm] = useState<
-    { kind: "blank" } | { kind: "reload" } | { kind: "restore" } | { kind: "drop"; id: string } | null
+    { kind: "blank" } | { kind: "reload" } | { kind: "restore" } | { kind: "open" } | { kind: "drop"; id: string } | null
   >(null);
   const [localStamp, setLocalStamp] = useState<string | null>(null);
   const sampleBooks = companies[SAMPLE_COMPANY_ID];
@@ -523,6 +524,9 @@ function SettingsPage() {
         <Card id="opt-modules" className="scroll-mt-16">
           <CardHeader>
             <CardTitle>Tax & payroll modules</CardTitle>
+            <CardDescription>
+              Worksheets and CSV for the books — not IRS, CPF Board, ATO, HMRC, or BIR eFiling.
+            </CardDescription>
             <OptionsDescMore>
               Turn on modules for your country. Practical stubs for the books and accountant — not statutory filing
               engines. Toggles only hide UI and exports — they do not delete posted paychecks, balances, rates, or
@@ -559,7 +563,7 @@ function SettingsPage() {
             </OptionsSwitchRow>
             <OptionsSwitchRow
               title="US payroll (FIT + FICA stub)"
-              hint="W-2 style estimate and CSV from salary posts. Not a substitute for IRS e-file, Form W-2, or 941."
+              hint="Estimate worksheet and CSV from posted salary. Not IRS e-file, Form W-2, or 941."
             >
               <Switch
                 checked={settings.modules.usPayroll}
@@ -568,7 +572,7 @@ function SettingsPage() {
             </OptionsSwitchRow>
             <OptionsSwitchRow
               title="Singapore CPF"
-              hint="Employee / employer CPF estimate table and CSV. Not CPF Board filing."
+              hint="Estimate worksheet and CSV. Not CPF Board filing."
             >
               <Switch
                 checked={settings.modules.sgCpf}
@@ -577,7 +581,7 @@ function SettingsPage() {
             </OptionsSwitchRow>
             <OptionsSwitchRow
               title="Generic VAT / GST workbook"
-              hint="Rates plus input/output summary and CSV for any VAT country. Not a VAT return."
+              hint="Rates plus input/output worksheet and CSV. Not a VAT return."
             >
               <Switch
                 checked={settings.modules.genericVat}
@@ -586,7 +590,7 @@ function SettingsPage() {
             </OptionsSwitchRow>
             <OptionsSwitchRow
               title="Australia PAYG / BAS summary"
-              hint="Remittance-style GST + PAYG estimate and CSV. Not ATO BAS or STP."
+              hint="GST + PAYG estimate worksheet and CSV. Not ATO BAS or STP."
             >
               <Switch
                 checked={settings.modules.auBas}
@@ -595,7 +599,7 @@ function SettingsPage() {
             </OptionsSwitchRow>
             <OptionsSwitchRow
               title="UK PAYE + NI"
-              hint="PAYE and Class 1 NI estimate and CSV. Not HMRC RTI."
+              hint="PAYE and Class 1 NI estimate worksheet and CSV. Not HMRC RTI."
             >
               <Switch
                 checked={settings.modules.ukPaye}
@@ -715,9 +719,10 @@ function SettingsPage() {
               </div>
             ) : null}
             <p className="text-xs text-muted-foreground">
-              Defaults: PH on for PHP / Pacific Harbor; US payroll for USD; CPF for SGD; PAYG/BAS for AUD; PAYE for GBP;
-              generic VAT when sales tax is already on. Off otherwise until you turn them on. Toggles hide UI — they do not
-              delete posted paychecks, rates, or accounts.
+              Worksheets and CSV — not IRS, CPF Board, ATO, HMRC, or BIR eFiling. Defaults: PH on for PHP / Pacific Harbor;
+              US payroll for USD; CPF for SGD; PAYG/BAS for AUD; PAYE for GBP; generic VAT when sales tax is already on.
+              Off otherwise until you turn them on. Toggles hide UI — they do not delete posted paychecks, rates, or
+              accounts.
             </p>
           </CardContent>
         </Card>
@@ -805,10 +810,11 @@ function SettingsPage() {
                 e.target.value = "";
                 if (!file) return;
                 try {
-                  const kind = importBackup(await file.text());
-                  toast.success(kind === "workspace" ? "Opened companies from that file." : "Company file opened.");
+                  pendingOpenRef.current = await file.text();
+                  setBooksConfirm({ kind: "open" });
                 } catch (err) {
-                  toast.error(err instanceof Error ? err.message : "Could not restore.");
+                  pendingOpenRef.current = null;
+                  toast.error(err instanceof Error ? err.message : "Could not read that file.");
                 }
               }}
             />
@@ -869,6 +875,8 @@ function SettingsPage() {
               ? "Reload the sample company?"
               : booksConfirm?.kind === "restore"
                 ? "Restore last local copy?"
+                : booksConfirm?.kind === "open"
+                  ? "Replace this company?"
                 : booksConfirm?.kind === "drop" && booksConfirm.id === SAMPLE_COMPANY_ID
                   ? "Remove the sample company?"
                   : "Remove this company?"
@@ -882,6 +890,8 @@ function SettingsPage() {
                 ? localStamp
                   ? `Replaces the open company with the snapshot from ${new Date(localStamp).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}. If you removed this file, it comes back. A downloaded JSON is not required.`
                   : "This browser has not saved a local copy yet."
+                : booksConfirm?.kind === "open"
+                  ? "Opens that file in place of the company you are in. Banks and entries in this file are replaced. Other companies stay. Merge is the safe import — it only adds records that are not already here."
                 : booksConfirm?.kind === "drop" && booksConfirm.id === SAMPLE_COMPANY_ID
                   ? order.length <= 1
                     ? "Deletes Pacific Harbor from this browser and opens a blank company. Restore last local copy or Reload sample brings it back."
@@ -897,6 +907,8 @@ function SettingsPage() {
               ? "Reload sample"
               : booksConfirm?.kind === "restore"
                 ? "Restore"
+                : booksConfirm?.kind === "open"
+                  ? "Open"
                 : "Remove"
         }
         requirePhrase={
@@ -904,9 +916,14 @@ function SettingsPage() {
             ? "DELETE"
             : booksConfirm?.kind === "restore"
               ? "RESTORE"
+              : booksConfirm?.kind === "open"
+                ? "REPLACE"
               : undefined
         }
-        onClose={() => setBooksConfirm(null)}
+        onClose={() => {
+          pendingOpenRef.current = null;
+          setBooksConfirm(null);
+        }}
         onConfirm={async () => {
           if (!booksConfirm) return;
           try {
@@ -923,6 +940,15 @@ function SettingsPage() {
                   ? `Restored ${result.name} from the last local copy.`
                   : `Restored ${result.name} to the last local copy.`,
               );
+            } else if (booksConfirm.kind === "open") {
+              const json = pendingOpenRef.current;
+              if (!json) {
+                toast.error("No company file selected.");
+              } else {
+                const kind = importBackup(json);
+                toast.success(kind === "workspace" ? "Opened companies from that file." : "Company file opened.");
+                pendingOpenRef.current = null;
+              }
             } else {
               removeCompany(booksConfirm.id);
               toast.success("Company removed.");

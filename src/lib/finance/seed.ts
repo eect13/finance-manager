@@ -120,13 +120,17 @@ export function isOutdatedPacificHarborSample(data: {
   bills: unknown[];
   receipts: unknown[];
   checks: unknown[];
+  budgetItems?: Array<{ id?: string; amount?: number }>;
 }): boolean {
   const docs = data.invoices.length + data.bills.length + data.receipts.length + data.checks.length;
+  const payrollBudget = data.budgetItems?.find((b) => b.id === "bud-pay");
+  const payrollStale = typeof payrollBudget?.amount === "number" && payrollBudget.amount < 38_000_000;
   return (
     data.customers.length < 35 ||
     data.vendors.length < 28 ||
     data.employees.length < 12 ||
-    docs < 1700
+    docs < 1700 ||
+    payrollStale
   );
 }
 
@@ -137,6 +141,11 @@ const AS_OF = "2026-09-03";
 function P(pesos: number): number {
   return Math.round(pesos * 100);
 }
+
+/** Lump to vendor “Staff payroll” — 13 active named employees (~₱380k/mo), not per-employee runs. */
+const PAY_HALF = P(190_000);
+const PAY_MONTH = P(380_000);
+const PAY_XFER = P(385_000);
 
 function d(month: number, day: number): string {
   return `2026-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
@@ -1067,7 +1076,7 @@ export function createSeed(): FinanceData {
       vendorId: IDS.vendPayroll,
       issueDate: d(m, 13),
       postDate: d(m, 14),
-      amount: P(126_400),
+      amount: PAY_HALF,
       memo: `1st half ${monthName(d(m, 1))}`,
       accountId: IDS.payroll,
     });
@@ -1077,7 +1086,7 @@ export function createSeed(): FinanceData {
       vendorId: IDS.vendPayroll,
       issueDate: d(m, 27),
       postDate: d(m, 28),
-      amount: P(126_400),
+      amount: PAY_HALF,
       memo: `2nd half ${monthName(d(m, 1))}`,
       accountId: IDS.payroll,
     });
@@ -1099,15 +1108,15 @@ export function createSeed(): FinanceData {
     vendorId: IDS.vendPayroll,
     issueDate: d(12, 12),
     postDate: d(12, 15),
-    amount: P(252_800),
+    amount: PAY_MONTH,
     memo: "13th month pay (PD 851)",
     accountId: IDS.payroll,
   });
 
   for (let m = 1; m <= 12; m++) {
-    addTransfer(d(m, 8), P(m >= 11 ? 280_000 : 255_000), IDS.bdo, IDS.metro, "Transfer Operating → Payroll");
+    addTransfer(d(m, 8), PAY_XFER, IDS.bdo, IDS.metro, "Transfer Operating → Payroll");
   }
-  addTransfer(d(12, 5), P(260_000), IDS.bdo, IDS.metro, "Transfer Operating → Payroll (13th month)");
+  addTransfer(d(12, 5), PAY_XFER, IDS.bdo, IDS.metro, "Transfer Operating → Payroll (13th month)");
 
   // Laguna Foods — monthly dry goods, Net 30. Paid ~22 days out when that date is before as-of.
   for (let m = 1; m <= 12; m++) {
@@ -1785,7 +1794,7 @@ export function createSeed(): FinanceData {
 
   const budgetItems: BudgetItem[] = [
     { id: "bud-rent", name: "Warehouse rent", kind: "outflow", amount: P(85_000), cadence: "monthly", startMonth: "2026-01", accountId: IDS.rent },
-    { id: "bud-pay", name: "Payroll", kind: "outflow", amount: P(252_800), cadence: "monthly", startMonth: "2026-01", accountId: IDS.payroll },
+    { id: "bud-pay", name: "Payroll", kind: "outflow", amount: PAY_MONTH, cadence: "monthly", startMonth: "2026-01", accountId: IDS.payroll },
     { id: "bud-util", name: "Utilities", kind: "outflow", amount: P(19_500), cadence: "monthly", startMonth: "2026-01", accountId: IDS.utilities },
     { id: "bud-sales", name: "Trade sales", kind: "inflow", amount: P(620_000), cadence: "monthly", startMonth: "2026-01", accountId: IDS.sales },
   ];
@@ -1809,7 +1818,7 @@ export function createSeed(): FinanceData {
       kind: "check",
       name: "Payroll 1st half",
       vendorId: IDS.vendPayroll,
-      amount: P(126_400),
+      amount: PAY_HALF,
       bankId: IDS.metro,
       accountId: IDS.payroll,
       memo: "Semi-monthly payroll",
@@ -1822,7 +1831,7 @@ export function createSeed(): FinanceData {
       kind: "check",
       name: "Payroll 2nd half",
       vendorId: IDS.vendPayroll,
-      amount: P(126_400),
+      amount: PAY_HALF,
       bankId: IDS.metro,
       accountId: IDS.payroll,
       memo: "Semi-monthly payroll",

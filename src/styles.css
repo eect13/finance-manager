@@ -7037,3 +7037,15 @@ button.party-card-row {
    (inset >= --list-card-gap so groups clear chrome).
    Desk Reconcile Grid ul shares inset; party Grid pane uses token, virt margin 0.
    ============================================================================= */
+
+/* v3.63.57 — phone Desk cash tiles: one-line labels, nicknames ellipsize */
+.desk-stats .eyebrow {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.desk-row-copy p:first-child {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

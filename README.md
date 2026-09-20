@@ -1,4 +1,4 @@
-# Finance Manager v3.63.56
+# Finance Manager v3.63.57
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -27,6 +27,14 @@ Vite is installed with the packages — no global `vite` command. `.npmrc` has `
 
 After the Windows installer: Desktop has one **Finance Manager** shortcut (navy pillars). Pin that — do not keep leftover `finance-manager` aliases from older builds.
 
+## What's new in v3.63.57
+
+- **Staff payroll matches the named employees:** Semi-monthly lump is ₱190,000 (₱380,000 a month, plus 13th). Existing Pacific Harbor files with the old ₱252,800 budget get the Reload sample callout.
+- **Open company file asks first:** After you pick a JSON, type REPLACE. Merge still adds missing records with no extra confirm.
+- **Regional packs are worksheets:** Settings says so on the card, not only behind More — estimates and CSV, not IRS / CPF / ATO / HMRC / BIR eFiling.
+- **Phone Desk cash tiles:** “In the bank” stays one line; bank nicknames ellipsize instead of wrapping.
+- **Opening splash:** App mark + Finance Manager while IndexedDB hydrates. No flash of the sample over your file.
+
 ## What's new in v3.63.56
 
 - **Finalize pass:** Recaptured README gallery against the mid-size Pacific Harbor sample. README changelog is this release plus the two before it — older notes stay in [docs/BUGS-AND-IMPROVEMENTS.md](docs/BUGS-AND-IMPROVEMENTS.md). Dead Options-density React store dropped; Comfortable boot script remains.
@@ -35,11 +43,6 @@ After the Windows installer: Desktop has one **Finance Manager** shortcut (navy 
 
 - **Compact remnant trim:** Options density stays gone. Force-Comfortable boot remains (clears old Compact localStorage). Unreachable Compact CSS token overrides and dead `isCompact` virt paths removed — spacing is Comfortable-only.
 - **Reload sample for existing profiles:** Options jump includes Sample; outdated/missing Pacific Harbor gets a clear callout and a emphasized Reload sample control. Confirm copy and toast match `resetDemo` (replaces the sample file with the mid-size seed; other companies stay).
-
-## What's new in v3.63.54
-
-- **Honest backup verbs:** Options → Backup is Save (export JSON), Open (replace this company), Merge (add missing records by id), Restore last local copy (this browser’s snapshot). “Bring in from another device” is gone — that label sounded like Save.
-- **Bigger Pacific Harbor sample:** ~40 customers, ~30 vendors, 14 employees (salary + hourly, one inactive), ~1,700 documents. Reload sample in Options to pick it up in an existing browser.
 
 Older point-release notes live in [docs/BUGS-AND-IMPROVEMENTS.md](docs/BUGS-AND-IMPROVEMENTS.md).
 

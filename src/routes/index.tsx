@@ -8,12 +8,13 @@ import { Sparkline } from "@/components/sparkline";
 import { BillBadge, CheckBadge, InvoiceBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { projectedCash, cashForecast } from "@/lib/finance/forecast";
+import { projectedCash, cashForecast, forecastAsOf } from "@/lib/finance/forecast";
 import { formatDate } from "@/lib/finance/format";
 import { billBalance, cashByBankId, invoiceBalance, openPayables, openReceivables, pendingChecksTotal, totalCash } from "@/lib/finance/ledger";
 import { openProps } from "@/lib/finance/open-record";
 import { closeChecklist, monthEndIso } from "@/lib/finance/close";
-import { parseForecastDays } from "@/lib/finance/types";
+import { FORECAST_DAY_OPTIONS, parseForecastDays } from "@/lib/finance/types";
+import { FilterPills } from "@/components/filter-pills";
 import { useFinanceData, useFinanceStore } from "@/lib/finance/store";
 
 export const Route = createFileRoute("/")({ component: Desk });
@@ -31,8 +32,9 @@ function Desk() {
   const projected = useMemo(() => projectedCash(data), [data]);
   const byBank = useMemo(() => cashByBankId(data), [data]);
   const days = parseForecastDays(settings.forecastDays);
+  const updateSettings = useFinanceStore((s) => s.updateSettings);
   const points = useMemo(
-    () => cashForecast(data, days),
+    () => cashForecast(data, days, forecastAsOf(data)),
     [days, data.settings, data.checks, data.invoices, data.bills, data.budgetItems, data.journals],
   );
   const spark = useMemo(() => points.map((p) => p.cash), [points]);
@@ -128,7 +130,15 @@ function Desk() {
       <Card className="mt-3">
         <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-end sm:gap-6 sm:p-5">
           <div className="min-w-0 flex-1">
-            <p className="eyebrow">{days}-day cash</p>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="eyebrow">{days}-day cash</p>
+              <FilterPills
+                label="Forecast days"
+                value={String(days)}
+                onChange={(v) => updateSettings({ forecastDays: parseForecastDays(v) })}
+                options={FORECAST_DAY_OPTIONS.map((n) => ({ id: String(n), label: `${n}d` }))}
+              />
+            </div>
             <Sparkline values={spark} className="mt-2 h-12 w-full" label={`${days}-day cash path`} />
           </div>
           <div className="shrink-0 sm:text-right">

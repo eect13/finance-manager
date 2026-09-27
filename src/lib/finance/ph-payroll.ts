@@ -183,6 +183,8 @@ export function remittanceIsEmpty(
 export type RosterStatutoryRow = {
   employeeId: string;
   name: string;
+  period: PayPeriod;
+  periodGross: number;
   monthlyGross: number;
   statutory: boolean;
   parts: PhPayrollParts;
@@ -191,6 +193,7 @@ export type RosterStatutoryRow = {
 export type RosterStatutoryEstimate = {
   rows: RosterStatutoryRow[];
   monthly: PhPayrollParts;
+  period: PhPayrollParts;
   skippedHourly: number;
 };
 
@@ -212,10 +215,11 @@ function addParts(a: PhPayrollParts, b: PhPayrollParts): PhPayrollParts {
   };
 }
 
-/** Monthly statutory worksheet from the active salaried roster. Hourly staff need posted slips. */
+/** Period statutory worksheet from the active salaried roster. Hourly staff need posted slips. */
 export function rosterStatutoryEstimate(data: FinanceData): RosterStatutoryEstimate {
   const rows: RosterStatutoryRow[] = [];
   let monthly = { ...ZERO };
+  let periodTotal = { ...ZERO };
   let skippedHourly = 0;
   const staff = [...(data.employees ?? [])].sort((a, b) => a.name.localeCompare(b.name));
   for (const emp of staff) {
@@ -226,9 +230,57 @@ export function rosterStatutoryEstimate(data: FinanceData): RosterStatutoryEstim
     }
     if (!emp.rate) continue;
     const statutory = emp.statutory !== false;
-    const parts = computePhPayroll({ gross: emp.rate, period: "monthly", statutory });
-    rows.push({ employeeId: emp.id, name: emp.name, monthlyGross: emp.rate, statutory, parts });
-    monthly = addParts(monthly, parts);
+    const period = emp.payPeriod ?? "monthly";
+    const periodGross = periodPayAmount(emp.rate, period, "salary");
+    const parts = computePhPayroll({ gross: periodGross, period, statutory });
+    const monthlyParts = computePhPayroll({ gross: emp.rate, period: "monthly", statutory });
+    rows.push({
+      employeeId: emp.id,
+      name: emp.name,
+      period,
+      periodGross,
+      monthlyGross: emp.rate,
+      statutory,
+      parts,
+    });
+    periodTotal = addParts(periodTotal, parts);
+    monthly = addParts(monthly, monthlyParts);
   }
-  return { rows, monthly, skippedHourly };
+  return { rows, monthly, period: periodTotal, skippedHourly };
+}
+
+export function rosterStatutoryCsvRows(est: RosterStatutoryEstimate): Array<Record<string, string | number>> {
+  const rows: Array<Record<string, string | number>> = est.rows.map((r) => ({
+    Employee: r.name,
+    Period: r.period,
+    "Period gross": r.periodGross / 100,
+    "SSS EE": r.parts.sssEe / 100,
+    "PhilHealth EE": r.parts.philEe / 100,
+    "Pag-IBIG EE": r.parts.pagEe / 100,
+    WHT: r.parts.bir / 100,
+    Net: r.parts.net / 100,
+    "Employer cost": r.parts.employerCost / 100,
+  }));
+  rows.push({
+    Employee: "Total (this period)",
+    Period: "" as const,
+    "Period gross": est.period.monthlyGross ? est.rows.reduce((s, r) => s + r.periodGross, 0) / 100 : 0,
+    "SSS EE": est.period.sssEe / 100,
+    "PhilHealth EE": est.period.philEe / 100,
+    "Pag-IBIG EE": est.period.pagEe / 100,
+    WHT: est.period.bir / 100,
+    Net: est.period.net / 100,
+    "Employer cost": est.period.employerCost / 100,
+  });
+  return rows;
+}
+
+export function staffPayrollLumpCovers(data: FinanceData, date: string): boolean {
+  const month = (date || "").slice(0, 7);
+  if (!month) return false;
+  return (data.checks ?? []).some((c) => {
+    if (c.payee !== "Staff payroll" || c.employeeId) return false;
+    if (c.status === "voided" || c.status === "bounced") return false;
+    return (c.postDate || c.issueDate || "").slice(0, 7) === month;
+  });
 }

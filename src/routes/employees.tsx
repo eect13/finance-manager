@@ -30,7 +30,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { fitColumnWidth } from "@/lib/finance/fit-column";
 import { formatMoney, parseAmountToCents, todayIso } from "@/lib/finance/format";
-import { computePhPayroll, periodPayAmount } from "@/lib/finance/ph-payroll";
+import { computePhPayroll, periodPayAmount, staffPayrollLumpCovers } from "@/lib/finance/ph-payroll";
 import { useEntrySort } from "@/lib/finance/sort";
 import { EMPTY_EMPLOYEE, type Employee, type PayPeriod, type PayType } from "@/lib/finance/types";
 import { stopOpen } from "@/lib/finance/open-record";
@@ -124,9 +124,7 @@ function EmployeesPage() {
   const payEmployee = useFinanceStore((s) => s.payEmployee);
   const payEmployees = useFinanceStore((s) => s.payEmployees);
   const banks = data.banks.filter((b) => !b.archived);
-  const lumpPayroll = (data.checks ?? []).some(
-    (c) => c.payee === "Staff payroll" && !c.employeeId && c.status !== "voided" && c.status !== "bounced",
-  );
+  const lumpPayroll = staffPayrollLumpCovers(data, todayIso());
 
   const [query, setQuery] = useState("");
   const [view, setView] = useListView("employees");
@@ -199,6 +197,7 @@ function EmployeesPage() {
   const [runDate, setRunDate] = useState(todayIso());
   const [runBankId, setRunBankId] = useState("");
   const [payStatutory, setPayStatutory] = useState(true);
+  const lumpThisRun = staffPayrollLumpCovers(data, runDate);
 
   const editing = editId ? (data.employees ?? []).find((e) => e.id === editId) : null;
   const payingEmp = payId ? (data.employees ?? []).find((e) => e.id === payId) : null;
@@ -301,7 +300,7 @@ function EmployeesPage() {
       title="Employees"
       description={
         lumpPayroll
-          ? "People on payroll. These books already pay a Staff payroll vendor lump — a paycheck here is a second run, not a replacement."
+          ? "People on payroll. These books already pay a Staff payroll vendor lump this month — Pay all is blocked so cash is not posted twice. Reports → Payroll has the statutory worksheet. A single slip is only for extra or hourly pay."
           : "People on payroll. Keep a roster, set pay type and rate, and post paychecks to a bank — the check lands in Register like any other payment."
       }
       actions={
@@ -629,7 +628,7 @@ function EmployeesPage() {
             <DialogTitle>Post paycheck</DialogTitle>
             <DialogDescription>
               Writes a check from the selected bank. Hourly is hours × rate.
-              {lumpPayroll ? " This is in addition to the Staff payroll vendor lump already in the register." : ""}
+              {lumpPayroll ? " A Staff payroll lump is already in this month’s register — this slip is extra cash." : ""}
               {phPayroll
                 ? " PH statutory computes SSS, PhilHealth, Pag-IBIG, and TRAIN withholding for this period."
                 : " Generic net pay only — enable Philippines payroll in Settings for statutory withholdings."}
@@ -697,8 +696,8 @@ function EmployeesPage() {
           <DialogHeader>
             <DialogTitle>Pay all active</DialogTitle>
             <DialogDescription>
-              {lumpPayroll
-                ? "These books already pay Staff payroll as a vendor lump. This posts a second set of salaried checks on top of that. Hourly people still need hours on a single slip."
+              {lumpThisRun
+                ? "This month already has a Staff payroll vendor lump. Pay all would double the cash. Use Reports → Payroll for SSS / PhilHealth / Pag-IBIG / TRAIN. Hourly people still need a single slip with hours."
                 : "Posts a period paycheck for each active salaried employee (weekly is 12/52 of monthly, twice a month is half). Hourly people need hours on a single slip."}
               {phPayroll ? " PH statutory is taken from each employee." : ""}
             </DialogDescription>
@@ -715,7 +714,9 @@ function EmployeesPage() {
             <Button variant="outline" onClick={() => setRunOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={runPayAll}>{lumpPayroll ? "Post second run" : "Post pay run"}</Button>
+            <Button onClick={runPayAll} disabled={lumpThisRun}>
+              {lumpThisRun ? "Lump already posted" : "Post pay run"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

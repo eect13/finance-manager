@@ -31,7 +31,7 @@ import type {
   Vendor,
 } from "./types";
 import { DEFAULT_REGIONAL_MODULES, parseForecastDays } from "./types";
-import { computePhPayroll, periodPayAmount, PH_PAYROLL_CODES } from "./ph-payroll";
+import { computePhPayroll, periodPayAmount, PH_PAYROLL_CODES, staffPayrollLumpCovers } from "./ph-payroll";
 import { capAuditEvents } from "./audit-cap";
 import { applyRegisterOrderPlacement, cashBook, pruneRegisterOrder, type ArrangePlace, type CashLineKind } from "./register";
 import { methodNeedsReference, methodLabel } from "./methods";
@@ -2469,6 +2469,11 @@ export function payEmployees(
   input: { date?: string; bankId?: string; withholding?: number; statutory?: boolean },
 ): { data: FinanceData; posted: number; skippedHourly: number } {
   const date = input.date || todayIso();
+  if (staffPayrollLumpCovers(data, date)) {
+    throw new Error(
+      "This month already has a Staff payroll vendor lump. Do not post a second cash run. Use Reports → Payroll for the statutory worksheet.",
+    );
+  }
   const active = (data.employees ?? []).filter((e) => e.active);
   let working = data;
   let posted = 0;

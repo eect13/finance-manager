@@ -1,6 +1,17 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-27. Updated for v3.63.59.
+Re-verified in code 2026-09-27. Updated for v3.63.60.
+
+## Fixed in v3.63.60
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| T1 | High | Pay all still posted cash on top of the Staff payroll lump | `payEmployees` refuses when a lump covers that month |
+| T2 | Med | Roster estimate was monthly-only | Uses each employee’s pay period; CSV export |
+| T3 | Med | One check on an account skipped every budget on that account | Cover per line by name or amount (half-month counts) |
+| T4 | Med | Untagged budgets and inflow budgets still stacked | Name match; inflow skipped when open invoices in the month ≥ budget |
+| T5 | Low | Dates required slashes and eight digits | Compact 09131992 / 091392 / 91326 / 0913; amounts take ₱ $ spaces ( ) |
+| T6 | Low | Forecast always started from today even after a future lock | `forecastAsOf` is today, or the day after `closedThrough` when that date is still ahead |
 
 ## Fixed in v3.63.59
 

@@ -1,4 +1,4 @@
-# Finance Manager v3.63.59
+# Finance Manager v3.63.60
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -27,24 +27,21 @@ Vite is installed with the packages — no global `vite` command. `.npmrc` has `
 
 After the Windows installer: Desktop has one **Finance Manager** shortcut (navy pillars). Pin that — do not keep leftover `finance-manager` aliases from older builds.
 
+## What's new in v3.63.60
+
+- **Dates type like QuickBooks:** 09131992, 091392, 91326, 0913, 9/13/2026 all resolve. Amounts accept ₱ / $ / spaces / (1,000.50).
+- **Pay all cannot double the lump:** A month that already has a Staff payroll vendor check will not post a second salaried run. Reports → Payroll estimate uses each person’s pay period (semi-monthly is half) and exports CSV.
+- **Forecast covers the right line:** A budget is skipped when a matching check/bill (name or amount, including a half-month payroll) or enough open invoices already sit in that month. Horizon pills are on Desk too.
+
 ## What's new in v3.63.59
 
 - **Forecast horizon is 30 / 60 / 90 / 180 days:** Pills on Cash forecast store the choice with the company file. Desk sparkline and “in N days” follow it.
-- **Payroll tax worksheet when remittance is zero:** Reports → Payroll still shows the empty 2211–2214 balances, then a monthly SSS / PhilHealth / Pag-IBIG / TRAIN estimate from the active salaried roster. Does not post or file.
+- **Payroll tax worksheet when remittance is zero:** Reports → Payroll still shows the empty 2211–2214 balances, then a statutory estimate from the active salaried roster. Does not post or file.
 
 ## What's new in v3.63.58
 
-- **Sample payroll no longer double-posts:** Recurring rent, payroll, and power next dates are January 2027 — the 2026 year is already in the books, so Desk does not offer “Post 4 due.” Pay all on a company that already has a Staff payroll lump says it is a second run.
-- **Forecast skips covered months:** A budget outflow is left out of a month that already has a check or an open bill on that account. Trade-sales budget still fills months with no matching invoices.
-- **Close banner and payroll worksheets:** A sample with no finished statement says statements stop at the bank stamp (Jul 31), not “619 uncleared.” Reports say the lump does not fill SSS / PhilHealth / Pag-IBIG, and the 13th-month table is not the December lump. Opening a workspace JSON says it replaces every company.
-
-## What's new in v3.63.57
-
-- **Staff payroll matches the named employees:** Semi-monthly lump is ₱190,000 (₱380,000 a month, plus 13th). Existing Pacific Harbor files with the old ₱252,800 budget get the Reload sample callout.
-- **Open company file asks first:** After you pick a JSON, type REPLACE. Merge still adds missing records with no extra confirm.
-- **Regional packs are worksheets:** Settings says so on the card, not only behind More — estimates and CSV, not IRS / CPF / ATO / HMRC / BIR eFiling.
-- **Phone Desk cash tiles:** “In the bank” stays one line; bank nicknames ellipsize instead of wrapping.
-- **Opening splash:** App mark + Finance Manager while IndexedDB hydrates. No flash of the sample over your file.
+- **Sample payroll no longer double-posts:** Recurring rent, payroll, and power next dates are January 2027 — the 2026 year is already in the books, so Desk does not offer “Post 4 due.”
+- **Forecast skips covered months:** A budget outflow is left out of a month that already has matching cash. Close banner and Open workspace wording stay honest.
 
 Older point-release notes live in [docs/BUGS-AND-IMPROVEMENTS.md](docs/BUGS-AND-IMPROVEMENTS.md).
 

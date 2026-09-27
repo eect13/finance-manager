@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { cashForecast, projectedCash } from "@/lib/finance/forecast";
+import { cashForecast, forecastAsOf, projectedCash } from "@/lib/finance/forecast";
 import { fitColumnWidth } from "@/lib/finance/fit-column";
 import { currentMonth, formatMoney, parseAmountToCents } from "@/lib/finance/format";
 import { openReceivables, pendingChecksTotal, totalCash } from "@/lib/finance/ledger";
@@ -136,7 +136,7 @@ function ForecastPage() {
   const [form, setForm] = useState<BudgetForm>(() => emptyBudgetForm());
 
   const points = useMemo(
-    () => cashForecast(data, days),
+    () => cashForecast(data, days, forecastAsOf(data)),
     [days, data.settings, data.checks, data.invoices, data.bills, data.budgetItems, data.journals],
   );
   const end = points[points.length - 1];
@@ -265,7 +265,7 @@ function ForecastPage() {
   return (
     <AppShell
       title="Cash forecast"
-      description="Cash from the bank estimate, pending checks, and invoice due dates. A monthly budget fills a month only when that account has no check or open bill already."
+      description="Cash from today (or the day after a future lock). Pending checks and invoice due dates first. A budget line fills a future month only when that line is not already covered by a matching check, bill, or open invoices."
       actions={
         <div className="flex flex-wrap items-center gap-2">
           <FilterPills

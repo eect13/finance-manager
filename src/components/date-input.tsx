@@ -16,7 +16,7 @@ import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { Input } from "@/components/ui/input";
-import { addDaysIso, isoToTyped, maskTypedDate, todayIso, typedToIso } from "@/lib/finance/format";
+import { addDaysIso, getDateFormatPref, isoToTyped, maskTypedDate, todayIso, typedToIso } from "@/lib/finance/format";
 import { onViewportChange, placeFixedPopover } from "@/lib/place-fixed";
 import { cn } from "@/lib/utils";
 
@@ -132,7 +132,7 @@ export function DateInput({
         autoCorrect="off"
         autoCapitalize="off"
         spellCheck={false}
-        placeholder="MM/DD/YYYY"
+        placeholder={getDateFormatPref() === "DMY" ? "DD/MM/YYYY" : "MM/DD/YYYY"}
         disabled={disabled}
         tabIndex={tabIndex}
         aria-label={ariaLabel}

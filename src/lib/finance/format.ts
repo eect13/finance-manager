@@ -196,15 +196,31 @@ export function addDaysIso(iso: string, days: number): string {
 }
 
 export function parseAmountToCents(raw: string | null | undefined): number {
-  const cleaned = String(raw ?? "").replace(/,/g, "").trim();
+  let cleaned = String(raw ?? "").trim();
   if (!cleaned) return 0;
-  const neg = cleaned.startsWith("-");
-  const body = neg ? cleaned.slice(1) : cleaned;
-  const match = /^(\d+)(?:\.(\d{0,2})\d*)?$/.exec(body);
+  cleaned = cleaned.replace(/[\s\u00a0]/g, "");
+  cleaned = cleaned.replace(/[₱$€£¥]/g, "");
+  let neg = false;
+  if (cleaned.startsWith("(") && cleaned.endsWith(")")) {
+    neg = true;
+    cleaned = cleaned.slice(1, -1);
+  }
+  if (cleaned.endsWith("-")) {
+    neg = true;
+    cleaned = cleaned.slice(0, -1);
+  }
+  if (cleaned.startsWith("-")) {
+    neg = true;
+    cleaned = cleaned.slice(1);
+  }
+  if (cleaned.startsWith("+")) cleaned = cleaned.slice(1);
+  cleaned = cleaned.replace(/,/g, "");
+  if (!cleaned) return 0;
+  const match = /^(\d+)(?:\.(\d{0,4})\d*)?$/.exec(cleaned);
   if (!match) {
     const n = Number(cleaned);
     if (!Number.isFinite(n)) return 0;
-    return Math.round(n * 100);
+    return Math.round(n * 100) * (neg ? -1 : 1);
   }
   const whole = Number(match[1]);
   const frac = (match[2] ?? "").padEnd(2, "0").slice(0, 2);
@@ -224,28 +240,84 @@ export function isoToTyped(iso: string): string {
   if (!iso) return "";
   const date = parseISO(iso);
   if (!isValid(date)) return iso;
-  return format(date, "MM/dd/yyyy");
+  return format(date, dateFormatPref === "DMY" ? "dd/MM/yyyy" : "MM/dd/yyyy");
 }
 
+/** Compact typing like QuickBooks: 09131992, 091392, 91392, 0913. */
 export function maskTypedDate(raw: string): string {
   const digits = raw.replace(/\D/g, "").slice(0, 8);
-  if (digits.length <= 2) return digits;
-  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
-  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+  return slashDateDigits(digits, dateFormatPref === "DMY");
 }
 
-export function typedToIso(raw: string): string {
+function slashDateDigits(digits: string, dmy: boolean): string {
+  if (!digits) return "";
+  const first = Number(digits[0]);
+  const wideFirst = first <= 1 || (dmy && first <= 3);
+  if (wideFirst) {
+    if (digits.length <= 2) return digits;
+    if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+    return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+  }
+  if (digits.length === 1) return digits;
+  if (digits.length <= 3) return `${digits[0]}/${digits.slice(1)}`;
+  return `${digits[0]}/${digits.slice(1, 3)}/${digits.slice(3)}`;
+}
+
+function expandYear(yy: number, today: string): number {
+  const nowY = Number(today.slice(0, 4)) || new Date().getFullYear();
+  const as20 = 2000 + yy;
+  const as19 = 1900 + yy;
+  if (as20 <= nowY + 1 && as20 >= nowY - 80) return as20;
+  return as19;
+}
+
+function isoFromParts(year: number, month: number, day: number): string {
+  if (!year || month < 1 || month > 12 || day < 1 || day > 31) return "";
+  const iso = `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  const date = parseISO(iso);
+  if (!isValid(date)) return "";
+  if (date.getFullYear() !== year || date.getMonth() + 1 !== month || date.getDate() !== day) return "";
+  return iso;
+}
+
+export function typedToIso(raw: string, today = todayIso()): string {
   const trimmed = raw.trim();
   if (!trimmed) return "";
   if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed) && isValid(parseISO(trimmed))) return trimmed;
   const digits = trimmed.replace(/\D/g, "");
-  if (digits.length === 6) {
-    const yy = Number(digits.slice(4, 6));
-    const year = yy >= 70 ? 1900 + yy : 2000 + yy;
-    const iso = `${String(year).padStart(4, "0")}-${digits.slice(0, 2)}-${digits.slice(2, 4)}`;
-    return isValid(parseISO(iso)) ? iso : "";
+  if (!digits) return "";
+  const dmy = dateFormatPref === "DMY";
+  const nowY = Number(today.slice(0, 4));
+  const nowM = Number(today.slice(5, 7));
+
+  const fromMdy = (a: number, b: number, year: number) =>
+    dmy ? isoFromParts(year, b, a) : isoFromParts(year, a, b);
+
+  if (digits.length === 3) {
+    return fromMdy(Number(digits[0]), Number(digits.slice(1)), nowY);
   }
-  if (digits.length !== 8) return "";
-  const iso = `${digits.slice(4, 8)}-${digits.slice(0, 2)}-${digits.slice(2, 4)}`;
-  return isValid(parseISO(iso)) ? iso : "";
+  if (digits.length === 4) {
+    const twoTwo = fromMdy(Number(digits.slice(0, 2)), Number(digits.slice(2, 4)), nowY);
+    if (twoTwo) return twoTwo;
+    return fromMdy(Number(digits[0]), Number(digits.slice(1)), nowY);
+  }
+  if (digits.length === 5) {
+    return fromMdy(Number(digits[0]), Number(digits.slice(1, 3)), expandYear(Number(digits.slice(3)), today));
+  }
+  if (digits.length === 6) {
+    const compact = fromMdy(Number(digits.slice(0, 2)), Number(digits.slice(2, 4)), expandYear(Number(digits.slice(4)), today));
+    if (compact) return compact;
+    return fromMdy(Number(digits[0]), Number(digits.slice(1, 3)), expandYear(Number(digits.slice(3)), today));
+  }
+  if (digits.length === 7) {
+    return fromMdy(Number(digits[0]), Number(digits.slice(1, 3)), Number(digits.slice(3)));
+  }
+  if (digits.length === 8) {
+    return fromMdy(Number(digits.slice(0, 2)), Number(digits.slice(2, 4)), Number(digits.slice(4)));
+  }
+  if (digits.length === 1 || digits.length === 2) {
+    const day = Number(digits);
+    return isoFromParts(nowY, nowM, day);
+  }
+  return "";
 }

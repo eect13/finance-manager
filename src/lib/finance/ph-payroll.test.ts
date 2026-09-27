@@ -9,7 +9,9 @@ import {
   remittanceIsEmpty,
   rosterStatutoryEstimate,
   sssMscCents,
+  staffPayrollLumpCovers,
 } from "./ph-payroll.ts";
+import { payEmployees } from "./actions.ts";
 import { createSeed } from "./seed.ts";
 
 describe("PH statutory 2026", () => {
@@ -73,11 +75,16 @@ describe("PH statutory 2026", () => {
     assert.ok(est.monthly.pagEe > 0);
     assert.ok(est.monthly.employerCost > 0);
     assert.equal(
-      est.monthly.sssEe,
+      est.period.sssEe,
       est.rows.reduce((s, r) => s + r.parts.sssEe, 0),
     );
-    assert.equal(remittanceIsEmpty({
-      sss: 0, philhealth: 0, pagibig: 0, wht: 0, other: 0, employer: 0,
-    }), true);
+    const semi = est.rows.find((r) => r.period === "semimonthly");
+    assert.ok(semi);
+    assert.equal(semi.periodGross, Math.round(semi.monthlyGross / 2));
+    assert.ok(est.period.sssEe > 0);
+    assert.ok(est.period.sssEe < est.monthly.sssEe);
+    assert.equal(staffPayrollLumpCovers(data, "2026-09-13"), true);
+    assert.equal(staffPayrollLumpCovers(data, "2027-02-13"), false);
+    assert.throws(() => payEmployees(data, { date: "2026-09-27" }), /vendor lump/);
   });
 });

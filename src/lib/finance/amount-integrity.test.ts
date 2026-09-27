@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { formatMoney, parseAmountToCents } from "./format.ts";
+import { formatMoney, parseAmountToCents, setDateFormatPref, typedToIso } from "./format.ts";
 import { normalizeBooks } from "./normalize.ts";
 import { addExpense, postReconAdjustment } from "./actions.ts";
 import type { FinanceData } from "./types.ts";
@@ -36,7 +36,22 @@ describe("amount integrity (pesos string → cents ledger → display)", () => {
     assert.equal(parseAmountToCents("1,000.50"), 100050);
     assert.equal(parseAmountToCents("0.01"), 1);
     assert.equal(parseAmountToCents("-25.10"), -2510);
-    assert.equal(parseAmountToCents(""), 0);
+    assert.equal(parseAmountToCents("(25.10)"), -2510);
+    assert.equal(parseAmountToCents("₱1,000.50"), 100050);
+    assert.equal(parseAmountToCents("1 000.50"), 100050);
+    assert.equal(parseAmountToCents("25.10-"), -2510);
+  });
+
+  it("typedToIso accepts QuickBooks compact dates", () => {
+    setDateFormatPref("MDY");
+    assert.equal(typedToIso("09131992", "2026-09-27"), "1992-09-13");
+    assert.equal(typedToIso("091392", "2026-09-27"), "1992-09-13");
+    assert.equal(typedToIso("091326", "2026-09-27"), "2026-09-13");
+    assert.equal(typedToIso("91326", "2026-09-27"), "2026-09-13");
+    assert.equal(typedToIso("0913", "2026-09-27"), "2026-09-13");
+    assert.equal(typedToIso("9/13/2026", "2026-09-27"), "2026-09-13");
+    assert.equal(typedToIso("2026-09-13", "2026-09-27"), "2026-09-13");
+    assert.equal(typedToIso("02312026", "2026-09-27"), "");
   });
 
   it("formatMoney shows ledger cents as pesos", () => {

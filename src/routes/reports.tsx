@@ -35,7 +35,7 @@ import {
   withholding1601cRows,
 } from "@/lib/finance/ph-bir";
 import { VAT_BOOKS_DISCLAIMER } from "@/lib/finance/generic-vat";
-import { payrollRemittance, remittanceIsEmpty, rosterStatutoryEstimate } from "@/lib/finance/ph-payroll";
+import { payrollRemittance, remittanceIsEmpty, rosterStatutoryCsvRows, rosterStatutoryEstimate } from "@/lib/finance/ph-payroll";
 import { FxPanel, GenericVatWorkbook, RegionalPayrollSections } from "@/components/regional-reports";
 import { modulesOf, type Account } from "@/lib/finance/types";
 import { openProps, openTxn } from "@/lib/finance/open-record";
@@ -779,7 +779,7 @@ function PayrollPanel({
   );
   return (
     <div className="space-y-4">
-      {(showBir || show13th) ? (
+      {(showBir || show13th || roster) ? (
         <div className="flex flex-wrap gap-2">
           {showBir ? (
             <>
@@ -800,6 +800,13 @@ function PayrollPanel({
               filename={`13th-month-${year}.csv`}
               rows={thirteenthMonthCsvRows(data, year, asOf)}
               label="Export 13th month"
+            />
+          ) : null}
+          {roster ? (
+            <CsvButton
+              filename={`payroll-roster-estimate-${year}.csv`}
+              rows={rosterStatutoryCsvRows(roster)}
+              label="Export roster estimate"
             />
           ) : null}
         </div>
@@ -835,9 +842,9 @@ function PayrollPanel({
       {roster && roster.rows.length > 0 ? (
       <div className="list-grid list-scroll overflow-auto rounded-2xl table-paper elevation outline-none">
         <div className="border-b border-border px-4 py-3">
-          <p className="text-sm font-medium">Roster statutory estimate · monthly</p>
+          <p className="text-sm font-medium">Roster statutory estimate · each person’s pay period</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Posted remittance accounts are zero, so this worksheet uses each active salaried person’s monthly rate and the 2026 PH tables. It does not post journals or file SSS / PhilHealth / Pag-IBIG / BIR. Hourly staff stay out until a paycheck is in their name
+            Posted remittance accounts are zero, so this worksheet uses each active salaried rate and pay period (semi-monthly is half) with the 2026 PH tables. It does not post journals or file. Hourly staff stay out until a paycheck is in their name
             {roster.skippedHourly ? ` (${roster.skippedHourly} hourly skipped)` : ""}.
           </p>
         </div>
@@ -858,7 +865,7 @@ function PayrollPanel({
             {roster.rows.map((r) => (
               <tr key={r.employeeId} className="border-b border-border/70 last:border-0">
                 <td className="px-4 py-3">{r.name}</td>
-                <td className="px-4 py-3"><Money amount={r.monthlyGross} currency={currency} /></td>
+                <td className="px-4 py-3"><Money amount={r.periodGross} currency={currency} /></td>
                 <td className="px-4 py-3"><Money amount={r.parts.sssEe} currency={currency} /></td>
                 <td className="px-4 py-3"><Money amount={r.parts.philEe} currency={currency} /></td>
                 <td className="px-4 py-3"><Money amount={r.parts.pagEe} currency={currency} /></td>

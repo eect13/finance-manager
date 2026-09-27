@@ -41,6 +41,7 @@ export function closeChecklist(
   for (const bank of live) {
     const lastRec = lastReconForBank(data, bank.id);
     const last = lastRec?.statementDate ?? "";
+    const stamped = (bank.lastStatementDate ?? "").trim();
     const uncleared = unclearedLines(data, bank.id, through);
     const recd = last !== "" && last >= through;
     const nothing = uncleared.length === 0 && last === "";
@@ -57,7 +58,9 @@ export function closeChecklist(
           ? "No activity — nothing to rec"
           : last
             ? `Last finished ${formatDate(last)}. ${uncleared.length} still uncleared.`
-            : `${uncleared.length} uncleared. Finish a statement through ${formatDate(through)}.`,
+            : stamped
+              ? `Statements stop at ${formatDate(stamped)}. Finish one through ${formatDate(through)} to close.`
+              : `${uncleared.length} uncleared. Finish a statement through ${formatDate(through)}.`,
       href: "/reconcile",
     });
   }

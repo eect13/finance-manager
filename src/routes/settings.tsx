@@ -22,7 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { canPickBackupFolder, chooseBackupFolder, clearBackupFolder, getBackupFolderName, hydrateBackupFolder, saveCompanyFilePreferFolder, useBackupFolderName } from "@/lib/finance/backup-folder";
-import { backupPayload } from "@/lib/finance/export";
+import { backupPayload, parseBackupFile } from "@/lib/finance/export";
 import { listLocalBackups, readLocalBackup } from "@/lib/finance/local-backup";
 import { isOutdatedPacificHarborSample, SAMPLE_COMPANY_ID } from "@/lib/finance/seed";
 import { fitColumnWidth } from "@/lib/finance/fit-column";
@@ -190,6 +190,7 @@ function SettingsPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const mergeRef = useRef<HTMLInputElement>(null);
   const pendingOpenRef = useRef<string | null>(null);
+  const [openScope, setOpenScope] = useState<"company" | "workspace">("company");
   const [countryPackId, setCountryPackId] = useState("");
   /** When applying a country tax pack, also set home currency to the pack’s currency. */
   const [updateCurrencyWithPack, setUpdateCurrencyWithPack] = useState(true);
@@ -810,10 +811,14 @@ function SettingsPage() {
                 e.target.value = "";
                 if (!file) return;
                 try {
-                  pendingOpenRef.current = await file.text();
+                  const text = await file.text();
+                  const parsed = parseBackupFile(text);
+                  pendingOpenRef.current = text;
+                  setOpenScope(parsed.type);
                   setBooksConfirm({ kind: "open" });
                 } catch (err) {
                   pendingOpenRef.current = null;
+                  setOpenScope("company");
                   toast.error(err instanceof Error ? err.message : "Could not read that file.");
                 }
               }}
@@ -876,7 +881,9 @@ function SettingsPage() {
               : booksConfirm?.kind === "restore"
                 ? "Restore last local copy?"
                 : booksConfirm?.kind === "open"
-                  ? "Replace this company?"
+                  ? openScope === "workspace"
+                    ? "Replace every company?"
+                    : "Replace this company?"
                 : booksConfirm?.kind === "drop" && booksConfirm.id === SAMPLE_COMPANY_ID
                   ? "Remove the sample company?"
                   : "Remove this company?"
@@ -891,7 +898,9 @@ function SettingsPage() {
                   ? `Replaces the open company with the snapshot from ${new Date(localStamp).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}. If you removed this file, it comes back. A downloaded JSON is not required.`
                   : "This browser has not saved a local copy yet."
                 : booksConfirm?.kind === "open"
-                  ? "Opens that file in place of the company you are in. Banks and entries in this file are replaced. Other companies stay. Merge is the safe import — it only adds records that are not already here."
+                  ? openScope === "workspace"
+                    ? "This file is a workspace backup. It replaces every company in this browser, not just the one you have open. Merge is the safe import — it only adds records that are not already here."
+                    : "Opens that file in place of the company you are in. Banks and entries in this file are replaced. Other companies stay. Merge is the safe import — it only adds records that are not already here."
                 : booksConfirm?.kind === "drop" && booksConfirm.id === SAMPLE_COMPANY_ID
                   ? order.length <= 1
                     ? "Deletes Pacific Harbor from this browser and opens a blank company. Restore last local copy or Reload sample brings it back."
@@ -922,6 +931,7 @@ function SettingsPage() {
         }
         onClose={() => {
           pendingOpenRef.current = null;
+          setOpenScope("company");
           setBooksConfirm(null);
         }}
         onConfirm={async () => {
@@ -948,6 +958,7 @@ function SettingsPage() {
                 const kind = importBackup(json);
                 toast.success(kind === "workspace" ? "Opened companies from that file." : "Company file opened.");
                 pendingOpenRef.current = null;
+                setOpenScope("company");
               }
             } else {
               removeCompany(booksConfirm.id);

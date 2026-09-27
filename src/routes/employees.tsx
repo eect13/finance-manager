@@ -124,6 +124,9 @@ function EmployeesPage() {
   const payEmployee = useFinanceStore((s) => s.payEmployee);
   const payEmployees = useFinanceStore((s) => s.payEmployees);
   const banks = data.banks.filter((b) => !b.archived);
+  const lumpPayroll = (data.checks ?? []).some(
+    (c) => c.payee === "Staff payroll" && !c.employeeId && c.status !== "voided" && c.status !== "bounced",
+  );
 
   const [query, setQuery] = useState("");
   const [view, setView] = useListView("employees");
@@ -296,7 +299,11 @@ function EmployeesPage() {
   return (
     <AppShell
       title="Employees"
-      description="People on payroll. Keep a roster, set pay type and rate, and post paychecks to a bank — the check lands in Register like any other payment."
+      description={
+        lumpPayroll
+          ? "People on payroll. These books already pay a Staff payroll vendor lump — a paycheck here is a second run, not a replacement."
+          : "People on payroll. Keep a roster, set pay type and rate, and post paychecks to a bank — the check lands in Register like any other payment."
+      }
       actions={
         <>
           <Button
@@ -622,6 +629,7 @@ function EmployeesPage() {
             <DialogTitle>Post paycheck</DialogTitle>
             <DialogDescription>
               Writes a check from the selected bank. Hourly is hours × rate.
+              {lumpPayroll ? " This is in addition to the Staff payroll vendor lump already in the register." : ""}
               {phPayroll
                 ? " PH statutory computes SSS, PhilHealth, Pag-IBIG, and TRAIN withholding for this period."
                 : " Generic net pay only — enable Philippines payroll in Settings for statutory withholdings."}
@@ -689,7 +697,9 @@ function EmployeesPage() {
           <DialogHeader>
             <DialogTitle>Pay all active</DialogTitle>
             <DialogDescription>
-              Posts a period paycheck for each active salaried employee (weekly is 12/52 of monthly, twice a month is half). Hourly people need hours on a single slip.
+              {lumpPayroll
+                ? "These books already pay Staff payroll as a vendor lump. This posts a second set of salaried checks on top of that. Hourly people still need hours on a single slip."
+                : "Posts a period paycheck for each active salaried employee (weekly is 12/52 of monthly, twice a month is half). Hourly people need hours on a single slip."}
               {phPayroll ? " PH statutory is taken from each employee." : ""}
             </DialogDescription>
           </DialogHeader>
@@ -705,7 +715,7 @@ function EmployeesPage() {
             <Button variant="outline" onClick={() => setRunOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={runPayAll}>Post pay run</Button>
+            <Button onClick={runPayAll}>{lumpPayroll ? "Post second run" : "Post pay run"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

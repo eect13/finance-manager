@@ -1,5 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { postDueRecurring } from "./actions.ts";
+import { cashForecast } from "./forecast.ts";
 import { createSeed, isOutdatedPacificHarborSample } from "./seed.ts";
 
 describe("Pacific Harbor sample", () => {
@@ -28,6 +30,22 @@ describe("Pacific Harbor sample", () => {
     const rec = data.recurrences.filter((r) => r.id.startsWith("rec-pay"));
     assert.equal(rec.length, 2);
     assert.ok(rec.every((r) => r.amount === 19_000_000));
+    assert.ok(data.recurrences.every((r) => r.nextDate >= "2027-01-01"), "seeded year is already posted");
+    assert.equal(postDueRecurring(data, "2026-09-30").posted.length, 0);
+  });
+
+  it("does not forecast budget cash that the month already posted", () => {
+    const points = cashForecast(data, 40, "2026-09-27");
+    const oct1 = points.find((p) => p.date === "2026-10-01");
+    assert.ok(oct1);
+    const pending = data.checks
+      .filter((c) => c.status === "pending" && (c.postDate || c.issueDate) === "2026-10-01")
+      .reduce((s, c) => s + c.amount, 0);
+    const bills = data.bills
+      .filter((b) => (b.status === "open" || b.status === "partial") && b.dueDate === "2026-10-01")
+      .reduce((s, b) => s + b.amount, 0);
+    assert.equal(oct1.outflows, pending + bills);
+    assert.ok(oct1.inflows >= 62_000_000, "trade-sales budget still fills a month with no matching invoices");
   });
 
   it("every journal balances", () => {
@@ -62,6 +80,20 @@ describe("Pacific Harbor sample", () => {
         receipts: Array(400),
         checks: Array(500),
         budgetItems: [{ id: "bud-pay", amount: 25_280_000 }],
+      }),
+      true,
+    );
+    assert.equal(
+      isOutdatedPacificHarborSample({
+        customers: Array(39),
+        vendors: Array(30),
+        employees: Array(14),
+        invoices: Array(500),
+        bills: Array(400),
+        receipts: Array(400),
+        checks: Array(500),
+        budgetItems: [{ id: "bud-pay", amount: 38_000_000 }],
+        recurrences: [{ id: "rec-pay1", nextDate: "2026-09-13" }],
       }),
       true,
     );

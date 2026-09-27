@@ -14,8 +14,24 @@ function bump(map: Map<string, number>, date: string, amount: number) {
   map.set(date, (map.get(date) ?? 0) + amount);
 }
 
-export function cashForecast(data: FinanceData, days = 90): ForecastPoint[] {
-  const start = todayIso();
+/** True when that month already has a check or an open bill on this account — the budget would count it twice. */
+export function monthAlreadyHasAccountCash(data: FinanceData, accountId: string, month: string): boolean {
+  if (!accountId || month.length < 7) return false;
+  for (const chk of data.checks) {
+    if (chk.accountId !== accountId) continue;
+    if (chk.status === "voided" || chk.status === "bounced") continue;
+    if ((chk.postDate || chk.issueDate || "").slice(0, 7) === month) return true;
+  }
+  for (const bill of data.bills ?? []) {
+    if (bill.accountId !== accountId) continue;
+    if (bill.status !== "open" && bill.status !== "partial") continue;
+    if ((bill.dueDate || bill.date || "").slice(0, 7) === month) return true;
+  }
+  return false;
+}
+
+export function cashForecast(data: FinanceData, days = 90, asOf = todayIso()): ForecastPoint[] {
+  const start = asOf;
   const thisMonth = start.slice(0, 7);
   let cash = totalCash(data) + pendingChecksTotal(data);
   const points: ForecastPoint[] = [];
@@ -45,7 +61,7 @@ export function cashForecast(data: FinanceData, days = 90): ForecastPoint[] {
       for (const item of data.budgetItems) {
         if (item.startMonth > month) continue;
         if (item.kind === "inflow") inflows += item.amount;
-        else outflows += item.amount;
+        else if (!monthAlreadyHasAccountCash(data, item.accountId ?? "", month)) outflows += item.amount;
       }
     }
 

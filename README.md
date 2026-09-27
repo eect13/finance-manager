@@ -1,4 +1,4 @@
-# Finance Manager v3.63.57
+# Finance Manager v3.63.58
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -27,6 +27,12 @@ Vite is installed with the packages — no global `vite` command. `.npmrc` has `
 
 After the Windows installer: Desktop has one **Finance Manager** shortcut (navy pillars). Pin that — do not keep leftover `finance-manager` aliases from older builds.
 
+## What's new in v3.63.58
+
+- **Sample payroll no longer double-posts:** Recurring rent, payroll, and power next dates are January 2027 — the 2026 year is already in the books, so Desk does not offer “Post 4 due.” Pay all on a company that already has a Staff payroll lump says it is a second run.
+- **Forecast skips covered months:** A budget outflow is left out of a month that already has a check or an open bill on that account. Trade-sales budget still fills months with no matching invoices.
+- **Close banner and payroll worksheets:** A sample with no finished statement says statements stop at the bank stamp (Jul 31), not “619 uncleared.” Reports say the lump does not fill SSS / PhilHealth / Pag-IBIG, and the 13th-month table is not the December lump. Opening a workspace JSON says it replaces every company.
+
 ## What's new in v3.63.57
 
 - **Staff payroll matches the named employees:** Semi-monthly lump is ₱190,000 (₱380,000 a month, plus 13th). Existing Pacific Harbor files with the old ₱252,800 budget get the Reload sample callout.
@@ -38,11 +44,6 @@ After the Windows installer: Desktop has one **Finance Manager** shortcut (navy 
 ## What's new in v3.63.56
 
 - **Finalize pass:** Recaptured README gallery against the mid-size Pacific Harbor sample. README changelog is this release plus the two before it — older notes stay in [docs/BUGS-AND-IMPROVEMENTS.md](docs/BUGS-AND-IMPROVEMENTS.md). Dead Options-density React store dropped; Comfortable boot script remains.
-
-## What's new in v3.63.55
-
-- **Compact remnant trim:** Options density stays gone. Force-Comfortable boot remains (clears old Compact localStorage). Unreachable Compact CSS token overrides and dead `isCompact` virt paths removed — spacing is Comfortable-only.
-- **Reload sample for existing profiles:** Options jump includes Sample; outdated/missing Pacific Harbor gets a clear callout and a emphasized Reload sample control. Confirm copy and toast match `resetDemo` (replaces the sample file with the mid-size seed; other companies stay).
 
 Older point-release notes live in [docs/BUGS-AND-IMPROVEMENTS.md](docs/BUGS-AND-IMPROVEMENTS.md).
 

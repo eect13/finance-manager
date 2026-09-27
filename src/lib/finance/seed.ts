@@ -121,16 +121,22 @@ export function isOutdatedPacificHarborSample(data: {
   receipts: unknown[];
   checks: unknown[];
   budgetItems?: Array<{ id?: string; amount?: number }>;
+  recurrences?: Array<{ id?: string; nextDate?: string }>;
 }): boolean {
   const docs = data.invoices.length + data.bills.length + data.receipts.length + data.checks.length;
   const payrollBudget = data.budgetItems?.find((b) => b.id === "bud-pay");
   const payrollStale = typeof payrollBudget?.amount === "number" && payrollBudget.amount < 38_000_000;
+  const seededRec = new Set(["rec-rent", "rec-pay1", "rec-pay2", "rec-power"]);
+  const recStale = (data.recurrences ?? []).some(
+    (r) => !!r.id && seededRec.has(r.id) && typeof r.nextDate === "string" && r.nextDate < "2027-01-01",
+  );
   return (
     data.customers.length < 35 ||
     data.vendors.length < 28 ||
     data.employees.length < 12 ||
     docs < 1700 ||
-    payrollStale
+    payrollStale ||
+    recStale
   );
 }
 
@@ -1810,7 +1816,7 @@ export function createSeed(): FinanceData {
       accountId: IDS.rent,
       memo: "Monthly warehouse",
       dayOfMonth: 1,
-      nextDate: "2026-09-01",
+      nextDate: "2027-01-01",
       active: true,
     },
     {
@@ -1823,7 +1829,7 @@ export function createSeed(): FinanceData {
       accountId: IDS.payroll,
       memo: "Semi-monthly payroll",
       dayOfMonth: 13,
-      nextDate: "2026-09-13",
+      nextDate: "2027-01-13",
       active: true,
     },
     {
@@ -1836,7 +1842,7 @@ export function createSeed(): FinanceData {
       accountId: IDS.payroll,
       memo: "Semi-monthly payroll",
       dayOfMonth: 27,
-      nextDate: "2026-09-27",
+      nextDate: "2027-01-27",
       active: true,
     },
     {
@@ -1849,7 +1855,7 @@ export function createSeed(): FinanceData {
       accountId: IDS.utilities,
       memo: "Meralco",
       dayOfMonth: 22,
-      nextDate: "2026-09-22",
+      nextDate: "2027-01-22",
       active: true,
     },
   ];

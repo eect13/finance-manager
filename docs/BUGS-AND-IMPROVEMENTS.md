@@ -1,6 +1,18 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-20. Updated for v3.63.57.
+Re-verified in code 2026-09-27. Updated for v3.63.58.
+
+## Fixed in v3.63.58
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| P1 | High | Pay all on the sample posted a second payroll on top of the Staff payroll lump | Employees copy and Pay all button say it is a second run |
+| P2 | High | Recurrences still due in Sep 2026 after the whole year was seeded | Next dates are Jan 2027; Desk no longer offers Post 4 due; old files get Reload sample |
+| P3 | Med | 90-day forecast added monthly budget on top of checks already in that month | Skip an outflow budget when that account already has a check or open bill that month |
+| P4 | Med | PH remittance and 13th-month table looked like nobody was paid | Payroll tab says the vendor lump does not fill those accounts or the 13th table |
+| P6 | Med | Desk close banner led with “619 uncleared” | No finished statement: “Statements stop at” the bank stamp |
+| P7 | Med | Workspace Open confirm talked about this company only | Title and body say every company is replaced |
+| P10 | Low | Find looked like it searched the whole company | Visible “Register only” line |
 
 ## Fixed in v3.63.57
 

@@ -262,7 +262,7 @@ function ForecastPage() {
   return (
     <AppShell
       title="Cash forecast"
-      description="Ninety-day cash from the bank estimate, pending checks, invoice due dates, then monthly budget items."
+      description="Ninety-day cash from the bank estimate, pending checks, and invoice due dates. A monthly budget fills a month only when that account has no check or open bill already."
       actions={
         <Button onClick={openNew}>
           <Plus />

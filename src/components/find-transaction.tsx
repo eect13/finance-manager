@@ -92,6 +92,7 @@ export function FindTransaction({ open, onClose }: { open: boolean; onClose: () 
             className="h-10 min-h-10 border-0 bg-transparent px-0 shadow-none focus-visible:ring-0"
           />
         </div>
+        <p className="px-4 pb-1 text-xs text-muted-foreground">Register only — checks, receipts, transfers, and payments. Not invoices, bills, or people.</p>
         <div className="grid grid-cols-2 gap-2 px-4 py-3">
           <Select value={type} onValueChange={(v) => setType(v as CashTypeFilter)}>
             <SelectTrigger className="h-9 min-h-9" aria-label="Type">

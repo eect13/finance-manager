@@ -821,6 +821,9 @@ function PayrollPanel({
         </table>
         <p className="px-4 py-3 text-xs text-muted-foreground">
           2026 PH statutory from posted paychecks. Use Export 1601-C CSV for the accountant’s remittance worksheet (not eBIRForms XML). {BIR_BOOKS_DISCLAIMER}
+          {p.sss === 0 && p.philhealth === 0 && p.pagibig === 0 && p.wht === 0 && data.checks.some((c) => c.payee === "Staff payroll" && !c.employeeId && c.status !== "voided")
+            ? " These books pay a Staff payroll vendor lump, so these accounts stay at zero until you post employee paychecks."
+            : ""}
         </p>
       </div>
       ) : null}
@@ -830,7 +833,7 @@ function PayrollPanel({
         <div className="border-b border-border px-4 py-3">
           <p className="text-sm font-medium">13th month estimate · {year}</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Prefer posted paycheck gross ÷ 12. Else salaried pro-rata: monthly rate × months worked ÷ 12 (hire month counts if any day worked). Basic pay only — not OT or allowances. Does not apply the ₱90,000 fringe exclusion or TRAIN year-end annualization. {BIR_BOOKS_DISCLAIMER}
+            Prefer posted paycheck gross ÷ 12. Else salaried pro-rata: monthly rate × months worked ÷ 12 (hire month counts if any day worked). Basic pay only — not OT or allowances. Does not apply the ₱90,000 fringe exclusion or TRAIN year-end annualization. Hourly people stay at zero until a paycheck is posted in their name. A December Staff payroll lump is not this table. {BIR_BOOKS_DISCLAIMER}
           </p>
         </div>
         <table className="text-sm" style={{ width: "100%" }}>

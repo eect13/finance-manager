@@ -6,8 +6,11 @@ import {
   monthlyFromPeriod,
   periodPayAmount,
   periodShare,
+  remittanceIsEmpty,
+  rosterStatutoryEstimate,
   sssMscCents,
 } from "./ph-payroll.ts";
+import { createSeed } from "./seed.ts";
 
 describe("PH statutory 2026", () => {
   it("maps MSC brackets (floor 5k, ceiling 35k)", () => {
@@ -58,5 +61,23 @@ describe("PH statutory 2026", () => {
     assert.equal(periodPayAmount(4_500_000, "monthly", "salary"), 4_500_000);
     assert.equal(periodPayAmount(4_500_000, "semimonthly", "salary"), 2_250_000);
     assert.equal(periodPayAmount(35_000, "weekly", "hourly"), 0);
+  });
+
+  it("roster estimate fills statutory when the sample remittance accounts are empty", () => {
+    const data = createSeed();
+    const est = rosterStatutoryEstimate(data);
+    assert.ok(est.rows.length >= 8, `salaried rows ${est.rows.length}`);
+    assert.ok(est.skippedHourly >= 3);
+    assert.ok(est.monthly.sssEe > 0);
+    assert.ok(est.monthly.philEe > 0);
+    assert.ok(est.monthly.pagEe > 0);
+    assert.ok(est.monthly.employerCost > 0);
+    assert.equal(
+      est.monthly.sssEe,
+      est.rows.reduce((s, r) => s + r.parts.sssEe, 0),
+    );
+    assert.equal(remittanceIsEmpty({
+      sss: 0, philhealth: 0, pagibig: 0, wht: 0, other: 0, employer: 0,
+    }), true);
   });
 });

@@ -40,6 +40,7 @@ import { currentMonth, formatMoney, parseAmountToCents } from "@/lib/finance/for
 import { openReceivables, pendingChecksTotal, totalCash } from "@/lib/finance/ledger";
 import { useEntrySort } from "@/lib/finance/sort";
 import { useFinanceData, useFinanceStore } from "@/lib/finance/store";
+import { FORECAST_DAY_OPTIONS, parseForecastDays } from "@/lib/finance/types";
 import type { BudgetItem } from "@/lib/finance/types";
 
 export const Route = createFileRoute("/forecast")({ component: ForecastPage });
@@ -126,6 +127,8 @@ function ForecastPage() {
   const { settings, budgetItems } = data;
   const upsertBudget = useFinanceStore((s) => s.upsertBudget);
   const removeBudget = useFinanceStore((s) => s.removeBudget);
+  const updateSettings = useFinanceStore((s) => s.updateSettings);
+  const days = parseForecastDays(settings.forecastDays);
 
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -133,8 +136,8 @@ function ForecastPage() {
   const [form, setForm] = useState<BudgetForm>(() => emptyBudgetForm());
 
   const points = useMemo(
-    () => cashForecast(data, 90),
-    [data.settings, data.checks, data.invoices, data.bills, data.budgetItems, data.journals],
+    () => cashForecast(data, days),
+    [days, data.settings, data.checks, data.invoices, data.bills, data.budgetItems, data.journals],
   );
   const end = points[points.length - 1];
 
@@ -262,12 +265,20 @@ function ForecastPage() {
   return (
     <AppShell
       title="Cash forecast"
-      description="Ninety-day cash from the bank estimate, pending checks, and invoice due dates. A monthly budget fills a month only when that account has no check or open bill already."
+      description="Cash from the bank estimate, pending checks, and invoice due dates. A monthly budget fills a month only when that account has no check or open bill already."
       actions={
-        <Button onClick={openNew}>
-          <Plus />
-          Budget item
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <FilterPills
+            value={String(days)}
+            onChange={(v) => updateSettings({ forecastDays: parseForecastDays(v) })}
+            label="Horizon"
+            options={FORECAST_DAY_OPTIONS.map((n) => ({ id: String(n), label: `${n}d` }))}
+          />
+          <Button onClick={openNew}>
+            <Plus />
+            Budget item
+          </Button>
+        </div>
       }
     >
       <section className="stat-grid stat-grid-3">
@@ -289,15 +300,15 @@ function ForecastPage() {
         </Card>
         <Card>
           <CardContent>
-            <p className="eyebrow">In 90 days</p>
+            <p className="eyebrow">In {days} days</p>
             <Money amount={end?.cash ?? 0} currency={settings.currency} className="stat-value" />
           </CardContent>
         </Card>
       </section>
       <Card className="mt-3">
         <CardContent className="p-4 sm:p-5">
-          <p className="eyebrow">90-day path</p>
-          <Sparkline values={points.map((p) => p.cash)} className="mt-2 h-12 w-full" label="Ninety-day cash path" />
+          <p className="eyebrow">{days}-day path</p>
+          <Sparkline values={points.map((p) => p.cash)} className="mt-2 h-12 w-full" label={`${days}-day cash path`} />
         </CardContent>
       </Card>
 

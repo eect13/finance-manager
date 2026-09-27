@@ -173,3 +173,62 @@ export function payrollRemittance(data: FinanceData, asOf?: string) {
     employer: bal(PH_PAYROLL_CODES.employer),
   };
 }
+
+export function remittanceIsEmpty(
+  p: ReturnType<typeof payrollRemittance>,
+): boolean {
+  return p.sss === 0 && p.philhealth === 0 && p.pagibig === 0 && p.wht === 0 && p.other === 0 && p.employer === 0;
+}
+
+export type RosterStatutoryRow = {
+  employeeId: string;
+  name: string;
+  monthlyGross: number;
+  statutory: boolean;
+  parts: PhPayrollParts;
+};
+
+export type RosterStatutoryEstimate = {
+  rows: RosterStatutoryRow[];
+  monthly: PhPayrollParts;
+  skippedHourly: number;
+};
+
+function addParts(a: PhPayrollParts, b: PhPayrollParts): PhPayrollParts {
+  return {
+    monthlyGross: a.monthlyGross + b.monthlyGross,
+    sssEe: a.sssEe + b.sssEe,
+    sssEr: a.sssEr + b.sssEr,
+    sssEc: a.sssEc + b.sssEc,
+    philEe: a.philEe + b.philEe,
+    philEr: a.philEr + b.philEr,
+    pagEe: a.pagEe + b.pagEe,
+    pagEr: a.pagEr + b.pagEr,
+    bir: a.bir + b.bir,
+    extra: a.extra + b.extra,
+    net: a.net + b.net,
+    employerCost: a.employerCost + b.employerCost,
+    employeeDeduct: a.employeeDeduct + b.employeeDeduct,
+  };
+}
+
+/** Monthly statutory worksheet from the active salaried roster. Hourly staff need posted slips. */
+export function rosterStatutoryEstimate(data: FinanceData): RosterStatutoryEstimate {
+  const rows: RosterStatutoryRow[] = [];
+  let monthly = { ...ZERO };
+  let skippedHourly = 0;
+  const staff = [...(data.employees ?? [])].sort((a, b) => a.name.localeCompare(b.name));
+  for (const emp of staff) {
+    if (!emp.active) continue;
+    if (emp.payType === "hourly") {
+      skippedHourly += 1;
+      continue;
+    }
+    if (!emp.rate) continue;
+    const statutory = emp.statutory !== false;
+    const parts = computePhPayroll({ gross: emp.rate, period: "monthly", statutory });
+    rows.push({ employeeId: emp.id, name: emp.name, monthlyGross: emp.rate, statutory, parts });
+    monthly = addParts(monthly, parts);
+  }
+  return { rows, monthly, skippedHourly };
+}

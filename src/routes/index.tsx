@@ -13,6 +13,7 @@ import { formatDate } from "@/lib/finance/format";
 import { billBalance, cashByBankId, invoiceBalance, openPayables, openReceivables, pendingChecksTotal, totalCash } from "@/lib/finance/ledger";
 import { openProps } from "@/lib/finance/open-record";
 import { closeChecklist, monthEndIso } from "@/lib/finance/close";
+import { parseForecastDays } from "@/lib/finance/types";
 import { useFinanceData, useFinanceStore } from "@/lib/finance/store";
 
 export const Route = createFileRoute("/")({ component: Desk });
@@ -29,9 +30,10 @@ function Desk() {
   const payables = useMemo(() => openPayables(data), [data]);
   const projected = useMemo(() => projectedCash(data), [data]);
   const byBank = useMemo(() => cashByBankId(data), [data]);
+  const days = parseForecastDays(settings.forecastDays);
   const points = useMemo(
-    () => cashForecast(data, 90),
-    [data.settings, data.checks, data.invoices, data.bills, data.budgetItems, data.journals],
+    () => cashForecast(data, days),
+    [days, data.settings, data.checks, data.invoices, data.bills, data.budgetItems, data.journals],
   );
   const spark = useMemo(() => points.map((p) => p.cash), [points]);
   const in90 = points[points.length - 1]?.cash ?? projected;
@@ -126,11 +128,11 @@ function Desk() {
       <Card className="mt-3">
         <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-end sm:gap-6 sm:p-5">
           <div className="min-w-0 flex-1">
-            <p className="eyebrow">90-day cash</p>
-            <Sparkline values={spark} className="mt-2 h-12 w-full" label="Ninety-day cash path" />
+            <p className="eyebrow">{days}-day cash</p>
+            <Sparkline values={spark} className="mt-2 h-12 w-full" label={`${days}-day cash path`} />
           </div>
           <div className="shrink-0 sm:text-right">
-            <p className="text-xs text-muted-foreground">In 90 days</p>
+            <p className="text-xs text-muted-foreground">In {days} days</p>
             <Money amount={in90} currency={settings.currency} className="text-lg font-medium" />
             <p className="mt-1 text-xs text-muted-foreground">
               After invoices in and bills out:{" "}

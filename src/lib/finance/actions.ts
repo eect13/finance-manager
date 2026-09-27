@@ -30,7 +30,7 @@ import type {
   Settings,
   Vendor,
 } from "./types";
-import { DEFAULT_REGIONAL_MODULES } from "./types";
+import { DEFAULT_REGIONAL_MODULES, parseForecastDays } from "./types";
 import { computePhPayroll, periodPayAmount, PH_PAYROLL_CODES } from "./ph-payroll";
 import { capAuditEvents } from "./audit-cap";
 import { applyRegisterOrderPlacement, cashBook, pruneRegisterOrder, type ArrangePlace, type CashLineKind } from "./register";
@@ -1535,6 +1535,7 @@ export function updateSettings(data: FinanceData, patch: Partial<Settings>): Fin
     },
     fxRates: patch.fxRates ?? data.settings.fxRates ?? [],
     secondaryCurrency: patch.secondaryCurrency ?? data.settings.secondaryCurrency ?? "",
+    forecastDays: parseForecastDays(patch.forecastDays ?? data.settings.forecastDays),
   };
   let accounts = data.accounts;
   // PH payroll on → ensure statutory account stubs (never delete when turning off).

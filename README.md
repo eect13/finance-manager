@@ -1,4 +1,4 @@
-# Finance Manager v3.63.58
+# Finance Manager v3.63.59
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -27,6 +27,11 @@ Vite is installed with the packages — no global `vite` command. `.npmrc` has `
 
 After the Windows installer: Desktop has one **Finance Manager** shortcut (navy pillars). Pin that — do not keep leftover `finance-manager` aliases from older builds.
 
+## What's new in v3.63.59
+
+- **Forecast horizon is 30 / 60 / 90 / 180 days:** Pills on Cash forecast store the choice with the company file. Desk sparkline and “in N days” follow it.
+- **Payroll tax worksheet when remittance is zero:** Reports → Payroll still shows the empty 2211–2214 balances, then a monthly SSS / PhilHealth / Pag-IBIG / TRAIN estimate from the active salaried roster. Does not post or file.
+
 ## What's new in v3.63.58
 
 - **Sample payroll no longer double-posts:** Recurring rent, payroll, and power next dates are January 2027 — the 2026 year is already in the books, so Desk does not offer “Post 4 due.” Pay all on a company that already has a Staff payroll lump says it is a second run.
@@ -40,10 +45,6 @@ After the Windows installer: Desktop has one **Finance Manager** shortcut (navy 
 - **Regional packs are worksheets:** Settings says so on the card, not only behind More — estimates and CSV, not IRS / CPF / ATO / HMRC / BIR eFiling.
 - **Phone Desk cash tiles:** “In the bank” stays one line; bank nicknames ellipsize instead of wrapping.
 - **Opening splash:** App mark + Finance Manager while IndexedDB hydrates. No flash of the sample over your file.
-
-## What's new in v3.63.56
-
-- **Finalize pass:** Recaptured README gallery against the mid-size Pacific Harbor sample. README changelog is this release plus the two before it — older notes stay in [docs/BUGS-AND-IMPROVEMENTS.md](docs/BUGS-AND-IMPROVEMENTS.md). Dead Options-density React store dropped; Comfortable boot script remains.
 
 Older point-release notes live in [docs/BUGS-AND-IMPROVEMENTS.md](docs/BUGS-AND-IMPROVEMENTS.md).
 
@@ -88,7 +89,8 @@ Books do **not** follow you to another phone or laptop. Download a backup on one
 - **Register** opens on this month. Filters → Month, Year, or All dates (last calendar year through an open end). Tick lines to delete or reassign bank. Double-click or Enter opens Post. Print is an on-screen sheet (Letter/A4 and friends).
 - **Reports → Aging** stacks Receivables then Payables (never two skinny columns).
 - **Close** recs every live bank, posts recurring, then locks. Reopen is a dated event (type REOPEN).
-- **Employees → Pay**: salary uses the rate; hourly is hours × rate. Optional withholding posts to Payroll Withholdings (2210).
+- **Employees → Pay**: salary uses the rate; hourly is hours × rate. With statutory on, the slip splits SSS / PhilHealth / Pag-IBIG / TRAIN. Reports → Payroll shows posted remittance, or a roster estimate when those accounts are still zero.
+- **Forecast**: pick 30 / 60 / 90 / 180 days. Monthly budget fills a future month only when that account has no check or open bill already.
 - **Backup**: Options → Backup. Pick a backup folder (desktop) then Save company file writes JSON there; otherwise download/save picker. Open replaces this company; Merge adds missing records; Restore last local copy is this browser’s snapshot. Header Export is CSV only.
 
 The register is still the book. See [docs/BUGS-AND-IMPROVEMENTS.md](docs/BUGS-AND-IMPROVEMENTS.md) for the full fixed/open list and older release notes.

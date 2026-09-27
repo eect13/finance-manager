@@ -35,7 +35,7 @@ import {
   withholding1601cRows,
 } from "@/lib/finance/ph-bir";
 import { VAT_BOOKS_DISCLAIMER } from "@/lib/finance/generic-vat";
-import { payrollRemittance } from "@/lib/finance/ph-payroll";
+import { payrollRemittance, remittanceIsEmpty, rosterStatutoryEstimate } from "@/lib/finance/ph-payroll";
 import { FxPanel, GenericVatWorkbook, RegionalPayrollSections } from "@/components/regional-reports";
 import { modulesOf, type Account } from "@/lib/finance/types";
 import { openProps, openTxn } from "@/lib/finance/open-record";
@@ -755,6 +755,10 @@ function PayrollPanel({
     () => (showPhPayroll ? payrollRemittance(data, asOf) : null),
     [showPhPayroll, data, asOf],
   );
+  const roster = useMemo(
+    () => (showPhPayroll && p && remittanceIsEmpty(p) ? rosterStatutoryEstimate(data) : null),
+    [showPhPayroll, p, data],
+  );
   const year = Number((asOf || todayIso()).slice(0, 4)) || new Date().getFullYear();
   const from = `${year}-01-01`;
   const thirteenth = useMemo(
@@ -825,6 +829,56 @@ function PayrollPanel({
             ? " These books pay a Staff payroll vendor lump, so these accounts stay at zero until you post employee paychecks."
             : ""}
         </p>
+      </div>
+      ) : null}
+
+      {roster && roster.rows.length > 0 ? (
+      <div className="list-grid list-scroll overflow-auto rounded-2xl table-paper elevation outline-none">
+        <div className="border-b border-border px-4 py-3">
+          <p className="text-sm font-medium">Roster statutory estimate · monthly</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Posted remittance accounts are zero, so this worksheet uses each active salaried person’s monthly rate and the 2026 PH tables. It does not post journals or file SSS / PhilHealth / Pag-IBIG / BIR. Hourly staff stay out until a paycheck is in their name
+            {roster.skippedHourly ? ` (${roster.skippedHourly} hourly skipped)` : ""}.
+          </p>
+        </div>
+        <table className="text-sm" style={{ width: "100%" }}>
+          <thead>
+            <tr className="border-b border-border text-muted-foreground">
+              <th className="px-4 py-3 text-center font-medium">Employee</th>
+              <th className="px-4 py-3 text-center font-medium">Gross</th>
+              <th className="px-4 py-3 text-center font-medium">SSS EE</th>
+              <th className="px-4 py-3 text-center font-medium">PH EE</th>
+              <th className="px-4 py-3 text-center font-medium">HDMF EE</th>
+              <th className="px-4 py-3 text-center font-medium">WHT</th>
+              <th className="px-4 py-3 text-center font-medium">Net</th>
+              <th className="px-4 py-3 text-center font-medium">ER cost</th>
+            </tr>
+          </thead>
+          <tbody>
+            {roster.rows.map((r) => (
+              <tr key={r.employeeId} className="border-b border-border/70 last:border-0">
+                <td className="px-4 py-3">{r.name}</td>
+                <td className="px-4 py-3"><Money amount={r.monthlyGross} currency={currency} /></td>
+                <td className="px-4 py-3"><Money amount={r.parts.sssEe} currency={currency} /></td>
+                <td className="px-4 py-3"><Money amount={r.parts.philEe} currency={currency} /></td>
+                <td className="px-4 py-3"><Money amount={r.parts.pagEe} currency={currency} /></td>
+                <td className="px-4 py-3"><Money amount={r.parts.bir} currency={currency} /></td>
+                <td className="px-4 py-3"><Money amount={r.parts.net} currency={currency} /></td>
+                <td className="px-4 py-3"><Money amount={r.parts.employerCost} currency={currency} /></td>
+              </tr>
+            ))}
+            <tr className="border-t border-border font-medium">
+              <td className="px-4 py-3">Roster total</td>
+              <td className="px-4 py-3"><Money amount={roster.monthly.monthlyGross} currency={currency} /></td>
+              <td className="px-4 py-3"><Money amount={roster.monthly.sssEe} currency={currency} /></td>
+              <td className="px-4 py-3"><Money amount={roster.monthly.philEe} currency={currency} /></td>
+              <td className="px-4 py-3"><Money amount={roster.monthly.pagEe} currency={currency} /></td>
+              <td className="px-4 py-3"><Money amount={roster.monthly.bir} currency={currency} /></td>
+              <td className="px-4 py-3"><Money amount={roster.monthly.net} currency={currency} /></td>
+              <td className="px-4 py-3"><Money amount={roster.monthly.employerCost} currency={currency} /></td>
+            </tr>
+          </tbody>
+        </table>
       </div>
       ) : null}
 

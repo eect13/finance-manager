@@ -109,6 +109,14 @@ export function toggleRegisterCol(cols: RegisterCols, id: RegisterColId): Regist
   return next;
 }
 
+export const FORECAST_DAY_OPTIONS = [30, 60, 90, 180] as const;
+export type ForecastDays = (typeof FORECAST_DAY_OPTIONS)[number];
+
+export function parseForecastDays(raw: unknown): ForecastDays {
+  const n = Number(raw);
+  return n === 30 || n === 60 || n === 90 || n === 180 ? n : 90;
+}
+
 export interface Settings {
   companyName: string;
   companyAddress: string;
@@ -146,6 +154,8 @@ export interface Settings {
   secondaryCurrency: string;
   /** Manual FX rates (units of `to` per 1 `from`). */
   fxRates: FxRate[];
+  /** Cash-forecast horizon on Desk and Forecast. 30, 60, 90, or 180. */
+  forecastDays: ForecastDays;
 }
 
 export interface RegionalModules {
@@ -723,6 +733,7 @@ export const DEFAULT_SETTINGS: Settings = {
   modules: { ...DEFAULT_REGIONAL_MODULES },
   secondaryCurrency: "",
   fxRates: [],
+  forecastDays: 90,
 };
 
 /** Infer PH regional modules for legacy books that lack the flags. */

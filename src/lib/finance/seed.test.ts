@@ -2,6 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { postDueRecurring } from "./actions.ts";
 import { cashForecast } from "./forecast.ts";
+import { parseForecastDays } from "./types.ts";
 import { createSeed, isOutdatedPacificHarborSample } from "./seed.ts";
 
 describe("Pacific Harbor sample", () => {
@@ -46,6 +47,13 @@ describe("Pacific Harbor sample", () => {
       .reduce((s, b) => s + b.amount, 0);
     assert.equal(oct1.outflows, pending + bills);
     assert.ok(oct1.inflows >= 62_000_000, "trade-sales budget still fills a month with no matching invoices");
+  });
+
+  it("forecast length follows the chosen horizon", () => {
+    assert.equal(parseForecastDays(60), 60);
+    assert.equal(parseForecastDays(7), 90);
+    assert.equal(cashForecast(data, 30, "2026-09-27").length, 30);
+    assert.equal(cashForecast(data, 180, "2026-09-27").length, 180);
   });
 
   it("every journal balances", () => {

@@ -1,4 +1,4 @@
-import { DEFAULT_SETTINGS, normalizeRegionalModules, normalizeRegisterCols, parseRecon, type ReconStatus } from "./types";
+import { DEFAULT_SETTINGS, normalizeRegionalModules, normalizeRegisterCols, parseForecastDays, parseRecon, type ReconStatus } from "./types";
 import { parseDateFormat } from "./format";
 import { parseMethod } from "./methods";
 import { ensureRegisterOrder } from "./register";
@@ -27,6 +27,7 @@ export function normalizeBooks(raw: unknown): FinanceData {
     useThousandSeparators: merged.useThousandSeparators !== false,
     decimalPlaces: Number.isFinite(decimals) ? Math.min(4, Math.max(0, Math.round(decimals))) : 2,
     dateFormat: parseDateFormat(merged.dateFormat),
+    forecastDays: parseForecastDays(merged.forecastDays),
     ...regional,
   };
   const customers = asArray<Customer>(p.customers).map((c, i) => ({

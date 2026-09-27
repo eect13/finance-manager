@@ -1,6 +1,13 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-27. Updated for v3.63.58.
+Re-verified in code 2026-09-27. Updated for v3.63.59.
+
+## Fixed in v3.63.59
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| F1 | Med | 90-day forecast was fixed; brief asked for 30/60/90/180 | `settings.forecastDays` + pills on Forecast; Desk follows |
+| P5 | Med | PH remittance table stayed ₱0 on the vendor-lump sample | Roster statutory estimate worksheet when posted 2211–2214 are empty |
 
 ## Fixed in v3.63.58
 

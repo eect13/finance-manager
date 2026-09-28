@@ -8,7 +8,10 @@ Pacific Harbor Trading is the default **sample company** — a full 2026 year of
 
 The app mark is a **navy tile with cream pillars**. Windows uses a BMP 32-bit `.ico` (PNG-in-ICO showed as a white square). NSIS writes one Desktop shortcut named **Finance Manager** (navy tile). A second launch focuses the existing window.
 
-## Install (fresh GitHub download)
+## Install
+
+Builds from `deploy.bat` land under **`Desktop\Vibe Apps\Finance Manager\Installers\`** by default.
+ (fresh GitHub download)
 
 Unzip the repo (a second unzip named `finance-manager-main (1)` is fine) so `deploy.bat` sits next to `package.json`. Then:
 

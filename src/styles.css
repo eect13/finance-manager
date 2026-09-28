@@ -3596,14 +3596,14 @@ html.tauri-android .app-header-inner {
     user-select: none;
   }
   .register-phone-grip[aria-pressed="true"] {
-    box-shadow: 0 0 0 2px color-mix(in oklab, var(--primary) 45%, transparent);
+    box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-primary) 45%, transparent);
   }
   /* Passbook arrange: insert marker above/below drop target row */
   [data-drop-place="before"] {
-    box-shadow: inset 0 2px 0 0 color-mix(in oklab, var(--primary) 75%, transparent);
+    box-shadow: inset 0 2px 0 0 color-mix(in oklab, var(--color-primary) 75%, transparent);
   }
   [data-drop-place="after"] {
-    box-shadow: inset 0 -2px 0 0 color-mix(in oklab, var(--primary) 75%, transparent);
+    box-shadow: inset 0 -2px 0 0 color-mix(in oklab, var(--color-primary) 75%, transparent);
   }
   .register-phone-move-ghost {
     position: fixed;
@@ -3617,7 +3617,7 @@ html.tauri-android .app-header-inner {
     font-weight: 600;
     line-height: 1.25;
     color: var(--color-primary-foreground, #fff);
-    background: color-mix(in oklab, var(--primary) 92%, #000);
+    background: color-mix(in oklab, var(--color-primary) 92%, #000);
     box-shadow: 0 8px 24px color-mix(in oklab, #000 28%, transparent);
     white-space: nowrap;
     overflow: hidden;
@@ -4035,13 +4035,13 @@ html.tauri-android .app-header-inner {
 }
 .register-phone-grip[aria-pressed="true"],
 .register-desk-grip[aria-pressed="true"] {
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--primary) 45%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-primary) 45%, transparent);
 }
 [data-drop-place="before"] {
-  box-shadow: inset 0 2px 0 0 color-mix(in oklab, var(--primary) 75%, transparent);
+  box-shadow: inset 0 2px 0 0 color-mix(in oklab, var(--color-primary) 75%, transparent);
 }
 [data-drop-place="after"] {
-  box-shadow: inset 0 -2px 0 0 color-mix(in oklab, var(--primary) 75%, transparent);
+  box-shadow: inset 0 -2px 0 0 color-mix(in oklab, var(--color-primary) 75%, transparent);
 }
 .register-phone-move-ghost {
   position: fixed;
@@ -4055,7 +4055,7 @@ html.tauri-android .app-header-inner {
   font-weight: 600;
   line-height: 1.25;
   color: var(--color-primary-foreground, #fff);
-  background: color-mix(in oklab, var(--primary) 92%, #000);
+  background: color-mix(in oklab, var(--color-primary) 92%, #000);
   box-shadow: 0 8px 24px color-mix(in oklab, #000 28%, transparent);
   white-space: nowrap;
   overflow: hidden;
@@ -4126,7 +4126,7 @@ body.is-phone-move-dragging {
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--color-primary-foreground, #fff);
-  background: color-mix(in oklab, var(--primary) 92%, #000);
+  background: color-mix(in oklab, var(--color-primary) 92%, #000);
   box-shadow: 0 6px 18px color-mix(in oklab, #000 25%, transparent);
   white-space: nowrap;
 }

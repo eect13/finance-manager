@@ -17,7 +17,12 @@ import { FORECAST_DAY_OPTIONS, parseForecastDays } from "@/lib/finance/types";
 import { FilterPills } from "@/components/filter-pills";
 import { useFinanceData, useFinanceStore } from "@/lib/finance/store";
 
-export const Route = createFileRoute("/")({ component: Desk });
+export const Route = createFileRoute("/")({
+  head: () => ({
+    links: [{ rel: "canonical", href: "https://finance-manager-phi-self.vercel.app/" }],
+  }),
+  component: Desk,
+});
 
 function Desk() {
   const data = useFinanceData();

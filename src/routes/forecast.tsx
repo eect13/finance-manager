@@ -84,6 +84,11 @@ type BudgetForm = {
   startMonth: string;
 };
 
+function budgetUntagged(name: string): boolean {
+  const token = name.trim().split(/\s+/)[0] ?? "";
+  return token.length < 3;
+}
+
 function emptyBudgetForm(): BudgetForm {
   return {
     name: "",
@@ -371,6 +376,7 @@ function ForecastPage() {
                     onClick={() => openEdit(item)}
                   >
                     {item.name}
+                    {budgetUntagged(item.name) ? <span className="text-muted-foreground"> · Untagged</span> : null}
                   </button>
                   <span className="item-card-meta block break-words text-muted-foreground">
                     {item.kind === "inflow" ? "Inflow" : "Outflow"} · from {item.startMonth}
@@ -502,6 +508,9 @@ function ForecastPage() {
                               data-align={budgetAligns.aligns.name ?? "left"}
                             >
                               {item.name}
+                              {budgetUntagged(item.name) ? (
+                                <span className="text-muted-foreground"> · Untagged</span>
+                              ) : null}
                             </td>
                             <td
                               className={cn("px-4 py-2", alignClass(budgetAligns.aligns.kind ?? "center"))}
@@ -555,7 +564,9 @@ function ForecastPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editId ? "Edit budget item" : "Budget item"}</DialogTitle>
-            <DialogDescription>Repeats every month from the start month onward.</DialogDescription>
+            <DialogDescription>
+              Repeats every month from the start month onward. A name shorter than one word of three letters is Untagged — the forecast can only match it by an exact amount.
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4">
             <Field label="Name">

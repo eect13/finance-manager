@@ -831,7 +831,7 @@ function PayrollPanel({
           </tbody>
         </table>
         <p className="px-4 py-3 text-xs text-muted-foreground">
-          2026 PH statutory from posted paychecks. Use Export 1601-C CSV for the accountant’s remittance worksheet (not eBIRForms XML). {BIR_BOOKS_DISCLAIMER}
+          2026 PH statutory from posted paychecks. This is a period worksheet, not the annual income tax return or TRAIN year-end annualization. Use Export 1601-C CSV for the accountant’s remittance worksheet (not eBIRForms XML). {BIR_BOOKS_DISCLAIMER}
           {p.sss === 0 && p.philhealth === 0 && p.pagibig === 0 && p.wht === 0 && data.checks.some((c) => c.payee === "Staff payroll" && !c.employeeId && c.status !== "voided")
             ? " These books pay a Staff payroll vendor lump, so these accounts stay at zero until you post employee paychecks."
             : ""}
@@ -844,7 +844,7 @@ function PayrollPanel({
         <div className="border-b border-border px-4 py-3">
           <p className="text-sm font-medium">Roster statutory estimate · each person’s pay period</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Posted remittance accounts are zero, so this worksheet uses each active salaried rate and pay period (semi-monthly is half) with the 2026 PH tables. It does not post journals or file. Hourly staff stay out until a paycheck is in their name
+            Posted remittance accounts are zero, so this worksheet uses each active salaried rate and pay period (semi-monthly is half) with the 2026 PH tables. Period worksheet only — not the annual income tax return. It does not post journals or file. Hourly staff stay out until a paycheck is in their name
             {roster.skippedHourly ? ` (${roster.skippedHourly} hourly skipped)` : ""}.
           </p>
         </div>
@@ -894,7 +894,7 @@ function PayrollPanel({
         <div className="border-b border-border px-4 py-3">
           <p className="text-sm font-medium">13th month estimate · {year}</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Prefer posted paycheck gross ÷ 12. Else salaried pro-rata: monthly rate × months worked ÷ 12 (hire month counts if any day worked). Basic pay only — not OT or allowances. Does not apply the ₱90,000 fringe exclusion or TRAIN year-end annualization. Hourly people stay at zero until a paycheck is posted in their name. A December Staff payroll lump is not this table. {BIR_BOOKS_DISCLAIMER}
+            Prefer posted paycheck gross ÷ 12. Else salaried pro-rata: monthly rate × months worked ÷ 12 (hire month counts if any day worked). Basic pay only — not OT or allowances. Period worksheet — not the annual income tax return, and it does not apply the ₱90,000 fringe exclusion or TRAIN year-end annualization. Hourly people stay at zero until a paycheck is posted in their name. A December Staff payroll lump is not this table. {BIR_BOOKS_DISCLAIMER}
           </p>
         </div>
         <table className="text-sm" style={{ width: "100%" }}>

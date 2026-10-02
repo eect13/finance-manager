@@ -1,6 +1,14 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-27. Updated for v3.63.61.
+Re-verified in code 2026-09-27. Updated for v3.63.62.
+
+## Fixed in v3.63.62
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| Y1 | High | A decade of daily postings stayed in the hot file after close | Pack closed year downloads a restore file and leaves one condensed journal. Open items, budgets, and the roster stay. Trial balance matches. |
+| Y2 | Low | A budget with no usable name looked like the others | The row says Untagged. Forecast still matches that line only by an exact amount. |
+| Y3 | Low | TRAIN / payroll tables could be read as the annual return | Payroll, roster estimate, and 13th month say they are a period worksheet, not the annual income tax return. |
 
 ## Fixed in v3.63.61
 

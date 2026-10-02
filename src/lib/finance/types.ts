@@ -40,7 +40,8 @@ export type JournalSource =
   | "receipt"
   | "bill"
   | "bill-payment"
-  | "close";
+  | "close"
+  | "condensed";
 
 export type OpenKind = "invoice" | "bill" | "receipt" | "check" | "customer" | "vendor" | "bank" | "journal";
 

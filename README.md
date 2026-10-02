@@ -1,4 +1,4 @@
-# Finance Manager v3.63.61
+# Finance Manager v3.63.62
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -27,6 +27,11 @@ Vite is installed with the packages — no global `vite` command. `.npmrc` has `
 
 After the Windows installer: Desktop has one **Finance Manager** shortcut (navy pillars). Pin that — do not keep leftover `finance-manager` aliases from older builds.
 
+## What's new in v3.63.62
+
+- **A closed year can leave the file:** Options → Storage → Pack closed year. Books must already be closed through that date. Expenses and cleared documents move into a year file you can restore. Open items, budgets, and the roster stay. Balances stay the same.
+- **Two honesty lines:** A budget with no usable name says Untagged. Payroll says the worksheet is not the annual return.
+
 ## What's new in v3.63.61
 
 - **Forecast counts what is still open:** Overdue invoices and bills land today. A budget line adds only the gap (a half payroll check leaves the other half). This month’s leftover budget lands today, not next month.
@@ -34,14 +39,8 @@ After the Windows installer: Desktop has one **Finance Manager** shortcut (navy 
 
 ## What's new in v3.63.60
 
-- **Dates type like QuickBooks:** 09131992, 091392, 91326, 0913, 9/13/2026 all resolve. Amounts accept ₱ / $ / spaces / (1,000.50).
-- **Pay all cannot double the lump:** A month that already has a Staff payroll vendor check will not post a second salaried run. Reports → Payroll estimate uses each person’s pay period (semi-monthly is half) and exports CSV.
-- **Forecast covers the right line:** A budget is skipped when a matching check/bill (name or amount, including a half-month payroll) or enough open invoices already sit in that month. Horizon pills are on Desk too.
-
-## What's new in v3.63.59
-
-- **Forecast horizon is 30 / 60 / 90 / 180 days:** Pills on Cash forecast store the choice with the company file. Desk sparkline and “in N days” follow it.
-- **Payroll tax worksheet when remittance is zero:** Reports → Payroll still shows the empty 2211–2214 balances, then a statutory estimate from the active salaried roster. Does not post or file.
+- **Dates type like QuickBooks:** 09131992, 091392, 91326, and 9/13/2026 all resolve. Amounts accept ₱, $, spaces, and parentheses.
+- **Forecast covers the right line:** A budget adds only the uncovered gap. Horizon pills are on Desk too.
 
 Older point-release notes live in [docs/BUGS-AND-IMPROVEMENTS.md](docs/BUGS-AND-IMPROVEMENTS.md).
 

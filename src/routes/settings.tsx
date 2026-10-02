@@ -22,7 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { canPickBackupFolder, chooseBackupFolder, clearBackupFolder, getBackupFolderName, hydrateBackupFolder, saveCompanyFilePreferFolder, useBackupFolderName } from "@/lib/finance/backup-folder";
-import { backupPayload, parseBackupFile } from "@/lib/finance/export";
+import { backupPayload, parseBackupFile, saveCompanyFile } from "@/lib/finance/export";
 import { listLocalBackups, readLocalBackup } from "@/lib/finance/local-backup";
 import { isOutdatedPacificHarborSample, SAMPLE_COMPANY_ID } from "@/lib/finance/seed";
 import { fitColumnWidth } from "@/lib/finance/fit-column";
@@ -30,6 +30,7 @@ import { formatDate, todayIso } from "@/lib/finance/format";
 import { useEntrySort } from "@/lib/finance/sort";
 import { UNDO_MAX, useFinanceData, useFinanceStore } from "@/lib/finance/store";
 import { browserStorage, countEntries, formatBytes, jsonSize } from "@/lib/finance/storage-usage";
+import { archiveClosedYear, parseYearArchive, yearArchiveFilename, yearArchivePayload } from "@/lib/finance/year-archive";
 import { newId } from "@/lib/finance/ids";
 import { COUNTRY_TAX_PACKS, CURRENCIES, countryTaxPackForCurrency, settingsPatchForCountryPack, withModule, type RecurringItem } from "@/lib/finance/types";
 import { useShallow } from "zustand/react/shallow";
@@ -861,7 +862,7 @@ function SettingsPage() {
             <OptionsDescMore>
               Books live in this browser as IndexedDB (with a localStorage fallback). That is the right place — entries
               are unlimited. This browser is asked to keep them when disk is tight. Watch usage here. When it fills,
-              download a backup, purge closed years, or start a new company. There is no cloud sync.
+              download a backup, pack a closed year out of this file, or start a new company. There is no cloud sync.
             </OptionsDescMore>
           </CardHeader>
           <CardContent>
@@ -1270,6 +1271,7 @@ function StoragePanel() {
   const data = useFinanceData();
   const companies = useFinanceStore((s) => s.companies);
   const purgeClosedThrough = useFinanceStore((s) => s.purgeClosedThrough);
+  const restoreYearArchive = useFinanceStore((s) => s.restoreYearArchive);
   const counts = countEntries(data);
   const companyBytes = useMemo(() => jsonSize(data), [data]);
   const allBytes = useMemo(() => jsonSize(companies), [companies]);
@@ -1281,6 +1283,7 @@ function StoragePanel() {
   }>({ usage: 0, quota: 0, persisted: null, engine: "unknown" });
   const [through, setThrough] = useState(`${new Date().getFullYear() - 1}-12-31`);
   const [purging, setPurging] = useState(false);
+  const yearFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let alive = true;
@@ -1351,29 +1354,57 @@ function StoragePanel() {
           </Field>
         </div>
         <Button variant="outline" onClick={() => setPurging(true)} disabled={!through}>
-          Purge closed
+          Pack closed year
         </Button>
+        <Button variant="outline" onClick={() => yearFileRef.current?.click()}>
+          Restore year
+        </Button>
+        <input
+          ref={yearFileRef}
+          type="file"
+          accept="application/json,.json"
+          className="hidden"
+          onChange={async (event) => {
+            const file = event.target.files?.[0];
+            event.target.value = "";
+            if (!file) return;
+            try {
+              const archive = parseYearArchive(await file.text());
+              restoreYearArchive(archive);
+              toast.success(`Restored the year packed through ${archive.through}. Balances are unchanged.`);
+            } catch (err) {
+              toast.error(err instanceof Error ? err.message : "Could not restore that year.");
+            }
+          }}
+        />
         <p className="w-full text-xs text-muted-foreground">
-          Removes paid, void, and cleared documents on or before that date. Open invoices, bills, and pending checks
-          stay. A condensed journal keeps balances the same. Download a backup first.
+          Books must already be closed through that date. Paid, void, and cleared activity leaves this file, including
+          expenses and deposits. Open invoices, bills, pending checks, budgets, and the roster stay. A year file
+          downloads so you can put that year back. Balances stay the same.
         </p>
       </div>
       <ConfirmDelete
         open={purging}
-        title="Purge closed activity?"
-        body={`Deletes paid, void, and cleared entries through ${through}. Open items stay. Balances stay the same. This cannot be undone unless you restore a backup.`}
-        confirmLabel="Purge"
-        requirePhrase="PURGE"
+        title="Pack this closed year?"
+        body={`Moves closed activity through ${through} out of this file and downloads a year file. Open items, budgets, and the roster stay. Balances stay the same. Restore that file to bring the year back.`}
+        confirmLabel="Pack year"
+        requirePhrase="PACK"
         onClose={() => setPurging(false)}
         onConfirm={() => {
-          try {
-            const n = purgeClosedThrough(through);
-            toast.success(`Removed ${n} closed ${n === 1 ? "entry" : "entries"}.`);
-            setPurging(false);
-          } catch (err) {
-            toast.error(err instanceof Error ? err.message : "Could not purge.");
-            setPurging(false);
-          }
+          void (async () => {
+            try {
+              const preview = archiveClosedYear(data, through);
+              await saveCompanyFile(yearArchiveFilename(preview.archive), yearArchivePayload(preview.archive));
+              const packed = purgeClosedThrough(through);
+              toast.success(
+                `Packed ${packed.removed} entries. This file ${formatBytes(packed.beforeBytes)} → ${formatBytes(packed.afterBytes)}.`,
+              );
+              setPurging(false);
+            } catch (err) {
+              toast.error(err instanceof Error ? err.message : "Could not pack that year.");
+              setPurging(false);
+            }
+          })();
         }}
       />
     </div>

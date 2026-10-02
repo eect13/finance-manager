@@ -66,6 +66,7 @@ import {
   postDueRecurring,
 } from "./actions";
 import { mergeBooks, parseBackupFile } from "./export";
+import { restoreClosedYear, type YearArchive } from "./year-archive";
 import { newId } from "./ids";
 import { listLocalBackups, readLocalBackup, writeLocalBackups } from "./local-backup";
 import { normalizeBooks } from "./normalize";
@@ -259,7 +260,8 @@ export interface FinanceState {
   removeEmployee: (id: string) => void;
   payEmployee: (input: Parameters<typeof payEmployee>[1]) => void;
   payEmployees: (input: Parameters<typeof payEmployees>[1]) => { posted: number; skippedHourly: number };
-  purgeClosedThrough: (throughDate: string) => number;
+  purgeClosedThrough: (throughDate: string) => { removed: number; beforeBytes: number; afterBytes: number };
+  restoreYearArchive: (archive: YearArchive) => void;
   closeBooks: (throughDate: string, packetPrinted?: boolean) => void;
   reopenBooks: (reason?: string) => void;
   finishRecon: (input: Parameters<typeof finishRecon>[1]) => void;
@@ -685,9 +687,19 @@ export const useFinanceStore = create<FinanceState>()(
           const result = purgeClosedThrough(current, throughDate);
           set({
             companies: { ...s.companies, [id]: sliceData(result.data) },
-            ...pushUndo(s, current, `purge closed through ${throughDate}`),
+            ...pushUndo(s, current, `pack closed through ${throughDate}`),
           });
-          return result.removed;
+          return { removed: result.removed, beforeBytes: result.beforeBytes, afterBytes: result.afterBytes };
+        },
+        restoreYearArchive: (archive) => {
+          const s = get();
+          const id = s.activeCompanyId;
+          const current = s.companies[id] ?? emptyBooks();
+          const next = restoreClosedYear(current, archive);
+          set({
+            companies: { ...s.companies, [id]: sliceData(next) },
+            ...pushUndo(s, current, `restore year through ${archive.through}`),
+          });
         },
         closeBooks: (throughDate, packetPrinted) =>
           apply((d) => closeBooks(d, throughDate, packetPrinted), `close books through ${throughDate}`),

@@ -32,6 +32,7 @@ import type {
 } from "./types";
 import { DEFAULT_REGIONAL_MODULES, parseForecastDays } from "./types";
 import { computePhPayroll, periodPayAmount, PH_PAYROLL_CODES, salariedPayAlreadyPosted, staffPayrollLumpCovers } from "./ph-payroll";
+import { archiveClosedYear } from "./year-archive";
 import { capAuditEvents } from "./audit-cap";
 import { applyRegisterOrderPlacement, cashBook, pruneRegisterOrder, type ArrangePlace, type CashLineKind } from "./register";
 import { methodNeedsReference, methodLabel } from "./methods";
@@ -1745,105 +1746,16 @@ function applyCashRecon(data: FinanceData, input: AnyIn): FinanceData {
   throw new Error("This line cannot be reconciled.");
 }
 
-/** Drop closed documents through a date and post one condensed journal so balances stay put. */
-export function purgeClosedThrough(data: FinanceData, throughDate: string): { data: FinanceData; removed: number } {
-  if (!throughDate) throw new Error("Pick a date.");
-  const dropInvoices = new Set(
-    data.invoices
-      .filter((i) => (i.status === "paid" || i.status === "void") && i.date <= throughDate)
-      .map((i) => i.id),
-  );
-  const dropReceipts = new Set(
-    data.receipts
-      .filter((r) => {
-        if (r.invoiceId && dropInvoices.has(r.invoiceId)) return true;
-        if (r.kind === "cash-sale" && r.date <= throughDate) return true;
-        if (r.kind === "payment" && r.status === "void" && r.date <= throughDate) return true;
-        return false;
-      })
-      .map((r) => r.id),
-  );
-  const dropBills = new Set(
-    data.bills
-      .filter((b) => (b.status === "paid" || b.status === "void") && b.date <= throughDate)
-      .map((b) => b.id),
-  );
-  const dropChecks = new Set(
-    data.checks
-      .filter((c) => c.status !== "pending" && c.issueDate <= throughDate)
-      .map((c) => c.id),
-  );
-
-  const journalIds: Array<string | undefined> = [];
-  for (const invoice of data.invoices) {
-    if (!dropInvoices.has(invoice.id)) continue;
-    journalIds.push(invoice.journalId, ...invoice.payments.map((p) => p.journalId));
-  }
-  for (const receipt of data.receipts) {
-    if (!dropReceipts.has(receipt.id)) continue;
-    journalIds.push(receipt.journalId, receipt.reversalJournalId);
-  }
-  for (const bill of data.bills) {
-    if (!dropBills.has(bill.id)) continue;
-    journalIds.push(bill.journalId, ...bill.payments.map((p) => p.journalId));
-  }
-  for (const check of data.checks) {
-    if (!dropChecks.has(check.id)) continue;
-    journalIds.push(check.journalId, check.reversalJournalId);
-  }
-
-  const drop = new Set(journalIds.filter((id): id is string => Boolean(id)));
-  for (const journal of data.journals) {
-    if (journal.sourceType === "reversal" && journal.sourceId && drop.has(journal.sourceId)) {
-      drop.add(journal.id);
-    }
-  }
-
-  const nets = new Map<string, number>();
-  for (const journal of data.journals) {
-    if (!drop.has(journal.id)) continue;
-    for (const line of journal.lines) {
-      nets.set(line.accountId, (nets.get(line.accountId) ?? 0) + line.debit - line.credit);
-    }
-  }
-  const condensedLines = [...nets.entries()]
-    .filter(([, net]) => net !== 0)
-    .map(([accountId, net]) =>
-      net > 0 ? { accountId, debit: net, credit: 0 } : { accountId, debit: 0, credit: -net },
-    );
-
-  const removed = dropInvoices.size + dropReceipts.size + dropBills.size + dropChecks.size;
-  if (removed === 0) throw new Error("Nothing closed on or before that date.");
-
-  let next: FinanceData = {
-    ...data,
-    invoices: data.invoices.filter((i) => !dropInvoices.has(i.id)),
-    receipts: data.receipts.filter((r) => !dropReceipts.has(r.id)),
-    bills: data.bills.filter((b) => !dropBills.has(b.id)),
-    checks: data.checks.filter((c) => !dropChecks.has(c.id)),
-    journals: data.journals.filter((j) => !drop.has(j.id)),
+/** Pack closed documents and journals through a date. Balances stay on one condensed journal. */
+export function purgeClosedThrough(data: FinanceData, throughDate: string) {
+  const packed = archiveClosedYear(data, throughDate);
+  return {
+    data: packed.data,
+    removed: packed.removed,
+    archive: packed.archive,
+    beforeBytes: packed.beforeBytes,
+    afterBytes: packed.afterBytes,
   };
-  if (condensedLines.length > 0) {
-    next = {
-      ...next,
-      journals: [
-        makeJournal({
-          date: throughDate,
-          description: `Condensed books through ${throughDate}`,
-          sourceType: "manual",
-          lines: condensedLines,
-        }),
-        ...next.journals,
-      ],
-    };
-  }
-  // Drop finished recon statements through the purge date (line refs are gone) and re-cap audit.
-  next = {
-    ...next,
-    reconHistory: (next.reconHistory ?? []).filter((r) => (r.statementDate || "") > throughDate),
-    audit: capAuditEvents(next.audit),
-  };
-  return { data: next, removed };
 }
 
 const AUDIT_WHO = "this browser";

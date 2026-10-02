@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { postDueRecurring } from "./actions.ts";
 import { cashForecast } from "./forecast.ts";
 import { invoiceBalance } from "./ledger.ts";
+import { normalizeBooks } from "./normalize.ts";
 import { parseForecastDays } from "./types.ts";
 import { createSeed, isOutdatedPacificHarborSample } from "./seed.ts";
 
@@ -112,5 +113,112 @@ describe("Pacific Harbor sample", () => {
       }),
       true,
     );
+  });
+});
+
+describe("forecast honesty", () => {
+  function books() {
+    return normalizeBooks({
+      settings: { companyName: "Gap Co", currency: "PHP", forecastDays: 90 },
+      banks: [
+        {
+          id: "bank-op",
+          name: "Operating",
+          nickname: "Operating",
+          accountNumber: "1",
+          openingBalance: 1_000_000,
+          accountId: "acc-op",
+          archived: false,
+        },
+      ],
+      accounts: [
+        { id: "acc-op", code: "1000", name: "Cash", type: "asset", bankId: "bank-op", system: true },
+        { id: "acc-ar", code: "1200", name: "AR", type: "asset", system: true },
+        { id: "acc-sales", code: "4000", name: "Sales", type: "income", system: true },
+        { id: "acc-pay", code: "5300", name: "Payroll", type: "expense", system: true },
+        { id: "acc-eq", code: "3000", name: "Equity", type: "equity", system: true },
+      ],
+      customers: [{ id: "c1", name: "Buyer", contact: "", email: "", phone: "", address: "", terms: "", notes: "", sortOrder: 0 }],
+      budgetItems: [
+        { id: "sales", name: "Trade sales", kind: "inflow", amount: 1_000, cadence: "monthly", startMonth: "2026-01", accountId: "acc-sales" },
+        { id: "pay", name: "Payroll", kind: "outflow", amount: 200, cadence: "monthly", startMonth: "2026-01", accountId: "acc-pay" },
+      ],
+      invoices: [
+        {
+          id: "inv-old",
+          number: "1",
+          customerId: "c1",
+          date: "2026-08-01",
+          dueDate: "2026-08-15",
+          status: "sent",
+          taxRate: 0,
+          notes: "",
+          journalId: "",
+          lines: [{ id: "l1", description: "Old", quantity: 1, unitPrice: 400 }],
+          payments: [],
+        },
+        {
+          id: "inv-oct",
+          number: "2",
+          customerId: "c1",
+          date: "2026-10-01",
+          dueDate: "2026-10-15",
+          status: "sent",
+          taxRate: 0,
+          notes: "",
+          journalId: "",
+          lines: [{ id: "l2", description: "Oct", quantity: 1, unitPrice: 400 }],
+          payments: [],
+        },
+      ],
+      checks: [
+        {
+          id: "chk-half",
+          bankId: "bank-op",
+          checkNumber: "1",
+          payee: "Staff payroll",
+          issueDate: "2026-10-13",
+          postDate: "2026-10-14",
+          amount: 100,
+          status: "pending",
+          memo: "1st half",
+          accountId: "acc-pay",
+          journalId: "",
+        },
+      ],
+      bills: [
+        {
+          id: "bill-old",
+          number: "B1",
+          vendorId: "v1",
+          date: "2026-08-01",
+          dueDate: "2026-08-20",
+          amount: 50,
+          accountId: "acc-pay",
+          status: "open",
+          memo: "",
+          reference: "",
+          payments: [],
+          journalId: "",
+        },
+      ],
+    });
+  }
+
+  it("parks overdue open items on the start date and leaves only the uncovered gap", () => {
+    const data = books();
+    const points = cashForecast(data, 20, "2026-10-02");
+    const start = points[0]!;
+    const oct15 = points.find((p) => p.date === "2026-10-15")!;
+    const halfDay = points.find((p) => p.date === "2026-10-14")!;
+    assert.equal(start.date, "2026-10-02");
+    // Overdue invoice 400 lands today. October sales gap is 600 (budget 1,000 − invoice 400).
+    assert.equal(start.inflows, 1_000);
+    assert.equal(oct15.inflows, 400);
+    // Overdue bill 50 plus the uncovered payroll half (100) land today. The posted half stays on its date.
+    assert.equal(start.outflows, 150);
+    assert.equal(halfDay.outflows, 100);
+    const monthOut = points.filter((p) => p.date.startsWith("2026-10")).reduce((s, p) => s + p.outflows, 0);
+    assert.equal(monthOut, 250);
   });
 });

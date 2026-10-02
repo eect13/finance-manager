@@ -1,7 +1,7 @@
 {
   "name": "finance-manager",
-  "version": "3.63.60",
-  "description": "Finance Manager \u2014 Peachtree-style ledger in a desktop window.",
+  "version": "3.63.61",
+  "description": "Finance Manager — Peachtree-style ledger in a desktop window.",
   "private": true,
   "sideEffects": false,
   "type": "module",
@@ -65,7 +65,7 @@
     "@tailwindcss/vite": "^4.3.0",
     "@tanstack/react-query": "^5.101.0",
     "@tanstack/react-router": "^1.170.0",
-    "@tanstack/react-start": "^1.168.0",
+    "@tanstack/react-start": "~1.168.60",
     "@tanstack/react-table": "^8.21.0",
     "@tanstack/react-virtual": "^3.14.10",
     "@tanstack/router-plugin": "^1.168.0",

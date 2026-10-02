@@ -31,7 +31,7 @@ import type {
   Vendor,
 } from "./types";
 import { DEFAULT_REGIONAL_MODULES, parseForecastDays } from "./types";
-import { computePhPayroll, periodPayAmount, PH_PAYROLL_CODES, staffPayrollLumpCovers } from "./ph-payroll";
+import { computePhPayroll, periodPayAmount, PH_PAYROLL_CODES, salariedPayAlreadyPosted, staffPayrollLumpCovers } from "./ph-payroll";
 import { capAuditEvents } from "./audit-cap";
 import { applyRegisterOrderPlacement, cashBook, pruneRegisterOrder, type ArrangePlace, type CashLineKind } from "./register";
 import { methodNeedsReference, methodLabel } from "./methods";
@@ -2472,6 +2472,11 @@ export function payEmployees(
   if (staffPayrollLumpCovers(data, date)) {
     throw new Error(
       "This month already has a Staff payroll vendor lump. Do not post a second cash run. Use Reports → Payroll for the statutory worksheet.",
+    );
+  }
+  if (salariedPayAlreadyPosted(data, date)) {
+    throw new Error(
+      "This month already has paychecks for salaried staff. Pay all would post them again. Use a single slip only for an extra payment.",
     );
   }
   const active = (data.employees ?? []).filter((e) => e.active);

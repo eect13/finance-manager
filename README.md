@@ -1,4 +1,4 @@
-# Finance Manager v3.63.60
+# Finance Manager v3.63.61
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -27,6 +27,11 @@ Vite is installed with the packages — no global `vite` command. `.npmrc` has `
 
 After the Windows installer: Desktop has one **Finance Manager** shortcut (navy pillars). Pin that — do not keep leftover `finance-manager` aliases from older builds.
 
+## What's new in v3.63.61
+
+- **Forecast counts what is still open:** Overdue invoices and bills land today. A budget line adds only the gap (a half payroll check leaves the other half). This month’s leftover budget lands today, not next month.
+- **Pay all once a month:** A month that already has salaried paychecks will not post them again. A single slip stays available as extra cash.
+
 ## What's new in v3.63.60
 
 - **Dates type like QuickBooks:** 09131992, 091392, 91326, 0913, 9/13/2026 all resolve. Amounts accept ₱ / $ / spaces / (1,000.50).
@@ -37,11 +42,6 @@ After the Windows installer: Desktop has one **Finance Manager** shortcut (navy 
 
 - **Forecast horizon is 30 / 60 / 90 / 180 days:** Pills on Cash forecast store the choice with the company file. Desk sparkline and “in N days” follow it.
 - **Payroll tax worksheet when remittance is zero:** Reports → Payroll still shows the empty 2211–2214 balances, then a statutory estimate from the active salaried roster. Does not post or file.
-
-## What's new in v3.63.58
-
-- **Sample payroll no longer double-posts:** Recurring rent, payroll, and power next dates are January 2027 — the 2026 year is already in the books, so Desk does not offer “Post 4 due.”
-- **Forecast skips covered months:** A budget outflow is left out of a month that already has matching cash. Close banner and Open workspace wording stay honest.
 
 Older point-release notes live in [docs/BUGS-AND-IMPROVEMENTS.md](docs/BUGS-AND-IMPROVEMENTS.md).
 

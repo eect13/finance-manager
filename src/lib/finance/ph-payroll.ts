@@ -284,3 +284,35 @@ export function staffPayrollLumpCovers(data: FinanceData, date: string): boolean
     return (c.postDate || c.issueDate || "").slice(0, 7) === month;
   });
 }
+
+function paycheckInMonth(data: FinanceData, date: string, employeeId?: string): boolean {
+  const month = (date || "").slice(0, 7);
+  if (!month) return false;
+  return (data.checks ?? []).some((c) => {
+    if (!c.employeeId) return false;
+    if (employeeId && c.employeeId !== employeeId) return false;
+    if (c.status === "voided" || c.status === "bounced") return false;
+    return (c.postDate || c.issueDate || "").slice(0, 7) === month;
+  });
+}
+
+/** Active salaried people who would be paid again if Pay all ran on this date. */
+export function salariedPayAlreadyPosted(data: FinanceData, date: string): boolean {
+  const month = (date || "").slice(0, 7);
+  if (!month) return false;
+  const ids = new Set(
+    (data.employees ?? [])
+      .filter((e) => e.active && e.payType !== "hourly" && e.rate > 0)
+      .map((e) => e.id),
+  );
+  if (ids.size === 0) return false;
+  return (data.checks ?? []).some((c) => {
+    if (!c.employeeId || !ids.has(c.employeeId)) return false;
+    if (c.status === "voided" || c.status === "bounced") return false;
+    return (c.postDate || c.issueDate || "").slice(0, 7) === month;
+  });
+}
+
+export function employeePayAlreadyPosted(data: FinanceData, employeeId: string, date: string): boolean {
+  return paycheckInMonth(data, date, employeeId);
+}

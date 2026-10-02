@@ -265,7 +265,7 @@ function ForecastPage() {
   return (
     <AppShell
       title="Cash forecast"
-      description="Cash from today (or the day after a future lock). Pending checks and invoice due dates first. A budget line fills a future month only when that line is not already covered by a matching check, bill, or open invoices."
+      description="Cash from today (or the day after a future lock). Overdue invoices and bills land today. A budget line adds only the gap still uncovered — a half payroll check leaves the other half. This month’s gap lands today; later months land on the 1st."
       actions={
         <div className="flex flex-wrap items-center gap-2">
           <FilterPills

@@ -172,6 +172,7 @@ describe("pay run and merge", () => {
     const check = data.checks.at(-1)!;
     assert.equal(check.employeeId, "emp-sal");
     assert.equal(check.amount, 50000);
+    assert.throws(() => payEmployees(data, { date: "2026-09-01", bankId: "bank-op" }), /paycheck/);
   });
 
   it("statutory paycheck splits SSS PhilHealth Pag-IBIG TRAIN and employer cost", () => {

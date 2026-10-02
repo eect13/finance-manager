@@ -1,6 +1,16 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-27. Updated for v3.63.60.
+Re-verified in code 2026-09-27. Updated for v3.63.61.
+
+## Fixed in v3.63.61
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| H1 | High | Overdue open invoices and bills never entered the cash path | Park them on the forecast start date |
+| H2 | High | Pay all could run twice when the payee was not exactly “Staff payroll” | Refuse when salaried paychecks already exist that month; a single slip stays extra |
+| H3 | Med | A partial month added the full budget, or a half check hid the rest | Add only the uncovered gap; a half payroll check leaves the other half |
+| H4 | Med | This month’s budget was skipped unless today was the 1st | Leftover budget for the open month lands today |
+| H5 | Med | Forecast rescanned every document for every budget line | One pass over checks, bills, and invoices builds the month cover |
 
 ## Fixed in v3.63.60
 

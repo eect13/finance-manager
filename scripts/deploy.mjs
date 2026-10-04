@@ -8,7 +8,8 @@
  *        phase 2  cargo --release  (minutes)
  *        phase 3  MSI / NSIS
  *   3. Collect MSI / NSIS from bundle/
- *   4. Open that folder
+ *   4. Copy them to %USERPROFILE%\Desktop\Vibe Installers and open it
+ *      (an older same-name file is renamed -prev-YYYYMMDD-HHMM, never overwritten)
  *
  *   node scripts/deploy.mjs
  *   node scripts/deploy.mjs --no-open
@@ -18,6 +19,7 @@ import { existsSync, readdirSync, statSync } from "node:fs";
 import { homedir, platform } from "node:os";
 import { delimiter, extname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { copyToVibeInstallers, vibeInstallersDir } from "./vibe-installers.mjs";
 
 const ROOT = join(fileURLToPath(new URL("..", import.meta.url)));
 const WIN = platform() === "win32";
@@ -79,7 +81,7 @@ console.log("Finance Manager deploy — 4 steps. First time is slow; leave this 
 console.log("  Inside step 2 there are three phases:");
 console.log("    1) Vite packs the UI     ← ends with “Phase 1 done”");
 console.log("    2) cargo compiles Rust   ← several minutes, looks like a new process");
-console.log("    3) MSI / NSIS installers ← Explorer opens the bundle folder\n");
+console.log("    3) MSI / NSIS installers ← copied to Desktop\\Vibe Installers, which opens\n");
 
 if (!existsSync(join(ROOT, "package.json")) || !existsSync(join(ROOT, "scripts", "desktop-setup.mjs"))) {
   fail(
@@ -128,8 +130,20 @@ if (show.length) {
   fail("No bundle folder. The release compile did not finish.");
 }
 
-log("4/4", "Open output folder");
-const openDir = existsSync(bundleDir) ? bundleDir : existsSync(releaseDir) ? releaseDir : null;
+log("4/4", "Copy to Desktop\\Vibe Installers + open");
+const outDir = vibeInstallersDir();
+const copied = [];
+for (const src of show.filter((p) => p.startsWith(bundleDir))) {
+  try {
+    const { dest, kept, same } = copyToVibeInstallers(src, outDir);
+    if (kept) console.log(`  kept older file as ${kept}`);
+    console.log(same ? `  already there (same SHA-256): ${dest}` : `  ${dest}`);
+    copied.push(dest);
+  } catch (err) {
+    console.error(`  copy failed: ${src} → ${outDir}`, err?.message ?? err);
+  }
+}
+const openDir = copied.length ? outDir : existsSync(bundleDir) ? bundleDir : existsSync(releaseDir) ? releaseDir : null;
 if (!noOpen && openDir) {
   if (WIN) spawnSync("explorer", [openDir], { shell: true, stdio: "ignore" });
   else if (platform() === "darwin") spawnSync("open", [openDir], { stdio: "ignore" });
@@ -138,6 +152,6 @@ if (!noOpen && openDir) {
 }
 
 console.log(`
-Done. Install the MSI or NSIS setup from bundle\\ — not target\\debug\\finance-manager.exe.
+Done. Install the MSI or NSIS setup from Desktop\\Vibe Installers\\ — not target\\debug\\finance-manager.exe.
 Other PCs do not need Node or Rust. Install the NSIS setup (or MSI) and open Finance Manager.
 `);

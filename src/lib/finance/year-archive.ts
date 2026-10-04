@@ -189,6 +189,20 @@ export function yearArchivePayload(archive: YearArchive): string {
   return JSON.stringify(archive, null, 2);
 }
 
+/**
+ * Purge only after the year file is confirmed saved. A fallback download
+ * ("downloaded") cannot be confirmed (Android WebView, no save picker), so the
+ * entries stay. A throw (e.g. a cancelled picker) also leaves them untouched.
+ */
+export async function packAfterConfirmedSave<T>(
+  save: () => Promise<"saved" | "downloaded">,
+  purge: () => T,
+): Promise<{ how: "saved"; packed: T } | { how: "downloaded"; packed: null }> {
+  const how = await save();
+  if (how !== "saved") return { how: "downloaded", packed: null };
+  return { how, packed: purge() };
+}
+
 export function yearArchiveFilename(archive: YearArchive): string {
   const slug = (archive.companyName || "company")
     .toLowerCase()

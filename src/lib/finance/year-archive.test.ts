@@ -4,7 +4,13 @@ import { addExpense, createInvoice } from "./actions.ts";
 import { trialBalance } from "./ledger.ts";
 import { normalizeBooks } from "./normalize.ts";
 import type { FinanceData } from "./types.ts";
-import { archiveClosedYear, parseYearArchive, restoreClosedYear, yearArchivePayload } from "./year-archive.ts";
+import {
+  archiveClosedYear,
+  packAfterConfirmedSave,
+  parseYearArchive,
+  restoreClosedYear,
+  yearArchivePayload,
+} from "./year-archive.ts";
 
 function bare(): FinanceData {
   return normalizeBooks({
@@ -111,5 +117,50 @@ describe("closed year pack", () => {
     assert.equal(back.credit, before.credit);
     assert.throws(() => restoreClosedYear(restored, roundTrip), /already in the open file/);
     assert.throws(() => archiveClosedYear(data, "2026-12-31"), /Close the books/);
+  });
+});
+
+describe("packAfterConfirmedSave", () => {
+  it("does not purge when the year file only fell back to a download", async () => {
+    let purged = 0;
+    const out = await packAfterConfirmedSave(
+      async () => "downloaded",
+      () => {
+        purged += 1;
+        return { removed: 3, beforeBytes: 10, afterBytes: 5 };
+      },
+    );
+    assert.equal(purged, 0);
+    assert.deepEqual(out, { how: "downloaded", packed: null });
+  });
+
+  it("purges once after a confirmed save", async () => {
+    let purged = 0;
+    const out = await packAfterConfirmedSave(
+      async () => "saved",
+      () => {
+        purged += 1;
+        return { removed: 3, beforeBytes: 10, afterBytes: 5 };
+      },
+    );
+    assert.equal(purged, 1);
+    assert.deepEqual(out, { how: "saved", packed: { removed: 3, beforeBytes: 10, afterBytes: 5 } });
+  });
+
+  it("does not purge when the save throws (cancelled picker)", async () => {
+    let purged = 0;
+    await assert.rejects(
+      packAfterConfirmedSave(
+        async () => {
+          throw new DOMException("cancelled", "AbortError");
+        },
+        () => {
+          purged += 1;
+          return { removed: 3, beforeBytes: 10, afterBytes: 5 };
+        },
+      ),
+      { name: "AbortError" },
+    );
+    assert.equal(purged, 0);
   });
 });

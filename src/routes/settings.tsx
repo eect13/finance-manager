@@ -30,7 +30,7 @@ import { formatDate, todayIso } from "@/lib/finance/format";
 import { useEntrySort } from "@/lib/finance/sort";
 import { UNDO_MAX, useFinanceData, useFinanceStore } from "@/lib/finance/store";
 import { browserStorage, countEntries, formatBytes, jsonSize } from "@/lib/finance/storage-usage";
-import { archiveClosedYear, parseYearArchive, yearArchiveFilename, yearArchivePayload } from "@/lib/finance/year-archive";
+import { archiveClosedYear, packAfterConfirmedSave, parseYearArchive, yearArchiveFilename, yearArchivePayload } from "@/lib/finance/year-archive";
 import { newId } from "@/lib/finance/ids";
 import { COUNTRY_TAX_PACKS, CURRENCIES, countryTaxPackForCurrency, settingsPatchForCountryPack, withModule, type RecurringItem } from "@/lib/finance/types";
 import { useShallow } from "zustand/react/shallow";
@@ -1394,8 +1394,16 @@ function StoragePanel() {
           void (async () => {
             try {
               const preview = archiveClosedYear(data, through);
-              await saveCompanyFile(yearArchiveFilename(preview.archive), yearArchivePayload(preview.archive));
-              const packed = purgeClosedThrough(through);
+              const result = await packAfterConfirmedSave(
+                () => saveCompanyFile(yearArchiveFilename(preview.archive), yearArchivePayload(preview.archive)),
+                () => purgeClosedThrough(through),
+              );
+              if (!result.packed) {
+                toast.error("The year file downloaded, but the save could not be confirmed, so nothing was packed.");
+                setPurging(false);
+                return;
+              }
+              const packed = result.packed;
               toast.success(
                 `Packed ${packed.removed} entries. This file ${formatBytes(packed.beforeBytes)} → ${formatBytes(packed.afterBytes)}.`,
               );

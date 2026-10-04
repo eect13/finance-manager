@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   web:
-    name: Web (npm ci, lint, typecheck, test:src, build)
+    name: Web (npm ci, lint, typecheck, test, build)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -29,5 +29,5 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
-      - run: npm run test:src
+      - run: npm test
       - run: npm run build

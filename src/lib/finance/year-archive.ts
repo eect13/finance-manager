@@ -175,6 +175,16 @@ export function archiveClosedYear(data: FinanceData, throughDate: string): Packe
   return { data: next, archive, removed, beforeBytes, afterBytes: utf8Size(next) };
 }
 
+export function packedThrough(data: FinanceData): string {
+  let latest = "";
+  for (const journal of data.journals) {
+    if (journal.sourceType !== "condensed") continue;
+    const through = (journal.sourceId || journal.date || "").slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(through) && through > latest) latest = through;
+  }
+  return latest;
+}
+
 export function yearArchivePayload(archive: YearArchive): string {
   return JSON.stringify(archive, null, 2);
 }

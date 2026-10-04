@@ -18,14 +18,23 @@ function monthOf(iso: string): string {
   return (iso || "").slice(0, 7);
 }
 
-function tokenOf(name: string): string {
-  const token = name.trim().toLowerCase().split(/\s+/)[0] || "";
-  return token.length >= 3 ? token : "";
+function nameWords(name: string): string[] {
+  return name
+    .trim()
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((word) => word.length >= 3);
 }
 
-function textHit(payee: string, memo: string, token: string): boolean {
-  if (!token) return false;
-  return `${payee} ${memo}`.toLowerCase().includes(token);
+function textHit(payee: string, memo: string, words: string[]): boolean {
+  if (words.length === 0) return false;
+  const have = new Set(
+    `${payee} ${memo}`
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .filter(Boolean),
+  );
+  return words.every((word) => have.has(word));
 }
 
 /** Exact, or a half-month / double of the budget line. */
@@ -36,14 +45,14 @@ function amountRelation(amount: number, budget: number): "exact" | "portion" | "
   return "none";
 }
 
-type CoverSlot = { item: BudgetItem; covered: number; token: string };
+type CoverSlot = { item: BudgetItem; covered: number; words: string[] };
 
 function slotsFor(data: FinanceData, month: string, cache: Map<string, CoverSlot[]>): CoverSlot[] {
   const hit = cache.get(month);
   if (hit) return hit;
   const slots = data.budgetItems
     .filter((item) => item.startMonth <= month && item.amount > 0)
-    .map((item) => ({ item, covered: 0, token: tokenOf(item.name) }));
+    .map((item) => ({ item, covered: 0, words: nameWords(item.name) }));
   cache.set(month, slots);
   return slots;
 }
@@ -63,14 +72,13 @@ function claim(
   let score = 0;
   for (const slot of slots) {
     if (slot.item.kind !== kind || slot.covered >= slot.item.amount) continue;
-    const named = textHit(payee, memo, slot.token);
+    const named = textHit(payee, memo, slot.words);
     const acct = Boolean(slot.item.accountId) && slot.item.accountId === accountId;
     const rel = amountRelation(amount, slot.item.amount);
     let s = 0;
     if (kind === "inflow" && anyInflow) s = named ? 3 : 1;
     else if (named) s = 4;
     else if (acct && rel !== "none") s = rel === "exact" ? 3 : 2;
-    else if (rel === "exact") s = 1;
     if (s > score) {
       score = s;
       best = slot;

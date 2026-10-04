@@ -1,6 +1,16 @@
 # Finance Manager — bugs & improvements (v3.63)
 
-Re-verified in code 2026-09-27. Updated for v3.63.62.
+Re-verified in code 2026-10-04. Updated for v3.63.63.
+
+## Fixed in v3.63.63
+
+| # | Severity | Issue | Fix |
+| --- | --- | --- | --- |
+| U1 | Med | Desk close banner repeated the month-end date | `deskCloseLine` keeps the blocker when it already names that date |
+| U2 | Med | “After invoices in and bills out” looked like the 90-day path | Labeled “Open position, not this path” |
+| U3 | Med | A packed year vanished from reports with no mark | Reports and the register say the detail is in a year file |
+| U4 | Med | First word or an exact amount covered the wrong budget | Every word of the name must match; an exact amount only counts on the same account |
+| U5 | Low | Desktop smoke shot the hydrate splash | Smoke waits until “Opening the books” is gone |
 
 ## Fixed in v3.63.62
 

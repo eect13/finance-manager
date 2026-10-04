@@ -1,4 +1,4 @@
-# Finance Manager v3.63.62
+# Finance Manager v3.63.63
 
 Treasury books in a **desktop window**, and in the browser. Banks, receipts, checks, invoices, bills, **employees**, and a **bank register**.
 
@@ -27,6 +27,13 @@ Vite is installed with the packages — no global `vite` command. `.npmrc` has `
 
 After the Windows installer: Desktop has one **Finance Manager** shortcut (navy pillars). Pin that — do not keep leftover `finance-manager` aliases from older builds.
 
+## What's new in v3.63.63
+
+- **Desk close banner is one sentence.** It no longer repeats the month-end date in front of the blocker.
+- **Open position is not the cash path.** The second figure on the desk is labeled as book cash plus invoices minus bills.
+- **A packed year is marked.** Reports and the register say the detail is in a year file. Balances are unchanged.
+- **Forecast names match the whole name.** “Warehouse power” does not cover “Warehouse rent,” and an exact amount does not jump accounts.
+
 ## What's new in v3.63.62
 
 - **A closed year can leave the file:** Options → Storage → Pack closed year. Books must already be closed through that date. Expenses and cleared documents move into a year file you can restore. Open items, budgets, and the roster stay. Balances stay the same.
@@ -36,11 +43,6 @@ After the Windows installer: Desktop has one **Finance Manager** shortcut (navy 
 
 - **Forecast counts what is still open:** Overdue invoices and bills land today. A budget line adds only the gap (a half payroll check leaves the other half). This month’s leftover budget lands today, not next month.
 - **Pay all once a month:** A month that already has salaried paychecks will not post them again. A single slip stays available as extra cash.
-
-## What's new in v3.63.60
-
-- **Dates type like QuickBooks:** 09131992, 091392, 91326, and 9/13/2026 all resolve. Amounts accept ₱, $, spaces, and parentheses.
-- **Forecast covers the right line:** A budget adds only the uncovered gap. Horizon pills are on Desk too.
 
 Older point-release notes live in [docs/BUGS-AND-IMPROVEMENTS.md](docs/BUGS-AND-IMPROVEMENTS.md).
 

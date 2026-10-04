@@ -89,6 +89,16 @@ export function closeChecklist(
   return { items, ok: blockers.length === 0, blockers, due };
 }
 
+/** One desk sentence. Skip the “cannot close yet” prefix when the blocker already names that date. */
+export function deskCloseLine(through: string, blocker: string): string {
+  const when = formatDate(through);
+  const text = blocker.trim();
+  if (!text) return `${when} cannot close yet.`;
+  if (text.includes(when)) return text.endsWith(".") ? text : `${text}.`;
+  const sentence = text.endsWith(".") ? text : `${text}.`;
+  return `${when} cannot close yet. ${sentence}`;
+}
+
 export function closeTotals(data: FinanceData, through: string) {
   const banks = data.banks
     .filter((b) => !b.archived)

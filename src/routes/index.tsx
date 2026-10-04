@@ -12,7 +12,7 @@ import { projectedCash, cashForecast, forecastAsOf } from "@/lib/finance/forecas
 import { formatDate } from "@/lib/finance/format";
 import { billBalance, cashByBankId, invoiceBalance, openPayables, openReceivables, pendingChecksTotal, totalCash } from "@/lib/finance/ledger";
 import { openProps } from "@/lib/finance/open-record";
-import { closeChecklist, monthEndIso } from "@/lib/finance/close";
+import { closeChecklist, deskCloseLine, monthEndIso } from "@/lib/finance/close";
 import { FORECAST_DAY_OPTIONS, parseForecastDays } from "@/lib/finance/types";
 import { FilterPills } from "@/components/filter-pills";
 import { useFinanceData, useFinanceStore } from "@/lib/finance/store";
@@ -79,7 +79,7 @@ function Desk() {
       {!close.ok ? (
         <div className="close-banner mb-4 flex flex-col gap-3 rounded-2xl bg-card px-4 py-3 text-sm elevation sm:flex-row sm:items-center">
           <p className="min-w-0 flex-1 leading-snug">
-            {formatDate(through)} cannot close yet. {close.blockers[0]}{" "}
+            {deskCloseLine(through, close.blockers[0] ?? "")}{" "}
             <Link to="/close" className="font-medium underline underline-offset-2">
               Open the checklist
             </Link>
@@ -145,7 +145,7 @@ function Desk() {
             <p className="text-xs text-muted-foreground">In {days} days</p>
             <Money amount={in90} currency={settings.currency} className="text-lg font-medium" />
             <p className="mt-1 text-xs text-muted-foreground">
-              After invoices in and bills out:{" "}
+              Open position, not this path:{" "}
               <Money amount={projected} currency={settings.currency} className="inline font-medium text-foreground" />
             </p>
           </div>

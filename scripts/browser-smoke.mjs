@@ -109,7 +109,12 @@ try {
     // networkidle never settles and would burn the whole timeout.
     const resp = await page.goto(url, { waitUntil: "domcontentloaded", timeout: timeoutMs });
     const status = resp?.status() ?? 0;
-    await page.waitForTimeout(1000);
+    await page
+      .waitForFunction(() => {
+        const text = (document.body?.innerText ?? "").replace(/\s+/g, " ").trim();
+        return text.length > 80 && !text.includes("Opening the books");
+      }, { timeout: 20000 })
+      .catch(() => {});
 
     const title = await page.title();
     const hasCanvas = (await page.locator("canvas").count()) > 0;

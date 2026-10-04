@@ -41,6 +41,7 @@ import { modulesOf, type Account } from "@/lib/finance/types";
 import { openProps, openTxn } from "@/lib/finance/open-record";
 import { useEntrySort } from "@/lib/finance/sort";
 import { useFinanceData } from "@/lib/finance/store";
+import { packedThrough } from "@/lib/finance/year-archive";
 
 export const Route = createFileRoute("/reports")({ component: ReportsPage });
 
@@ -113,6 +114,7 @@ function ReportsPage() {
     () => (q ? pl.byAccount.filter((r) => `${r.account.code} ${r.account.name}`.toLowerCase().includes(q)) : pl.byAccount),
     [pl.byAccount, q],
   );
+  const packed = packedThrough(data);
 
   return (
     <AppShell
@@ -135,6 +137,11 @@ function ReportsPage() {
         <p className="mb-1 text-xs text-muted-foreground">As of</p>
         <DateInput value={asOf} onChange={setAsOf} />
       </div>
+      {packed ? (
+        <p className="mb-3 text-xs text-muted-foreground">
+          Detail through {formatDate(packed)} is in a year file. Balances still include that summary.
+        </p>
+      ) : null}
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="mb-4 w-full justify-start">
           <TabsTrigger value="aging">Aging</TabsTrigger>

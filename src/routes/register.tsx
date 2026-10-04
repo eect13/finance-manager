@@ -38,6 +38,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { cashRegisterRows } from "@/lib/finance/export";
+import { packedThrough } from "@/lib/finance/year-archive";
 import { FIT_MARK, FIT_VERSION } from "@/lib/finance/col-fit-mark";
 import { fitColumnWidth } from "@/lib/finance/fit-column";
 import { clampCol } from "@/components/use-col-widths";
@@ -588,6 +589,11 @@ function RegisterPage() {
       {data.settings.closedThrough ? (
         <p className="no-print mb-3 text-center text-xs text-muted-foreground">
           Closed through {formatDate(data.settings.closedThrough)}. Posting on or before that date is blocked.
+        </p>
+      ) : null}
+      {packedThrough(data) ? (
+        <p className="no-print mb-3 text-center text-xs text-muted-foreground">
+          Detail through {formatDate(packedThrough(data))} is in a year file.
         </p>
       ) : null}
 

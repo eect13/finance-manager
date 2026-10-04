@@ -1,7 +1,9 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { postDueRecurring } from "./actions.ts";
+import { deskCloseLine } from "./close.ts";
 import { cashForecast } from "./forecast.ts";
+import { formatDate } from "./format.ts";
 import { invoiceBalance } from "./ledger.ts";
 import { normalizeBooks } from "./normalize.ts";
 import { parseForecastDays } from "./types.ts";
@@ -220,5 +222,54 @@ describe("forecast honesty", () => {
     assert.equal(halfDay.outflows, 100);
     const monthOut = points.filter((p) => p.date.startsWith("2026-10")).reduce((s, p) => s + p.outflows, 0);
     assert.equal(monthOut, 250);
+  });
+
+  it("does not let a shared word or an exact amount on another account cover rent", () => {
+    const data = books();
+    data.accounts.push(
+      { id: "acc-rent", code: "5400", name: "Rent", type: "expense", system: false },
+      { id: "acc-util", code: "5410", name: "Utilities", type: "expense", system: false },
+    );
+    data.budgetItems.push({
+      id: "rent",
+      name: "Warehouse rent",
+      kind: "outflow",
+      amount: 500,
+      cadence: "monthly",
+      startMonth: "2026-01",
+      accountId: "acc-rent",
+    });
+    data.bills.push({
+      id: "power",
+      number: "B2",
+      vendorId: "v1",
+      date: "2026-10-01",
+      dueDate: "2026-10-05",
+      amount: 500,
+      accountId: "acc-util",
+      status: "open",
+      memo: "warehouse power",
+      reference: "",
+      payments: [],
+      journalId: "",
+      sortOrder: 0,
+      taxRate: 0,
+    });
+    const points = cashForecast(data, 10, "2026-10-02");
+    const start = points[0]!;
+    const powerDay = points.find((p) => p.date === "2026-10-05")!;
+    assert.equal(start.outflows, 650);
+    assert.equal(powerDay.outflows, 500);
+  });
+});
+
+describe("desk close banner", () => {
+  it("does not repeat the through date", () => {
+    const through = "2026-10-31";
+    const when = formatDate(through);
+    const blocker = `Statements stop at ${formatDate("2026-07-31")}. Finish one through ${when} to close.`;
+    const line = deskCloseLine(through, blocker);
+    assert.equal(line.split(when).length - 1, 1);
+    assert.equal(line.includes("cannot close yet"), false);
   });
 });

@@ -13,7 +13,7 @@ export function capAuditEvents(events: AuditEvent[] | undefined | null): AuditEv
   const raw = Array.isArray(events) ? events : [];
   let list = raw.length > AUDIT_MAX_EVENTS ? raw.slice(-AUDIT_MAX_EVENTS) : raw.slice();
   while (list.length > 40) {
-    let size = 0;
+    let size: number;
     try {
       size = JSON.stringify(list).length;
     } catch {

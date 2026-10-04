@@ -306,7 +306,7 @@ function maskDigitGroups(digits: string, dmy: boolean, today: string): string {
 }
 
 function maskExplicitSlashes(raw: string, dmy: boolean, today: string): string {
-  let cleaned = raw.replace(/[^\d/]/g, "").replace(/\/{2,}/g, "/").replace(/^\/+/, "");
+  const cleaned = raw.replace(/[^\d/]/g, "").replace(/\/{2,}/g, "/").replace(/^\/+/, "");
   if (!cleaned) return "";
   const trailing = cleaned.endsWith("/");
   const body = trailing ? cleaned.slice(0, -1) : cleaned;

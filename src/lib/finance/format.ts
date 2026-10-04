@@ -243,24 +243,83 @@ export function isoToTyped(iso: string): string {
   return format(date, dateFormatPref === "DMY" ? "dd/MM/yyyy" : "MM/dd/yyyy");
 }
 
-/** Compact typing like QuickBooks: 09131992, 091392, 91392, 0913. */
+/**
+ * Compact typing like QuickBooks: 09131992, 091392, 91326, 0913.
+ * A typed "/" is a field separator, so 1/2/26 is January 2 — not the digit
+ * string 1226 (December 26). Five digits stay the parser's M/DD/YY reading
+ * (11226 is 1/12/26, not 11/22/6). The mask never paints month 13.
+ */
 export function maskTypedDate(raw: string): string {
+  const dmy = dateFormatPref === "DMY";
+  const today = todayIso();
+  if (raw.includes("/")) return maskExplicitSlashes(raw, dmy, today);
   const digits = raw.replace(/\D/g, "").slice(0, 8);
-  return slashDateDigits(digits, dateFormatPref === "DMY");
+  return maskDigitGroups(digits, dmy, today);
 }
 
-function slashDateDigits(digits: string, dmy: boolean): string {
-  if (!digits) return "";
-  const first = Number(digits[0]);
-  const wideFirst = first <= 1 || (dmy && first <= 3);
-  if (wideFirst) {
-    if (digits.length <= 2) return digits;
-    if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
-    return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+/** Groupings that mirror typedToIso's digit readings, preferred reading first. */
+function candidateMasks(digits: string): string[] {
+  const n = digits.length;
+  const out: string[] = [];
+  const add = (parts: string[]) => {
+    if (parts.length < 2 || parts.some((part) => part.length === 0)) return;
+    out.push(parts.join("/"));
+  };
+  if (n === 3) {
+    add([digits[0] ?? "", digits.slice(1)]);
+  } else if (n === 4) {
+    add([digits.slice(0, 2), digits.slice(2)]);
+    add([digits[0] ?? "", digits.slice(1, 3), digits.slice(3)]);
+    add([digits[0] ?? "", digits.slice(1)]);
+  } else if (n === 5) {
+    // Ambiguous five-digit strings are M/DD/YY (DMY: D/MM/YY). No second reading.
+    add([digits[0] ?? "", digits.slice(1, 3), digits.slice(3)]);
+  } else if (n === 6) {
+    add([digits.slice(0, 2), digits.slice(2, 4), digits.slice(4)]);
+    add([digits[0] ?? "", digits.slice(1, 3), digits.slice(3)]);
+  } else if (n === 7) {
+    add([digits[0] ?? "", digits.slice(1, 3), digits.slice(3)]);
+  } else if (n === 8) {
+    add([digits.slice(0, 2), digits.slice(2, 4), digits.slice(4)]);
+    add([digits[0] ?? "", digits.slice(1, 3), digits.slice(3)]);
   }
-  if (digits.length === 1) return digits;
-  if (digits.length <= 3) return `${digits[0]}/${digits.slice(1)}`;
-  return `${digits[0]}/${digits.slice(1, 3)}/${digits.slice(3)}`;
+  return out;
+}
+
+function maskMonth(mask: string, dmy: boolean): number | null {
+  const fields = mask.split("/");
+  const month = dmy ? fields[1] : fields[0];
+  if (!month) return null;
+  return Number(month);
+}
+
+function maskDigitGroups(digits: string, dmy: boolean, today: string): string {
+  if (!digits) return "";
+  if (digits.length <= 2) return digits;
+  const target = isoFromDigits(digits, today, dmy);
+  for (const mask of candidateMasks(digits)) {
+    const month = maskMonth(mask, dmy);
+    if (month !== null && month > 12) continue;
+    if (isoFromSlashed(mask, today, dmy) === target) return mask;
+  }
+  return digits;
+}
+
+function maskExplicitSlashes(raw: string, dmy: boolean, today: string): string {
+  const cleaned = raw.replace(/[^\d/]/g, "").replace(/\/{2,}/g, "/").replace(/^\/+/, "");
+  if (!cleaned) return "";
+  const trailing = cleaned.endsWith("/");
+  const body = trailing ? cleaned.slice(0, -1) : cleaned;
+  if (!body) return trailing ? "/" : "";
+  const bits = body.split("/");
+  const parts = bits.slice(0, 3);
+  if (bits.length > 3) parts[2] = `${parts[2] ?? ""}${bits.slice(3).join("")}`;
+  const monthStr = dmy ? (parts[1] ?? "") : (parts[0] ?? "");
+  if (monthStr !== "" && Number(monthStr) > 12) {
+    return maskDigitGroups(cleaned.replace(/\D/g, "").slice(0, 8), dmy, today);
+  }
+  const masked = parts.join("/");
+  return trailing ? `${masked}/` : masked;
 }
 
 function expandYear(yy: number, today: string): number {
@@ -280,16 +339,43 @@ function isoFromParts(year: number, month: number, day: number): string {
   return iso;
 }
 
-export function typedToIso(raw: string, today = todayIso()): string {
-  const trimmed = raw.trim();
-  if (!trimmed) return "";
-  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed) && isValid(parseISO(trimmed))) return trimmed;
-  const digits = trimmed.replace(/\D/g, "");
-  if (!digits) return "";
-  const dmy = dateFormatPref === "DMY";
+function yearFromTyped(ys: string, today: string): number {
+  if (!/^\d+$/.test(ys) || ys.length > 4) return 0;
+  if (ys.length === 4) return Number(ys);
+  return expandYear(Number(ys), today);
+}
+
+/** Honor "/" as month/day/year separators (MDY unless DMY). */
+function isoFromSlashed(raw: string, today: string, dmy: boolean): string {
+  let cleaned = raw.trim().replace(/[^\d/]/g, "").replace(/\/{2,}/g, "/").replace(/^\/+/, "");
+  if (cleaned.endsWith("/")) cleaned = cleaned.slice(0, -1);
+  if (!cleaned) return "";
+  const parts = cleaned.split("/");
+  if (parts.some((part) => part.length === 0)) return "";
   const nowY = Number(today.slice(0, 4));
   const nowM = Number(today.slice(5, 7));
+  if (parts.length === 1) {
+    if (parts[0].length > 2) return "";
+    return isoFromParts(nowY, nowM, Number(parts[0]));
+  }
+  if (parts.length === 2) {
+    const [a, b] = parts;
+    if (!a || !b || a.length > 2 || b.length > 2) return "";
+    return dmy ? isoFromParts(nowY, Number(b), Number(a)) : isoFromParts(nowY, Number(a), Number(b));
+  }
+  if (parts.length === 3) {
+    const [a, b, ys] = parts;
+    if (!a || !b || !ys || a.length > 2 || b.length > 2) return "";
+    const year = yearFromTyped(ys, today);
+    return dmy ? isoFromParts(year, Number(b), Number(a)) : isoFromParts(year, Number(a), Number(b));
+  }
+  return "";
+}
 
+function isoFromDigits(digits: string, today: string, dmy: boolean): string {
+  if (!digits) return "";
+  const nowY = Number(today.slice(0, 4));
+  const nowM = Number(today.slice(5, 7));
   const fromMdy = (a: number, b: number, year: number) =>
     dmy ? isoFromParts(year, b, a) : isoFromParts(year, a, b);
 
@@ -320,4 +406,13 @@ export function typedToIso(raw: string, today = todayIso()): string {
     return isoFromParts(nowY, nowM, day);
   }
   return "";
+}
+
+export function typedToIso(raw: string, today = todayIso()): string {
+  const trimmed = raw.trim();
+  if (!trimmed) return "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed) && isValid(parseISO(trimmed))) return trimmed;
+  const dmy = dateFormatPref === "DMY";
+  if (trimmed.includes("/")) return isoFromSlashed(trimmed, today, dmy);
+  return isoFromDigits(trimmed.replace(/\D/g, ""), today, dmy);
 }
